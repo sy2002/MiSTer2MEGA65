@@ -13,7 +13,7 @@ this becomes very clear.
 ----------------------------------------------------------------------------------
 -- NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
 --
--- Name of this module One-line description what this module does
+-- Name of this module one-line description what this module does
 --
 -- You can just delete these additional lines. They are used in cases, where you
 -- need additional room to comment things that are specific to this module.
@@ -40,6 +40,7 @@ you have been created by yourself.
 -- https://gbdev.io/pandocs/#ff00-p1-joyp-joypad-r-w
 --
 -- This machine is based on Gameboy_MiSTer
+-- Powered by MiSTer2MEGA65
 -- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 ```
