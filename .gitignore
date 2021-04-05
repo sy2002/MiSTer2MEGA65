@@ -8,9 +8,10 @@ MEGA65/vivado*.log
 MEGA65/vivado_pid*
 MEGA65/*ip_user_files
 MEGA65/webtalk*.*
+MEGA65/m2m-rom/*.def
 MEGA65/m2m-rom/*.lis
-MEGA65/m2m-rom/*.rom
 MEGA65/m2m-rom/*.out
+MEGA65/m2m-rom/*.rom
 M2M/rom/*.lis
-M2M/rom/*.rom
 M2M/rom/*.out
+M2M/rom/*.rom

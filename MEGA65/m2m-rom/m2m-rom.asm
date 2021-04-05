@@ -18,7 +18,7 @@
 ; debug mode so that the firmware runs in RAM and can be changed/loaded using
 ; the standard QNICE Monitor mechanisms such as "M/L" or QTransfer.
 
-#undef RELEASE
+#define RELEASE
 
 ; ----------------------------------------------------------------------------
 ; Firmware: M2M system
@@ -35,8 +35,10 @@
 ; Firmware: Main Code
 ; ----------------------------------------------------------------------------
 
-                ; initialize system
-START_FIRMWARE  HALT
+                ; Run the shell: This is where you could put your own system
+                ; instead of the shell
+START_FIRMWARE  RSUB    START_SHELL, 1
+                HALT
 
 ; ----------------------------------------------------------------------------
 ; Variables and stack: need to be located in RAM
