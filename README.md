@@ -3,6 +3,11 @@ MiSTer2MEGA65 (HEAVILY WORK-IN-PROGRESS)
 
 MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
 
+CAUTION: RIGHT NOW THIS IS A HEAVILY WORK-IN-PROGRESS PRE-ALPHA VERSION.
+WE WILL RELEASE THIS AS A V1.0 AS SOON AS THE FOLLOWING FIRST MILESTONE HAS
+BEEN REACHED: USING THIS FRAMEWORK, steddyman PORTED A FIRST VERSION OF
+MiSTer's TRS-80 CORE AND sy2002 PORTED A FIRST VERSION OF MiSTer's NES CORE.
+
 The MEGA65 does have some significant ROM/RAM constraints compared to the
 MiSTer: There is the RAM that is contained in the FPGA and there are 8 MB up
 to 16 MB of relatively slow HyperRAM. This is why MiSTer2MEGA65 strives to
