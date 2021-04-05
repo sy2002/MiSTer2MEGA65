@@ -68,7 +68,7 @@ That means: Avoid touching the MiSTer core you are porting and avoid touching
 as well the MiSTer2MEGA65 framework and QNICE.
 
 The reason for that is simple: You want to easily be able to update to newer
-versions of the MiSTEr core, the MiSTer2MEGA65 framework and QNICE easily.
+versions of the MiSTEr core, the MiSTer2MEGA65 framework and QNICE.
 Always document each and everything (even the smallest changes) that you
 are applying in one of these three modules in `doc/m2m/exceptions.md`.
 
