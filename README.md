@@ -134,7 +134,7 @@ TODO TODO TODO
 that comes with M2M.
 
 You can use the Shell to focus on your Verilog/VHDL code and avoid any QNICE
-programming. You can also avoid the Shell and create your own user interface
-and core control automation.
+programming. Alternatively, you can do it the other way round and avoid the
+Shell and create your own user interface and core control automation instead.
 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
