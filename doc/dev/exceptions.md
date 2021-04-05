@@ -26,5 +26,22 @@ files in the folder `rtl` with `dualport_2clk_ram`:
 * `gb.v`
 * `sprites.v`
 
+MiSTer2MEGA65
+-------------
 
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+No changes
+
+QNICE
+-----
+
+This is just another example to show you how `exceptions.md` is meant to work.
+Change everything to the actual reality of your project.
+
+### Duplicated `qmon.asm` and modified it
+
+Currently, QNICE's project structure is not allowing an easy change of where
+the machine should jump to on power-on. This is why `qmon.asm` has been
+duplicated and modified:
+
+Modified `reset!` so that it jumps to the label `INIT_FIRMWARE` instead
+of `QMON$COLDSTART`.
