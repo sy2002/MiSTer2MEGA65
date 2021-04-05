@@ -1,0 +1,62 @@
+YOUR PROJECT NAME for MEGA65 aka GITHUB REPO SHORT NAME
+=======================================================
+
+done in YEAR by YOUR NAME
+
+YOUR WEBSITE
+YOUR GITHUB SITE
+
+REPO SHORT NAME is licensed under the terms of GNU/GPL v3, for more information please read the file LICENSE
+Parts of REPO SHORT NAME are licensed under other Free-software licenses as described in the source code
+
+GITHUB REPO SHORT NAME:
+-----------------------
+
+  GITHUB REPO SHORT NAME is a port of MISTER'S REPO SHORT NAME
+      done by the MiSTer Development Team
+      Original GitHub Repository: https://github.com/MiSTer-devel/MISTER-REPO-LINK
+      Significant contributors:
+      * NAME THE MAIN
+      * CONTRIBUTORS
+      * ON MiSTer's SIDE
+
+  MISTER'S REPO SHORT NAME is a port of MiST's MiST NAME/OTHER SOURCE IN CASE MiSTer ported it from MIST/OTHER SOURCE
+      done by the MiST Development Team
+      Original GitHub Repository: https://github.com/mist-devel/MIST-REPO-LINK OR OTHER SOURCE
+      Significant contributors:
+      * NAME THE MAIN
+      * CONTRIBUTORS
+      * ON MiST's SIDE (OR OTHER SOURCE)
+
+  LIST SOME MORE SIGNIFICANT / MAIN AUTHERS OF SUBMODULES
+  HAVE A LOOK AT THIS EXAMPLE HOW TO: https://github.com/sy2002/gbc4mega65/blob/master/AUTHORS
+
+Other than that and my own work, REPO SHORT NAME uses:
+------------------------------------------------------
+
+DO NOT FORGET TO CREDIT EVERYTHING YOU USE FROM OTHER PEOPLE HERE
+THE FOLLOWING LIST NEEDS ALWAYS TO BE PART OF YOUR LIST:
+  
+  * MiSTer2MEGA65 by The MiSTer2MEGA65 Development Team
+    https://github.com/sy2002/MiSTer2MEGA65
+
+  * QNICE Co-Processor and System-on-a-Chip for file operations and on-screen-menu by The QNICE Development Team
+    https://github.com/sy2002/QNICE-FPGA
+
+  * Various MEGA65 drivers taken from the MEGA65 VHDL source by Paul Gardner-Stephen
+    https://github.com/MEGA65/mega65-core
+
+  * VGA Timing Generator, done by Scott Larson
+    https://www.digikey.com/eewiki/pages/viewpage.action?pageId=15925278
+
+  * Debouncer: I/O debouncing used for the joysticks, done by Scott Larson
+    https://www.digikey.com/eewiki/pages/viewpage.action?pageId=4980758
+
+  * Anikki-16x16 font, archived and provided by k80w
+    https://github.com/k80w/consolefonts
+
+  * PSF font to text file converter nafe-0.1 by Corvus Corax
+    https://sourceforge.net/projects/nafe/
+
+  * PSF font to C include file converter psftools-1.1.1 by John Elliott
+    https://www.seasip.info/Unix/PSF/

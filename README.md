@@ -65,7 +65,7 @@ as well the MiSTer2MEGA65 framework and QNICE.
 The reason for that is simple: You want to easily be able to update to newer
 versions of the MiSTEr core, the MiSTer2MEGA65 framework and QNICE easily.
 Always document each and everything (even the smallest changes) that you
-are applying in one of these three modules in `doc/dev/exceptions.md`.
+are applying in one of these three modules in `doc/m2m/exceptions.md`.
 
 From this basic philosophy, the following "how-to-use" rules are derived when
 it comes to setting-up a new MiSTer2MEGA65 porting project.
@@ -79,6 +79,9 @@ but also initialize the submodules afterwards:
 git clone https://github.com/sy2002/MiSTer2MEGA65.git
 git submodule update --init --recursive
 ```
+
+Rename the folder name `MiSTer2MEGA65` to match the GitHub repository name
+of your project.
 
 ### Step #2: Copy/paste the MiSTer core
 
@@ -102,7 +105,30 @@ TODO TODO TODO TODO TODO
 | QNICE         | QNICE root folder including the QNICE system-on-a-chip, development tools and documentation                                               |
 | bin           | Deliver MEGA65 `.cor` and `.bit` files here. Put them into subfolders that are named according to the MEGA65 release, e.g. `R2` and `R3` .|
 | doc           | Documentation of your port as well as recommended MiSTer2MEGA65 standard documentation plus all assets for GitHub (e.g. images)           |
-| rtl           | MiSTer core main folder                   
+| rtl           | MiSTer core main folder: After you copy/pasted the MiSTer core in step #2, this folder will be there.                  
 
+#### Personalize the following files
+
+Personalize all these files by entering your project's name, your name, etc.
+into the file headers and by removing template content:
+
+* `AUTHORS`
+
+* `doc/m2m/exceptions.md`
+
+* In folder `MEGA65`: `MEGA65-R2.xpr`, `MEGA65-R2.xdc`,
+  `MEGA65-R3.xpr`, `MEGA65-R3.xdc`
+
+* `MEGA65/m2m-rom/m2m-rom.asm`
+
+TODO TODO TODO
+--------------
+
+"Shell" is the name of the standard user interface and core control automation
+that comes with M2M.
+
+You can use the Shell to focus on your Verilog/VHDL code and avoid any QNICE
+programming. You can also avoid the Shell and create your own user interface
+and core control automation.
 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
