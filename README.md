@@ -85,7 +85,7 @@ git clone https://github.com/sy2002/MiSTer2MEGA65.git
 git submodule update --init --recursive
 ```
 
-Rename the folder name `MiSTer2MEGA65` to match the GitHub repository name
+Rename the folder name `MiSTer2MEGA65` to match the actual name
 of your project.
 
 ### Step #2: Copy/paste the MiSTer core
