@@ -121,10 +121,11 @@ into the file headers and by removing template content:
 
 * `doc/m2m/exceptions.md`
 
-* In folder `MEGA65`: `MEGA65-R2.xpr`, `MEGA65-R2.xdc`,
-  `MEGA65-R3.xpr`, `MEGA65-R3.xdc`
+* In folder `MEGA65`: `MEGA65-R2.xdc` and `MEGA65-R3.xdc`
 
 * `MEGA65/m2m-rom/m2m-rom.asm`
+
+* `MEGA65/VHDL` TODO add the names of the two top files for R2 and R3 here
 
 TODO TODO TODO
 --------------
