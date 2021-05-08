@@ -317,22 +317,21 @@ begin
 --         dest_out(15 downto 0)  => qnice_qngbc_keyb_matrix
 --      ); -- i_main2qnice: xpm_cdc_array_single
 
---   i_qnice2vga: xpm_cdc_array_single
---      generic map (
---         WIDTH => 33
---      )
---      port map (
---         src_clk                => qnice_clk,
---         src_in(15 downto 0)    => qnice_osm_cfg_xy,
---         src_in(31 downto 16)   => qnice_osm_cfg_dxdy,
---         src_in(32)             => qnice_osm_cfg_enable,
---         dest_clk               => vga_pixelclk,
---         dest_out(15 downto 0)  => vga_osm_cfg_xy,
---         dest_out(31 downto 16) => vga_osm_cfg_dxdy,
---         dest_out(32)           => vga_osm_cfg_enable
---      ); -- i_qnice2vga: xpm_cdc_single
+   i_qnice2vga: xpm_cdc_array_single
+      generic map (
+         WIDTH => 33
+      )
+      port map (
+         src_clk                => qnice_clk,
+         src_in(15 downto 0)    => qnice_osm_cfg_xy,
+         src_in(31 downto 16)   => qnice_osm_cfg_dxdy,
+         src_in(32)             => qnice_osm_cfg_enable,
+         dest_clk               => vga_pixelclk,
+         dest_out(15 downto 0)  => vga_osm_cfg_xy,
+         dest_out(31 downto 16) => vga_osm_cfg_dxdy,
+         dest_out(32)           => vga_osm_cfg_enable
+      );
       
-
    -- Dual clock & dual port RAM that acts as framebuffer: the LCD display of the gameboy is
    -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
    -- using the pixel clock

@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework  
 --
--- VGA On-Screen-Memory interface.
+-- VGA On-Screen-Menu interface.
 --
 -- This block provides a bridge between the VGA control block and the QNICE core.
 --
