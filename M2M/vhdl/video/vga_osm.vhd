@@ -18,8 +18,10 @@ use work.qnice_tools.all;
 
 entity vga_osm is
    generic  (
-      G_VGA_DX : integer;
-      G_VGA_DY : integer
+      G_VGA_DX    : natural;
+      G_VGA_DY    : natural;
+      G_FONT_DX   : natural;
+      G_FONT_DY   : natural
    );
    port (
       clk_i                : in  std_logic;
@@ -43,10 +45,8 @@ end vga_osm;
 architecture synthesis of vga_osm is
 
    -- Constants for VGA output
-   constant FONT_DX           : integer := 16;
-   constant FONT_DY           : integer := 16;
-   constant CHARS_DX          : integer := G_VGA_DX / FONT_DX;
-   constant CHARS_DY          : integer := G_VGA_DY / FONT_DY;
+   constant CHARS_DX          : integer := G_VGA_DX / G_FONT_DX;
+   constant CHARS_DY          : integer := G_VGA_DY / G_FONT_DY;
 
    -- VGA signals
    signal vga_osm_x1          : integer range 0 to CHARS_DX - 1;

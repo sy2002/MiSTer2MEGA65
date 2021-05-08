@@ -84,9 +84,10 @@ constant QNICE_FIRMWARE    : string  := "../../QNICE/monitor/monitor.rom";
 constant QNICE_CLK_SPEED   : natural := 50_000_000;
 constant CORE_CLK_SPEED    : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
 
--- Rendering constants
+-- Rendering constants (in pixels)
 --    VGA_*   size of the final output on the screen
 --    CORE_*  size of the input resolution coming from the core
+--    FONT_*  size of one OSM character
 -- @TODO: Currently, our scaling factor is hard coded to 4. We need to have a fractional scaler
 -- and we need to define the appropriate constants here 
 constant VGA_DX            : natural := 800;          -- SVGA mode 800 x 600 @ 60 Hz
@@ -94,14 +95,25 @@ constant VGA_DY            : natural := 600;          -- ditto
 constant CORE_DX           : natural := 200;
 constant CORE_DY           : natural := 150;
 constant CORE_TO_VGA_SCALE : natural := 4;
-
--- Constants for VGA output
 constant FONT_DX           : natural := 16;
 constant FONT_DY           : natural := 16;
+
+-- Constants for the OSM screen memory
 constant CHARS_DX          : natural := VGA_DX / FONT_DX;
 constant CHARS_DY          : natural := VGA_DY / FONT_DY;
 constant CHAR_MEM_SIZE     : natural := CHARS_DX * CHARS_DY;
 constant VRAM_ADDR_WIDTH   : natural := f_log2(CHAR_MEM_SIZE);
+
+-- Shell rendering constants (in characters)
+-- The Shell uses the OSM mechanism to display itself
+constant SHELL_M_X           : natural := 0;
+constant SHELL_M_Y           : natural := 0;
+constant SHELL_M_DX          : natural := CHARS_DX;
+constant SHELL_M_DY          : natural := CHARS_DY;
+constant SHELL_O_X           : natural := CHARS_DX - 20;
+constant SHELL_O_Y           : natural := 0;
+constant SHELL_O_DX          : natural := 20;
+constant SHELL_O_DY          : natural := 20;
 
 -- Clocks
 signal main_clk            : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
@@ -203,8 +215,18 @@ begin
       generic map
       (
          G_FIRMWARE              => QNICE_FIRMWARE,
-         G_CHARS_DX              => CHARS_DX,
-         G_CHARS_DY              => CHARS_DY
+         G_VGA_DX                => VGA_DX,
+         G_VGA_DY                => VGA_DY,
+         G_FONT_DX               => FONT_DX,
+         G_FONT_DY               => FONT_DY,
+         G_SHELL_M_X             => SHELL_M_X,
+         G_SHELL_M_Y             => SHELL_M_Y,
+         G_SHELL_M_DX            => SHELL_M_DX,
+         G_SHELL_M_DY            => SHELL_M_DY,
+         G_SHELL_O_X             => SHELL_O_X,
+         G_SHELL_O_Y             => SHELL_O_Y,
+         G_SHELL_O_DX            => SHELL_O_DX,
+         G_SHELL_O_DY            => SHELL_O_DY
       )
       port map
       (
