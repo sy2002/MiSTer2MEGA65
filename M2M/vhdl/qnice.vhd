@@ -8,16 +8,16 @@
 -- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use work.env1_globals.all;
 use work.qnice_tools.all;
 
 entity QNICE is
 generic (
-   VGA_DX            : integer;
-   VGA_DY            : integer;
+   CHARS_DX          : integer;
+   CHARS_DY          : integer;
    MAX_ROM           : integer;                       -- highest supported ROM size code from https://gbdev.io/pandocs/#_0148-rom-size
                                                       -- but ignoring the $5x values
    MAX_RAM           : integer                        -- highest supported RAM size code from https://gbdev.io/pandocs/#_0149-ram-size
@@ -34,28 +34,28 @@ port (
    SD_CLK            : out std_logic;
    SD_MOSI           : out std_logic;
    SD_MISO           : in std_logic;
-   
+
+   osm_xy               : out std_logic_vector(15 downto 0);
+   osm_dxdy             : out std_logic_vector(15 downto 0);
+   vram_addr            : out std_logic_vector(15 downto 0);
+   vram_data_out        : out std_logic_vector(15 downto 0);
+   vram_attr_we         : out std_logic;
+   vram_attr_data_out_i : in  std_logic_vector(7 downto 0);
+   vram_we              : out std_logic;
+   vram_data_out_i      : in  std_logic_vector(7 downto 0);
+
    -- keyboard matrix
    full_matrix       : in std_logic_vector(15 downto 0);
 
-   -- Host VGA interface:
-   -- The host requests one pixel in advance and QNICE responds with vga_on if this pixel is
-   -- an OSD pixel and if yes, vga_rgb contains the color
-   pixelclock        : in std_logic;
-   vga_x             : in integer range 0 to VGA_DX - 1;
-   vga_y             : in integer range 0 to VGA_DY - 1;
-   vga_on            : out std_logic;
-   vga_rgb           : out std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each 
-
    -- Control and status register
-   gbc_reset         : buffer std_logic;     -- reset Game Boy
-   gbc_pause         : buffer std_logic;     -- pause Game Boy
-   gbc_osm           : buffer std_logic;     -- show QNICE's On-Screen-Menu (OSM) over the Game Boy's Screen
-   gbc_keyboard      : buffer std_logic;     -- connect the M65 keyboard with the Game Boy
-   gbc_joystick      : buffer std_logic;     -- connect the M65 joystick ports with the Game Boy
-   gbc_color         : buffer std_logic;     -- 1=Game Boy Color; 0=Game Boy Classic
-   gbc_joy_map       : buffer std_logic_vector(1 downto 0); -- see gbc.asm for the mapping
-   gbc_color_mode    : buffer std_logic;     -- 0=Fully Saturated; 1=LCD Emulation 
+   gbc_reset         : out std_logic;     -- reset Game Boy
+   gbc_pause         : out std_logic;     -- pause Game Boy
+   gbc_osm           : out std_logic;     -- show QNICE's On-Screen-Menu (OSM) over the Game Boy's Screen
+   gbc_keyboard      : out std_logic;     -- connect the M65 keyboard with the Game Boy
+   gbc_joystick      : out std_logic;     -- connect the M65 joystick ports with the Game Boy
+   gbc_color         : out std_logic;     -- 1=Game Boy Color; 0=Game Boy Classic
+   gbc_joy_map       : out std_logic_vector(1 downto 0); -- see gbc.asm for the mapping
+   gbc_color_mode    : out std_logic;     -- 0=Fully Saturated; 1=LCD Emulation
 
    -- Interfaces to Game Boy's RAMs (MMIO):
    gbc_bios_addr     : out std_logic_vector(11 downto 0);
@@ -68,24 +68,16 @@ port (
    gbc_cart_data_out : in std_logic_vector(7 downto 0);
          
    -- Information about the current game cartridge
-   cart_cgb_flag     : buffer std_logic_vector(7 downto 0);
-   cart_sgb_flag     : buffer std_logic_vector(7 downto 0);
-   cart_mbc_type     : buffer std_logic_vector(7 downto 0);
-   cart_rom_size     : buffer std_logic_vector(7 downto 0);
-   cart_ram_size     : buffer std_logic_vector(7 downto 0);
-   cart_old_licensee : buffer std_logic_vector(7 downto 0)
+   cart_cgb_flag     : out std_logic_vector(7 downto 0);
+   cart_sgb_flag     : out std_logic_vector(7 downto 0);
+   cart_mbc_type     : out std_logic_vector(7 downto 0);
+   cart_rom_size     : out std_logic_vector(7 downto 0);
+   cart_ram_size     : out std_logic_vector(7 downto 0);
+   cart_old_licensee : out std_logic_vector(7 downto 0)
 ); 
 end QNICE;
 
 architecture beh of QNICE is
-
--- Constants for VGA output
-constant FONT_DX                  : integer := 16;
-constant FONT_DY                  : integer := 16;
-constant CHARS_DX                 : integer := VGA_DX / FONT_DX;
-constant CHARS_DY                 : integer := VGA_DY / FONT_DY;
-constant CHAR_MEM_SIZE            : integer := CHARS_DX * CHARS_DY;
-constant VRAM_ADDR_WIDTH          : integer := f_log2(CHAR_MEM_SIZE);
 
 -- CPU control signals
 signal cpu_addr                   : std_logic_vector(15 downto 0);
@@ -139,12 +131,8 @@ signal keyb_en                    : std_logic;                        -- $FFE4
 signal keyb_data_out              : std_logic_vector(15 downto 0);
 signal gbc_cart_sel_data_out      : std_logic_vector(15 downto 0);
 signal vram_en                    : std_logic;                        -- $D000
-signal vram_we                    : std_logic;
-signal vram_data_out_i            : std_logic_vector(7 downto 0);
 signal vram_data_out_16bit        : std_logic_vector(15 downto 0);
 signal vram_attr_en               : std_logic;
-signal vram_attr_we               : std_logic;
-signal vram_attr_data_out_i       : std_logic_vector(7 downto 0);
 signal vram_attr_data_out_16bit   : std_logic_vector(15 downto 0);
 signal gbc_bios_en                : std_logic;                        -- $C000
 signal gbc_bios_data_out_16bit    : std_logic_vector(15 downto 0);
@@ -174,20 +162,10 @@ signal reg_maxramrom_data_out     : std_logic_vector(15 downto 0);
 -- The cartridge address is up to 8 MB large and is calculated like this: (gbc_cart_sel x 4096) + gbc_cart_win
 signal gbc_cart_sel               : integer range 0 to 2047;
 
--- On-Screen-Menu (OSM)
-signal vga_x_old                  : integer range 0 to VGA_DX - 1;
-signal vga_y_old                  : integer range 0 to VGA_DY - 1;
-signal osm_vram_addr              : std_logic_vector(VRAM_ADDR_WIDTH - 1 downto 0);
-signal osm_vram_data              : std_logic_vector(7 downto 0);
-signal osm_vram_attr_data         : std_logic_vector(7 downto 0);
-signal osm_font_addr              : std_logic_vector(11 downto 0);
-signal osm_font_data              : std_logic_vector(15 downto 0);
-signal osm_xy                     : std_logic_vector(15 downto 0);
-signal osm_dxdy                   : std_logic_vector(15 downto 0);
-signal osm_x1, osm_x2             : integer range 0 to CHARS_DX - 1;
-signal osm_y1, osm_y2             : integer range 0 to CHARS_DY - 1;
-
 begin
+
+   vram_addr     <= cpu_addr;
+   vram_data_out <= cpu_data_out;
 
    -- Merge data outputs from all devices into a single data input to the CPU.
    -- This requires that all devices output 0's when not selected.
@@ -541,134 +519,5 @@ begin
    -- all zero: STDIN = STDOUT = UART
    switch_data_out <= (others => '0');
       
-   -- Dual port & dual clock screen RAM / video RAM: contains the "ASCII" codes of the characters
-   vram : entity work.dualport_2clk_ram
-      generic map
-      (
-          ADDR_WIDTH          => VRAM_ADDR_WIDTH,
-          DATA_WIDTH          => 8,
-          FALLING_A           => true              -- QNICE expects read/write to happen at the falling clock edge
-      )
-      port map
-      (
-         clock_a              => CLK50,
-         address_a            => cpu_addr(VRAM_ADDR_WIDTH - 1 downto 0),
-         data_a               => cpu_data_out(7 downto 0),
-         wren_a               => vram_we,
-         q_a                  => vram_data_out_i,
-   
-         clock_b              => pixelclock,
-         address_b            => osm_vram_addr,
-         q_b                  => osm_vram_data
-      );
-      
-   -- Dual port & dual clock attribute RAM: contains inverse attribute, light/dark attrib. and colors of the chars
-   -- bit 7: 1=inverse
-   -- bit 6: 1=dark, 0=bright
-   -- bit 5: background red
-   -- bit 4: background green
-   -- bit 3: background blue
-   -- bit 2: foreground red
-   -- bit 1: foreground green
-   -- bit 0: foreground blue
-   vram_attr : entity work.dualport_2clk_ram
-      generic map
-      (
-         ADDR_WIDTH           => VRAM_ADDR_WIDTH,
-         DATA_WIDTH           => 8,
-         FALLING_A            => true
-      )
-      port map
-      (
-         clock_a              => CLK50,
-         address_a            => cpu_addr(VRAM_ADDR_WIDTH - 1 downto 0),
-         data_a               => cpu_data_out(7 downto 0),
-         wren_a               => vram_attr_we,
-         q_a                  => vram_attr_data_out_i,
-         
-         clock_b              => pixelclock,
-         address_b            => osm_vram_addr,       -- same address as VRAM
-         q_b                  => osm_vram_attr_data
-      );
-         
-   -- 16x16 pixel font ROM
-   font : entity work.BROM
-      generic map
-      (
-         FILE_NAME      => "../font/Anikki-16x16.rom",
-         ADDR_WIDTH     => 12,
-         DATA_WIDTH     => 16,
-         LATCH_ACTIVE   => false
-      )
-      port map
-      (
-         clk            => pixelclock,
-         ce             => '1',
-         address        => osm_font_addr,
-         data           => osm_font_data
-      );
-     
-   -- it takes one pixelclock cycle until the vram returns the data 
-   latch_vga_xy : process(pixelclock)
-   begin
-      if rising_edge(pixelclock) then
-         vga_x_old <= vga_x;
-         vga_y_old <= vga_y;
-      end if;
-   end process;
-      
-   -- render OSM: calculate the pixel that needs to be shown at the given position  
-   -- TODO: either here or in the top file: we are +1 pixel too much to the right (what about the vertical axis?) 
-   render_osm : process(vga_x, vga_y, vga_x_old, vga_y_old, osm_vram_data, osm_vram_attr_data, osm_font_data, osm_x1, osm_y1, osm_x2, osm_y2, gbc_osm)
-      variable vga_x_div_16 : integer range 0 to CHARS_DX - 1;
-      variable vga_y_div_16 : integer range 0 to CHARS_DY - 1;
-      variable vga_x_mod_16 : integer range 0 to 15;
-      variable vga_y_mod_16 : integer range 0 to 15;
-      
-      function attr2rgb(attr: in std_logic_vector(3 downto 0)) return std_logic_vector is
-      variable r, g, b: std_logic_vector(7 downto 0);
-      variable brightness : std_logic_vector(7 downto 0);
-      begin
-         -- see comment above at vram_attr to understand the Attribute VRAM bit patterns
-         brightness := x"FF" when attr(3) = '0' else x"7F";
-         r := brightness when attr(2) = '1' else x"00";
-         g := brightness when attr(1) = '1' else x"00";
-         b := brightness when attr(0) = '1' else x"00";
-         return r & g & b;
-      end attr2rgb;
-      
-   begin
-      vga_x_div_16 := to_integer(to_unsigned(vga_x, 16)(9 downto 4));
-      vga_y_div_16 := to_integer(to_unsigned(vga_y, 16)(9 downto 4));
-      vga_x_mod_16 := to_integer(to_unsigned(vga_x_old, 16)(3 downto 0));
-      vga_y_mod_16 := to_integer(to_unsigned(vga_y_old, 16)(3 downto 0));
-      osm_vram_addr <= std_logic_vector(to_unsigned(vga_y_div_16 * CHARS_DX + vga_x_div_16, VRAM_ADDR_WIDTH));
-      osm_font_addr <= std_logic_vector(to_unsigned(to_integer(unsigned(osm_vram_data)) * FONT_DY + vga_y_mod_16, 12));
-      -- if pixel is set in font (and take care of inverse on/off)
-      if osm_font_data(15 - vga_x_mod_16) = not osm_vram_attr_data(7) then
-         -- foreground color
-         vga_rgb <= attr2rgb(osm_vram_attr_data(6) & osm_vram_attr_data(2 downto 0));
-      else
-         -- background color
-         vga_rgb <= attr2rgb(osm_vram_attr_data(6 downto 3));
-      end if;
-      
-      if vga_x_div_16 >= osm_x1 and vga_x_div_16 < osm_x2 and vga_y_div_16 >= osm_y1 and vga_y_div_16 < osm_y2 then
-         vga_on <= gbc_osm;
-      else
-         vga_on <= '0';
-      end if;
-   end process;   
-   
-   calc_boundaries : process(osm_xy, osm_dxdy)
-      variable osm_x : integer range 0 to CHARS_DX - 1;
-      variable osm_y : integer range 0 to CHARS_DY - 1;
-   begin
-      osm_x  := to_integer(unsigned(osm_xy(15 downto 8)));
-      osm_y  := to_integer(unsigned(osm_xy(7 downto 0)));
-      osm_x1 <= osm_x;
-      osm_y1 <= osm_y;
-      osm_x2 <= osm_x + to_integer(unsigned(osm_dxdy(15 downto 8)));
-      osm_y2 <= osm_y + to_integer(unsigned(osm_dxdy(7 downto 0)));
-   end process;
 end beh;
+

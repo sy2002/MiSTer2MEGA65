@@ -10,21 +10,17 @@
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS33} [get_ports CLK]
 create_clock -period 10.000 -name CLK [get_ports CLK]
 
-## Make the general clocks and the pixelclock unrelated to other to avoid erroneous timing
-## violations, and hopefully make everything synthesise faster
-set_clock_groups -asynchronous \
-     -group { CLK gbmain_mmcm qnice_mmcm} \
-     -group [get_clocks -of_objects [get_pins MEGA65/clk_pixel/pixelclk_o]]
-     
-set_clock_groups -asynchronous \
-     -group { CLK gbmain_mmcm } \
-     -group { qnice_mmcm }
-          
+create_generated_clock -name gbmainclk [get_pins */clk_gen/i_mmcme2_adv/CLKOUT0]
+create_generated_clock -name qniceclk  [get_pins */clk_gen/i_mmcme2_adv/CLKOUT1]
+create_generated_clock -name pixelclk  [get_pins */clk_gen/i_mmcme2_adv/CLKOUT2]
+
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] -to [get_cells {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
-set_multicycle_path -from [get_cells {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] -to [get_cells {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2     
+set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] \
+   -to [get_cells -include_replicated {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
+set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] \
+   -to [get_cells -include_replicated {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
      
 ## Reset button
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports RESET_N]
