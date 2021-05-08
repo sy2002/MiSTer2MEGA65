@@ -6,7 +6,13 @@ MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
 CAUTION: RIGHT NOW THIS IS A HEAVILY WORK-IN-PROGRESS PRE-ALPHA VERSION.
 WE WILL RELEASE THIS AS A V1.0 AS SOON AS THE FOLLOWING FIRST MILESTONE HAS
 BEEN REACHED: USING THIS FRAMEWORK, steddyman PORTED A FIRST VERSION OF
-MiSTer's TRS-80 CORE AND sy2002 PORTED A FIRST VERSION OF MiSTer's NES CORE.
+MiSTer's TRS-80 CORE AND sy2002 PORTED A FIRST VERSION OF MiSTer's NES CORE
+and MJoergen also ported some core of his choice using the framework.
+
+If you want to learn more about the potential of this M2M framework right now,
+then you better go to our
+[Game Boy for MEGA65 repository](https://github.com/sy2002/gbc4mega65/)
+because there you can see in action, what we are planning to do here.
 
 The MEGA65 does have some significant ROM/RAM constraints compared to the
 MiSTer: There is the RAM that is contained in the FPGA and there are 8 MB up

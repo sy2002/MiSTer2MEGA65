@@ -1,9 +1,10 @@
-## Game Boy Color for MEGA65 (gbc4mega65)
+## NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
 ##
 ## Signal mapping für MEGA65-R3
 ##
-## This machine is based on Gameboy_MiSTer
-## MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+## This machine is based on EXACT GITHUB REPO NAME OF THE MiSTer REPO
+## Powered by MiSTer2MEGA65
+## MEGA65 port done by YOURNAME in YEAR and licensed under GPL v3
 
 ## External clock signal (100 MHz)
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS33} [get_ports CLK]
@@ -13,7 +14,7 @@ create_clock -period 10.000 -name CLK [get_ports CLK]
 ## violations, and hopefully make everything synthesise faster
 set_clock_groups -asynchronous \
      -group { CLK gbmain_mmcm qnice_mmcm} \
-     -group [get_clocks -of_objects [get_pins clk_pixel/pixelclk_o]]
+     -group [get_clocks -of_objects [get_pins MEGA65/clk_pixel/pixelclk_o]]
      
 set_clock_groups -asynchronous \
      -group { CLK gbmain_mmcm } \
@@ -22,8 +23,8 @@ set_clock_groups -asynchronous \
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells {{QNICE_SOC/eae_inst/op0_reg[*]} {QNICE_SOC/eae_inst/op1_reg[*]}}] -to [get_cells {QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
-set_multicycle_path -from [get_cells {{QNICE_SOC/eae_inst/op0_reg[*]} {QNICE_SOC/eae_inst/op1_reg[*]}}] -to [get_cells {QNICE_SOC/eae_inst/res_reg[*]}] -hold 2     
+set_multicycle_path -from [get_cells {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] -to [get_cells {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
+set_multicycle_path -from [get_cells {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] -to [get_cells {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2     
      
 ## Reset button
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports RESET_N]
