@@ -1,14 +1,13 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework  
 --
--- Main clock & QNICE-clock generator using the Xilinx specific MMCME2_ADV
+-- Main clock & QNICE-clock generator using the Xilinx specific MMCME2_ADV:
 --
--- The MiSTer core expects 8x the clock speed of the original Game Boy:
---   8 x 4.194304 MHz = 33.554432 MHz
--- The QNICE core expects 50 MHz
+--   @TODO YOURCORE expects 40 MHz
+--   800 x 600 @ 60 Hz VGA expects 40 MhZ
+--   QNICE expects 50 MHz
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -20,7 +19,7 @@ use unisim.vcomponents.all;
 entity clk is
    port (
       sys_clk_i  : in  std_logic;   -- expects 100 MHz
-      gbmain_o   : out std_logic;   -- Game Boy's 33.554432 MHz main clock
+      main_o     : out std_logic;   -- @TODO YOURCORE expects 40 MHz
       qnice_o    : out std_logic;   -- QNICE's 50 MHz main clock
       pixelclk_o : out std_logic    -- outputs 40.00 MHz pixelclock for SVGA mode 800 x 600 @ 60 Hz
    );
@@ -30,7 +29,7 @@ architecture rtl of clk is
 
 signal clkfb         : std_logic;
 signal clkfb_mmcm    : std_logic;
-signal gbmain_mmcm   : std_logic;
+signal main_mmcm     : std_logic;
 signal qnice_mmcm    : std_logic;
 signal pixelclk_mmcm : std_logic;
 
@@ -48,7 +47,7 @@ begin
          CLKFBOUT_MULT_F      => 8.0,        -- 800 MHz
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => 23.875,     -- GameBoyColor @ 33.51 MHz, close enough to 33.554432 MHz
+         CLKOUT0_DIVIDE_F     => 20.000,     -- @TODO YOURCORE expects 40 MHz
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.500,
          CLKOUT0_USE_FINE_PS  => FALSE,
@@ -64,7 +63,7 @@ begin
       port map (
          -- Output clocks
          CLKFBOUT            => clkfb_mmcm,
-         CLKOUT0             => gbmain_mmcm,
+         CLKOUT0             => main_mmcm,
          CLKOUT1             => qnice_mmcm,
          CLKOUT2             => pixelclk_mmcm,
          -- Input clock control
@@ -107,8 +106,8 @@ begin
       
    gbmain_bufg : BUFG
       port map (
-         I => gbmain_mmcm,
-         O => gbmain_o
+         I => main_mmcm,
+         O => main_o
       );
 
    qnice_bufg : BUFG
@@ -124,4 +123,3 @@ begin
       );
       
 end architecture rtl;
-

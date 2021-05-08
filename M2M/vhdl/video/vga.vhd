@@ -1,13 +1,12 @@
-----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-------------------------------------------------------------------------------------
+-- MiSTer2MEGA65 Framework  
 --
 -- VGA control block.
 --
 -- This block overlays the On Screen Menu (OSM) on top of the Core output.
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 and MJoergen in 2021 and licensed under GPL v3
-----------------------------------------------------------------------------------
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-------------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -16,11 +15,11 @@ use work.qnice_tools.all;
 
 entity vga is
    generic  (
-      G_VGA_DX          : integer;  -- 800
-      G_VGA_DY          : integer;  -- 600
-      G_GB_DX           : integer;  -- 160
-      G_GB_DY           : integer;  -- 144
-      G_GB_TO_VGA_SCALE : integer   -- 4 : 160x144 => 640x576
+      G_VGA_DX             : natural;
+      G_VGA_DY             : natural;
+      G_CORE_DX            : natural;
+      G_CORE_DY            : natural;
+      G_CORE_TO_VGA_SCALE  : natural
    );
    port (
       clk_i                : in  std_logic;
@@ -140,9 +139,9 @@ begin
       generic map (
          G_VGA_DX             => G_VGA_DX,
          G_VGA_DY             => G_VGA_DY,
-         G_GB_DX              => G_GB_DX,
-         G_GB_DY              => G_GB_DY,
-         G_GB_TO_VGA_SCALE    => G_GB_TO_VGA_SCALE
+         G_GB_DX              => G_CORE_DX,
+         G_GB_DY              => G_CORE_DY,
+         G_GB_TO_VGA_SCALE    => G_CORE_TO_VGA_SCALE
       )
       port map (
          clk_i                => clk_i,

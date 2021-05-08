@@ -1,13 +1,12 @@
-----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-------------------------------------------------------------------------------------
+-- MiSTer2MEGA65 Framework  
 --
 -- VGA core interface.
 --
 -- This block provides a bridge between the VGA control block and the MEGA65 core.
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 and MJoergen in 2021 and licensed under GPL v3
-----------------------------------------------------------------------------------
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-------------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -15,11 +14,11 @@ use ieee.numeric_std.all;
 
 entity vga_core is
    generic  (
-      G_VGA_DX          : integer;  -- 800
-      G_VGA_DY          : integer;  -- 600
-      G_GB_DX           : integer;  -- 160
-      G_GB_DY           : integer;  -- 144
-      G_GB_TO_VGA_SCALE : integer   -- 4 : 160x144 => 640x576
+      G_VGA_DX          : natural;
+      G_VGA_DY          : natural;
+      G_GB_DX           : natural;
+      G_GB_DY           : natural;
+      G_GB_TO_VGA_SCALE : natural
    );
    port (
       clk_i                : in  std_logic;

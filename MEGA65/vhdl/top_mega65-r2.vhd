@@ -1,20 +1,14 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework  
 --
 -- R2-Version: Top Module for synthesizing the whole machine
 --
--- Screen resolution:
--- VGA out runs at SVGA mode 800 x 600 @ 60 Hz. This is a compromise between
--- the optimal usage of screen real estate and compatibility to older CRTs 
---
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use work.m65_const.all;
 
 entity MEGA65_R2 is
 port (
@@ -46,24 +40,24 @@ port (
    SD_RESET       : out std_logic;
    SD_CLK         : out std_logic;
    SD_MOSI        : out std_logic;
-   SD_MISO        : in std_logic;
+   SD_MISO        : in std_logic
    
    -- 3.5mm analog audio jack
-   pwm_l          : out std_logic;
-   pwm_r          : out std_logic;
+--   pwm_l          : out std_logic;
+--   pwm_r          : out std_logic;
       
    -- Joysticks
-   joy_1_up_n     : in std_logic;
-   joy_1_down_n   : in std_logic;
-   joy_1_left_n   : in std_logic;
-   joy_1_right_n  : in std_logic;
-   joy_1_fire_n   : in std_logic;
+--   joy_1_up_n     : in std_logic;
+--   joy_1_down_n   : in std_logic;
+--   joy_1_left_n   : in std_logic;
+--   joy_1_right_n  : in std_logic;
+--   joy_1_fire_n   : in std_logic;
       
-   joy_2_up_n     : in std_logic;
-   joy_2_down_n   : in std_logic;
-   joy_2_left_n   : in std_logic;
-   joy_2_right_n  : in std_logic;
-   joy_2_fire_n   : in std_logic
+--   joy_2_up_n     : in std_logic;
+--   joy_2_down_n   : in std_logic;
+--   joy_2_left_n   : in std_logic;
+--   joy_2_right_n  : in std_logic;
+--   joy_2_fire_n   : in std_logic
             
    -- HDMI via ADV7511
 --   hdmi_vsync     : out std_logic;
@@ -107,11 +101,11 @@ begin
    MEGA65 : entity work.MEGA65_Core
       generic map
       (
-         -- m65_const.vhd contains details and explanations
-         CART_ROM_MAX   => CART_ROM_MAX_R2,
-         CART_RAM_MAX   => CART_RAM_MAX_R2,
-         SYS_ROM_MAX    => SYS_ROM_MAX_R2,
-         SYS_RAM_MAX    => SYS_RAM_MAX_R2   
+         -- @TODO: Add your MEGA65 revision machine dependent generics (MEGA65 R2, R3, ...) here
+         -- or delete them if your core does not have machine dependencies
+         YOUR_GENERIC1  => 1,
+         YOUR_GENERIC2  => "MiSTer2MEGA65", 
+         YOUR_GENERICN  => 1234
       )
       port map
       (
@@ -143,24 +137,24 @@ begin
          SD_RESET       => SD_RESET,
          SD_CLK         => SD_CLK,
          SD_MOSI        => SD_MOSI,
-         SD_MISO        => SD_MISO,
+         SD_MISO        => SD_MISO
          
-         -- 3.5mm analog audio jack
-         pwm_l          => pwm_l,
-         pwm_r          => pwm_r,
+--         -- 3.5mm analog audio jack
+--         pwm_l          => pwm_l,
+--         pwm_r          => pwm_r,
             
-         -- Joysticks
-         joy_1_up_n     => joy_1_up_n,     
-         joy_1_down_n   => joy_1_down_n,
-         joy_1_left_n   => joy_1_left_n,
-         joy_1_right_n  => joy_1_right_n,  
-         joy_1_fire_n   => joy_1_fire_n,   
+--         -- Joysticks
+--         joy_1_up_n     => joy_1_up_n,     
+--         joy_1_down_n   => joy_1_down_n,
+--         joy_1_left_n   => joy_1_left_n,
+--         joy_1_right_n  => joy_1_right_n,  
+--         joy_1_fire_n   => joy_1_fire_n,   
             
-         joy_2_up_n     => joy_2_up_n, 
-         joy_2_down_n   => joy_2_down_n,
-         joy_2_left_n   => joy_2_left_n,   
-         joy_2_right_n  => joy_2_right_n,  
-         joy_2_fire_n   => joy_2_fire_n
+--         joy_2_up_n     => joy_2_up_n, 
+--         joy_2_down_n   => joy_2_down_n,
+--         joy_2_left_n   => joy_2_left_n,   
+--         joy_2_right_n  => joy_2_right_n,  
+--         joy_2_fire_n   => joy_2_fire_n
       ); 
 
 end beh;

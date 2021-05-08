@@ -1,11 +1,10 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework  
 --
--- QNICE globals based on QNICE's original env1_globals but with optimized
--- values for ROM/RAM usage and for defining the right ROM to load
+-- QNICE globals based on QNICE's original env1_globals but
+-- with optimized values for ROM/RAM usage
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 
@@ -14,22 +13,16 @@ use IEEE.STD_LOGIC_1164.all;
 
 package env1_globals is
 
--- Development and Debug mode: use the standard Monitor as ROM
---constant ROM_FILE             : string    := "../../QNICE/monitor/monitor.rom";
-
--- Release mode: use the self-contained self-starting firmware
-constant ROM_FILE             : string    := "../QNICE/osm_rom.rom";
-
 -- size of lower register bank: needs to be 256 for standard QNICE
 -- depending on the ROM/firmware we ca reduce it to save FPGA resources
--- for osm_rom.rom we assume that 32 is enough
+-- for MiSTer2MEGA65 we assume that 32 is enough
 constant SHADOW_REGFILE_SIZE  : natural   := 32;
 
 -- size of the block RAM in 16bit words:
 --   standard QNICE (development mode): 32768
---   embedded mode (osm_rom.rom):       12288
---constant BLOCK_RAM_SIZE       : natural   := 32768;
-constant BLOCK_RAM_SIZE       : natural   := 12288;
+--   embedded mode (m2m-rom.rom):       12288
+constant BLOCK_RAM_SIZE       : natural   := 32768;
+--constant BLOCK_RAM_SIZE       : natural   := 12288;
 
 -- UART is in 8-N-1 mode
 -- assuming a 100 MHz system clock, set the baud rate by selecting the following divisors according to this formula:

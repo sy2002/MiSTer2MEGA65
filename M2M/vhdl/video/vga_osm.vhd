@@ -1,16 +1,15 @@
-----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-------------------------------------------------------------------------------------
+-- MiSTer2MEGA65 Framework  
 --
 -- VGA On-Screen-Memory interface.
 --
 -- This block provides a bridge between the VGA control block and the QNICE core.
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 and MJoergen in 2021 and licensed under GPL v3
---
 -- The signals vga_osm_on_o and vga_osm_rgb_o are delayed one clock cycle after
 -- vga_col_i and vga_row_i.
-----------------------------------------------------------------------------------
+--
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-------------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -95,21 +94,21 @@ begin
 
    -- 16x16 pixel font ROM
    -- This reads on the falling clock edge, and is therefore equivalent to a combinatorial read.
-   font : entity work.BROM
+   font : entity work.dualport_2clk_ram
       generic map
       (
-         FILE_NAME    => "../font/Anikki-16x16.rom",
          ADDR_WIDTH   => 12,
          DATA_WIDTH   => 16,
-         LATCH_ACTIVE => false
+         ROM_PRELOAD  => true,
+         ROM_FILE     => "../font/Anikki-16x16.rom",         
+         FALLING_A      => true
       )
       port map
       (
-         clk          => clk_i,
-         ce           => '1',
-         address      => vga_osm_font_addr_d,
-         data         => vga_osm_font_data_d
-      ); -- font : entity work.BROM
+         clock_a           => clk_i,
+         address_a         => vga_osm_font_addr_d, 
+         q_a               => vga_osm_font_data_d      
+      );
 
    p_delay : process (clk_i)
    begin
@@ -160,4 +159,3 @@ begin
    end process;
 
 end synthesis;
-
