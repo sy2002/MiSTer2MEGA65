@@ -7,7 +7,7 @@ CAUTION: RIGHT NOW THIS IS A HEAVILY WORK-IN-PROGRESS PRE-ALPHA VERSION.
 WE WILL RELEASE THIS AS A V1.0 AS SOON AS THE FOLLOWING FIRST MILESTONE HAS
 BEEN REACHED: USING THIS FRAMEWORK, steddyman PORTED A FIRST VERSION OF
 MiSTer's TRS-80 CORE AND sy2002 PORTED A FIRST VERSION OF MiSTer's NES CORE
-and MJoergen also ported some core of his choice using the framework.
+AND MJOERGEN ALSO PORTED SOME CORE OF HIS CHOICE USING THE FRAMEWORK.
 
 If you want to learn more about the potential of this M2M framework right now,
 then you better go to our
@@ -81,17 +81,35 @@ are applying in one of these three modules in `doc/m2m/exceptions.md`.
 From this basic philosophy, the following "how-to-use" rules are derived when
 it comes to setting-up a new MiSTer2MEGA65 porting project.
 
-### Step #1: Clone MiSTer2MEGA65
+### Step #1: Clone MiSTer2MEGA65 and initialize it
 
 MiSTer2MEGA65 contains sub-modules, so make sure that you do not "just" clone
 but also initialize the submodules afterwards:
 
 ```
 git clone https://github.com/sy2002/MiSTer2MEGA65.git
+cd MiSTer2MEGA65
 git submodule update --init --recursive
 ```
 
-Rename the folder name `MiSTer2MEGA65` to match the actual name
+After that, make sure that the QNICE development framework and the QNICE's
+"operating system" called "Monitor" is available to MiSTer2MEGA65. You can
+build it using the following commands:
+
+```
+cd QNICE/tools/
+./make-toolchain.sh 
+```
+
+Answer all questions that you are being asked while the QNICE toolchain
+is being build by pressing <kbd>Enter</kbd>. You can check the success of
+the process by checking, if the Monitor is available as  `.rom` file:
+
+```
+ls -l ../monitor/monitor.rom
+```
+
+Rename the root folder name `MiSTer2MEGA65` to match the actual name
 of your project.
 
 ### Step #2: Copy/paste the MiSTer core
