@@ -199,7 +199,7 @@ begin
    ---------------------------------------------------------------------------------------------
 
    -- QNICE Co-Processor (System-on-a-Chip) for ROM loading and On-Screen-Menu
-   i_QNICE_SOC : entity work.QNICE
+   QNICE_SOC : entity work.QNICE
       generic map
       (
          G_FIRMWARE              => QNICE_FIRMWARE,
