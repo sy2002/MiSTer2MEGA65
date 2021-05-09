@@ -176,8 +176,10 @@ using TODO VHDL CONFIG STRING:
    as (4), or if there should be (without keypress) a clearscreen after
    everything has been successfully loaded or if you want a keypress after
    successfully loading.
-4. Show a help screen / explanation screen
-5. Show a file browser: The user can load a ROM (e.g. cartridge ROM)
+4. Show one or more help screens / explanation screens, allow "browing them"
+   in case there is more than one using the cursor keys. <kbd>Space</kbd>
+   to start the core.
+6. Show a file browser: The user can load a ROM (e.g. cartridge ROM)
    or mount a device (e.g. disk image). (TODO: Do we need to allow 0 .. n
    here or is 0 .. 1 sufficient?)
 
