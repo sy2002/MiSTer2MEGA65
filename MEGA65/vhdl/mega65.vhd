@@ -77,12 +77,12 @@ architecture beh of MEGA65_Core is
 
 -- QNICE Firmware: Use the regular QNICE "operating system" called "Monitor" while developing
 -- and debugging and use the MiSTer2MEGA65 firmware in the release version
-constant QNICE_FIRMWARE    : string  := "../../QNICE/monitor/monitor.rom";
---constant QNICE_FIRMWARE    : string  := "../m2m-rom/m2m-rom.rom";  
+constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
+--constant QNICE_FIRMWARE       : string  := "../m2m-rom/m2m-rom.rom";  
 
 -- Clock speeds
-constant QNICE_CLK_SPEED   : natural := 50_000_000;
-constant CORE_CLK_SPEED    : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
+constant QNICE_CLK_SPEED      : natural := 50_000_000;
+constant CORE_CLK_SPEED       : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
 
 -- Rendering constants (in pixels)
 --    VGA_*   size of the final output on the screen
@@ -90,35 +90,35 @@ constant CORE_CLK_SPEED    : natural := 40_000_000;   -- @TODO YOURCORE expects 
 --    FONT_*  size of one OSM character
 -- @TODO: Currently, our scaling factor is hard coded to 4. We need to have a fractional scaler
 -- and we need to define the appropriate constants here 
-constant VGA_DX            : natural := 800;          -- SVGA mode 800 x 600 @ 60 Hz
-constant VGA_DY            : natural := 600;          -- ditto
-constant CORE_DX           : natural := 200;
-constant CORE_DY           : natural := 150;
-constant CORE_TO_VGA_SCALE : natural := 4;
-constant FONT_DX           : natural := 16;
-constant FONT_DY           : natural := 16;
+constant VGA_DX               : natural := 800;          -- SVGA mode 800 x 600 @ 60 Hz
+constant VGA_DY               : natural := 600;          -- ditto
+constant CORE_DX              : natural := 200;
+constant CORE_DY              : natural := 150;
+constant CORE_TO_VGA_SCALE    : natural := 4;
+constant FONT_DX              : natural := 16;
+constant FONT_DY              : natural := 16;
 
 -- Constants for the OSM screen memory
-constant CHARS_DX          : natural := VGA_DX / FONT_DX;
-constant CHARS_DY          : natural := VGA_DY / FONT_DY;
-constant CHAR_MEM_SIZE     : natural := CHARS_DX * CHARS_DY;
-constant VRAM_ADDR_WIDTH   : natural := f_log2(CHAR_MEM_SIZE);
+constant CHARS_DX             : natural := VGA_DX / FONT_DX;
+constant CHARS_DY             : natural := VGA_DY / FONT_DY;
+constant CHAR_MEM_SIZE        : natural := CHARS_DX * CHARS_DY;
+constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 
 -- Shell rendering constants (in characters)
 -- The Shell uses the OSM mechanism to display itself
-constant SHELL_M_X           : natural := 0;
-constant SHELL_M_Y           : natural := 0;
-constant SHELL_M_DX          : natural := CHARS_DX;
-constant SHELL_M_DY          : natural := CHARS_DY;
-constant SHELL_O_X           : natural := CHARS_DX - 20;
-constant SHELL_O_Y           : natural := 0;
-constant SHELL_O_DX          : natural := 20;
-constant SHELL_O_DY          : natural := 20;
+constant SHELL_M_X            : natural := 0;
+constant SHELL_M_Y            : natural := 0;
+constant SHELL_M_DX           : natural := CHARS_DX;
+constant SHELL_M_DY           : natural := CHARS_DY;
+constant SHELL_O_X            : natural := CHARS_DX - 20;
+constant SHELL_O_Y            : natural := 0;
+constant SHELL_O_DX           : natural := 20;
+constant SHELL_O_DY           : natural := 20;
 
 -- Clocks
-signal main_clk            : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
-signal vga_pixelclk        : std_logic;               -- SVGA mode 800 x 600 @ 60 Hz: 40.00 MHz
-signal qnice_clk           : std_logic;               -- QNICE main clock @ 50 MHz
+signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
+signal vga_pixelclk           : std_logic;               -- SVGA mode 800 x 600 @ 60 Hz: 40.00 MHz
+signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
 
 ---------------------------------------------------------------------------------------------
 -- main_clk
@@ -128,26 +128,26 @@ signal qnice_clk           : std_logic;               -- QNICE main clock @ 50 M
 -- qnice_clk
 ---------------------------------------------------------------------------------------------
 
--- QNICE control signals (see also gbc.asm for more details)
-signal qnice_qngbc_reset          : std_logic;
-signal qnice_qngbc_pause          : std_logic;
-signal qnice_qngbc_keyboard       : std_logic;
-signal qnice_qngbc_joystick       : std_logic;
-signal qnice_qngbc_color          : std_logic;
-signal qnice_qngbc_joy_map        : std_logic_vector(1 downto 0);
-signal qnice_qngbc_color_mode     : std_logic;
-signal qnice_qngbc_keyb_matrix    : std_logic_vector(15 downto 0);
-
 -- On-Screen-Menu (OSM)
-signal qnice_osm_cfg_enable       : std_logic;
-signal qnice_osm_cfg_xy           : std_logic_vector(15 downto 0);
-signal qnice_osm_cfg_dxdy         : std_logic_vector(15 downto 0);
-signal qnice_vram_addr            : std_logic_vector(15 downto 0);
-signal qnice_vram_data_out        : std_logic_vector(15 downto 0);
-signal qnice_vram_attr_we         : std_logic;
-signal qnice_vram_attr_data_out_i : std_logic_vector(7 downto 0);
-signal qnice_vram_we              : std_logic;
-signal qnice_vram_data_out_i      : std_logic_vector(7 downto 0);
+signal qnice_osm_cfg_enable   : std_logic;
+signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
+signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
+
+-- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
+-- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
+-- ramrom_addr_o is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
+signal qnice_ramrom_dev       : std_logic_vector(15 downto 0);
+signal qnice_ramrom_addr      : std_logic_vector(27 downto 0);
+signal qnice_ramrom_data_o    : std_logic_vector(15 downto 0);
+signal qnice_ramrom_data_i    : std_logic_vector(15 downto 0);
+signal qnice_ramrom_ce        : std_logic;
+signal qnice_ramrom_we        : std_logic;
+
+-- VRAM
+signal qnice_vram_we          : std_logic;
+signal qnice_vram_data_o      : std_logic_vector(7 downto 0);
+signal qnice_vram_attr_we     : std_logic;
+signal qnice_vram_attr_data_o : std_logic_vector(7 downto 0);       
 
 ---------------------------------------------------------------------------------------------
 -- vga_pixelclk
@@ -230,31 +230,69 @@ begin
       )
       port map
       (
-         CLK50                   => qnice_clk,        -- 50 MHz clock      -- input
-         RESET_N                 => RESET_N,                               -- input
-
+         clk50_i                 => qnice_clk,
+         reset_n_i               => RESET_N,
+      
          -- serial communication (rxd, txd only; rts/cts are not available)
-         -- 115.200 baud, 8-N-1
-         UART_RXD                => UART_RXD,         -- receive data      -- input
-         UART_TXD                => UART_TXD,         -- send data         -- output
+         -- 115.200 baud, 8-N-1      
+         uart_rxd_i              => UART_RXD,
+         uart_txd_o              => UART_TXD,
 
          -- SD Card
-         SD_RESET                => SD_RESET,                              -- output
-         SD_CLK                  => SD_CLK,                                -- output
-         SD_MOSI                 => SD_MOSI,                               -- output
-         SD_MISO                 => SD_MISO,                               -- input
+         sd_reset_o              => SD_RESET,
+         sd_clk_o                => SD_CLK,
+         sd_mosi_o               => SD_MOSI,
+         sd_miso_i               => SD_MISO,
+      
+         -- QNICE public registers
+         csr_reset_o             => open,
+         csr_pause_o             => open,
+         csr_osm_o               => qnice_osm_cfg_enable,
+         csr_keyboard_o          => open,
+         csr_joy1_o              => open,
+         csr_joy2_o              => open,
+         osm_xy_o                => qnice_osm_cfg_xy,
+         osm_dxdy_o              => qnice_osm_cfg_dxdy,
+      
+         -- 256-bit General purpose control flags
+         -- "d" = directly controled by the firmware
+         -- "m" = indirectly controled by the menu system
+         control_d_o             => open,
+         control_m_o             => open,
 
-         gbc_osm                 => qnice_osm_cfg_enable,                  -- output
-         osm_xy                  => qnice_osm_cfg_xy,                      -- output
-         osm_dxdy                => qnice_osm_cfg_dxdy,                    -- output
-         vram_addr               => qnice_vram_addr,                       -- output
-         vram_data_out           => qnice_vram_data_out,                   -- output
-         vram_attr_we            => qnice_vram_attr_we,                    -- output
-         vram_attr_data_out_i    => qnice_vram_attr_data_out_i,            -- input
-         vram_we                 => qnice_vram_we,                         -- output
-         vram_data_out_i         => qnice_vram_data_out_i                  -- input
+         -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
+         -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
+         -- ramrom_addr_o is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
+         ramrom_dev_o            => qnice_ramrom_dev,
+         ramrom_addr_o           => qnice_ramrom_addr,
+         ramrom_data_o           => qnice_ramrom_data_o,
+         ramrom_data_i           => qnice_ramrom_data_i,
+         ramrom_ce_o             => qnice_ramrom_ce,
+         ramrom_we_o             => qnice_ramrom_we         
       );
-
+      
+   -- The device selector qnice_ramrom_dev decides, which RAM/ROM-like device QNICE is writing to.
+   -- Device numbers < 256 are reserved for QNICE; everything else can be used by your MiSTer core.
+   qnice_ramrom_devices : process(all)
+   begin
+      qnice_ramrom_we <= '0';
+      qnice_ramrom_data_i <= x"EEEE";
+   
+      case qnice_ramrom_dev is
+         -- OSM VRAM data and attributes
+         -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
+         when x"0000" =>
+            qnice_vram_we <= qnice_ramrom_we;
+            qnice_ramrom_data_i <= x"00" & qnice_vram_data_o;
+         when x"0001" =>
+            qnice_vram_attr_we <= qnice_ramrom_we;
+            qnice_ramrom_data_i <= x"00" & qnice_vram_attr_data_o;
+         
+         -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) and other RAM/ROM-like devices
+         when others => null;            
+      end case;
+   end process;
+      
    ---------------------------------------------------------------------------------------------
    -- vga_pixelclk
    ---------------------------------------------------------------------------------------------
@@ -265,7 +303,9 @@ begin
          G_VGA_DY             => VGA_DY,
          G_CORE_DX            => CORE_DX,
          G_CORE_DY            => CORE_DY,
-         G_CORE_TO_VGA_SCALE  => CORE_TO_VGA_SCALE
+         G_CORE_TO_VGA_SCALE  => CORE_TO_VGA_SCALE,
+         G_FONT_DX            => FONT_DX,
+         G_FONT_DY            => FONT_DY
       )
       port map (
          clk_i                => vga_pixelclk,     -- pixel clock at frequency of VGA mode being used
@@ -389,10 +429,10 @@ begin
       port map
       (
          clock_a      => qnice_clk,
-         address_a    => qnice_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
-         data_a       => qnice_vram_data_out(7 downto 0),
+         address_a    => qnice_ramrom_addr(VRAM_ADDR_WIDTH-1 downto 0),
+         data_a       => qnice_ramrom_data_o(7 downto 0),
          wren_a       => qnice_vram_we,
-         q_a          => qnice_vram_data_out_i,
+         q_a          => qnice_vram_data_o,
 
          clock_b      => vga_pixelclk,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
@@ -418,10 +458,10 @@ begin
       port map
       (
          clock_a      => qnice_clk,
-         address_a    => qnice_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
-         data_a       => qnice_vram_data_out(7 downto 0),
+         address_a    => qnice_ramrom_addr(VRAM_ADDR_WIDTH-1 downto 0),
+         data_a       => qnice_ramrom_data_o(7 downto 0),
          wren_a       => qnice_vram_attr_we,
-         q_a          => qnice_vram_attr_data_out_i,
+         q_a          => qnice_vram_attr_data_o,
 
          clock_b      => vga_pixelclk,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),       -- same address as VRAM

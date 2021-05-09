@@ -116,15 +116,13 @@ signal sd_we                     : std_logic;
 signal sd_reg                    : std_logic_vector(2 downto 0);
 signal sd_data_out               : std_logic_vector(15 downto 0);
 
--- M2M specific MMIO signals
+-- M2M specific QNICE MMIO signals
+signal ramrom_en                 : std_logic;                        -- $7000
+signal ramrom_we                 : std_logic;
+signal ramrom_data_out           : std_logic_vector(15 downto 0);
 signal csr_en                    : std_logic;                        -- $FFE0
 signal csr_we                    : std_logic;
 signal csr_data_out              : std_logic_vector(15 downto 0);
-
--- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices: MMIO at $7000
-signal ramrom_en                 : std_logic;
-signal ramrom_we                 : std_logic;
-signal ramrom_data_out           : std_logic_vector(15 downto 0);
 signal osm_xy_en                 : std_logic;                        -- $FFE1
 signal osm_xy_we                 : std_logic;
 signal osm_xy_data_out           : std_logic_vector(15 downto 0);
@@ -142,44 +140,26 @@ signal shell_o_dxdy_data_out     : std_logic_vector(15 downto 0);
 signal cfd_addr_en               : std_logic;                        -- $FFE7
 signal cfd_addr_we               : std_logic;
 signal cfd_addr_data_out         : std_logic_vector(15 downto 0);
-
-
---signal keyb_en                    : std_logic;                        -- $FFE4
---signal keyb_data_out              : std_logic_vector(15 downto 0);
---signal gbc_cart_sel_data_out      : std_logic_vector(15 downto 0);
---signal vram_en                    : std_logic;                        -- $D000
---signal vram_data_out_16bit        : std_logic_vector(15 downto 0);
---signal vram_attr_en               : std_logic;
---signal vram_attr_data_out_16bit   : std_logic_vector(15 downto 0);
---signal gbc_bios_en                : std_logic;                        -- $C000
---signal gbc_bios_data_out_16bit    : std_logic_vector(15 downto 0);
---signal gbc_cart_en                : std_logic;                        -- $B000
---signal gbc_cart_data_out_16bit    : std_logic_vector(15 downto 0);   
---signal cf_cgb_en                  : std_logic;                        -- $FFE5             
---signal cf_cgb_we                  : std_logic;
---signal cf_cgb_data_out_16bit      : std_logic_vector(15 downto 0);
---signal cf_sgb_en                  : std_logic;                        -- $FFE6
---signal cf_sgb_we                  : std_logic;
---signal cf_sgb_data_out_16bit      : std_logic_vector(15 downto 0);
---signal cf_mbc_en                  : std_logic;                        -- $FFE7
---signal cf_mbc_we                  : std_logic;
---signal cf_mbc_data_out_16bit      : std_logic_vector(15 downto 0);
---signal cf_rom_size_en             : std_logic;                        -- $FFE8
---signal cf_rom_size_we             : std_logic;
---signal cf_rom_size_data_out_16bit : std_logic_vector(15 downto 0);
---signal cf_ram_size_en             : std_logic;                        -- $FFE9
---signal cf_ram_size_we             : std_logic;
---signal cf_ram_size_data_out_16bit : std_logic_vector(15 downto 0);
---signal cf_oldlic_en               : std_logic;                        -- $FFEA
---signal cf_oldlic_we               : std_logic;
---signal cf_oldlic_data_out_16bit   : std_logic_vector(15 downto 0);
---signal reg_maxramrom_en           : std_logic;                        -- $FFEB
---signal reg_maxramrom_data_out     : std_logic_vector(15 downto 0);
+signal cfd_data_en               : std_logic;                        -- $FFE8
+signal cfd_data_we               : std_logic;
+signal cfd_data_data_out         : std_logic_vector(15 downto 0);
+signal cfm_addr_en               : std_logic;                        -- $FFE9
+signal cfm_addr_we               : std_logic;
+signal cfm_addr_data_out         : std_logic_vector(15 downto 0);
+signal cfm_data_en               : std_logic;                        -- $FFEA
+signal cfm_data_we               : std_logic;
+signal cfm_data_data_out         : std_logic_vector(15 downto 0);
+signal ramrom_dev_en             : std_logic;                        -- $FFEB
+signal ramrom_dev_we             : std_logic;
+signal ramrom_dev_data_out       : std_logic_vector(15 downto 0);
+signal ramrom_4kwin_en           : std_logic;                        -- $FFEC
+signal ramrom_4kwin_we           : std_logic;
+signal ramrom_4kwin_data_out     : std_logic_vector(15 downto 0);
 
 -- Internal registers
 signal reg_csr                   : std_logic_vector(15 downto 0);
-signal reg_cfd_addr              : natural range 0 to 7;
-signal reg_cfm_addr              : natural range 0 to 7;
+signal reg_cfd_addr              : natural range 0 to 15;
+signal reg_cfm_addr              : natural range 0 to 15;
 signal reg_ramrom_4kwin          : natural range 0 to 65535;
 
 begin
@@ -203,8 +183,13 @@ begin
                   shell_m_dxdy_data_out      or
                   shell_o_xy_data_out        or
                   shell_o_dxdy_data_out      or
-                  cfd_addr_data_out;
-
+                  cfd_addr_data_out          or
+                  cfd_data_data_out          or
+                  cfm_addr_data_out          or
+                  cfm_data_data_out          or
+                  ramrom_dev_data_out        or
+                  ramrom_4kwin_data_out;
+                                                                                          
    -- generate the general reset signal
    reset_ctl <= '1' when (reset_pre_pore = '1' or reset_post_pore = '1') else '0';                     
                   
@@ -215,6 +200,10 @@ begin
    csr_keyboard_o    <= reg_csr(3);
    csr_joy1_o        <= reg_csr(4);
    csr_joy2_o        <= reg_csr(5);
+   ramrom_ce_o       <= ramrom_en;
+   ramrom_we_o       <= ramrom_we;
+   ramrom_addr_o     <= std_logic_vector(to_unsigned(reg_ramrom_4kwin * 4096 + to_integer(unsigned(cpu_addr(11 downto 0))), 28));
+   ramrom_data_o     <= cpu_data_out;
                      
    -- QNICE CPU
    cpu : entity work.QNICE_CPU
@@ -402,6 +391,7 @@ begin
    -- 0xFFE2: OSM dx|dy width|height (in chars)
    -- 0xFFE3 .. 0xFFE6: read-only registers for OSM presets 
    -- 0xFFE7 .. 0xFFEA: access 256-bit general purpose control flags via address/data pairs
+   -- 0xFFEB -- 0xFFEC: 4k-segmented access to RAMs, ROMs and similarily behaving devices
    ramrom_en                  <= '1' when cpu_addr(15 downto 12) = x"7" else '0';
    ramrom_we                  <= ramrom_en and cpu_data_dir and cpu_data_valid;
    ramrom_data_out            <= ramrom_data_i when ramrom_en = '1' and ramrom_we = '0' else (others => '0');
@@ -434,8 +424,28 @@ begin
    
    cfd_addr_en                <= '1' when cpu_addr = x"FFE7" else '0';
    cfd_addr_we                <= cfd_addr_en and cpu_data_dir and cpu_data_valid;
-   cfd_addr_data_out          <= std_logic_vector(to_unsigned(reg_cfd_addr, 16)) when cfd_addr_en = '1' and cfd_addr_we = '0' else (others => '0');   
-                            
+   cfd_addr_data_out          <= std_logic_vector(to_unsigned(reg_cfd_addr, 16)) when cfd_addr_en = '1' and cfd_addr_we = '0' else (others => '0');
+   
+   cfd_data_en                <= '1' when cpu_addr = x"FFE8" else '0';
+   cfd_data_we                <= cfd_data_en and cpu_data_dir and cpu_data_valid;
+   cfd_data_data_out          <= control_d_o(((reg_cfd_addr + 1) * 16) - 1 downto (reg_cfd_addr * 16)) when cfd_data_en = '1' and cfd_data_we = '0' else (others => '0');  
+
+   cfm_addr_en                <= '1' when cpu_addr = x"FFE9" else '0';
+   cfm_addr_we                <= cfm_addr_en and cpu_data_dir and cpu_data_valid;
+   cfm_addr_data_out          <= std_logic_vector(to_unsigned(reg_cfm_addr, 16)) when cfm_addr_en = '1' and cfm_addr_we = '0' else (others => '0');
+   
+   cfm_data_en                <= '1' when cpu_addr = x"FFEA" else '0';
+   cfm_data_we                <= cfm_data_en and cpu_data_dir and cpu_data_valid;
+   cfm_data_data_out          <= control_m_o(((reg_cfm_addr + 1) * 16) - 1 downto (reg_cfm_addr * 16)) when cfm_data_en = '1' and cfm_data_we = '0' else (others => '0');
+   
+   ramrom_dev_en              <= '1' when cpu_addr = x"FFEB" else '0';
+   ramrom_dev_we              <= ramrom_dev_en and cpu_data_dir and cpu_data_valid;
+   ramrom_dev_data_out        <= ramrom_dev_o when ramrom_dev_en = '1' and ramrom_dev_we = '0' else (others => '0');
+   
+   ramrom_4kwin_en            <= '1' when cpu_addr = x"FFEC" else '0';
+   ramrom_4kwin_we            <= ramrom_4kwin_en and cpu_data_dir and cpu_data_valid;
+   ramrom_4kwin_data_out      <= std_logic_vector(to_unsigned(reg_ramrom_4kwin, 16)) when ramrom_4kwin_en = '1' and ramrom_4kwin_we = '0' else (others => '0');    
+                                       
    -- Registers (see also M2M/rom/sysdef.asm)
    handle_regs : process(clk50_i)
    begin
@@ -449,8 +459,14 @@ begin
             osm_dxdy_o  <= std_logic_vector(to_unsigned(CHARS_DX * 256 + CHARS_DY, 16));
             
             -- General purpose control flag management registers
+            reg_cfd_addr <= 0;
+            reg_cfm_addr <= 0;
             control_d_o <= (others => '0');
             control_m_o <= (others => '0');
+            
+            -- MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
+            ramrom_dev_o <= x"0000";
+            reg_ramrom_4kwin <= 0;
          else
             -- CSR register
             if csr_we then
@@ -467,7 +483,21 @@ begin
             
             -- General purpose control flag management registers
             if cfd_addr_we then
-               reg_cfd_addr <= to_integer(unsigned(cpu_data_out));
+               reg_cfd_addr <= to_integer(unsigned(cpu_data_out(3 downto 0)));
+            end if;
+            if cfd_data_we then
+               control_d_o(((reg_cfd_addr + 1) * 16) - 1 downto (reg_cfd_addr * 16)) <= cpu_data_out;
+            end if;
+            if cfm_data_we then
+               control_m_o(((reg_cfm_addr + 1) * 16) - 1 downto (reg_cfm_addr * 16)) <= cpu_data_out;            
+            end if;
+            
+            -- MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
+            if ramrom_dev_we then
+               ramrom_dev_o <= cpu_data_out;   
+            end if;
+            if ramrom_4kwin_we then
+               reg_ramrom_4kwin <= to_integer(unsigned(cpu_data_out));
             end if;
          end if;
       end if;

@@ -90,7 +90,7 @@ begin
    vga_osm_vram_addr_o <= std_logic_vector(to_unsigned(vga_y_div_16 * CHARS_DX + vga_x_div_16, 16));
 
    -- Read font data. (Almost) combinatorial read.
-   vga_osm_font_addr_d <= std_logic_vector(to_unsigned(to_integer(unsigned(vga_osm_vram_data_i)) * FONT_DY + vga_y_mod_16, 12));
+   vga_osm_font_addr_d <= std_logic_vector(to_unsigned(to_integer(unsigned(vga_osm_vram_data_i)) * G_FONT_DY + vga_y_mod_16, 12));
 
    -- 16x16 pixel font ROM
    -- This reads on the falling clock edge, and is therefore equivalent to a combinatorial read.

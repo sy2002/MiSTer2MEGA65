@@ -19,7 +19,9 @@ entity vga is
       G_VGA_DY             : natural;
       G_CORE_DX            : natural;
       G_CORE_DY            : natural;
-      G_CORE_TO_VGA_SCALE  : natural
+      G_CORE_TO_VGA_SCALE  : natural;
+      G_FONT_DX            : natural;
+      G_FONT_DY            : natural
    );
    port (
       clk_i                : in  std_logic;
@@ -112,8 +114,10 @@ begin
 
    i_vga_osm : entity work.vga_osm
       generic map (
-         G_VGA_DX => G_VGA_DX,
-         G_VGA_DY => G_VGA_DY
+         G_VGA_DX             => G_VGA_DX,
+         G_VGA_DY             => G_VGA_DY,
+         G_FONT_DX            => G_FONT_DX,
+         G_FONT_DY            => G_FONT_DY
       )
       port map (
          clk_i                => clk_i,
