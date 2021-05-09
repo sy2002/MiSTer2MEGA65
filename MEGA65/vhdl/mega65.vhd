@@ -275,11 +275,12 @@ begin
    -- Device numbers < 256 are reserved for QNICE; everything else can be used by your MiSTer core.
    qnice_ramrom_devices : process(all)
    begin
-      qnice_ramrom_we <= '0';
+      qnice_vram_we <= '0';
+      qnice_vram_attr_we <= '0';
       qnice_ramrom_data_i <= x"EEEE";
    
       case qnice_ramrom_dev is
-         -- OSM VRAM data and attributes
+         -- OSM VRAM data and attributes with device numbers < 0x0100
          -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
          when x"0000" =>
             qnice_vram_we <= qnice_ramrom_we;
@@ -289,6 +290,7 @@ begin
             qnice_ramrom_data_i <= x"00" & qnice_vram_attr_data_o;
          
          -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) and other RAM/ROM-like devices
+         -- Device numbers need to be >= 0x0100
          when others => null;            
       end case;
    end process;
@@ -326,7 +328,7 @@ begin
          vdac_clk_o           => vdac_clk,
          vdac_sync_n_o        => vdac_sync_n,
          vdac_blank_n_o       => vdac_blank_n
-      ); -- i_vga : entity work.vga
+      );
 
 
    ---------------------------------------------------------------------------------------------
@@ -366,7 +368,7 @@ begin
 --         dest_out(39 downto 32) => main_cart_rom_size,
 --         dest_out(47 downto 40) => main_cart_ram_size,
 --         dest_out(55 downto 48) => main_cart_old_licensee
---      ); -- i_qnice2main: xpm_cdc_array_single
+--      );
 
 --   i_main2qnice: xpm_cdc_array_single
 --      generic map (
@@ -377,7 +379,7 @@ begin
 --         src_in(15 downto 0)    => main_qngbc_keyb_matrix,
 --         dest_clk               => qnice_clk,
 --         dest_out(15 downto 0)  => qnice_qngbc_keyb_matrix
---      ); -- i_main2qnice: xpm_cdc_array_single
+--      );
 
    i_qnice2vga: xpm_cdc_array_single
       generic map (
@@ -416,7 +418,7 @@ begin
          data_b       => (others => '0'),
          wren_b       => '0',
          q_b          => vga_core_vram_data
-      ); -- core_frame_buffer : entity work.dualport_2clk_ram
+      );
 
    -- Dual port & dual clock screen RAM / video RAM: contains the "ASCII" codes of the characters
    osm_vram : entity work.dualport_2clk_ram
@@ -437,7 +439,7 @@ begin
          clock_b      => vga_pixelclk,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
          q_b          => vga_osm_vram_data
-      ); -- osm_vram : entity work.dualport_2clk_ram
+      );
 
    -- Dual port & dual clock attribute RAM: contains inverse attribute, light/dark attrib. and colors of the chars
    -- bit 7: 1=inverse
@@ -466,7 +468,7 @@ begin
          clock_b      => vga_pixelclk,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),       -- same address as VRAM
          q_b          => vga_osm_vram_attr
-      ); -- osm_vram_attr : entity work.dualport_2clk_ram
+      );
 
 end beh;
 
