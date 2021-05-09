@@ -151,8 +151,8 @@ into the file headers and by removing template content:
 
 * `MEGA65/VHDL` TODO add the names of the two top files for R2 and R3 here
 
-TODO TODO TODO
---------------
+The Shell
+---------
 
 "Shell" is the name of the standard user interface and core control automation
 that comes with M2M.
@@ -161,4 +161,56 @@ You can use the Shell to focus on your Verilog/VHDL code and avoid any QNICE
 programming. Alternatively, you can do it the other way round and avoid the
 Shell and create your own user interface and core control automation instead.
 
+The Shell executes the following startup sequence for every core while the
+invidivual steps of the sequence can be configured and sometimes made optional
+using TODO VHDL CONFIG STRING:
+
+1. Show a welcome message
+2. Load one or more mandatory or optional BIOS / ROMs. "Mandatory" means:
+   If the file is not there, the core stops. "Optional" means: You are able to
+   provide an Open Source version of the BIOS / ROM and synthesize it into the
+   core. "Mandatory" means: The core stops, if the file is not there. In both
+   cases, the Shell informs the user on the screen and outputs additional debug
+   info on the UART.
+3. It is configurable if you want that the output of (2) is on the same screen
+   as (4), or if there should be (without keypress) a clearscreen after
+   everything has been successfully loaded or if you want a keypress after
+   successfully loading.
+4. Show a help screen / explanation screen
+5. Show a file browser: The user can load a ROM (e.g. cartridge ROM)
+   or mount a device (e.g. disk image). (TODO: Do we need to allow 0 .. n
+   here or is 0 .. 1 sufficient?)
+
+TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+
+TODO: "Load a ROM" means that you can define Dual Clock Dual Port RAMs in
+VHDL, assign a "device number" to them and then the Shell is smart enough
+to fill this RAM (that can act as a RAM or ROM to the core).
+
+TODO: "Mount a device" will be a mechanism that pipes data through the
+QNICE FAT32 implementation using an interrupt driven approach that will
+"look and feel" like a flat data stream to the core.
+
+TODO: Define what happens, when the user presses <kbd>Run/Stop</kbd>
+while the core runs. Default behaviour: Pause the core, show the file
+broswer (5) and act like during the startup sequene
+
+TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+
+When the user presses <kbd>Help</kbd> while the core is running, the Shell
+will show the Options menu. The options menu is configurable to work with
+menu groups. TODO: describe; see gbc4mega65
+
+It will return the selection as bit patterns inside control_m_o. So for
+example menu group 0 might consist of a 1-bit selection, so this might
+be mapped to control_m_o(0), while menu group 1 might consist of a 3-bit
+selection, so this might be mapped to control_m_o(3 downto 1). It is
+recommended for readability to define signals that are mapped to these very
+subsets of control_m_o and then use these signals to configure your core.
+
+TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+
+Reminder / design principle: The Shell, what it does, what it automates, how
+it controls everything: Heavily inspired by
+[gbc4mega65](https://github.com/sy2002/gbc4mega65/).
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
