@@ -335,6 +335,43 @@ begin
    -- Dual Clocks
    ---------------------------------------------------------------------------------------------
 
+   -- IMPORTANT THING TO PONDER AROUND DUAL-CLOCK / DUAL-PORT DEVICES SUCH AS BRAMs:
+   --
+   -- We might want to make sure, that all dual port dual clock RAMs here that are interacting
+   -- with QNICE are rising-edge only, so that we have 20ns time versus the 10ns that are
+   -- available due to the "mixed mode" of QNICE needing falling-edge and other parts of
+   -- M2M need rising-edge.
+   --
+   -- Example: gbc4mega65 Cartridge RAM, where we ran into timing closure problems due to this.
+   -- Back then, this was solved by adjusting the FPGA speed grade to the right value (-2) and
+   -- "luck" due to Vivado picking the right routing optimization strategy.
+   --
+   -- Possible solution that does not need QNICE changes: In the MMIO-MUX part, introduce
+   -- a delay for QNICE when accessing anything via the "0x7000 device system" using the
+   -- WAIT_FOR_DATA mechanism. Something like this untested/unproven sketech of code:
+   --     process delay_cart_rom : process (clk50)
+   --     begin
+   --        if rising_edge(clk50) then
+   --          if WAIT = '1' then
+   --              WAIT <= '0';
+   --         elsif gbc_cart_en = '1' then
+   --              WAIT <= '1';
+   --         end if;
+   --     end process;
+   -- When doing this, one needs to check QNICE's internal address bus timing to see, if
+   -- gbc_cart_en is asserted long enough to still work after this delay. And if not,
+   -- some mechanism to compensate for this needs to be found. And of course it might be
+   -- that the above-mentioned code is "too slow" (setting WAIT one cycle too late). The
+   -- whole thing needs some serious brain-power-investment to be solved.
+   --
+   -- Advantage: Will make the whole design more robust and less prone to timing closure problems.
+   --
+   -- Disadvantage: Slower QNICE access to "0x7000 devices"; but as it can be seen at the time
+   -- of writing this, this should not be a problem because most of the tasks QNICE does outside
+   -- SD card access for mounted floppies and other devices is not realtime and therefore not
+   -- timing critical. If this changed, we might introduce "high-speed" devices that are using
+   -- the falling-edge and that work without WAIT_FOR_DATA.
+
 --   i_qnice2main: xpm_cdc_array_single
 --      generic map (
 --         WIDTH => 56
