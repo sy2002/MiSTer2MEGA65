@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework  
 --
--- VGA control block.
+-- VGA control block
 --
--- This block overlays the On Screen Menu (OSM) on top of the Core output.
+-- This block overlays the On Screen Menu (OSM) on top of the MiSTer Core output.
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 -------------------------------------------------------------------------------------
@@ -12,11 +12,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.qnice_tools.all;
+use work.video_modes_pkg.all;
 
 entity vga is
    generic  (
-      G_VGA_DX             : natural;
-      G_VGA_DY             : natural;
+      G_VIDEO_MODE         : video_modes_t;
       G_CORE_DX            : natural;
       G_CORE_DY            : natural;
       G_CORE_TO_VGA_SCALE  : natural;
@@ -25,19 +25,19 @@ entity vga is
    );
    port (
       clk_i                : in  std_logic;
-      rst_i                : in  std_logic;
+      rstn_i                 : in  std_logic;
 
       -- OSM configuration from QNICE
       vga_osm_cfg_enable_i : in  std_logic;
       vga_osm_cfg_xy_i     : in  std_logic_vector(15 downto 0);
       vga_osm_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
 
-      -- OSM interface to VRAM (character and palette index)
+      -- OSM interface to VRAM (character RAM and attribute RAM)
       vga_osm_vram_addr_o  : out std_logic_vector(15 downto 0);
       vga_osm_vram_data_i  : in  std_logic_vector(7 downto 0);
       vga_osm_vram_attr_i  : in  std_logic_vector(7 downto 0);
 
-      -- Core interface to VRAM (RGB colors)
+      -- Core interface to VRAM (24-bit RGB colors in the core's native resolution)
       vga_core_vram_addr_o : out std_logic_vector(14 downto 0);
       vga_core_vram_data_i : in  std_logic_vector(23 downto 0);
 
@@ -47,6 +47,7 @@ entity vga is
       vga_blue_o           : out std_logic_vector(7 downto 0);
       vga_hs_o             : out std_logic;
       vga_vs_o             : out std_logic;
+      vga_de_o               : out std_logic;
       vdac_clk_o           : out std_logic;
       vdac_sync_n_o        : out std_logic;
       vdac_blank_n_o       : out std_logic
@@ -59,8 +60,8 @@ architecture synthesis of vga is
    signal vga_hs         : std_logic;
    signal vga_vs         : std_logic;
    signal vga_disp_en    : std_logic;
-   signal vga_col        : integer range 0 to G_VGA_DX - 1;
-   signal vga_row        : integer range 0 to G_VGA_DY - 1;
+   signal vga_col        : integer range 0 to G_VIDEO_MODE.H_PIXELS - 1;
+   signal vga_row        : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
 
    -- Delayed VGA signals
    signal vga_hs_d       : std_logic;
@@ -75,29 +76,23 @@ architecture synthesis of vga is
 
 begin
 
-   -- SVGA mode 800 x 600 @ 60 Hz
    -- Component that produces VGA timings and outputs the currently active pixel coordinate (row, column)
-   -- Timings taken from http://tinyvga.com/vga-timing/800x600@60Hz
    vga_pixels_and_timing : entity work.vga_controller
-      generic map
-      (
-         H_PIXELS  => G_VGA_DX,    -- horizontal display width in pixels
-         V_PIXELS  => G_VGA_DY,    -- vertical display width in rows
-
-         H_PULSE   => 128,         -- horiztonal sync pulse width in pixels
-         H_BP      => 88,          -- horiztonal back porch width in pixels
-         H_FP      => 40,          -- horiztonal front porch width in pixels
-         H_POL     => '1',         -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-
-         V_PULSE   => 4,           -- vertical sync pulse width in rows
-         V_BP      => 23,          -- vertical back porch width in rows
-         V_FP      => 1,           -- vertical front porch width in rows
-         V_POL     => '1'          -- vertical sync pulse polarity (1 = positive, 0 = negative)
-      )
       port map
       (
+         h_pulse   => G_VIDEO_MODE.H_PULSE,     -- horizontal sync pulse width in pixels
+         h_bp      => G_VIDEO_MODE.H_BP,        -- horizontal back porch width in pixels
+         h_pixels  => G_VIDEO_MODE.H_PIXELS,    -- horizontal display width in pixels
+         h_fp      => G_VIDEO_MODE.H_FP,        -- horizontal front porch width in pixels
+         h_pol     => G_VIDEO_MODE.H_POL,       -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+         v_pulse   => G_VIDEO_MODE.V_PULSE,     -- vertical sync pulse width in rows
+         v_bp      => G_VIDEO_MODE.V_BP,        -- vertical back porch width in rows
+         v_pixels  => G_VIDEO_MODE.V_PIXELS,    -- vertical display width in rows
+         v_fp      => G_VIDEO_MODE.V_FP,        -- vertical front porch width in rows
+         v_pol     => G_VIDEO_MODE.V_POL,       -- vertical sync pulse polarity (1 = positive, 0 = negative)
+   
          pixel_clk => clk_i,       -- pixel clock at frequency of VGA mode being used
-         reset_n   => rst_i,       -- active low asycnchronous reset
+         reset_n   => rstn_i,      -- active low asycnchronous reset
          h_sync    => vga_hs,      -- horiztonal sync pulse
          v_sync    => vga_vs,      -- vertical sync pulse
          disp_ena  => vga_disp_en, -- display enable ('1' = display time, '0' = blanking time)
@@ -109,19 +104,18 @@ begin
 
 
    -----------------------------------------------
-   -- Instantiate On-Screen-Memory generator
+   -- Instantiate On-Screen-Menu generator
    -----------------------------------------------
 
    i_vga_osm : entity work.vga_osm
       generic map (
-         G_VGA_DX             => G_VGA_DX,
-         G_VGA_DY             => G_VGA_DY,
+         G_VGA_DX             => G_VIDEO_MODE.H_PIXELS,
+         G_VGA_DY             => G_VIDEO_MODE.V_PIXELS,
          G_FONT_DX            => G_FONT_DX,
          G_FONT_DY            => G_FONT_DY
       )
       port map (
          clk_i                => clk_i,
-         rst_i                => rst_i,
          vga_col_i            => vga_col,
          vga_row_i            => vga_row,
          vga_osm_cfg_xy_i     => vga_osm_cfg_xy_i,
@@ -141,19 +135,23 @@ begin
 
    i_vga_core : entity work.vga_core
       generic map (
-         G_VGA_DX             => G_VGA_DX,
-         G_VGA_DY             => G_VGA_DY,
-         G_GB_DX              => G_CORE_DX,
-         G_GB_DY              => G_CORE_DY,
-         G_GB_TO_VGA_SCALE    => G_CORE_TO_VGA_SCALE
+         G_VGA_DX               => G_VIDEO_MODE.H_PIXELS,
+         G_VGA_DY               => G_VIDEO_MODE.V_PIXELS,
+         G_CORE_DX              => G_CORE_DX,
+         G_CORE_DY              => G_CORE_DY,
+         G_CORE_TO_VGA_SCALE    => G_CORE_TO_VGA_SCALE
       )
       port map (
+         -- pixel clock and current position on screen relative to pixel clock      
          clk_i                => clk_i,
-         rst_i                => rst_i,
          vga_col_i            => vga_col,
          vga_row_i            => vga_row,
+         
+         -- 24-bit RGB VRAM data input in the core's native resolution
          vga_core_vram_addr_o => vga_core_vram_addr_o,
          vga_core_vram_data_i => vga_core_vram_data_i,
+         
+         -- scaled 24-bit RGB output for the current col/row
          vga_core_on_o        => vga_core_on_d,
          vga_core_rgb_o       => vga_core_rgb_d
       ); -- i_vga_core : entity work.vga_core
@@ -178,7 +176,7 @@ begin
          vga_green_o <= (others => '0');
 
          if vga_disp_en_d then
-            -- MEGA65 core output
+            -- MiSTer core output
             if vga_core_on_d then
                vga_red_o   <= vga_core_rgb_d(23 downto 16);
                vga_green_o <= vga_core_rgb_d(15 downto 8);

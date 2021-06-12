@@ -49,6 +49,9 @@ THE FOLLOWING LIST NEEDS ALWAYS TO BE PART OF YOUR LIST:
   * VGA Timing Generator, done by Scott Larson
     https://www.digikey.com/eewiki/pages/viewpage.action?pageId=15925278
 
+  * VGA to HDMI converter IP core, done by Adam Barnes
+    https://github.com/amb5l/tyto_project
+
   * Debouncer: I/O debouncing used for the joysticks, done by Scott Larson
     https://www.digikey.com/eewiki/pages/viewpage.action?pageId=4980758
 

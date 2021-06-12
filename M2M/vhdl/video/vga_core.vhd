@@ -14,16 +14,14 @@ use ieee.numeric_std.all;
 
 entity vga_core is
    generic  (
-      G_VGA_DX          : natural;
-      G_VGA_DY          : natural;
-      G_GB_DX           : natural;
-      G_GB_DY           : natural;
-      G_GB_TO_VGA_SCALE : natural
+      G_VGA_DX            : natural;
+      G_VGA_DY            : natural;
+      G_CORE_DX           : natural;
+      G_CORE_DY           : natural;
+      G_CORE_TO_VGA_SCALE : natural
    );
    port (
       clk_i                : in  std_logic;
-      rst_i                : in  std_logic;
-
       vga_col_i            : in  integer range 0 to G_VGA_DX - 1;
       vga_row_i            : in  integer range 0 to G_VGA_DY - 1;
       vga_core_vram_addr_o : out std_logic_vector(14 downto 0);
@@ -49,9 +47,9 @@ begin
       variable src_y: std_logic_vector(9 downto 0);
       variable dst_x: std_logic_vector(7 downto 0);
       variable dst_y: std_logic_vector(7 downto 0);
-      variable dst_x_i: integer range 0 to G_GB_DX - 1;
-      variable dst_y_i: integer range 0 to G_GB_DY - 1;
-      variable nextrow: integer range 0 to G_GB_DY - 1;
+      variable dst_x_i: integer range 0 to G_CORE_DX - 1;
+      variable dst_y_i: integer range 0 to G_CORE_DY - 1;
+      variable nextrow: integer range 0 to G_CORE_DY - 1;
    begin
       src_x   := std_logic_vector(to_unsigned(vga_col_i, 10));
       src_y   := std_logic_vector(to_unsigned(vga_row_i, 10));
@@ -63,12 +61,12 @@ begin
 
       -- The dual port & dual clock RAM needs one clock cycle to provide the data. Therefore we need
       -- to always address one pixel ahead of where we currently stand
-      if dst_x_i < G_GB_DX - 1 then
+      if dst_x_i < G_CORE_DX - 1 then
          vga_col_next <= dst_x_i + 1;
          vga_row_next <= dst_y_i;
       else
          vga_col_next <= 0;
-         if nextrow < G_GB_DY then
+         if nextrow < G_CORE_DY then
             vga_row_next <= nextrow;
          else
             vga_row_next <= 0;
@@ -76,11 +74,11 @@ begin
       end if;
    end process p_scaler;
 
-   vga_core_vram_addr_o <= std_logic_vector(to_unsigned(vga_row_next * G_GB_DX + vga_col_next, 15));
+   vga_core_vram_addr_o <= std_logic_vector(to_unsigned(vga_row_next * G_CORE_DX + vga_col_next, 15));
 
    vga_core_on_o <= '1' when
-            vga_col_i >= 0 and vga_col_i < G_GB_DX * G_GB_TO_VGA_SCALE and
-            vga_row_i >= 0 and vga_row_i < G_GB_DY * G_GB_TO_VGA_SCALE
+            vga_col_i >= 0 and vga_col_i < G_CORE_DX * G_CORE_TO_VGA_SCALE and
+            vga_row_i >= 0 and vga_row_i < G_CORE_DY * G_CORE_TO_VGA_SCALE
          else '0';
    vga_core_rgb_o <= vga_core_vram_data_i;
 

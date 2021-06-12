@@ -10,6 +10,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.qnice_tools.all;
+use work.video_modes_pkg.all;
 
 Library xpm;
 use xpm.vcomponents.all;
@@ -78,23 +79,25 @@ architecture beh of MEGA65_Core is
 -- QNICE Firmware: Use the regular QNICE "operating system" called "Monitor" while developing
 -- and debugging and use the MiSTer2MEGA65 firmware in the release version
 constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
---constant QNICE_FIRMWARE       : string  := "../m2m-rom/m2m-rom.rom";  
+--constant QNICE_FIRMWARE       : string  := "../m2m-rom/m2m-rom.rom";
+
+-- MiSTer2MEGA65 default resolution is HDMI 720p @ 60 Hz
+constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;  
 
 -- Clock speeds
 constant QNICE_CLK_SPEED      : natural := 50_000_000;
 constant CORE_CLK_SPEED       : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
+constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 
 -- Rendering constants (in pixels)
 --    VGA_*   size of the final output on the screen
---    CORE_*  size of the input resolution coming from the core
+--    CORE_*  size of the input resolution coming from the core and scaling factor
 --    FONT_*  size of one OSM character
--- @TODO: Currently, our scaling factor is hard coded to 4. We need to have a fractional scaler
--- and we need to define the appropriate constants here 
-constant VGA_DX               : natural := 800;          -- SVGA mode 800 x 600 @ 60 Hz
-constant VGA_DY               : natural := 600;          -- ditto
-constant CORE_DX              : natural := 200;
-constant CORE_DY              : natural := 150;
-constant CORE_TO_VGA_SCALE    : natural := 4;
+constant VGA_DX               : natural := VIDEO_MODE.H_PIXELS;
+constant VGA_DY               : natural := VIDEO_MODE.V_PIXELS;
+constant CORE_DX              : natural := 160;
+constant CORE_DY              : natural := 144;
+constant CORE_TO_VGA_SCALE    : natural := 5;
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
 
@@ -115,10 +118,15 @@ constant SHELL_O_Y            : natural := 0;
 constant SHELL_O_DX           : natural := 20;
 constant SHELL_O_DY           : natural := 20;
 
--- Clocks
-signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
-signal vga_pixelclk           : std_logic;               -- SVGA mode 800 x 600 @ 60 Hz: 40.00 MHz
-signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
+-- Clocks and active high reset signals for each clock domain
+signal clk_main               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
+signal clk_qnice              : std_logic;               -- QNICE main clock @ 50 MHz
+signal clk_pixel_1x           : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
+signal clk_pixel_5x           : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
+
+signal main_rst               : std_logic;
+signal qnice_rst              : std_logic;
+signal pixel_rst              : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- main_clk
@@ -168,18 +176,25 @@ signal vga_osm_vram_attr  : std_logic_vector(7 downto 0);
 begin
 
    -- MMCME2_ADV clock generators:
-   --    Core clock:          @TODO YOURCORE expects 40 MHz
-   --    Pixelclock:          40 MHz
-   --    QNICE co-processor:  50 MHz
+   --   @TODO YOURCORE:       40 MHz
+   --   QNICE:                50 MHz
+   --   HDMI 720p 60 Hz:      74.25 MHz (VGA) and 371.25 MHz (HDMI)
    clk_gen : entity work.clk
-      port map
-      (
-         sys_clk_i  => CLK,
-         main_o     => main_clk,         -- @TODO YOURCORE expects 40 MHz
-         qnice_o    => qnice_clk,        -- QNICE's 50 MHz main clock
-         pixelclk_o => vga_pixelclk      -- 40.00 MHz pixelclock for SVGA mode 800 x 600 @ 60 Hz
+      port map (
+         sys_clk_i    => CLK,             -- expects 100 MHz
+         sys_rstn_i   => RESET_N,         -- Asynchronous, asserted low
+         
+         main_clk_o   => clk_main,        -- main's @TODO 40 MHz main clock
+         main_rst_o   => main_rst,        -- main's reset, synchronized
+         
+         qnice_clk_o  => clk_qnice,       -- QNICE's 50 MHz main clock
+         qnice_rst_o  => qnice_rst,       -- QNICE's reset, synchronized
+         
+         pixel_clk_o  => clk_pixel_1x,    -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
+         pixel_rst_o  => pixel_rst,       -- VGA's reset, synchronized
+         pixel_clk5_o => clk_pixel_5x     -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI         
       );
-
+   
    ---------------------------------------------------------------------------------------------
    -- main_clk
    ---------------------------------------------------------------------------------------------
@@ -198,8 +213,8 @@ begin
          G_ANOTHER_THING        => 123456
       )
       port map (
-         main_clk               => main_clk,
-         reset_n                => reset_n,
+         main_clk               => clk_main,
+         reset_n                => not main_rst,
          kb_io0                 => kb_io0,
          kb_io1                 => kb_io1,
          kb_io2                 => kb_io2
@@ -212,8 +227,7 @@ begin
 
    -- QNICE Co-Processor (System-on-a-Chip) for ROM loading and On-Screen-Menu
    QNICE_SOC : entity work.QNICE
-      generic map
-      (
+      generic map (
          G_FIRMWARE              => QNICE_FIRMWARE,
          G_VGA_DX                => VGA_DX,
          G_VGA_DY                => VGA_DY,
@@ -230,8 +244,8 @@ begin
       )
       port map
       (
-         clk50_i                 => qnice_clk,
-         reset_n_i               => RESET_N,
+         clk50_i                 => clk_qnice,
+         reset_n_i               => not qnice_rst,
       
          -- serial communication (rxd, txd only; rts/cts are not available)
          -- 115.200 baud, 8-N-1      
@@ -301,8 +315,7 @@ begin
 
    i_vga : entity work.vga
       generic map (
-         G_VGA_DX             => VGA_DX,
-         G_VGA_DY             => VGA_DY,
+         G_VIDEO_MODE         => VIDEO_MODE,
          G_CORE_DX            => CORE_DX,
          G_CORE_DY            => CORE_DY,
          G_CORE_TO_VGA_SCALE  => CORE_TO_VGA_SCALE,
@@ -310,8 +323,8 @@ begin
          G_FONT_DY            => FONT_DY
       )
       port map (
-         clk_i                => vga_pixelclk,     -- pixel clock at frequency of VGA mode being used
-         rst_i                => reset_n,          -- active low asycnchronous reset
+         clk_i                => clk_pixel_1x,     -- pixel clock at frequency of VGA mode being used
+         rstn_i               => not pixel_rst,    -- active low reset
          vga_osm_cfg_enable_i => vga_osm_cfg_enable,
          vga_osm_cfg_xy_i     => vga_osm_cfg_xy,
          vga_osm_cfg_dxdy_i   => vga_osm_cfg_dxdy,
@@ -423,11 +436,11 @@ begin
          WIDTH => 33
       )
       port map (
-         src_clk                => qnice_clk,
+         src_clk                => clk_qnice,
          src_in(15 downto 0)    => qnice_osm_cfg_xy,
          src_in(31 downto 16)   => qnice_osm_cfg_dxdy,
          src_in(32)             => qnice_osm_cfg_enable,
-         dest_clk               => vga_pixelclk,
+         dest_clk               => clk_pixel_1x,
          dest_out(15 downto 0)  => vga_osm_cfg_xy,
          dest_out(31 downto 16) => vga_osm_cfg_dxdy,
          dest_out(32)           => vga_osm_cfg_enable
@@ -437,20 +450,18 @@ begin
    -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
    -- using the pixel clock
    core_frame_buffer : entity work.dualport_2clk_ram
-      generic map
-      (
+      generic map (
          ADDR_WIDTH   => 15,
          DATA_WIDTH   => 24
       )
-      port map
-      (
+      port map (
 --         clock_a      => main_clk,
 --         address_a    => std_logic_vector(to_unsigned(main_pixel_out_ptr, 15)),
 --         data_a       => main_pixel_out_data,
 --         wren_a       => main_pixel_out_we,
 --         q_a          => open,
 
-         clock_b      => vga_pixelclk,
+         clock_b      => clk_pixel_1x,
          address_b    => vga_core_vram_addr,
          data_b       => (others => '0'),
          wren_b       => '0',
@@ -459,21 +470,19 @@ begin
 
    -- Dual port & dual clock screen RAM / video RAM: contains the "ASCII" codes of the characters
    osm_vram : entity work.dualport_2clk_ram
-      generic map
-      (
+      generic map (
          ADDR_WIDTH   => VRAM_ADDR_WIDTH,
          DATA_WIDTH   => 8,
          FALLING_A    => true              -- QNICE expects read/write to happen at the falling clock edge
       )
-      port map
-      (
-         clock_a      => qnice_clk,
+      port map (
+         clock_a      => clk_qnice,
          address_a    => qnice_ramrom_addr(VRAM_ADDR_WIDTH-1 downto 0),
          data_a       => qnice_ramrom_data_o(7 downto 0),
          wren_a       => qnice_vram_we,
          q_a          => qnice_vram_data_o,
 
-         clock_b      => vga_pixelclk,
+         clock_b      => clk_pixel_1x,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
          q_b          => vga_osm_vram_data
       );
@@ -488,21 +497,19 @@ begin
    -- bit 1: foreground green
    -- bit 0: foreground blue
    osm_vram_attr : entity work.dualport_2clk_ram
-      generic map
-      (
+      generic map (
          ADDR_WIDTH   => VRAM_ADDR_WIDTH,
          DATA_WIDTH   => 8,
          FALLING_A    => true
       )
-      port map
-      (
-         clock_a      => qnice_clk,
+      port map (
+         clock_a      => clk_qnice,
          address_a    => qnice_ramrom_addr(VRAM_ADDR_WIDTH-1 downto 0),
          data_a       => qnice_ramrom_data_o(7 downto 0),
          wren_a       => qnice_vram_attr_we,
          q_a          => qnice_vram_attr_data_o,
 
-         clock_b      => vga_pixelclk,
+         clock_b      => clk_pixel_1x,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),       -- same address as VRAM
          q_b          => vga_osm_vram_attr
       );
