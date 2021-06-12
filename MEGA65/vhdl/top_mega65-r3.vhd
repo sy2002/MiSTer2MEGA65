@@ -31,6 +31,12 @@ port (
    vdac_sync_n    : out std_logic;
    vdac_blank_n   : out std_logic;
    
+   -- Digital Video (HDMI)
+   tmds_data_p    : out std_logic_vector(2 downto 0);
+   tmds_data_n    : out std_logic_vector(2 downto 0);
+   tmds_clk_p     : out std_logic;
+   tmds_clk_n     : out std_logic;   
+
    -- MEGA65 smart keyboard controller
    kb_io0         : out std_logic;                 -- clock to keyboard
    kb_io1         : out std_logic;                 -- data output to keyboard
@@ -59,26 +65,6 @@ port (
 --   joy_2_right_n  : in std_logic;
 --   joy_2_fire_n   : in std_logic
             
-   -- HDMI via ADV7511
---   hdmi_vsync     : out std_logic;
---   hdmi_hsync     : out std_logic;
---   hdmired        : out std_logic_vector(7 downto 0);
---   hdmigreen      : out std_logic_vector(7 downto 0);
---   hdmiblue       : out std_logic_vector(7 downto 0);
-   
---   hdmi_clk       : out std_logic;      
---   hdmi_de        : out std_logic;                 -- high when valid pixels being output
-   
---   hdmi_int       : in std_logic;                  -- interrupts by ADV7511
---   hdmi_spdif     : out std_logic := '0';          -- unused: GND
---   hdmi_scl       : inout std_logic;               -- I2C to/from ADV7511: serial clock
---   hdmi_sda       : inout std_logic;               -- I2C to/from ADV7511: serial data
-   
-   -- TPD12S016 companion chip for ADV7511
-   --hpd_a          : inout std_logic;
---   ct_hpd         : out std_logic := '1';          -- assert to connect ADV7511 to the actual port
---   ls_oe          : out std_logic := '1';          -- ditto
-   
    -- Built-in HyperRAM
 --   hr_d           : inout unsigned(7 downto 0);    -- Data/Address
 --   hr_rwds        : inout std_logic;               -- RW Data strobe
@@ -127,6 +113,12 @@ begin
          vdac_clk       => vdac_clk,
          vdac_sync_n    => vdac_sync_n,
          vdac_blank_n   => vdac_blank_n,
+         
+         -- Digital Video (HDMI)
+         tmds_data_p    => tmds_data_p,
+         tmds_data_n    => tmds_data_n,
+         tmds_clk_p     => tmds_clk_p,
+         tmds_clk_n     => tmds_clk_n,            
          
          -- MEGA65 smart keyboard controller
          kb_io0         => kb_io0,

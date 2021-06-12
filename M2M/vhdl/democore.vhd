@@ -1,11 +1,12 @@
-----------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework  
 --
--- Demo core that produces a test image so that MiSTer2MEGA65 can ebe synthesized
--- and run run stand alone even before the MiSTer core is being applied
+-- Demo core that produces a test image including test sound, so that MiSTer2MEGA65
+-- can be synthesized and tested stand alone even before the MiSTer core is being
+-- applied. The MEGA65 "Help" menu can be used to change the behavior of the core.
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
-----------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

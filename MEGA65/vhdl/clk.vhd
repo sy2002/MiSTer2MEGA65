@@ -49,7 +49,7 @@ signal pixel_clk5_mmcm : std_logic;
 
 begin
 
-   -- generate Game Boy Color and QNICE clock
+   -- generate @TODO-YOUR-CORE and QNICE clock
    -- VCO frequency range for Artix 7 speed grade -1 : 600 MHz - 1200 MHz
    -- f_VCO = f_CLKIN * CLKFBOUT_MULT_F / DIVCLK_DIVIDE   
    i_clk_main_qnice : MMCME2_ADV
@@ -64,7 +64,7 @@ begin
          CLKFBOUT_MULT_F      => 8.0,        -- 800 MHz
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => 23.875,     -- Game Boy Color @ 33.51 MHz, close enough to 33.554432 MHz
+         CLKOUT0_DIVIDE_F     => 20.000,     -- @TODO YOURCORE @ 40 MHz
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.500,
          CLKOUT0_USE_FINE_PS  => FALSE,

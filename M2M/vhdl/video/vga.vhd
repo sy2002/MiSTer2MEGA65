@@ -47,7 +47,7 @@ entity vga is
       vga_blue_o           : out std_logic_vector(7 downto 0);
       vga_hs_o             : out std_logic;
       vga_vs_o             : out std_logic;
-      vga_de_o               : out std_logic;
+      vga_de_o             : out std_logic;
       vdac_clk_o           : out std_logic;
       vdac_sync_n_o        : out std_logic;
       vdac_blank_n_o       : out std_logic
@@ -78,8 +78,7 @@ begin
 
    -- Component that produces VGA timings and outputs the currently active pixel coordinate (row, column)
    vga_pixels_and_timing : entity work.vga_controller
-      port map
-      (
+      port map (
          h_pulse   => G_VIDEO_MODE.H_PULSE,     -- horizontal sync pulse width in pixels
          h_bp      => G_VIDEO_MODE.H_BP,        -- horizontal back porch width in pixels
          h_pixels  => G_VIDEO_MODE.H_PIXELS,    -- horizontal display width in pixels
@@ -194,6 +193,7 @@ begin
          -- VGA horizontal and vertical sync
          vga_hs_o <= vga_hs_d;
          vga_vs_o <= vga_vs_d;
+         vga_de_o <= vga_disp_en_d;
       end if;
    end process; -- p_video_signal_latches : process(vga_pixelclk)
 

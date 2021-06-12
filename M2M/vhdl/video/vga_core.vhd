@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework  
 --
--- VGA core interface.
+-- VGA core interface
 --
--- This block provides a bridge between the VGA control block and the MEGA65 core.
+-- This block scales the MiSTer core and provides a bridge to the VGA control block.
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 -------------------------------------------------------------------------------------

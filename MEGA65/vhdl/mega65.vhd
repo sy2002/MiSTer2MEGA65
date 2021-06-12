@@ -10,9 +10,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.qnice_tools.all;
+
+library work;
+use work.types_pkg.all;
 use work.video_modes_pkg.all;
 
-Library xpm;
+library xpm;
 use xpm.vcomponents.all;
 
 entity MEGA65_Core is
@@ -43,6 +46,12 @@ port (
    vdac_clk       : out std_logic;
    vdac_sync_n    : out std_logic;
    vdac_blank_n   : out std_logic;
+
+   -- Digital Video (HDMI)
+   tmds_data_p    : out std_logic_vector(2 downto 0);
+   tmds_data_n    : out std_logic_vector(2 downto 0);
+   tmds_clk_p     : out std_logic;
+   tmds_clk_n     : out std_logic;
 
    -- MEGA65 smart keyboard controller
    kb_io0         : out std_logic;                 -- clock to keyboard
@@ -118,7 +127,10 @@ constant SHELL_O_Y            : natural := 0;
 constant SHELL_O_DX           : natural := 20;
 constant SHELL_O_DY           : natural := 20;
 
+---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
+---------------------------------------------------------------------------------------------
+
 signal clk_main               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
 signal clk_qnice              : std_logic;               -- QNICE main clock @ 50 MHz
 signal clk_pixel_1x           : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
@@ -129,11 +141,11 @@ signal qnice_rst              : std_logic;
 signal pixel_rst              : std_logic;
 
 ---------------------------------------------------------------------------------------------
--- main_clk
+-- clk_main (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------
--- qnice_clk
+-- clk_qnice
 ---------------------------------------------------------------------------------------------
 
 -- On-Screen-Menu (OSM)
@@ -158,20 +170,23 @@ signal qnice_vram_attr_we     : std_logic;
 signal qnice_vram_attr_data_o : std_logic_vector(7 downto 0);       
 
 ---------------------------------------------------------------------------------------------
--- vga_pixelclk
+-- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
 ---------------------------------------------------------------------------------------------
 
+signal vga_de                 : std_logic;            -- VGA data enable (visible pixels)
+signal vga_tmds               : slv_9_0_t(0 to 2);    -- parallel TMDS symbol stream x 3 channels
+
 -- Core frame buffer
-signal vga_core_vram_addr  : std_logic_vector(14 downto 0);
-signal vga_core_vram_data  : std_logic_vector(23 downto 0);
+signal vga_core_vram_addr     : std_logic_vector(14 downto 0);
+signal vga_core_vram_data     : std_logic_vector(23 downto 0);
 
 -- On-Screen-Menu (OSM)
-signal vga_osm_cfg_enable : std_logic;
-signal vga_osm_cfg_xy     : std_logic_vector(15 downto 0);
-signal vga_osm_cfg_dxdy   : std_logic_vector(15 downto 0);
-signal vga_osm_vram_addr  : std_logic_vector(15 downto 0);
-signal vga_osm_vram_data  : std_logic_vector(7 downto 0);
-signal vga_osm_vram_attr  : std_logic_vector(7 downto 0);
+signal vga_osm_cfg_enable     : std_logic;
+signal vga_osm_cfg_xy         : std_logic_vector(15 downto 0);
+signal vga_osm_cfg_dxdy       : std_logic_vector(15 downto 0);
+signal vga_osm_vram_addr      : std_logic_vector(15 downto 0);
+signal vga_osm_vram_data      : std_logic_vector(7 downto 0);
+signal vga_osm_vram_attr      : std_logic_vector(7 downto 0);
 
 begin
 
@@ -196,7 +211,7 @@ begin
       );
    
    ---------------------------------------------------------------------------------------------
-   -- main_clk
+   -- clk_main (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
 
    i_main : entity work.main
@@ -220,9 +235,8 @@ begin
          kb_io2                 => kb_io2
       );
 
-
    ---------------------------------------------------------------------------------------------
-   -- qnice_clk
+   -- clk_qnice
    ---------------------------------------------------------------------------------------------
 
    -- QNICE Co-Processor (System-on-a-Chip) for ROM loading and On-Screen-Menu
@@ -310,7 +324,7 @@ begin
    end process;
       
    ---------------------------------------------------------------------------------------------
-   -- vga_pixelclk
+   -- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
    ---------------------------------------------------------------------------------------------
 
    i_vga : entity work.vga
@@ -338,11 +352,68 @@ begin
          vga_blue_o           => vga_blue,
          vga_hs_o             => vga_hs,
          vga_vs_o             => vga_vs,
+         vga_de_o             => vga_de,
          vdac_clk_o           => vdac_clk,
          vdac_sync_n_o        => vdac_sync_n,
          vdac_blank_n_o       => vdac_blank_n
       );
 
+   i_vga_to_hdmi : entity work.vga_to_hdmi
+      port map (
+         select_44100 => '0',
+         dvi          => '0',                         -- DVI mode: if activated, HDMI extensions like sound are deactivated
+         vic          => std_logic_vector(to_unsigned(VIDEO_MODE.CEA_CTA_VIC, 8)),  -- CEA/CTA VIC 4=720p @ 60 Hz
+         aspect       => VIDEO_MODE.ASPECT,           -- "10" which means 16:9 at fits for 720p
+         pix_rep      => VIDEO_MODE.PIXEL_REP,        -- no pixel repetition for 720p
+         vs_pol       => VIDEO_MODE.V_POL,            -- horizontal polarity: negative
+         hs_pol       => VIDEO_MODE.H_POL,            -- vertaical polarity: negative
+
+         vga_rst      => pixel_rst,                   -- active high reset
+         vga_clk      => clk_pixel_1x,                -- VGA pixel clock
+         vga_vs       => vga_vs,
+         vga_hs       => vga_hs,
+         vga_de       => vga_de,
+         vga_r        => vga_red,
+         vga_g        => vga_green,
+         vga_b        => vga_blue,
+
+         -- PCM audio
+         pcm_rst      => main_rst,
+         pcm_clk      => clk_main,
+         pcm_clken    => '0',
+         pcm_l        => (others => '0'),
+         pcm_r        => (others => '0'),
+         pcm_acr      => '0',
+         pcm_n        => (others => '0'),
+         pcm_cts      => (others => '0'),
+
+         -- TMDS output (parallel)
+         tmds         => vga_tmds
+      ); -- i_vga_to_hdmi: entity work.vga_to_hdmi
+
+   -- serialiser: in this design we use TMDS SelectIO outputs
+   GEN_HDMI_DATA: for i in 0 to 2 generate
+   begin
+      HDMI_DATA: entity work.serialiser_10to1_selectio
+      port map (
+         rst     => pixel_rst,
+         clk     => clk_pixel_1x,
+         clk_x5  => clk_pixel_5x,
+         d       => vga_tmds(i),
+         out_p   => TMDS_data_p(i),
+         out_n   => TMDS_data_n(i)
+      ); -- HDMI_DATA: entity work.serialiser_10to1_selectio
+   end generate GEN_HDMI_DATA;
+
+   HDMI_CLK: entity work.serialiser_10to1_selectio
+   port map (
+         rst     => pixel_rst,
+         clk     => clk_pixel_1x,
+         clk_x5  => clk_pixel_5x,
+         d       => "0000011111",
+         out_p   => TMDS_clk_p,
+         out_n   => TMDS_clk_n
+      ); -- HDMI_CLK: entity work.serialiser_10to1_selectio
 
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks
