@@ -40,23 +40,23 @@ set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports SD_CLK]
 set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
 set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports SD_MISO]
 
-# Joystick port A
-set_property -dict {PACKAGE_PIN C14 IOSTANDARD LVCMOS33} [get_ports joy_1_up_n]
-set_property -dict {PACKAGE_PIN F16 IOSTANDARD LVCMOS33} [get_ports joy_1_down_n]
-set_property -dict {PACKAGE_PIN F14 IOSTANDARD LVCMOS33} [get_ports joy_1_left_n]
-set_property -dict {PACKAGE_PIN F13 IOSTANDARD LVCMOS33} [get_ports joy_1_right_n]
-set_property -dict {PACKAGE_PIN E17 IOSTANDARD LVCMOS33} [get_ports joy_1_fire_n]
+## Joystick port A
+#set_property -dict {PACKAGE_PIN C14 IOSTANDARD LVCMOS33} [get_ports joy_1_up_n]
+#set_property -dict {PACKAGE_PIN F16 IOSTANDARD LVCMOS33} [get_ports joy_1_down_n]
+#set_property -dict {PACKAGE_PIN F14 IOSTANDARD LVCMOS33} [get_ports joy_1_left_n]
+#set_property -dict {PACKAGE_PIN F13 IOSTANDARD LVCMOS33} [get_ports joy_1_right_n]
+#set_property -dict {PACKAGE_PIN E17 IOSTANDARD LVCMOS33} [get_ports joy_1_fire_n]
 
-# Joystick port B
-set_property -dict {PACKAGE_PIN W19 IOSTANDARD LVCMOS33} [get_ports joy_2_up_n]
-set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVCMOS33} [get_ports joy_2_down_n]
-set_property -dict {PACKAGE_PIN F21 IOSTANDARD LVCMOS33} [get_ports joy_2_left_n]
-set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports joy_2_right_n]
-set_property -dict {PACKAGE_PIN F15 IOSTANDARD LVCMOS33} [get_ports joy_2_fire_n]
+## Joystick port B
+#set_property -dict {PACKAGE_PIN W19 IOSTANDARD LVCMOS33} [get_ports joy_2_up_n]
+#set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVCMOS33} [get_ports joy_2_down_n]
+#set_property -dict {PACKAGE_PIN F21 IOSTANDARD LVCMOS33} [get_ports joy_2_left_n]
+#set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports joy_2_right_n]
+#set_property -dict {PACKAGE_PIN F15 IOSTANDARD LVCMOS33} [get_ports joy_2_fire_n]
 
-# PWM Audio
-set_property -dict {PACKAGE_PIN L6 IOSTANDARD LVCMOS33} [get_ports pwm_l]
-set_property -dict {PACKAGE_PIN F4 IOSTANDARD LVCMOS33} [get_ports pwm_r]
+## PWM Audio
+#set_property -dict {PACKAGE_PIN L6 IOSTANDARD LVCMOS33} [get_ports pwm_l]
+#set_property -dict {PACKAGE_PIN F4 IOSTANDARD LVCMOS33} [get_ports pwm_r]
 
 ## VGA via VDAC
 set_property -dict {PACKAGE_PIN U15  IOSTANDARD LVCMOS33} [get_ports {VGA_RED[0]}]

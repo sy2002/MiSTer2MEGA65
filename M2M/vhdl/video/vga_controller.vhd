@@ -19,102 +19,115 @@
 --     Initial Public Release
 --   Version 1.1 03/07/2018 Scott Larson
 --     Corrected two minor "off-by-one" errors
+--   Version 1.2 May 16, 2021 Michael Jørgensen
+--     Clean-up, adjusted to fit gbc4mega65 and MiSTer2MEGA coding style
 --    
 --------------------------------------------------------------------------------
 
-LIBRARY ieee;
-USE ieee.std_logic_1164.all;
+library ieee;
+use ieee.std_logic_1164.all;
 
-ENTITY vga_controller IS
-	GENERIC(
-		h_pulse 	:	INTEGER := 208;    	--horiztonal sync pulse width in pixels
-		h_bp	 	:	INTEGER := 336;		--horiztonal back porch width in pixels
-		h_pixels	:	INTEGER := 1920;		--horiztonal display width in pixels
-		h_fp	 	:	INTEGER := 128;		--horiztonal front porch width in pixels
-		h_pol		:	STD_LOGIC := '0';		--horizontal sync pulse polarity (1 = positive, 0 = negative)
-		v_pulse 	:	INTEGER := 3;			--vertical sync pulse width in rows
-		v_bp	 	:	INTEGER := 38;			--vertical back porch width in rows
-		v_pixels	:	INTEGER := 1200;		--vertical display width in rows
-		v_fp	 	:	INTEGER := 1;			--vertical front porch width in rows
-		v_pol		:	STD_LOGIC := '1');	--vertical sync pulse polarity (1 = positive, 0 = negative)
-	PORT(
-		pixel_clk	:	IN		STD_LOGIC;	--pixel clock at frequency of VGA mode being used
-		reset_n		:	IN		STD_LOGIC;	--active low asycnchronous reset
-		h_sync		:	OUT	STD_LOGIC;	--horiztonal sync pulse
-		v_sync		:	OUT	STD_LOGIC;	--vertical sync pulse
-		disp_ena		:	OUT	STD_LOGIC;	--display enable ('1' = display time, '0' = blanking time)
-		column		:	OUT	INTEGER;		--horizontal pixel coordinate
-		row			:	OUT	INTEGER;		--vertical pixel coordinate
-		n_blank		:	OUT	STD_LOGIC;	--direct blacking output to DAC
-		n_sync		:	OUT	STD_LOGIC); --sync-on-green output to DAC
-END vga_controller;
+entity vga_controller is
+   port (
+      h_pulse   : in  integer;    -- horizontal sync pulse width in pixels
+      h_bp      : in  integer;    -- horizontal back porch width in pixels
+      h_pixels  : in  integer;    -- horizontal display width in pixels
+      h_fp      : in  integer;    -- horizontal front porch width in pixels
+      h_pol     : in  std_logic;  -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      v_pulse   : in  integer;    -- vertical sync pulse width in rows
+      v_bp      : in  integer;    -- vertical back porch width in rows
+      v_pixels  : in  integer;    -- vertical display width in rows
+      v_fp      : in  integer;    -- vertical front porch width in rows
+      v_pol     : in  std_logic;  -- vertical sync pulse polarity (1 = positive, 0 = negative)
+      pixel_clk : in  std_logic;  -- pixel clock at frequency of vga mode being used
+      reset_n   : in  std_logic;  -- active low sycnchronous reset
+      h_sync    : out std_logic;  -- horiztonal sync pulse
+      v_sync    : out std_logic;  -- vertical sync pulse
+      disp_ena  : out std_logic;  -- display enable ('1' = display time, '0' = blanking time)
+      column    : out integer;    -- horizontal pixel coordinate
+      row       : out integer;    -- vertical pixel coordinate
+      n_blank   : out std_logic;  -- direct blacking output to dac
+      n_sync    : out std_logic   -- sync-on-green output to dac
+   );
+end vga_controller;
 
-ARCHITECTURE behavior OF vga_controller IS
-	CONSTANT	h_period	:	INTEGER := h_pulse + h_bp + h_pixels + h_fp;  --total number of pixel clocks in a row
-	CONSTANT	v_period	:	INTEGER := v_pulse + v_bp + v_pixels + v_fp;  --total number of rows in column
-BEGIN
+architecture synthesis of vga_controller is
+   signal h_period     : natural range 0 to 2047;  -- total number of pixel clocks in a row
+   signal v_period     : natural range 0 to 2047;  -- total number of rows in column
+   signal h_sync_first : natural range 0 to 2047;
+   signal h_sync_last  : natural range 0 to 2047;
+   signal v_sync_first : natural range 0 to 2047;
+   signal v_sync_last  : natural range 0 to 2047;
+begin
+   h_period     <= h_pulse + h_bp + h_pixels + h_fp;  -- total number of pixel clocks in a row
+   v_period     <= v_pulse + v_bp + v_pixels + v_fp;  -- total number of rows in column
+   h_sync_first <= h_pixels + h_fp;
+   h_sync_last  <= h_pixels + h_fp + h_pulse - 1;
+   v_sync_first <= v_pixels + v_fp;
+   v_sync_last  <= v_pixels + v_fp + v_pulse - 1;
 
-	n_blank <= '1';  --no direct blanking
-	n_sync <= '0';   --no sync on green
-	
-	PROCESS(pixel_clk, reset_n)
-		VARIABLE h_count	:	INTEGER RANGE 0 TO h_period - 1 := 0;  --horizontal counter (counts the columns)
-		VARIABLE v_count	:	INTEGER RANGE 0 TO v_period - 1 := 0;  --vertical counter (counts the rows)
-	BEGIN
-	
-		IF(reset_n = '0') THEN		--reset asserted
-			h_count := 0;				--reset horizontal counter
-			v_count := 0;				--reset vertical counter
-			h_sync <= NOT h_pol;		--deassert horizontal sync
-			v_sync <= NOT v_pol;		--deassert vertical sync
-			disp_ena <= '0';			--disable display
-			column <= 0;				--reset column pixel coordinate
-			row <= 0;					--reset row pixel coordinate
-			
-		ELSIF(pixel_clk'EVENT AND pixel_clk = '1') THEN
+   n_blank <= '1';  -- no direct blanking
+   n_sync  <= '0';  -- no sync on green
+   
+   process (pixel_clk)
+      variable h_count : natural range 0 to 2047 := 0;  -- horizontal counter (counts the columns)
+      variable v_count : natural range 0 to 2047 := 0;  -- vertical counter (counts the rows)
+   begin
+   
+      if rising_edge(pixel_clk) then
 
-			--counters
-			IF(h_count < h_period - 1) THEN		--horizontal counter (pixels)
-				h_count := h_count + 1;
-			ELSE
-				h_count := 0;
-				IF(v_count < v_period - 1) THEN	--veritcal counter (rows)
-					v_count := v_count + 1;
-				ELSE
-					v_count := 0;
-				END IF;
-			END IF;
+         -- counters
+         if h_count < h_period - 1 then     -- horizontal counter (pixels)
+            h_count := h_count + 1;
+         else
+            h_count := 0;
+            if v_count < v_period - 1 then  -- veritcal counter (rows)
+               v_count := v_count + 1;
+            else
+               v_count := 0;
+            end if;
+         end if;
 
-			--horizontal sync signal
-			IF(h_count < h_pixels + h_fp OR h_count >= h_pixels + h_fp + h_pulse) THEN
-				h_sync <= NOT h_pol;		--deassert horiztonal sync pulse
-			ELSE
-				h_sync <= h_pol;			--assert horiztonal sync pulse
-			END IF;
-			
-			--vertical sync signal
-			IF(v_count < v_pixels + v_fp OR v_count >= v_pixels + v_fp + v_pulse) THEN
-				v_sync <= NOT v_pol;		--deassert vertical sync pulse
-			ELSE
-				v_sync <= v_pol;			--assert vertical sync pulse
-			END IF;
-			
-			--set pixel coordinates
-			IF(h_count < h_pixels) THEN  	--horiztonal display time
-				column <= h_count;			--set horiztonal pixel coordinate
-			END IF;
-			IF(v_count < v_pixels) THEN	--vertical display time
-				row <= v_count;				--set vertical pixel coordinate
-			END IF;
+         -- horizontal sync signal
+         if h_count >= h_sync_first and h_count <= h_sync_last then
+            h_sync <= h_pol;           -- assert horizontal sync pulse
+         else
+            h_sync <= not h_pol;       -- deassert horizontal sync pulse
+         end if;
+         
+         -- vertical sync signal
+         if v_count >= v_sync_first and v_count <= v_sync_last then
+            v_sync <= v_pol;           -- assert vertical sync pulse
+         else
+            v_sync <= not v_pol;       -- deassert vertical sync pulse
+         end if;
+         
+         -- set pixel coordinates
+         if h_count < h_pixels then    -- horizontal display time
+            column <= h_count;         -- set horizontal pixel coordinate
+         end if;
+         if v_count < v_pixels then    -- vertical display time
+            row <= v_count;            -- set vertical pixel coordinate
+         end if;
 
-			--set display enable output
-			IF(h_count < h_pixels AND v_count < v_pixels) THEN  	--display time
-				disp_ena <= '1';											 	--enable display
-			ELSE																	--blanking time
-				disp_ena <= '0';												--disable display
-			END IF;
+         -- set display enable output
+         if h_count < h_pixels and v_count < v_pixels then     -- display time
+            disp_ena <= '1';                                   -- enable display
+         else                                                  -- blanking time
+            disp_ena <= '0';                                   -- disable display
+         end if;
 
-		END IF;
-	END PROCESS;
+         if reset_n = '0' then      -- reset asserted
+            h_count := 0;           -- reset horizontal counter
+            v_count := 0;           -- reset vertical counter
+            h_sync   <= not h_pol;  -- deassert horizontal sync
+            v_sync   <= not v_pol;  -- deassert vertical sync
+            disp_ena <= '0';        -- disable display
+            column   <= 0;          -- reset column pixel coordinate
+            row      <= 0;          -- reset row pixel coordinate
+         end if;
+      end if;
+   end process;
 
-END behavior;
+end architecture synthesis;
+
