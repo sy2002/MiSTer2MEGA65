@@ -12,6 +12,7 @@ MEGA65/m2m-rom/*.def
 MEGA65/m2m-rom/*.lis
 MEGA65/m2m-rom/*.out
 MEGA65/m2m-rom/*.rom
+MEGA65/load_bitstream.sh
 M2M/rom/*.lis
 M2M/rom/*.out
 M2M/rom/*.rom
