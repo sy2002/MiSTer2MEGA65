@@ -25,7 +25,7 @@ entity vga is
    );
    port (
       clk_i                : in  std_logic;
-      rstn_i                 : in  std_logic;
+      rstn_i               : in  std_logic;
 
       -- OSM configuration from QNICE
       vga_osm_cfg_enable_i : in  std_logic;

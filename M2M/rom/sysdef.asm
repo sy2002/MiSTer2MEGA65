@@ -62,6 +62,37 @@ M2M$SHELL_M_DXDY    .EQU 0xFFE4     ; main screen: dx|dy width and height
 M2M$SHELL_O_XY      .EQU 0xFFE5     ; options menu: x|y start coordinates
 M2M$SHELL_O_DXDX    .EQU 0xFFE6     ; options menu: dx|dy width and height
 
+; Screen attributes: Single bits
+M2M$SA_INVERSE      .EQU 0x80
+M2M$SA_DARK         .EQU 0x40
+M2M$SA_BG_RED       .EQU 0x20
+M2M$SA_BG_GREEN     .EQU 0x10
+M2M$SA_BG_BLUE      .EQU 0x08
+M2M$SA_FG_RED       .EQU 0x04
+M2M$SA_FG_GREEN     .EQU 0x02
+M2M$SA_FG_BLUE      .EQU 0x01
+
+; Screen attributes: Common bit-combinations
+M2M$SA_COL_STD      .EQU 0x0B   ; cyan font on blue background
+M2M$SA_COL_STD_INV  .EQU 0x8B   ; inverse standard
+M2M$SA_COL_SEL      .EQU 0x0F   ; selection: white font on blue background
+
+; Special characters in font Anikki-16x16
+M2M$FC_TL           .EQU 201    ; fat top/left corner
+M2M$FC_SH           .EQU 205    ; fat straight horizontal
+M2M$FC_TR           .EQU 187    ; fat top/right corner
+M2M$FC_SV           .EQU 186    ; fat straight vertical
+M2M$FC_BL           .EQU 200    ; fat bottom/left corner
+M2M$FC_BR           .EQU 188    ; fat bottom/right corner
+M2M$FC_HE_LEFT      .EQU 185    ; fat straight horiz. line ends: left part
+M2M$FC_HE_RIGHT     .EQU 204    ; fat straight horiz. line ends: right part
+M2M$NC_SH           .EQU 196    ; normal straight horizontal
+M2M$NC_VE_LEFT      .EQU 199    ; normal vertical line end: left part
+M2M$NC_VE_RIGHT     .EQU 182    ; normal vertical line end: right part
+M2M$DIR_L           .EQU 17     ; left char for displaying a directory
+M2M$DIR_R           .EQU 16     ; right char for displaying a directory
+M2M$OPT_SEL         .EQU 7      ; selection char for options menu
+
 ; ----------------------------------------------------------------------------
 ; 256-bit General purpose control flags
 ; ----------------------------------------------------------------------------
@@ -91,6 +122,13 @@ M2M$RAMROM_DEV      .EQU 0xFFEB
 
 M2M$VRAM_DATA       .EQU 0x0000     ; Device for VRAM: Data
 M2M$VRAM_ATTR       .EQU 0x0001     ; Device for VRAM: Attributes
+M2M$CONFIG          .EQU 0x0002     ; Static Shell config data (config.vhd)
 
 M2M$RAMROM_4KWIN    .EQU 0xFFEC     ; 4k window selector
 M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
+
+; ----------------------------------------------------------------------------
+; Selectors for static Shell configuration data (config.vhd)
+; ----------------------------------------------------------------------------
+
+M2M$CFG_WELCOME     .EQU 0x0000     ; Welcome screen

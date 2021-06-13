@@ -9,32 +9,30 @@
 ; done by sy2002 in 2021 and licensed under GPL v3
 ; ****************************************************************************
 
+#include "screen.asm"
+#include "tools.asm"
 
-; EVERYTHING HERE IS DEBUG CODE - DELETE EVERYTHING
+                ; keep core in reset state
+                ; activate OSM, configure position and size and clear screen                
+START_SHELL     MOVE    M2M$CSR, R0
+                MOVE    M2M$CSR_RESET, @R0
+                RSUB    SCR$OSM_FS_ON, 1
+                RSUB    SCR$CLR, 1
 
-STR_DEBUG       .ASCII_W "MiSTer2MEGA65 Debug Message"
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$VRAM_DATA, @R0              
+                MOVE    M2M$RAMROM_DATA, R1
 
-                ; activate OSM and configure position and size
-START_SHELL     MOVE    M2M$CSR, R0             ; activate OSM
-                MOVE    M2M$CSR_OSM_ON, @R0
-                MOVE    M2M$OSM_XY, R0          ; take x|y of OSM from ..
-                MOVE    M2M$SHELL_M_XY, R1      ; .. VHDL generics
-                MOVE    @R1, @R0
-                MOVE    M2M$OSM_DXDY, R0        ; tkae dx|dy of OSM from ..
-                MOVE    M2M$SHELL_M_DXDY, R1    ; .. VHDL generics
-                MOVE    @R1, @R0
+LOOP1_S         MOVE    M2M$CONFIG, @R0
+                MOVE    @R1, R2
+                RBRA    LOOP1_E, Z
+                MOVE    M2M$VRAM_DATA, @R0
+                MOVE    R2, @R1++
+                RBRA    LOOP1_S, 1
+                
+LOOP1_E         SYSCALL(exit, 1)
 
-                ; print debug string
-                MOVE    STR_DEBUG, R0           ; R0: string pointer
-                MOVE    M2M$RAMROM_DEV, R1      ; R1: device selector
-                MOVE    M2M$RAMROM_DATA, R2     ; R2: MMIO data area
-LOOP_S          MOVE    M2M$VRAM_DATA, @R1      ; switch to VRAM data
-                MOVE    @R0++, @R2              ; copy char
-                MOVE    M2M$VRAM_ATTR, @R1      ; switch to VRAM attributes
-                MOVE    0x000F, @R2++           ; white font & blue background
-                CMP     @R0, 0                  ; end of string?
-                RBRA    LOOP_S, !Z              ; no; continue loop
-                SYSCALL(exit, 1)      
+
 
                 ; TODO DELIT SAMPLE CODE FOR FORMATTING
 TODO_DELT       MOVE    R8, R8                  ; invalidate device handle

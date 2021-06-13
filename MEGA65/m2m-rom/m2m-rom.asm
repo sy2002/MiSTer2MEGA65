@@ -52,7 +52,7 @@ START_FIRMWARE  RSUB    START_SHELL, 1
 ; add your own variables here
 ;
 
-; M2M shell variables
+; M2M shell variables (only include, if you included "shell.asm" above)
 #include "../../M2M/rom/shell_vars.asm"
 
 ; TODO TODO TODO

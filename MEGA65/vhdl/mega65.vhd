@@ -167,7 +167,10 @@ signal qnice_ramrom_we        : std_logic;
 signal qnice_vram_we          : std_logic;
 signal qnice_vram_data_o      : std_logic_vector(7 downto 0);
 signal qnice_vram_attr_we     : std_logic;
-signal qnice_vram_attr_data_o : std_logic_vector(7 downto 0);       
+signal qnice_vram_attr_data_o : std_logic_vector(7 downto 0);
+
+-- Shell configuration (config.vhd)
+signal qnice_config_data      : std_logic_vector(15 downto 0);   
 
 ---------------------------------------------------------------------------------------------
 -- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
@@ -256,8 +259,7 @@ begin
          G_SHELL_O_DX            => SHELL_O_DX,
          G_SHELL_O_DY            => SHELL_O_DY
       )
-      port map
-      (
+      port map (
          clk50_i                 => clk_qnice,
          reset_n_i               => not qnice_rst,
       
@@ -299,9 +301,20 @@ begin
          ramrom_we_o             => qnice_ramrom_we         
       );
       
+   shell_cfg : entity work.config
+      port map (
+         -- bits 27 .. 12:    select configuration data block; called "Selector" hereafter
+         -- bits 11 downto 0: address the up to 4k the configuration data
+         address_i               => qnice_ramrom_addr,
+         
+         -- config data
+         data_o                  => qnice_config_data         
+      );
+      
    -- The device selector qnice_ramrom_dev decides, which RAM/ROM-like device QNICE is writing to.
    -- Device numbers < 256 are reserved for QNICE; everything else can be used by your MiSTer core.
    qnice_ramrom_devices : process(all)
+   variable strpos : integer;
    begin
       qnice_vram_we <= '0';
       qnice_vram_attr_we <= '0';
@@ -316,9 +329,13 @@ begin
          when x"0001" =>
             qnice_vram_attr_we <= qnice_ramrom_we;
             qnice_ramrom_data_i <= x"00" & qnice_vram_attr_data_o;
+            
+         -- Shell configuration data (config.vhd)
+         when x"0002" =>
+            qnice_ramrom_data_i <= qnice_config_data;
          
          -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) and other RAM/ROM-like devices
-         -- Device numbers need to be >= 0x0100
+         -- Device numbers need to be >= 0x0100         
          when others => null;            
       end case;
    end process;
