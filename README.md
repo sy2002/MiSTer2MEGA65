@@ -6,14 +6,16 @@ MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
 TL;DR
 -----
 
-1. Plug-in your "raw" MiSTer core from MiSTer's RTL folder
-   into `MEGA65/main.vhd`
+1. Copy your your "raw" MiSTer core from MiSTer's RTL folder
+   into `/rtl` and wire it inside `MEGA65/vhdl/main.vhd` while
+   adjusting the clocks in `MEGA65/vhdk/clk.vhd`.
 
-2. Provide and wire RAMs, ROMs and other devices in `MEGA65/mega65.vhd`
+2. Provide and wire RAMs, ROMs and other devices in
+   `MEGA65/vhdl/mega65.vhd` and wire everything correctly.
 
 3. Configure your core's behavior, including how the start screen looks like,
-   what the ROMs should be loaded (and where to), the abilities of the
-   <kbd>Help</kbd> menu and more in `MEGA65/config.vhd`
+   what ROMs should be loaded (and where to), the abilities of the
+   <kbd>Help</kbd> menu and more in `MEGA65/vhdl/config.vhd`.
 
 **DONE** your core is ported to MEGA65! :-)
 
@@ -59,6 +61,8 @@ Use cases and features of the framework:
 * SD card and FAT32 support
 * Load BIOS ROMs and cartridge ROMs and the likes before starting
   the MiSTer core
+* Easy to use infrastructure to map the disk-drives, HDs, etc. of
+  the MiSTer core to MEGA65's SD card and/or to its floppy disk drive
 * Control the MiSTer core (start, stop, reset, pause, ...)
 * On-Screen-Menu (overlay) that offers configuration options and
   file system functionality for the MiSTer core while it is running
