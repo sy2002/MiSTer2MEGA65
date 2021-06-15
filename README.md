@@ -3,11 +3,31 @@ MiSTer2MEGA65 (HEAVILY WORK-IN-PROGRESS)
 
 MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
 
+TL;DR
+-----
+
+1. Plug-in your "raw" MiSTer core from MiSTer's RTL folder
+   into `MEGA65/main.vhd`
+
+2. Provide and wire RAMs, ROMs and other devices in `MEGA65/mega65.vhd`
+
+3. Configure your core's behavior, including how the start screen looks like,
+   what the ROMs should be loaded (and where to), the abilities of the
+   <kbd>Help</kbd> menu and more in `MEGA65/config.vhd`
+
+**DONE** your core is ported to MEGA65! :-)
+
+*Obviously, this is a shameless exaggeration of how easy it is to work with
+MiSTer2MEGA65, but you get the gist of it.*
+
+Details
+-------
+
 CAUTION: RIGHT NOW THIS IS A HEAVILY WORK-IN-PROGRESS PRE-ALPHA VERSION.
 WE WILL RELEASE THIS AS A V1.0 AS SOON AS THE FOLLOWING FIRST MILESTONE HAS
 BEEN REACHED: USING THIS FRAMEWORK, steddyman PORTED A FIRST VERSION OF
 MiSTer's TRS-80 CORE AND sy2002 PORTED A FIRST VERSION OF MiSTer's NES CORE
-AND MJOERGEN ALSO PORTED SOME CORE OF HIS CHOICE USING THE FRAMEWORK.
+AND/OR THE C64 CORE TOGETHER WITH MJOERGEN.
 
 If you want to learn more about the potential of this M2M framework right now,
 then you better go to our
@@ -33,7 +53,9 @@ Use cases and features of the framework:
 * Drivers for the MEGA65 hardware
 * Drop-in replacements for various RAM types that MiSTer uses
 * VGA timing generator
-* HDMI support
+* 3.5mm audio jack support (encode LPCM to PDM)
+* HDMI video (720p @ 60 Hz) and audio support
+  (sample LPCM with 48 kHz and transmit it via HDMI)
 * SD card and FAT32 support
 * Load BIOS ROMs and cartridge ROMs and the likes before starting
   the MiSTer core
