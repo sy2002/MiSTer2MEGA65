@@ -60,7 +60,13 @@ M2M$OSM_DXDY        .EQU 0xFFE2     ; dx|dy width and height
 M2M$SHELL_M_XY      .EQU 0xFFE3     ; main screen: x|y start coordinates
 M2M$SHELL_M_DXDY    .EQU 0xFFE4     ; main screen: dx|dy width and height
 M2M$SHELL_O_XY      .EQU 0xFFE5     ; options menu: x|y start coordinates
-M2M$SHELL_O_DXDX    .EQU 0xFFE6     ; options menu: dx|dy width and height
+M2M$SHELL_O_DXDY    .EQU 0xFFE6     ; options menu: dx|dy width and height
+
+; The followint read-only register is meant to be used by the QNICE firmware.
+; They are used to determine the current screen hardware-resolution in
+; characters (width and height). This values are used to calculate video
+; RAM and video attribute RAM coordinates
+M2M$SYS_DXDY        .EQU 0xFFE7
 
 ; Screen attributes: Single bits
 M2M$SA_INVERSE      .EQU 0x80
@@ -100,22 +106,20 @@ M2M$OPT_SEL         .EQU 7      ; selection char for options menu
 ; 128-bit directly controled by the programmer:
 ; Select a window between 0 and 7 in M2M$CFD_ADDR and access the control flags
 ; sliced into 16-bit chunks via M2M$CFD_DATA
-M2M$CFD_ADDR        .EQU 0xFFE7
-M2M$CFD_DATA        .EQU 0xFFE8
+M2M$CFD_ADDR        .EQU 0xFFF0
+M2M$CFD_DATA        .EQU 0xFFF1
 
 ; 128-bit indirectly controled via the options menu, i.e. the menu that opens
 ; when the core is running and the user presses "Help" on the keyboard
-M2M$CFM_ADDR        .EQU 0xFFE9
-M2M$CFM_DATA        .EQU 0xFFEA
+M2M$CFM_ADDR        .EQU 0xFFF2
+M2M$CFM_DATA        .EQU 0xFFF3
 
 ; ----------------------------------------------------------------------------
 ; MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
 ; ----------------------------------------------------------------------------
 
-M2M$RAMROM_DEV      .EQU 0xFFEB
-    ; Device 0x0000:              VRAM: Data
-    ; Device 0x0001:              VRAM: Attributes
-    ; Devices 0x0002 .. 0x00FF:   RESERVED
+M2M$RAMROM_DEV      .EQU 0xFFF4
+    ; Devices 0x0000 .. 0x00FF:   RESERVED (see below)
     ; Devices 0x0100 .. 0xFFFF:   Free to be used for any RAM, ROM or device
     ;                             that behaves like a RAM or ROM from the
     ;                             perspective of QNICE
@@ -124,7 +128,7 @@ M2M$VRAM_DATA       .EQU 0x0000     ; Device for VRAM: Data
 M2M$VRAM_ATTR       .EQU 0x0001     ; Device for VRAM: Attributes
 M2M$CONFIG          .EQU 0x0002     ; Static Shell config data (config.vhd)
 
-M2M$RAMROM_4KWIN    .EQU 0xFFEC     ; 4k window selector
+M2M$RAMROM_4KWIN    .EQU 0xFFF5     ; 4k window selector
 M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
 
 ; ----------------------------------------------------------------------------

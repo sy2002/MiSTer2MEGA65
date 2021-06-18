@@ -118,14 +118,14 @@ constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 
 -- Shell rendering constants (in characters)
 -- The Shell uses the OSM mechanism to display itself
-constant SHELL_M_X            : natural := 0;
-constant SHELL_M_Y            : natural := 0;
-constant SHELL_M_DX           : natural := CHARS_DX;
-constant SHELL_M_DY           : natural := CHARS_DY;
-constant SHELL_O_X            : natural := CHARS_DX - 20;
-constant SHELL_O_Y            : natural := 0;
-constant SHELL_O_DX           : natural := 20;
-constant SHELL_O_DY           : natural := 20;
+constant SHELL_M_X            : integer := 0;
+constant SHELL_M_Y            : integer := 0;
+constant SHELL_M_DX           : integer := CHARS_DX;
+constant SHELL_M_DY           : integer := CHARS_DY;
+constant SHELL_O_X            : integer := CHARS_DX - 20;
+constant SHELL_O_Y            : integer := 0;
+constant SHELL_O_DX           : integer := 20;
+constant SHELL_O_DY           : integer := 20;
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain

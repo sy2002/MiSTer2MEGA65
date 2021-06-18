@@ -67,5 +67,7 @@ START_FIRMWARE  RSUB    START_SHELL, 1
 ; is currently 0x8157 and subtract the result from 0xAFE0. This yields
 ; currently a stack size of 649 words, which is sufficient for this program.
 
+STACK_SIZE      .EQU    649
+
                 .ORG    0xAFE0                  ; TODO: automate calculation
 #include "../../M2M/rom/main_vars.asm"

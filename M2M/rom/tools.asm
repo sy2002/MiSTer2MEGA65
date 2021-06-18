@@ -45,6 +45,31 @@ _W2HEX_LOOP2    MOVE    @SP++, @R7++            ; fetch char from stack
 _WORD2HEXSTR_DG .ASCII_P "0123456789ABCDEF"                 
 
 ; ----------------------------------------------------------------------------
+; Save/restore current device and selector values to/from a buffer
+;
+; Input:  R8: Pointer to a two word buffer
+; Output: R8 is not changed; buffer is used to save and restore
+; ----------------------------------------------------------------------------
+
+SAVE_DEVSEL     INCRB
+                MOVE    R8, R1
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    @R0, @R1++
+                MOVE    M2M$RAMROM_4KWIN, R0
+                MOVE    @R0, @R1
+                DECRB
+                RET
+
+RESTORE_DEVSEL  INCRB
+                MOVE    R8, R1
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    @R1++, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0
+                MOVE    @R1, @R0
+                DECRB
+                RET
+
+; ----------------------------------------------------------------------------
 ; Functions that are part of QNICE Monitor V1.7 and that can be replaced
 ; as soon as we update gbc4mega65 to QNICE V1.7
 ; ----------------------------------------------------------------------------
@@ -68,3 +93,14 @@ LEAVE           DECRB
                 MOVE    R4, R12
                 DECRB
                 RET
+
+; STRCPY copies a zero-terminated string to a destination
+; R8: Pointer to the string to be copied
+; R9: Pointer to the large enough destination memory
+STRCPY          INCRB
+                MOVE    R8, R0
+                MOVE    R9, R1
+_STRCPY_L       MOVE    @R0++, @R1++
+                RBRA    _STRCPY_L, !Z
+                DECRB
+                RET                   

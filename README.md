@@ -10,8 +10,8 @@ TL;DR
    into `/rtl` and wire it inside `MEGA65/vhdl/main.vhd` while
    adjusting the clocks in `MEGA65/vhdk/clk.vhd`.
 
-2. Provide and wire RAMs, ROMs and other devices in
-   `MEGA65/vhdl/mega65.vhd` and wire everything correctly.
+2. Provide RAMs, ROMs and other devices in `MEGA65/vhdl/mega65.vhd`
+   and wire everything correctly.
 
 3. Configure your core's behavior, including how the start screen looks like,
    what ROMs should be loaded (and where to), the abilities of the
@@ -202,7 +202,7 @@ using TODO VHDL CONFIG STRING:
    as (4), or if there should be (without keypress) a clearscreen after
    everything has been successfully loaded or if you want a keypress after
    successfully loading.
-4. Show one or more help screens / explanation screens, allow "browing them"
+4. Show one or more help screens / explanation screens, allow "browsing them"
    in case there is more than one using the cursor keys. <kbd>Space</kbd>
    to start the core.
 6. Show a file browser: The user can load a ROM (e.g. cartridge ROM)

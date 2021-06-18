@@ -25,14 +25,14 @@ generic (
    G_FONT_DY         : natural;                          -- ditto height         
    
    -- x|y start positions and dx|dy dimensions of the two standard windows of the Shell: main window and options menu
-   G_SHELL_M_X       : natural;
-   G_SHELL_M_Y       : natural;
-   G_SHELL_M_DX      : natural;
-   G_SHELL_M_DY      : natural;
-   G_SHELL_O_X       : natural;
-   G_SHELL_O_Y       : natural;
-   G_SHELL_O_DX      : natural;
-   G_SHELL_O_DY      : natural   
+   G_SHELL_M_X       : integer;
+   G_SHELL_M_Y       : integer;
+   G_SHELL_M_DX      : integer;
+   G_SHELL_M_DY      : integer;
+   G_SHELL_O_X       : integer;
+   G_SHELL_O_Y       : integer;
+   G_SHELL_O_DX      : integer;
+   G_SHELL_O_DY      : integer   
 );
 port (
    -- QNICE MEGA65 hardware interface
@@ -137,22 +137,24 @@ signal shell_o_xy_en             : std_logic;                        -- $FFE5
 signal shell_o_xy_data_out       : std_logic_vector(15 downto 0);
 signal shell_o_dxdy_en           : std_logic;                        -- $FFE6
 signal shell_o_dxdy_data_out     : std_logic_vector(15 downto 0);
-signal cfd_addr_en               : std_logic;                        -- $FFE7
+signal sys_dxdy_en               : std_logic;                        -- $FFE7
+signal sys_dxdy_data_out         : std_logic_vector(15 downto 0);
+signal cfd_addr_en               : std_logic;                        -- $FFF0
 signal cfd_addr_we               : std_logic;
 signal cfd_addr_data_out         : std_logic_vector(15 downto 0);
-signal cfd_data_en               : std_logic;                        -- $FFE8
+signal cfd_data_en               : std_logic;                        -- $FFF1
 signal cfd_data_we               : std_logic;
 signal cfd_data_data_out         : std_logic_vector(15 downto 0);
-signal cfm_addr_en               : std_logic;                        -- $FFE9
+signal cfm_addr_en               : std_logic;                        -- $FFF2
 signal cfm_addr_we               : std_logic;
 signal cfm_addr_data_out         : std_logic_vector(15 downto 0);
-signal cfm_data_en               : std_logic;                        -- $FFEA
+signal cfm_data_en               : std_logic;                        -- $FFF3
 signal cfm_data_we               : std_logic;
 signal cfm_data_data_out         : std_logic_vector(15 downto 0);
-signal ramrom_dev_en             : std_logic;                        -- $FFEB
+signal ramrom_dev_en             : std_logic;                        -- $FFF4
 signal ramrom_dev_we             : std_logic;
 signal ramrom_dev_data_out       : std_logic_vector(15 downto 0);
-signal ramrom_4kwin_en           : std_logic;                        -- $FFEC
+signal ramrom_4kwin_en           : std_logic;                        -- $FFF5
 signal ramrom_4kwin_we           : std_logic;
 signal ramrom_4kwin_data_out     : std_logic_vector(15 downto 0);
 
@@ -183,6 +185,7 @@ begin
                   shell_m_dxdy_data_out      or
                   shell_o_xy_data_out        or
                   shell_o_dxdy_data_out      or
+                  sys_dxdy_data_out          or
                   cfd_addr_data_out          or
                   cfd_data_data_out          or
                   cfm_addr_data_out          or
@@ -389,9 +392,10 @@ begin
    -- 0xFFE0: Control and status register
    -- 0xFFE1: OSM x|y coordinates (in chars)
    -- 0xFFE2: OSM dx|dy width|height (in chars)
-   -- 0xFFE3 .. 0xFFE6: read-only registers for OSM presets 
-   -- 0xFFE7 .. 0xFFEA: access 256-bit general purpose control flags via address/data pairs
-   -- 0xFFEB -- 0xFFEC: 4k-segmented access to RAMs, ROMs and similarily behaving devices
+   -- 0xFFE3 .. 0xFFE6: read-only registers for OSM presets
+   -- 0xFFE7: read-only register for hardware screen size in chars (width and height)
+   -- 0xFFF0 .. 0xFFF3: access 256-bit general purpose control flags via address/data pairs
+   -- 0xFFF4 -- 0xFFF5: 4k-segmented access to RAMs, ROMs and similarily behaving devices
    ramrom_en                  <= '1' when cpu_addr(15 downto 12) = x"7" else '0';
    ramrom_we                  <= ramrom_en and cpu_data_dir and cpu_data_valid;
    ramrom_data_out            <= ramrom_data_i when ramrom_en = '1' and ramrom_we = '0' else (others => '0');
@@ -422,27 +426,30 @@ begin
    shell_o_dxdy_en            <= '1' when cpu_addr = x"FFE6" else '0';
    shell_o_dxdy_data_out      <= std_logic_vector(to_unsigned(G_SHELL_O_DX * 256 + G_SHELL_O_DY, 16)) when shell_o_dxdy_en = '1' and cpu_data_dir = '0' else (others => '0');
    
-   cfd_addr_en                <= '1' when cpu_addr = x"FFE7" else '0';
+   sys_dxdy_en                <= '1' when cpu_addr = x"FFE7" else '0';
+   sys_dxdy_data_out          <= std_logic_vector(to_unsigned(CHARS_DX * 256 + CHARS_DY, 16)) when sys_dxdy_en = '1' and cpu_data_dir = '0' else (others => '0');
+   
+   cfd_addr_en                <= '1' when cpu_addr = x"FFF0" else '0';
    cfd_addr_we                <= cfd_addr_en and cpu_data_dir and cpu_data_valid;
    cfd_addr_data_out          <= std_logic_vector(to_unsigned(reg_cfd_addr, 16)) when cfd_addr_en = '1' and cfd_addr_we = '0' else (others => '0');
    
-   cfd_data_en                <= '1' when cpu_addr = x"FFE8" else '0';
+   cfd_data_en                <= '1' when cpu_addr = x"FFF1" else '0';
    cfd_data_we                <= cfd_data_en and cpu_data_dir and cpu_data_valid;
    cfd_data_data_out          <= control_d_o(((reg_cfd_addr + 1) * 16) - 1 downto (reg_cfd_addr * 16)) when cfd_data_en = '1' and cfd_data_we = '0' else (others => '0');  
 
-   cfm_addr_en                <= '1' when cpu_addr = x"FFE9" else '0';
+   cfm_addr_en                <= '1' when cpu_addr = x"FFF2" else '0';
    cfm_addr_we                <= cfm_addr_en and cpu_data_dir and cpu_data_valid;
    cfm_addr_data_out          <= std_logic_vector(to_unsigned(reg_cfm_addr, 16)) when cfm_addr_en = '1' and cfm_addr_we = '0' else (others => '0');
    
-   cfm_data_en                <= '1' when cpu_addr = x"FFEA" else '0';
+   cfm_data_en                <= '1' when cpu_addr = x"FFF3" else '0';
    cfm_data_we                <= cfm_data_en and cpu_data_dir and cpu_data_valid;
    cfm_data_data_out          <= control_m_o(((reg_cfm_addr + 1) * 16) - 1 downto (reg_cfm_addr * 16)) when cfm_data_en = '1' and cfm_data_we = '0' else (others => '0');
    
-   ramrom_dev_en              <= '1' when cpu_addr = x"FFEB" else '0';
+   ramrom_dev_en              <= '1' when cpu_addr = x"FFF4" else '0';
    ramrom_dev_we              <= ramrom_dev_en and cpu_data_dir and cpu_data_valid;
    ramrom_dev_data_out        <= ramrom_dev_o when ramrom_dev_en = '1' and ramrom_dev_we = '0' else (others => '0');
    
-   ramrom_4kwin_en            <= '1' when cpu_addr = x"FFEC" else '0';
+   ramrom_4kwin_en            <= '1' when cpu_addr = x"FFF5" else '0';
    ramrom_4kwin_we            <= ramrom_4kwin_en and cpu_data_dir and cpu_data_valid;
    ramrom_4kwin_data_out      <= std_logic_vector(to_unsigned(reg_ramrom_4kwin, 16)) when ramrom_4kwin_en = '1' and ramrom_4kwin_we = '0' else (others => '0');    
                                        

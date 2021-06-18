@@ -9,40 +9,38 @@
 ; done by sy2002 in 2021 and licensed under GPL v3
 ; ****************************************************************************
 
-#include "screen.asm"
-#include "tools.asm"
-
                 ; keep core in reset state
                 ; activate OSM, configure position and size and clear screen                
-START_SHELL     MOVE    M2M$CSR, R0
+START_SHELL     RSUB    SCR$INIT, 1             ; retrieve VHDL generics
+                MOVE    M2M$CSR, R0             ; keep core in reset state
                 MOVE    M2M$CSR_RESET, @R0
-                RSUB    SCR$OSM_FS_ON, 1
+                RSUB    SCR$OSM_M_ON, 1         ; switch on main OSM
                 RSUB    SCR$CLR, 1
 
-                MOVE    M2M$RAMROM_DEV, R0
-                MOVE    M2M$VRAM_DATA, @R0              
-                MOVE    M2M$RAMROM_DATA, R1
+                ; show welcome screen: draw frame and print text
+                MOVE    SCR$OSM_M_X, R8
+                MOVE    @R8, R8
+                MOVE    SCR$OSM_M_Y, R9
+                MOVE    @R9, R9
+                MOVE    SCR$OSM_M_DX, R10
+                MOVE    @R10, R10
+                MOVE    SCR$OSM_M_DY, R11
+                MOVE    @R11, R11
+                RSUB    SCR$PRINTFRAME, 1
+                MOVE    M2M$RAMROM_DEV, R0      ; Device = config data
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0    ; Selector = Welcome screen
+                MOVE    M2M$CFG_WELCOME, @R0
+                MOVE    M2M$RAMROM_DATA, R8     ; R8 = welcome screen string
+                RSUB    SCR$PRINTSTR, 1
 
-LOOP1_S         MOVE    M2M$CONFIG, @R0
-                MOVE    @R1, R2
-                RBRA    LOOP1_E, Z
-                MOVE    M2M$VRAM_DATA, @R0
-                MOVE    R2, @R1++
-                RBRA    LOOP1_S, 1
-                
-LOOP1_E         SYSCALL(exit, 1)
-
-
-
-                ; TODO DELIT SAMPLE CODE FOR FORMATTING
-TODO_DELT       MOVE    R8, R8                  ; invalidate device handle
-                MOVE    0, @R8
+                SYSCALL(exit, 1)
 
 ; ----------------------------------------------------------------------------
 ; Directory browser, keyboard controller, On-Screen-Menu (OSM) and misc. tools
 ; ----------------------------------------------------------------------------
 
 #include "dirbrowse.asm"
+#include "screen.asm"
+#include "tools.asm"
 ;#include "keyboard.asm"
-;#include "tools.asm"
-

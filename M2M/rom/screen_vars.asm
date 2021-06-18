@@ -10,6 +10,21 @@
 SCR$CUR_X       .BLOCK 1                        ; OSD cursor x coordinate
 SCR$CUR_Y       .BLOCK 1                        ; ditto y
 
-; shortcut-variables (read-only)
-SCR$OSD_DX      .BLOCK 1                        ; width of OSD in chars
-SCR$OSD_DY      .BLOCK 1                        ; height of OSD in chars
+; shortcut-variables (read-only): hardware screen size in chars:
+; used to calculate VRAM positions of characters, clear screen amount, etc. 
+SCR$SYS_DX      .BLOCK 1
+SCR$SYS_DY      .BLOCK 1
+
+; shortcut-variables (read-only): attributes of the main OSM and Help OSM:
+; used to display the main OSM and the Help-Key ingame OSM (aka Options Menu)
+SCR$OSM_M_X     .BLOCK 1
+SCR$OSM_M_Y     .BLOCK 1
+SCR$OSM_M_DX    .BLOCK 1
+SCR$OSM_M_DY    .BLOCK 1
+SCR$OSM_O_X     .BLOCK 1
+SCR$OSM_O_Y     .BLOCK 1
+SCR$OSM_O_DX    .BLOCK 1
+SCR$OSM_O_DY    .BLOCK 1
+
+; Scratch variables
+TEMP_2W         .BLOCK 2
