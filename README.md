@@ -156,13 +156,11 @@ after the fork and after having initialized the submodules (see above):
 
 
 ```
-git remote add upstream git@github.com:sy2002/mister2mega65.git
+git remote add upstream https://github.com/sy2002/MiSTer2MEGA65.git
 git remote -v
-
 ```
 
 More documentation on this topic, [click here](https://docs.github.com/en/github/collaborating-with-pull-requests/working-with-forks/configuring-a-remote-for-a-fork).
-
 
 ### Step #2: Copy/paste the MiSTer core
 
