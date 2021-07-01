@@ -109,6 +109,8 @@ it comes to setting-up a new MiSTer2MEGA65 porting project.
 
 ### Step #1: Clone MiSTer2MEGA65 and initialize it
 
+#### Unfinished first thoughts
+
 MiSTer2MEGA65 contains sub-modules, so make sure that you do not "just" clone
 but also initialize the submodules afterwards:
 
@@ -137,6 +139,30 @@ ls -l ../monitor/monitor.rom
 
 Rename the root folder name `MiSTer2MEGA65` to match the actual name
 of your project.
+
+#### FORK vs. CLONE ?
+
+It might make a lot of sense, if your Core porting project has an
+"upstream connection" to the MiSTer2MEGA65 framework, because then it is much
+easier for you to to update to new MiSTer2MEGA65 versions; particularly given
+that right now everything is still work in process.
+
+In this context, it is currently an open question, if we should CLONE
+MiSTer2MEGA65 for a new porting project or if we should FORK.
+
+In the [Commodore 64 porting project](https://github.com/MJoergen/C64MEGA65)
+we are currently going down the FORK route using the following commands right
+after the fork and after having initialized the submodules (see above):
+
+
+```
+git remote add upstream git@github.com:sy2002/mister2mega65.git
+git remote -v
+
+```
+
+More documentation on this topic, [click here](https://docs.github.com/en/github/collaborating-with-pull-requests/working-with-forks/configuring-a-remote-for-a-fork).
+
 
 ### Step #2: Copy/paste the MiSTer core
 
