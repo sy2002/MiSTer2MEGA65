@@ -44,7 +44,7 @@ package video_modes_pkg is
    -- Taken from section 4.9 in the document CEA-861-D
    constant C_PAL_720_576_50 : video_modes_t := (
       CLK_KHZ     => 27000,      -- 27 MHz
-      CEA_CTA_VIC => 17,         -- CEA/CTA VIC 17=PAL 720x576 @ 60 Hz
+      CEA_CTA_VIC => 17,         -- CEA/CTA VIC 17=PAL 720x576 @ 50 Hz
       ASPECT      => "01",       -- aspect ratio: 01=4:3, 10=16:9: "01" for PAL
       PIXEL_REP   => '0',        -- no pixel repetition
       H_PIXELS    => 720,        -- horizontal display width in pixels
