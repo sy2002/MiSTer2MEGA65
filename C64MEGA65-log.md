@@ -26,10 +26,10 @@ changes. Keeping these changes on a separate branch makes it easier to
 merge in upstream changes from the original repos.
 
 ```
-git clone git@github.com:MJoergen/C64MEGA65.git
+git clone https://github.com/MJoergen/C64MEGA65.git
 cd C64MEGA65
 git submodule update --init --recursive
-git remote add upstream git@github.com:sy2002/MiSTer2MEGA65.git
+git remote add upstream https://github.com/sy2002/MiSTer2MEGA65.git
 git checkout -b m2m
 
 git submodule add git@github.com:MJoergen/C64_MiSTerMEGA65.git
