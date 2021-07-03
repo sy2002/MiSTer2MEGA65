@@ -6,4 +6,7 @@
 ; done by sy2002 in 2021 and licensed under GPL v3
 ; ****************************************************************************
 
-#include "qmon_vars.asm"
+#ifdef RELEASE
+	#include "qmon_vars.asm"
+#endif
+

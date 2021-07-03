@@ -94,8 +94,8 @@ constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
 constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;  
 
 -- Clock speeds
-constant QNICE_CLK_SPEED      : natural := 50_000_000;
 constant CORE_CLK_SPEED       : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
+constant QNICE_CLK_SPEED      : natural := 50_000_000;
 constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 
 -- Rendering constants (in pixels)
@@ -144,9 +144,17 @@ signal pixel_rst              : std_logic;
 -- clk_main (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
 
+-- keyboard handling
+signal main_key_num           : integer range 0 to 79;
+signal main_key_pressed_n     : std_logic;
+signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
+
 ---------------------------------------------------------------------------------------------
 -- clk_qnice
 ---------------------------------------------------------------------------------------------
+
+-- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
+signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
 
 -- On-Screen-Menu (OSM)
 signal qnice_osm_cfg_enable   : std_logic;
@@ -217,6 +225,7 @@ begin
    -- clk_main (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
 
+   -- main.vhd contains the actual MiSTer core
    i_main : entity work.main
       generic map (
          G_CORE_CLK_SPEED     => CORE_CLK_SPEED,
@@ -227,15 +236,37 @@ begin
          
          -- @TODO feel free to add as many generics as your core needs
          -- you might also pass MEGA65 model specifics to your core, if needed (e.g. R2 vs. R3 differences) 
-         G_YOUR_GENERIC1        => false,
-         G_ANOTHER_THING        => 123456
+         G_YOUR_GENERIC1      => false,
+         G_ANOTHER_THING      => 123456
       )
       port map (
-         main_clk               => clk_main,
-         reset_n                => not main_rst,
-         kb_io0                 => kb_io0,
-         kb_io1                 => kb_io1,
-         kb_io2                 => kb_io2
+         clk_main_i           => clk_main,
+         reset_i              => main_rst,
+         
+         -- M2M Keyboard interface
+         kb_key_num_i         => main_key_num,
+         kb_key_pressed_n_i   => main_key_pressed_n         
+      );
+      
+   -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
+   i_m2m_keyb : entity work.m2m_keyb
+      generic map (
+         CLOCK_SPEED          => CORE_CLK_SPEED
+      )
+      port map (
+         clk_main_i           => clk_main,
+             
+         -- interface to the MEGA65 keyboard controller       
+         kio8_o               => kb_io0,
+         kio9_o               => kb_io1,
+         kio10_i              => kb_io2,
+         
+         -- interface to the core
+         key_num_o            => main_key_num,
+         key_pressed_n_o      => main_key_pressed_n,
+               
+         -- interface to QNICE: used by the firmware and the Shell
+         qnice_keys_o         => main_qnice_keys_n          
       );
 
    ---------------------------------------------------------------------------------------------
@@ -283,7 +314,10 @@ begin
          csr_joy2_o              => open,
          osm_xy_o                => qnice_osm_cfg_xy,
          osm_dxdy_o              => qnice_osm_cfg_dxdy,
-      
+         
+         -- Keyboard input for the firmware and Shell (see sysdef.asm)
+         keys_n_i                => qnice_qnice_keys_n,
+                  
          -- 256-bit General purpose control flags
          -- "d" = directly controled by the firmware
          -- "m" = indirectly controled by the menu system
@@ -508,16 +542,16 @@ begin
 --         dest_out(55 downto 48) => main_cart_old_licensee
 --      );
 
---   i_main2qnice: xpm_cdc_array_single
---      generic map (
---         WIDTH => 16
---      )
---      port map (
---         src_clk                => main_clk,
---         src_in(15 downto 0)    => main_qngbc_keyb_matrix,
---         dest_clk               => qnice_clk,
---         dest_out(15 downto 0)  => qnice_qngbc_keyb_matrix
---      );
+   i_main2qnice: xpm_cdc_array_single
+      generic map (
+         WIDTH => 16
+      )
+      port map (
+         src_clk                => clk_main,
+         src_in(15 downto 0)    => main_qnice_keys_n,
+         dest_clk               => clk_qnice,
+         dest_out(15 downto 0)  => qnice_qnice_keys_n
+      );
 
    i_qnice2vga: xpm_cdc_array_single
       generic map (

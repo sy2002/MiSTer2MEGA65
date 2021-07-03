@@ -100,6 +100,31 @@ M2M$DIR_R           .EQU 16     ; right char for displaying a directory
 M2M$OPT_SEL         .EQU 7      ; selection char for options menu
 
 ; ----------------------------------------------------------------------------
+; Keyboard for the framework (independent from the keyboard of the core)
+; ----------------------------------------------------------------------------
+
+; Low active realtime snapshot of the currently pressed keys (read-only)
+; (MMIO "qnice_keys_o" register of m2m_keys.vhd)
+M2M$KEYBOARD        .EQU 0xFFE8
+
+; Typematic delay (DLY) and typematic repeat (SPD)
+; DLY: How long needs the key to be pressed, until the typematic repeat starts
+; SPD: How fast will the pressed key be repeated
+; IMPORTANT: These values are empiric and relative to QNICE V1.61
+M2M$TYPEMATIC_DLY   .EQU     0x8000             ; ~0.5sec in QNICE V1.61
+M2M$TYPEMATIC_SPD   .EQU     0x1000             ; ~12 per sec
+
+; Definition of the bits in M2M$KEYBOARD
+M2M$KEY_UP          .EQU 0x0001
+M2M$KEY_DOWN        .EQU 0x0002
+M2M$KEY_LEFT        .EQU 0x0004
+M2M$KEY_RIGHT       .EQU 0x0008
+M2M$KEY_RETURN      .EQU 0x0010
+M2M$KEY_SPACE       .EQU 0x0020
+M2M$KEY_RUNSTOP     .EQU 0x0040
+M2M$KEY_HELP        .EQU 0x0080
+
+; ----------------------------------------------------------------------------
 ; 256-bit General purpose control flags
 ; ----------------------------------------------------------------------------
 

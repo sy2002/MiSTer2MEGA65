@@ -18,8 +18,9 @@ entity democore is
       G_OUTPUT_DY          : natural    
    );
    port (
-      main_clk             : in  std_logic;
-      reset_n              : in  std_logic
+      clk_main_i           : in  std_logic;
+      reset_i              : in  std_logic;
+      keyboard_n_i         : in  std_logic_vector(2 downto 0)
    );
 end democore;
 

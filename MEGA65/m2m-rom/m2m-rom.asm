@@ -69,5 +69,8 @@ START_FIRMWARE  RSUB    START_SHELL, 1
 
 STACK_SIZE      .EQU    649
 
+#ifdef RELEASE
                 .ORG    0xAFE0                  ; TODO: automate calculation
+#endif
+
 #include "../../M2M/rom/main_vars.asm"

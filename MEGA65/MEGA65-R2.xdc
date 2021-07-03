@@ -20,7 +20,7 @@ create_generated_clock -name pixelclk  [get_pins */clk_gen/i_clk_720p_hdmi/CLKOU
 create_generated_clock -name pixelclk5 [get_pins */clk_gen/i_clk_720p_hdmi/CLKOUT0]
 
 ## Clock divider sdcardclk that creates the 25 MHz used by sd_spi.vhd
-create_generated_clock -name sdcardclk -source [get_pins */clk_gen/i_clk_gb_qnice/CLKOUT1] -divide_by 2 [get_pins MEGA65/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
+create_generated_clock -name sdcardclk -source [get_pins */clk_gen/i_clk_main_qnice/CLKOUT1] -divide_by 2 [get_pins MEGA65/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path

@@ -2,6 +2,7 @@
 -- see AUTHORS details and license
 --
 -- Modified for gbc4mega65 by sy2002 in January 2021
+-- Added to MiSTer2MEGA65 based on the modified gbc4mega65 form by sy2002 in July 2021
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

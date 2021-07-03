@@ -21,13 +21,12 @@ entity main is
       G_ANOTHER_THING         : natural
    );
    port (
-      main_clk               : in  std_logic;
-      reset_n                : in  std_logic;
+      clk_main_i             : in std_logic;
+      reset_i                : in std_logic;
 
-      -- MEGA65 smart keyboard controller
-      kb_io0                 : out std_logic;
-      kb_io1                 : out std_logic;
-      kb_io2                 : in  std_logic
+      -- M2M Keyboard interface
+      kb_key_num_i           : in integer range 0 to 79;    -- cycles through all MEGA65 keys
+      kb_key_pressed_n_i     : in std_logic                 -- low active: debounced feedback: is kb_key_num_i pressed right now?   
 
       -- MEGA65 audio
 --      pwm_l                  : out std_logic;
@@ -50,87 +49,48 @@ end main;
 
 architecture synthesis of main is
 
+-- @TODO: Remove these demo core signals
+signal keyboard_n          : std_logic_vector(2 downto 0);
+
 begin
 
    -- @TODO: Add the actual MiSTer core here
    -- The demo core's purpose is to show a test image and to make sure, that the MiSTer2MEGA65 framework
    -- can be synthesized and run stand-alone without an actual MiSTer core being there, yet
    i_democore : entity work.democore   
-      generic map
-      (
-         G_CORE_CLK_SPEED  => G_CORE_CLK_SPEED,
-         G_OUTPUT_DX       => G_OUTPUT_DX,
-         G_OUTPUT_DY       => G_OUTPUT_DY
+      generic map (
+         G_CORE_CLK_SPEED     => G_CORE_CLK_SPEED,
+         G_OUTPUT_DX          => G_OUTPUT_DX,
+         G_OUTPUT_DY          => G_OUTPUT_DY
       )
-      port map
-      (
-         main_clk          => main_clk,
-         reset_n           => reset_n
+      port map (
+         clk_main_i           => clk_main_i,
+         reset_i              => reset_i,
+         
+         keyboard_n_i         => keyboard_n
       );
 
---   -- MEGA65 keyboard and joystick controller
---   kbd : entity work.keyboard
---      generic map
---      (
---         CLOCK_SPEED             => G_CORE_CLK_SPEED
---      )
---      port map
---      (
---         clk                     => main_clk,
---         kio8                    => kb_io0,
---         kio9                    => kb_io1,
---         kio10                   => kb_io2,
---         joystick                => main_m65_joystick,
---         joy_map                 => main_qngbc_joy_map,
-
---         p54                     => main_joypad_p54,
---         joypad                  => main_joypad_data_i,
---         full_matrix             => main_qngbc_keyb_matrix
---      ); -- kbd : entity work.keyboard
-
-
---   -- debouncer for the RESET button as well as for the joysticks:
---   -- 40ms for the RESET button
---   -- 5ms for any joystick direction
---   -- 1ms for the fire button
---   do_dbnce_reset_n : entity work.debounce
---      generic map(clk_freq => G_CORE_CLK_SPEED, stable_time => 40)
---      port map (clk => main_clk, reset_n => '1', button => RESET_N, result => main_dbnce_reset_n);
---   do_dbnce_joysticks : entity work.debouncer
---      generic map
---      (
---         CLK_FREQ                => G_CORE_CLK_SPEED
---      )
---      port map
---      (
---         clk                     => main_clk,
---         reset_n                 => RESET_N,
-
---         joy_1_up_n              => joy_1_up_n,
---         joy_1_down_n            => joy_1_down_n,
---         joy_1_left_n            => joy_1_left_n,
---         joy_1_right_n           => joy_1_right_n,
---         joy_1_fire_n            => joy_1_fire_n,
-
---         dbnce_joy1_up_n         => main_dbnce_joy1_up_n,
---         dbnce_joy1_down_n       => main_dbnce_joy1_down_n,
---         dbnce_joy1_left_n       => main_dbnce_joy1_left_n,
---         dbnce_joy1_right_n      => main_dbnce_joy1_right_n,
---         dbnce_joy1_fire_n       => main_dbnce_joy1_fire_n,
-
---         joy_2_up_n              => joy_2_up_n,
---         joy_2_down_n            => joy_2_down_n,
---         joy_2_left_n            => joy_2_left_n,
---         joy_2_right_n           => joy_2_right_n,
---         joy_2_fire_n            => joy_2_fire_n,
-
---         dbnce_joy2_up_n         => main_dbnce_joy2_up_n,
---         dbnce_joy2_down_n       => main_dbnce_joy2_down_n,
---         dbnce_joy2_left_n       => main_dbnce_joy2_left_n,
---         dbnce_joy2_right_n      => main_dbnce_joy2_right_n,
---         dbnce_joy2_fire_n       => main_dbnce_joy2_fire_n
---      ); -- do_dbnce_joysticks : entity work.debouncer
-
+   -- @TODO: Keyboard mapping and keyboard behavior
+   -- Each core is treating the keyboard in a different way: Some need low-active "matrices", some
+   -- might need small high-active keyboard memories, etc. This is why the MiSTer2MEGA65 framework
+   -- lets you define literally everything and only provides a minimal abstraction layer to the keyboard.
+   -- You need to adjust keyboard.vhd to your needs
+   i_keyboard : entity work.keyboard
+      port map (
+         clk_main_i           => clk_main_i,
+            
+         -- interface to the MEGA65 keyboard
+         key_num_i            => kb_key_num_i,
+         key_pressed_n_i      => kb_key_pressed_n_i,
+         
+         -- @TODO: Create the kind of keyboard output that your core needs
+         -- "example_n_o" is a low active register and used by the demo core:
+         --    bit 0: Space
+         --    bit 1: Return
+         --    bit 2: Run/Stop
+         example_n_o          => keyboard_n
+      );
+   
 
 end synthesis;
 

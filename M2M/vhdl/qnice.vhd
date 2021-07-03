@@ -57,6 +57,9 @@ port (
    osm_xy_o             : out std_logic_vector(15 downto 0);   -- On-Screen-Menu x|y (in chars): x=hi-byte y=lo-byte 
    osm_dxdy_o           : out std_logic_vector(15 downto 0);   -- On-Screen-Menu dx|dy (in chars): dx=hi-byte dy=lo-byte
    
+   -- Keyboard input for the firmware and Shell (see sysdef.asm)
+   keys_n_i             : in std_logic_vector(15 downto 0);
+   
    -- 256-bit General purpose control flags
    -- "d" = directly controled by the firmware
    -- "m" = indirectly controled by the menu system
@@ -139,6 +142,8 @@ signal shell_o_dxdy_en           : std_logic;                        -- $FFE6
 signal shell_o_dxdy_data_out     : std_logic_vector(15 downto 0);
 signal sys_dxdy_en               : std_logic;                        -- $FFE7
 signal sys_dxdy_data_out         : std_logic_vector(15 downto 0);
+signal keys_en                   : std_logic;                        -- $FFE8
+signal keys_data_out             : std_logic_vector(15 downto 0);
 signal cfd_addr_en               : std_logic;                        -- $FFF0
 signal cfd_addr_we               : std_logic;
 signal cfd_addr_data_out         : std_logic_vector(15 downto 0);
@@ -186,6 +191,7 @@ begin
                   shell_o_xy_data_out        or
                   shell_o_dxdy_data_out      or
                   sys_dxdy_data_out          or
+                  keys_data_out              or                 
                   cfd_addr_data_out          or
                   cfd_data_data_out          or
                   cfm_addr_data_out          or
@@ -428,6 +434,9 @@ begin
    
    sys_dxdy_en                <= '1' when cpu_addr = x"FFE7" else '0';
    sys_dxdy_data_out          <= std_logic_vector(to_unsigned(CHARS_DX * 256 + CHARS_DY, 16)) when sys_dxdy_en = '1' and cpu_data_dir = '0' else (others => '0');
+   
+   keys_en                    <= '1' when cpu_addr = x"FFE8" else '0';
+   keys_data_out              <= keys_n_i when keys_en = '1' and cpu_data_dir = '0' else (others => '0');
    
    cfd_addr_en                <= '1' when cpu_addr = x"FFF0" else '0';
    cfd_addr_we                <= cfd_addr_en and cpu_data_dir and cpu_data_valid;
