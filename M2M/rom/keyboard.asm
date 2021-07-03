@@ -1,10 +1,10 @@
 ; ****************************************************************************
 ; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
-; Keyboard controller
+; Keyboard controller (expects low-active keys in the QNICE register)
 ;
 ; The basic idea is: A key first has to be released until it can be counted
-; as pressed.
+; as pressed again.
 ;
 ; originally made for gbc4mega65 by sy2002 in 2021
 ; adpoted for MiSTer2MEGA65 by sy2002 in 2021 and licensed under GPL v3
@@ -13,9 +13,9 @@
 ; call this before working with this library
 KEYB$INIT       INCRB
                 MOVE    KEYB_PRESSED, R0
-                MOVE    0, @R0
+                MOVE    0xFFFF, @R0             ; low active, i.e. no keys
                 MOVE    KEYB_NEWKEYS, R0
-                MOVE    0, @R0
+                MOVE    0, @R0                  ; high active, i.e. no keys
                 MOVE    KEYB_CDN_DELAY, R0
                 MOVE    0, @R0++
                 MOVE    0, @R0++
@@ -34,10 +34,12 @@ KEYB$SCAN       INCRB
 
                 MOVE    M2M$KEYBOARD, R0        ; R0: keyboard status
                 MOVE    @R0, R0
+                NOT     R0, R0                  ; convert to high-active
+
                 MOVE    KEYB_PRESSED, R1        ; R1 points to PRESSED
                 MOVE    KEYB_NEWKEYS, R2        ; R2 points to NEWKEYS
 
-                ; new keys are keys that have not been pressed since last scan
+                ; keys need to be released first to count as new keys again
                 NOT     @R1, R3
                 AND     R0, R3
                 OR      R3, @R2

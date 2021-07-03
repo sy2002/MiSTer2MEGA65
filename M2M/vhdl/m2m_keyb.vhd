@@ -38,8 +38,8 @@ entity m2m_keyb is
       key_num_o            : out integer range 0 to 79;        -- cycles through all keys with SCAN_FREQUENCY
       key_pressed_n_o      : out std_logic;                    -- low active: debounced feedback: is kb_key_num_o pressed right now?
             
-      -- interface to QNICE: used by the firmware and the Shell
-      qnice_keys_o         : out std_logic_vector(15 downto 0) -- see sysdef.asm for details
+      -- interface to QNICE: used by the firmware and the Shell (see sysdef.asm for details)
+      qnice_keys_n_o       : out std_logic_vector(15 downto 0)
    );
 end m2m_keyb;
 
@@ -49,11 +49,13 @@ signal matrix_col          : std_logic_vector(7 downto 0);
 signal matrix_col_idx      : integer range 0 to 9 := 0;
 signal key_num             : integer range 0 to 79;
 signal key_status_n        : std_logic;
+signal keys_n              : std_logic_vector(15 downto 0) := x"FFFF"; -- low active, "no key pressed"
 
 begin
    -- output the keyboard interface for the core
    key_num_o         <= key_num;
    key_pressed_n_o   <= key_status_n;
+   qnice_keys_n_o    <= keys_n;
    
    m65driver : entity work.mega65kbd_to_matrix
    port map
@@ -114,14 +116,14 @@ begin
    begin
       if rising_edge(clk_main_i) then      
          case key_num is
-            when 73        => qnice_keys_o(0) <= key_status_n;     -- Cursor up
-            when 7         => qnice_keys_o(1) <= key_status_n;     -- Cursor down
-            when 74        => qnice_keys_o(2) <= key_status_n;     -- Cursor left
-            when 2         => qnice_keys_o(3) <= key_status_n;     -- Cursor right
-            when 1         => qnice_keys_o(4) <= key_status_n;     -- Return
-            when 60        => qnice_keys_o(5) <= key_status_n;     -- Space
-            when 63        => qnice_keys_o(6) <= key_status_n;     -- Run/Stop
-            when 67        => qnice_keys_o(7) <= key_status_n;     -- Help  
+            when 73        => keys_n(0) <= key_status_n;     -- Cursor up
+            when 7         => keys_n(1) <= key_status_n;     -- Cursor down
+            when 74        => keys_n(2) <= key_status_n;     -- Cursor left
+            when 2         => keys_n(3) <= key_status_n;     -- Cursor right
+            when 1         => keys_n(4) <= key_status_n;     -- Return
+            when 60        => keys_n(5) <= key_status_n;     -- Space
+            when 63        => keys_n(6) <= key_status_n;     -- Run/Stop
+            when 67        => keys_n(7) <= key_status_n;     -- Help  
             when others    => null;
          end case;
       end if;

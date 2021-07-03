@@ -43,7 +43,12 @@ end keyboard;
 
 architecture beh of keyboard is
 
+-- @TODO remove this demo signal
+signal   keys_n: std_logic_vector(2 downto 0) := "111"; -- low active: no key pressed
+
 begin
+
+   example_n_o <= keys_n;
 
 -- MEGA65 key codes that kb_key_num_i is using while
 -- kb_key_pressed_n_i is signalling (low active) which key is pressed
@@ -134,9 +139,9 @@ begin
    begin
       if rising_edge(clk_main_i) then      
          case key_num_i is
-            when 1         => example_n_o(1) <= key_pressed_n_i;   -- Return
-            when 60        => example_n_o(0) <= key_pressed_n_i;   -- Space
-            when 63        => example_n_o(2) <= key_pressed_n_i;   -- Run/Stop
+            when 1         => keys_n(1) <= key_pressed_n_i;   -- Return
+            when 60        => keys_n(0) <= key_pressed_n_i;   -- Space
+            when 63        => keys_n(2) <= key_pressed_n_i;   -- Run/Stop
             when others    => null;
          end case;
       end if;

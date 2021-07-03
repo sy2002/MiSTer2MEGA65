@@ -266,7 +266,7 @@ begin
          key_pressed_n_o      => main_key_pressed_n,
                
          -- interface to QNICE: used by the firmware and the Shell
-         qnice_keys_o         => main_qnice_keys_n          
+         qnice_keys_n_o       => main_qnice_keys_n          
       );
 
    ---------------------------------------------------------------------------------------------

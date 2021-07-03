@@ -111,8 +111,8 @@ M2M$KEYBOARD        .EQU 0xFFE8
 ; DLY: How long needs the key to be pressed, until the typematic repeat starts
 ; SPD: How fast will the pressed key be repeated
 ; IMPORTANT: These values are empiric and relative to QNICE V1.61
-M2M$TYPEMATIC_DLY   .EQU     0x8000             ; ~0.5sec in QNICE V1.61
-M2M$TYPEMATIC_SPD   .EQU     0x1000             ; ~12 per sec
+M2M$TYPEMATIC_DLY   .EQU 0x8000             ; ~0.5sec in QNICE V1.61
+M2M$TYPEMATIC_SPD   .EQU 0x1000             ; ~12 per sec
 
 ; Definition of the bits in M2M$KEYBOARD
 M2M$KEY_UP          .EQU 0x0001
