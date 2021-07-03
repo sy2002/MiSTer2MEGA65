@@ -97,3 +97,10 @@ This error occurs when declaring local signal within an `always` block.
 Apparently this is not allowed. However, the fix is very easy. Just add a label
 after the `begin` keyword.
 
+### 3.3. `[Synth 8-2671] single value range is not allowed in this mode of verilog`
+This error is because Vivado tries to auto-detect whether a source file a pure
+verilog or SystemVerilog based on the file extension (`.v` versus `.sv`). In
+this case a file was erroneously classified a pure verilog. The fix is to
+locate the file in the `Sources` tab and then in the `Source File Properties`
+tab to change the `Type` from `Verilog` to `SystemVerilog`.
+
