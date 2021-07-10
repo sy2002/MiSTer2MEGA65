@@ -8,6 +8,6 @@
 
 
 #include "dirbrowse_vars.asm"
+#include "keyboard_vars.asm"
+#include "menu_vars.asm"
 #include "screen_vars.asm"
-;#include "keyboard_vars.asm"
-;#include "menu_vars.asm"
