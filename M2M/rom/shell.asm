@@ -43,7 +43,6 @@ START_SPACE     RSUB    KEYB$SCAN, 1
                 CMP     M2M$KEY_SPACE, R8
                 RBRA    START_SPACE, !Z         ; loop until Space was pressed
 
-
                 ; Hide OSM and "un-reset" (aka start) the core
                 RSUB    SCR$OSM_OFF, 1
                 MOVE    M2M$CSR, R0
@@ -64,7 +63,24 @@ MAIN_LOOP       RSUB    CHECK_DEBUG, 1          ; Run/Stop + Help + Cursor Up
                 RSUB    KEYB$SCAN, 1            ; scan for single key presses
                 RSUB    KEYB$GETKEY, 1
 
+                RSUB    HELP_MENU, 1            ; check/manage help menu
+
                 RBRA    MAIN_LOOP, 1
+
+; ----------------------------------------------------------------------------
+; Help menu / Options menu
+; ----------------------------------------------------------------------------
+
+HELP_MENU       INCRB
+                CMP     M2M$KEY_HELP, R8        ; help key pressed?
+                RBRA    _HLP_RET, !Z
+
+                RSUB    SCR$OSM_O_ON, 1         ; activate overlay (visible)
+
+                SYSCALL(exit, 1)
+
+_HLP_RET        DECRB
+                RET                
 
 ; ----------------------------------------------------------------------------
 ; Debug mode: Run/Stop + Help + Cursor Up
@@ -74,7 +90,8 @@ MAIN_LOOP       RSUB    CHECK_DEBUG, 1          ; Run/Stop + Help + Cursor Up
                 ; simultaneously exits the main loop and starts the QNICE
                 ; Monitor which can be used to debug via UART and a
                 ; terminal program
-CHECK_DEBUG     MOVE    M2M$KEY_UP, R0
+CHECK_DEBUG     INCRB
+                MOVE    M2M$KEY_UP, R0
                 OR      M2M$KEY_RUNSTOP, R0
                 OR      M2M$KEY_HELP, R0
                 MOVE    M2M$KEYBOARD, R1        ; read keyboard status
@@ -82,6 +99,7 @@ CHECK_DEBUG     MOVE    M2M$KEY_UP, R0
                 NOT     R2, R2                  ; convert low active to hi
                 AND     R0, R2
                 CMP     R0, R2                  ; key combi pressed?
+                DECRB
                 RBRA    START_MONITOR, Z        ; yes: enter debug mode
                 RET                             ; no: return to main loop
                 
