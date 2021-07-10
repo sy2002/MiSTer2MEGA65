@@ -265,6 +265,29 @@ _PS_POST        INCRB
                 DECRB
                 RET
 
+; ----------------------------------------------------------------------------
+; Print the string using SCR$PRINTSTR
+; Input:  x|y coords in R9|R10
+; Output: None; all registers stay unmodified
+; ----------------------------------------------------------------------------            
+
+SCR$PRINTSTRXY  INCRB
+
+                MOVE    SCR$CUR_X, R0           ; remember original cursor
+                MOVE    @R0, R1
+                MOVE    SCR$CUR_Y, R2
+                MOVE    @R2, R3
+
+                MOVE    R9, @R0                 ; print at actual position
+                MOVE    R10, @R2
+                RSUB    SCR$PRINTSTR, 1
+
+                MOVE    R1, @R0                 ; restore original cursor
+                MOVE    R3, @R2
+
+                DECRB
+                RET
+
 ; ----------------------------------------------------------------------------            
 ; Draws a frame
 ; Input:  R8/R9:   start x/y coordinates

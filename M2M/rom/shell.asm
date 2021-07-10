@@ -75,12 +75,182 @@ HELP_MENU       INCRB
                 CMP     M2M$KEY_HELP, R8        ; help key pressed?
                 RBRA    _HLP_RET, !Z
 
+                ; configure the menu library
+                MOVE    OPT_MENU_DATA, R8
+                MOVE    SCR$OSM_O_X, R9
+                MOVE    @R9, R9
+                MOVE    SCR$OSM_O_Y, R10
+                MOVE    @R10, R10
+                MOVE    SCR$OSM_O_DX, R11
+                MOVE    @R11, R11
+                MOVE    SCR$OSM_O_DY, R12
+                MOVE    @R12, R12
+                RSUB    OPTM_INIT, 1
+                RSUB    OPTM_SHOW, 1
                 RSUB    SCR$OSM_O_ON, 1         ; activate overlay (visible)
 
                 SYSCALL(exit, 1)
 
 _HLP_RET        DECRB
+                RET
+
+OPT_MENU_SIZE   .EQU 18                         ; amount of items
+OPT_MENU_START  .EQU 2                          ; initial default selection
+OPT_MENU_CLPOS  .EQU 17                         ; position of "Close"
+OPT_MENU_MODE   .EQU 1                          ; group # for mode selection
+OPT_MENU_JOY    .EQU 2                          ; group # for joystock mapping
+OPT_MENU_COL    .EQU 3
+
+OPT_MENU_ITEMS  .ASCII_P " Game Boy Mode\n"
+                .ASCII_P "\n"
+                .ASCII_P " Classic\n"
+                .ASCII_P " Color\n"
+                .ASCII_P "\n"
+                .ASCII_P " Joystick Mode\n"
+                .ASCII_P "\n"
+                .ASCII_P " Standard, Fire=A\n"
+                .ASCII_P " Standard, Fire=B\n"
+                .ASCII_P " Up=A, Fire=B\n"
+                .ASCII_P " Up=B, Fire=A\n"
+                .ASCII_P "\n"
+                .ASCII_P " Color Mode\n"
+                .ASCII_P "\n"
+                .ASCII_P " Fully Saturated\n"
+                .ASCII_P " LCD Emulation\n"
+                .ASCII_P "\n"
+                .ASCII_W " Close Menu\n"
+
+OPT_MENU_GROUPS .DW 0, 0
+                .DW OPT_MENU_MODE, OPT_MENU_MODE
+                .DW 0, 0, 0
+                .DW OPT_MENU_JOY, OPT_MENU_JOY, OPT_MENU_JOY, OPT_MENU_JOY
+                .DW 0, 0, 0
+                .DW OPT_MENU_COL, OPT_MENU_COL
+                .DW 0
+                .DW OPTM_CLOSE
+
+OPT_MENU_STDSEL .DW 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0
+OPT_MENU_LINES  .DW 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0
+
+OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, SCR$PRINTSTR, SCR$PRINTSTRXY
+                .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
+                .DW     OPTM_CALLBACK,
+                .DW     M2M$OPT_SEL, 0
+                .DW     OPT_MENU_SIZE, OPT_MENU_ITEMS
+                .DW     OPT_MENU_GROUPS
+                .DW     OPT_MENU_CURSEL ; is in RAM to remember last settings
+                .DW     OPT_MENU_LINES
+
+; Draws a horizontal line/menu separator at the y-pos given in R8, dx in R9
+OPT_PRINTLINE   INCRB
+
+                MOVE    SP, R0                  ; R0: use to restore stack
+                MOVE    R8, R1                  ; R1: y-pos
+                MOVE    OPTM_DX, R2             ; R2: width minus left/right..
+                MOVE    @R2, R2                 ; ..boundary
+                SUB     2, R2                   
+
+                SUB     R2, SP                  ; memory for string
+                SUB     3, SP                   ; 3: l/r boundary + zero term.
+                MOVE    SP, R3
+                MOVE    R3, R4                  ; remember for printing
+
+                MOVE    M2M$NC_VE_LEFT, @R3++                
+_PRINTLN_L      MOVE    M2M$NC_SH, @R3++
+                SUB     1, R2
+                RBRA    _PRINTLN_L, !Z
+                MOVE    M2M$NC_VE_RIGHT, @R3++
+                MOVE    0, @R3
+
+                MOVE    R4, R8
+                MOVE    OPTM_X, R9
+                MOVE    @R9, R9
+                MOVE    R1, R10
+                RSUB    SCR$PRINTSTRXY, 1                
+
+                MOVE    R0, SP
+                DECRB
+                RET
+
+; Selects/unselects menu item in R8 (counting from 0 and counting also
+; non-selectable menu entries such as lines)
+; R9=0: unselect   R9=1: select
+OPTM_SELECT     INCRB
+
+                MOVE    OPTM_X, R0              ; R0: x start coordinate
+                MOVE    @R0, R0
+                ADD     1, R0
+                MOVE    OPTM_Y, R1              ; R1: y start coordinate
+                MOVE    @R1, R1
+                ADD     1, R1
+                ADD     R8, R1
+                MOVE    OPTM_DX, R2             ; R2: width of selection
+                MOVE    @R2, R2
+                SUB     2, R2
+
+                CMP     R9, 0                   ; R3: attribute to apply
+                RBRA    _OPTM_FPS_1, Z
+                MOVE    M2M$SA_COL_STD_INV, R3
+                RBRA    _OPTM_FPS_2, 1
+_OPTM_FPS_1     MOVE    M2M$SA_COL_STD, R3
+
+_OPTM_FPS_2     MOVE    SCR$SYS_DX, R8          ; R10: start address in ..
+                MOVE    @R8, R8
+                MOVE    R1, R9                  ; .. attribute VRAM
+                SYSCALL(mulu, 1)
+                ADD     R0, R10
+                ADD     M2M$RAMROM_DATA, R10
+
+                MOVE    M2M$RAMROM_DEV, R4      ; switch to ATTR data, win 0
+                MOVE    M2M$VRAM_ATTR, @R4
+                MOVE    M2M$RAMROM_4KWIN, R4
+                MOVE    0, @R4
+
+                XOR     R4, R4
+_OPTM_FPS_L     CMP     R2, R4
+                RBRA    _OPTM_FPS_RET, Z
+                MOVE    R3, @R10++
+                ADD     1, R4
+                RBRA    _OPTM_FPS_L, 1
+
+_OPTM_FPS_RET   DECRB
                 RET                
+
+; Waits until one of the four Option Menu keys is pressed
+; and returns the OPTM_KEY_* code in R8
+OPT_MENU_GETKEY INCRB
+_OPTMGK_LOOP    RSUB    KEYB$SCAN, 1            ; wait until key is pressed
+                RSUB    KEYB$GETKEY, 1
+                CMP     0, R8
+                RBRA    _OPTMGK_LOOP, Z
+
+                CMP     M2M$KEY_UP, R8          ; up
+                RBRA    _OPTM_GK_1, !Z
+                MOVE    OPTM_KEY_UP, R8
+                RBRA    _OPTMGK_RET, 1
+
+_OPTM_GK_1      CMP     M2M$KEY_DOWN, R8        ; down
+                RBRA    _OPTM_GK_2, !Z
+                MOVE    OPTM_KEY_DOWN, R8
+                RBRA    _OPTMGK_RET, 1
+
+_OPTM_GK_2      CMP     M2M$KEY_RETURN, R8      ; return (select)
+                RBRA    _OPTM_GK_3, !Z
+                MOVE    OPTM_KEY_SELECT, R8
+                RBRA    _OPTMGK_RET, 1
+
+_OPTM_GK_3      CMP     M2M$KEY_HELP, R8        ; help (close menu)
+                RBRA    _OPTMGK_LOOP, !Z        ; other key: ignore
+                MOVE    OPTM_KEY_CLOSE, R8
+
+_OPTMGK_RET     DECRB
+                RET
+
+; Callback function that is called during the execution of the menu (OPTM_RUN)
+; R8: selected menu group (as defined in OPTM_IR_GROUPS)
+; R9: selected item within menu group
+;     in case of single selected items: 0=not selected, 1=selected
+OPTM_CALLBACK   RET         
 
 ; ----------------------------------------------------------------------------
 ; Debug mode: Run/Stop + Help + Cursor Up
@@ -121,5 +291,6 @@ START_MONITOR   MOVE    DBG_START1, R8          ; print info message via UART
 ; framework libraries
 #include "dirbrowse.asm"
 #include "keyboard.asm"
+#include "menu.asm"
 #include "screen.asm"
 #include "tools.asm"
