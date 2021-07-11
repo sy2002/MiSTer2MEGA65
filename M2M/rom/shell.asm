@@ -11,12 +11,15 @@
 
                 ; keep core in reset state
                 ; activate OSM, configure position and size and clear screen                
-START_SHELL     RSUB    KEYB$INIT, 1            ; init keyboard library
-                RSUB    SCR$INIT, 1             ; retrieve VHDL generics
+START_SHELL     RSUB    SCR$INIT, 1             ; retrieve VHDL generics
                 MOVE    M2M$CSR, R0             ; keep core in reset state
                 MOVE    M2M$CSR_RESET, @R0
                 RSUB    SCR$OSM_M_ON, 1         ; switch on main OSM
                 RSUB    SCR$CLR, 1
+
+                ; init libraries
+                RSUB    KEYB$INIT, 1            ; keyboard library
+                RSUB    HELP_MENU_INIT, 1       ; menu library
 
                 ; show welcome screen: draw frame and print text
                 MOVE    SCR$OSM_M_X, R8
@@ -58,7 +61,7 @@ START_SPACE     RSUB    KEYB$SCAN, 1
                 ; The latter one could also be done via interrupts, but we
                 ; will try to keep it simple in the first iteration and only
                 ; increase complexity by using interrupts if neccessary.
-MAIN_LOOP       RSUB    CHECK_DEBUG, 1          ; Run/Stop + Help + Cursor Up
+MAIN_LOOP       RSUB    CHECK_DEBUG, 1          ; (Run/Stop+Cursor Up) + Help
 
                 RSUB    KEYB$SCAN, 1            ; scan for single key presses
                 RSUB    KEYB$GETKEY, 1
@@ -71,11 +74,40 @@ MAIN_LOOP       RSUB    CHECK_DEBUG, 1          ; Run/Stop + Help + Cursor Up
 ; Help menu / Options menu
 ; ----------------------------------------------------------------------------
 
+                ; Check if Help is pressed and if yes, run the Options menu
 HELP_MENU       INCRB
                 CMP     M2M$KEY_HELP, R8        ; help key pressed?
-                RBRA    _HLP_RET, !Z
+                RBRA    _HLP_RET, !Z                
 
-                ; configure the menu library
+                ; TODO: We might want to pause/unpause the core while
+                ; the Options menu is running
+
+                ; run the menu
+                RSUB    OPTM_SHOW, 1            ; fill VRAM
+                RSUB    SCR$OSM_O_ON, 1         ; make overlay visible
+                MOVE    OPTM_SELECTED, R9       ; use recently selected line
+                MOVE    @R9, R8
+                RSUB    OPTM_RUN, 1             ; run menu
+                RSUB    SCR$OSM_OFF, 1          ; make overlay invisible
+
+                ; Smart handling of last-recently-selected: only remember
+                ; LRS when the menu is closed via pressing the Help key again.
+                ; Otherwise (when using "Close Menu" or something like this),
+                ; restart from the default start position
+                MOVE    OPT_MENU_GROUPS, R10
+                ADD     R8, R10
+                CMP     OPTM_CLOSE, @R10
+                RBRA    _HLP_RESETPOS, Z
+                MOVE    R8, @R9                 ; remember recently sel. line
+                RBRA    _HLP_RET, 1
+_HLP_RESETPOS   MOVE    OPT_MENU_START, @R9     ; TODO: use config.vhd
+
+_HLP_RET        DECRB
+                RET
+
+                ; init/configure the menu library
+HELP_MENU_INIT  RSUB    ENTER, 1
+
                 MOVE    OPT_MENU_DATA, R8
                 MOVE    SCR$OSM_O_X, R9
                 MOVE    @R9, R9
@@ -86,17 +118,22 @@ HELP_MENU       INCRB
                 MOVE    SCR$OSM_O_DY, R12
                 MOVE    @R12, R12
                 RSUB    OPTM_INIT, 1
-                RSUB    OPTM_SHOW, 1
-                RSUB    SCR$OSM_O_ON, 1         ; activate overlay (visible)
+                MOVE    OPTM_SELECTED, R8
+                MOVE    OPT_MENU_START, @R8     ; TODO: use config.vhd
+                MOVE    OPT_MENU_STDSEL, R8     ; default selections/state
+                MOVE    OPT_MENU_CURSEL, R9
+                XOR     R10, R10
+_HLP_ILOOP      MOVE    @R8++, @R9++
+                ADD     1, R10
+                CMP     OPT_MENU_SIZE, R10
+                RBRA    _HLP_ILOOP, !Z
 
-                SYSCALL(exit, 1)
-
-_HLP_RET        DECRB
+                RSUB    LEAVE, 1
                 RET
+
 
 OPT_MENU_SIZE   .EQU 18                         ; amount of items
 OPT_MENU_START  .EQU 2                          ; initial default selection
-OPT_MENU_CLPOS  .EQU 17                         ; position of "Close"
 OPT_MENU_MODE   .EQU 1                          ; group # for mode selection
 OPT_MENU_JOY    .EQU 2                          ; group # for joystock mapping
 OPT_MENU_COL    .EQU 3
@@ -253,13 +290,15 @@ _OPTMGK_RET     DECRB
 OPTM_CALLBACK   RET         
 
 ; ----------------------------------------------------------------------------
-; Debug mode: Run/Stop + Help + Cursor Up
+; Debug mode:
+; Hold "Run/Stop" + "Cursor Up" and then while holding these, press "Help"
 ; ----------------------------------------------------------------------------
 
-                ; Debug mode: Pressing Run/Stop + Help + Cursor Up
-                ; simultaneously exits the main loop and starts the QNICE
+                ; Debug mode: Exits the main loop and starts the QNICE
                 ; Monitor which can be used to debug via UART and a
-                ; terminal program
+                ; terminal program. You can return to the Shell by using
+                ; the Monitor C/R command while entering the start address
+                ; that is shown in the terminal (using the "puthex" below).
 CHECK_DEBUG     INCRB
                 MOVE    M2M$KEY_UP, R0
                 OR      M2M$KEY_RUNSTOP, R0

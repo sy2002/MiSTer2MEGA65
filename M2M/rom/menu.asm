@@ -183,7 +183,7 @@ _OPTM_SHOW_RET  RSUB    LEAVE, 1
 ;   R8: Selected cursor position
 ;   plus: Will callback to OPTM_FP_CLLBCK (see above) on each press
 ;         of the selection key
-OPTM_RUN        INCRB
+OPTM_RUN        RSUB    ENTER, 1
 
                 MOVE    OPTM_DATA, R0           ; R0: size of data structure
                 MOVE    @R0, R0
@@ -348,7 +348,9 @@ _OPTM_RUN_14    MOVE    R6, R8                  ; R8: return selected group
                 RBRA    _OPTM_RUN_SEL, !Z       ; no: continue menu loop
                 MOVE    R2, R8                  ; yes: return selected item
 
-_OPTM_RUN_RET   DECRB
+_OPTM_RUN_RET   MOVE    R8, @--SP               ; carry R8 over the LEAVE bump
+                RSUB    LEAVE, 1
+                MOVE    @SP++, R8
                 RET
 
 _OPTM_RUN_SPCE  .ASCII_W " "
