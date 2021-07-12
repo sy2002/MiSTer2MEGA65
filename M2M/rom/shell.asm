@@ -10,19 +10,17 @@
 ; ****************************************************************************
 
                 ; keep core in reset state
-                ; activate OSM, configure position and size and clear screen                
-START_SHELL     RSUB    SCR$INIT, 1             ; retrieve VHDL generics
-                MOVE    M2M$CSR, R0             ; keep core in reset state
-                MOVE    M2M$CSR_RESET, @R0
-                RSUB    SCR$OSM_M_ON, 1         ; switch on main OSM
-                RSUB    SCR$CLR, 1
+START_SHELL     MOVE    M2M$CSR, R0             ; keep core in reset state ..
+                MOVE    M2M$CSR_RESET, @R0      ; .. and clear all other flags
 
-                ; init libraries
+                ; initialize libraries
+                RSUB    SCR$INIT, 1             ; retrieve VHDL generics
                 RSUB    KEYB$INIT, 1            ; keyboard library
                 RSUB    HELP_MENU_INIT, 1       ; menu library
 
                 ; show welcome screen: draw frame and print text
-                MOVE    SCR$OSM_M_X, R8
+                RSUB    SCR$CLR, 1              ; clear screen                                
+                MOVE    SCR$OSM_M_X, R8         ; retrieve frame coordinates
                 MOVE    @R8, R8
                 MOVE    SCR$OSM_M_Y, R9
                 MOVE    @R9, R9
@@ -30,13 +28,16 @@ START_SHELL     RSUB    SCR$INIT, 1             ; retrieve VHDL generics
                 MOVE    @R10, R10
                 MOVE    SCR$OSM_M_DY, R11
                 MOVE    @R11, R11
-                RSUB    SCR$PRINTFRAME, 1
+                RSUB    SCR$PRINTFRAME, 1       ; draw frame
                 MOVE    M2M$RAMROM_DEV, R0      ; Device = config data
                 MOVE    M2M$CONFIG, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0    ; Selector = Welcome screen
                 MOVE    M2M$CFG_WELCOME, @R0
                 MOVE    M2M$RAMROM_DATA, R8     ; R8 = welcome screen string
                 RSUB    SCR$PRINTSTR, 1
+
+                ; switch on main OSM
+                RSUB    SCR$OSM_M_ON, 1
 
                 ; Wait for "Space to continue"
                 ; TODO: The whole startup behavior of the Shell needs to be
@@ -47,6 +48,7 @@ START_SPACE     RSUB    KEYB$SCAN, 1
                 RBRA    START_SPACE, !Z         ; loop until Space was pressed
 
                 ; Hide OSM and "un-reset" (aka start) the core
+                ; SCR$OSM_OFF also connects keyboard and joysticks to the core
                 RSUB    SCR$OSM_OFF, 1
                 MOVE    M2M$CSR, R0
                 AND     M2M$CSR_UN_RESET, @R0
@@ -321,7 +323,7 @@ START_MONITOR   MOVE    DBG_START1, R8          ; print info message via UART
                 SYSCALL(exit, 1)                ; small/irrelevant stack leak
 
 ; ----------------------------------------------------------------------------
-; Directory browser, keyboard controller, On-Screen-Menu (OSM) and misc. tools
+; Strings and Libraries
 ; ----------------------------------------------------------------------------
 
 ; hardcoded Shell strings
