@@ -84,6 +84,58 @@ HELP_MENU       INCRB
                 ; TODO: We might want to pause/unpause the core while
                 ; the Options menu is running
 
+                ; Copy menu items from config.vhd to heap
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0    ; R0: config selector
+                MOVE    M2M$CFG_OPT_MENU, @R0   ; select menu items
+                MOVE    M2M$RAMROM_DATA, R8     ; copy men. items to heap
+                MOVE    HEAP, R9
+                ADD     OPTM_STRUCTSIZE, R9
+                MOVE    R9, R1                  ; R1: points to item string
+                RSUB    STRCPY, 1
+
+                ; Count menu size by counting CR/LFs and literal "\n"s
+                MOVE    R9, R2                  ; R2: string scan variable
+                XOR     R3, R3                  ; R3: menu size counter
+_HLP_1          MOVE    @R2++, R4               ; R4: current char
+                RBRA    _HLP_4, Z               ; zero terminator encountered
+                CMP     0x000D, R4              ; is it a CR?
+                RBRA    _HLP_2, Z               ; yes: process
+                CMP     0x005C, R4              ; is it a backslash?
+                RBRA    _HLP_2, Z               ; yes: process
+                RBRA    _HLP_1, 1               ; no: next char
+_HLP_2          MOVE    @R2++, R4               ; next char
+                RBRA    _HLP_4, Z               ; zero terminator encountered
+                CMP     0x000A, R4              ; is it a LF?
+                RBRA    _HLP_3, Z               ; yes: process
+                CMP     'n', R4                 ; is it a n after a \?
+                RBRA    _HLP_3, Z               ; yes: process
+                RBRA    _HLP_1, 1               ; no: next char
+_HLP_3          ADD     1, R3                   ; R3: menu item counter
+                RBRA    _HLP_1, 1               ; next char
+
+                ; Copy menu data structure from ROM to RAM (heap) and modify
+                ; it, so that it points to the data from config.vhd
+_HLP_4          MOVE    OPT_MENU_DATA, R8
+                MOVE    HEAP, R9
+                MOVE    OPTM_STRUCTSIZE, R10
+                SYSCALL(memcpy, 1)
+
+                ; Set menu size (using R3) and set items string (HEAP)
+                MOVE    HEAP, R8
+                ADD     OPTM_IR_SIZE, R8
+                MOVE    R3, @R8                 ; R3: menu item counter
+                MOVE    HEAP, R8
+                ADD     OPTM_IR_ITEMS, R8
+                MOVE    R1, @R8                 ; R1: item string
+
+                ; TODO
+                ; R0 can be used to switch the config selector
+                ; R2 contains the first free word on the heap behind the
+                ; menu item string: remove the copy routine from the INIT
+                ; and make it here, as we know the menu item amount in R3
+
                 ; run the menu
                 RSUB    OPTM_SHOW, 1            ; fill VRAM
                 RSUB    SCR$OSM_O_ON, 1         ; make overlay visible
@@ -110,7 +162,7 @@ _HLP_RET        DECRB
                 ; init/configure the menu library
 HELP_MENU_INIT  RSUB    ENTER, 1
 
-                MOVE    OPT_MENU_DATA, R8
+                MOVE    HEAP, R8
                 MOVE    SCR$OSM_O_X, R9
                 MOVE    @R9, R9
                 MOVE    SCR$OSM_O_Y, R10
@@ -125,39 +177,19 @@ HELP_MENU_INIT  RSUB    ENTER, 1
                 MOVE    OPT_MENU_STDSEL, R8     ; default selections/state
                 MOVE    OPT_MENU_CURSEL, R9
                 XOR     R10, R10
+                MOVE    18, R11
 _HLP_ILOOP      MOVE    @R8++, @R9++
                 ADD     1, R10
-                CMP     OPT_MENU_SIZE, R10
+                CMP     R11, R10
                 RBRA    _HLP_ILOOP, !Z
 
                 RSUB    LEAVE, 1
                 RET
 
-
-OPT_MENU_SIZE   .EQU 18                         ; amount of items
 OPT_MENU_START  .EQU 2                          ; initial default selection
 OPT_MENU_MODE   .EQU 1                          ; group # for mode selection
 OPT_MENU_JOY    .EQU 2                          ; group # for joystock mapping
 OPT_MENU_COL    .EQU 3
-
-OPT_MENU_ITEMS  .ASCII_P " Game Boy Mode\n"
-                .ASCII_P "\n"
-                .ASCII_P " Classic\n"
-                .ASCII_P " Color\n"
-                .ASCII_P "\n"
-                .ASCII_P " Joystick Mode\n"
-                .ASCII_P "\n"
-                .ASCII_P " Standard, Fire=A\n"
-                .ASCII_P " Standard, Fire=B\n"
-                .ASCII_P " Up=A, Fire=B\n"
-                .ASCII_P " Up=B, Fire=A\n"
-                .ASCII_P "\n"
-                .ASCII_P " Color Mode\n"
-                .ASCII_P "\n"
-                .ASCII_P " Fully Saturated\n"
-                .ASCII_P " LCD Emulation\n"
-                .ASCII_P "\n"
-                .ASCII_W " Close Menu\n"
 
 OPT_MENU_GROUPS .DW 0, 0
                 .DW OPT_MENU_MODE, OPT_MENU_MODE
@@ -171,12 +203,15 @@ OPT_MENU_GROUPS .DW 0, 0
 OPT_MENU_STDSEL .DW 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0
 OPT_MENU_LINES  .DW 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0
 
+; Menu initialization record (needed by OPTM_INIT)
+; Will be copied to the HEAP, together with the configuration data from
+; config.vhd and then modified to point to the right addresses on the heap
 OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, SCR$PRINTSTR, SCR$PRINTSTRXY
                 .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
                 .DW     OPTM_CALLBACK,
                 .DW     M2M$OPT_SEL, 0
-                .DW     OPT_MENU_SIZE, OPT_MENU_ITEMS
-                .DW     OPT_MENU_GROUPS
+                .DW     0, 0,
+                .DW     OPT_MENU_GROUPS,
                 .DW     OPT_MENU_CURSEL ; is in RAM to remember last settings
                 .DW     OPT_MENU_LINES
 

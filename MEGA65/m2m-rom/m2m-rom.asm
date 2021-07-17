@@ -24,11 +24,14 @@
 ; Firmware: M2M system
 ; ----------------------------------------------------------------------------
 
+; main.asm is the mandatory, so always include it
+; It jumps to START_FIRMWARE (see below) after the QNICE "operating system"
+; called "Monitor" has been included and initialized
 #include "../../M2M/rom/main.asm"
 
 ; Only include the Shell, if you want to use the pre-build core automation
 ; and user experience. If you build your own, then remove this include and
-; also remove the include "shell_vars.asm" in the variables section.
+; also remove the include "shell_vars.asm" in the variables section below.
 #include "../../M2M/rom/shell.asm"
 
 ; ----------------------------------------------------------------------------
@@ -37,11 +40,10 @@
 
                 ; Run the shell: This is where you could put your own system
                 ; instead of the shell
-START_FIRMWARE  RSUB    START_SHELL, 1
-                HALT
+START_FIRMWARE  RBRA    START_SHELL, 1
 
 ; ----------------------------------------------------------------------------
-; Variables and stack: need to be located in RAM
+; Variables: Need to be located in RAM
 ; ----------------------------------------------------------------------------
 
 #ifdef RELEASE
@@ -55,6 +57,30 @@ START_FIRMWARE  RSUB    START_SHELL, 1
 ; M2M shell variables (only include, if you included "shell.asm" above)
 #include "../../M2M/rom/shell_vars.asm"
 
+; ----------------------------------------------------------------------------
+; Heap and Stack: Need to be located in RAM after the variables
+; ----------------------------------------------------------------------------
+
+; TODO TODO TODO COMPLETELY REDO THIS AS THIS IS COPY/PASTE FROM gbc4mega65
+
+; in DEVELOPMENT mode: 6k of heap, so that we are not colliding with
+; MEM_CARTRIDGE_WIN at 0xB000
+#ifndef RELEASE
+
+; heap for storing the sorted structure of the current directory entries
+; this needs to be the last variable before the monitor variables as it is
+; only defined as "BLOCK 1" to avoid a large amount of null-values in
+; the ROM file
+HEAP_SIZE       .EQU 6144
+HEAP            .BLOCK 1
+
+; in RELEASE mode: 11k of heap which leads to a better user experience when
+; it comes to folders with a lot of files
+#else
+
+HEAP_SIZE       .EQU 11264
+HEAP            .BLOCK 1
+
 ; TODO TODO TODO
 ; THIS IS STILL THE gbc4MEGA65 comment: Completely redo
 ; 
@@ -67,10 +93,9 @@ START_FIRMWARE  RSUB    START_SHELL, 1
 ; is currently 0x8157 and subtract the result from 0xAFE0. This yields
 ; currently a stack size of 649 words, which is sufficient for this program.
 
-STACK_SIZE      .EQU    649
-
-#ifdef RELEASE
                 .ORG    0xAFE0                  ; TODO: automate calculation
 #endif
+
+STACK_SIZE      .EQU    649
 
 #include "../../M2M/rom/main_vars.asm"

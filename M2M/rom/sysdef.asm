@@ -161,3 +161,6 @@ M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
 ; ----------------------------------------------------------------------------
 
 M2M$CFG_WELCOME     .EQU 0x0000     ; Welcome screen
+M2M$CFG_DIR_START   .EQU 0x0100     ; Start folder for file browser
+M2M$CFG_ROMS        .EQU 0x0200     ; Mandatory and optional ROMs
+M2M$CFG_OPT_MENU    .EQU 0x0300     ; "Help" menu / Options menu

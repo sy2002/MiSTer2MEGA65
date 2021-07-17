@@ -4,7 +4,7 @@
 ; Main include for m2m-rom.asm
 ;
 ; As the main include is intended to be included in each and every M2M
-; project,  it does not contain any part of the Shell yet to leave it up to
+; project, it does not contain any part of the Shell yet to leave it up to
 ; the user of the M2M framework to decide. If the Shell is not used, then the
 ; respective overhead is being avoided.
 ;

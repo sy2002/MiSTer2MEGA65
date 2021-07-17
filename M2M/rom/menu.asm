@@ -84,6 +84,9 @@ OPTM_IR_STDSEL  .EQU 13
 ; array of 0s and 1s to define horizontal separator lines
 OPTM_IR_LINES   .EQU 14
 
+; size of initialization record in words
+OPTM_STRUCTSIZE .EQU 15
+
 ; ----------------------------------------------------------------------------
 ; Options Menu functions
 ; ----------------------------------------------------------------------------

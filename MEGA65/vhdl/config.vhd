@@ -114,7 +114,33 @@ constant SEL_ROM_2_MAGIC  : std_logic_vector(15 downto 0) := x"0206";
 constant SEL_ROM_2_DEVICE : std_logic_vector(15 downto 0) := x"0207";
 constant ROM_2_FLAG       : std_logic_vector(15 downto 0) := x"000" & "0000"; -- optional, do not hide, no magic, no more roms
 constant ROM_2_FILE       : string := "/m2m/test_opt.rom";
-   
+
+--------------------------------------------------------------------------------------------------------------------
+-- "Help" menu / Options menu  (Selectors 0x0300 .. 0x03FF) 
+--------------------------------------------------------------------------------------------------------------------
+
+constant SEL_OPTM_ITEMS   : std_logic_vector(15 downto 0) := x"0300";
+constant OPTM_ITEMS       : string :=
+
+   " Demo Headline A\n" &
+   "\n" & 
+   " Item A.1\n" &
+   " Item A.2\n" &
+   "\n" &
+   " Headline B\n" &
+   "\n" &
+   " Item B.1\n" &
+   " Item B.2\n" &
+   " Item B.3\n" &
+   " Item B.4\n" &
+   "\n" &
+   " Headline C\n" &
+   "\n" &
+   " Item C.1\n" &
+   " Item C.2\n" &
+   "\n" &
+   " Close Menu\n";
+
 --------------------------------------------------------------------------------------------------------------------
 -- Address Decoding 
 --------------------------------------------------------------------------------------------------------------------
@@ -141,6 +167,7 @@ begin
    case address_i(27 downto 12) is   
       when SEL_WELCOME     => data_o <= str2data(SCR_WELCOME);
       when SEL_DIR_START   => data_o <= str2data(DIR_START);
+      when SEL_OPTM_ITEMS  => data_o <= str2data(OPTM_ITEMS);
       
       -- BIOS / ROM section
       -- @TODO: Add the desired amount of SEL_ROM_x_FLAG and SEL_ROM_x_FILE constants here

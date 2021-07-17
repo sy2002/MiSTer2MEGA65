@@ -14,4 +14,4 @@
 
 #include "menu_vars.asm"
 OPTM_SELECTED   .BLOCK 1                        ; last options menu selection
-OPT_MENU_CURSEL .BLOCK OPT_MENU_SIZE            ; current options menu state
+OPT_MENU_CURSEL .BLOCK 18			            ; current options menu state
