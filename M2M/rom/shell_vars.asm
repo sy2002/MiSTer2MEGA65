@@ -11,7 +11,5 @@
 #include "keyboard_vars.asm"
 #include "screen_vars.asm"
 
-
 #include "menu_vars.asm"
 OPTM_SELECTED   .BLOCK 1                        ; last options menu selection
-OPT_MENU_CURSEL .BLOCK 18			            ; current options menu state

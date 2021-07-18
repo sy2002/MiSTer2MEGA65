@@ -163,4 +163,9 @@ M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
 M2M$CFG_WELCOME     .EQU 0x0000     ; Welcome screen
 M2M$CFG_DIR_START   .EQU 0x0100     ; Start folder for file browser
 M2M$CFG_ROMS        .EQU 0x0200     ; Mandatory and optional ROMs
-M2M$CFG_OPT_MENU    .EQU 0x0300     ; "Help" menu / Options menu
+
+M2M$CFG_OPTM_ITEMS  .EQU 0x0300     ; "Help" menu / Options menu items
+M2M$CFG_OPTM_GROUPS .EQU 0x0301     ; Menu groups
+M2M$CFG_OPTM_STDSEL .EQU 0x0302     ; Menu items that are selected by default
+M2M$CFG_OPTM_LINES  .EQU 0x0303     ; Separator lines
+M2M$CFG_OPTM_START  .EQU 0x0304     ; Position of very first cursor pos

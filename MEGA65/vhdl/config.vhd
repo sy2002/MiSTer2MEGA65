@@ -75,7 +75,6 @@ constant SCR_WELCOME : string :=
 --------------------------------------------------------------------------------------------------------------------
 
 constant SEL_DIR_START : std_logic_vector(15 downto 0) := x"0100";
-
 constant DIR_START     : string := "/m2m";
 
 --------------------------------------------------------------------------------------------------------------------
@@ -116,11 +115,27 @@ constant ROM_2_FLAG       : std_logic_vector(15 downto 0) := x"000" & "0000"; --
 constant ROM_2_FILE       : string := "/m2m/test_opt.rom";
 
 --------------------------------------------------------------------------------------------------------------------
--- "Help" menu / Options menu  (Selectors 0x0300 .. 0x03FF) 
+-- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0304) 
 --------------------------------------------------------------------------------------------------------------------
 
-constant SEL_OPTM_ITEMS   : std_logic_vector(15 downto 0) := x"0300";
-constant OPTM_ITEMS       : string :=
+constant SEL_OPTM_ITEMS    : std_logic_vector(15 downto 0) := x"0300";
+constant SEL_OPTM_GROUPS   : std_logic_vector(15 downto 0) := x"0301";
+constant SEL_OPTM_STDSEL   : std_logic_vector(15 downto 0) := x"0302";
+constant SEL_OPTM_LINES    : std_logic_vector(15 downto 0) := x"0303";
+constant SEL_OPTM_START    : std_logic_vector(15 downto 0) := x"0304";
+
+-- Configuration constants for OPTM_GROUPS (do not change their value, shell.asm and menu.asm expect them to be like this)
+constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
+constant OPTM_G_CLOSE      : integer := 16#00FF#;         -- menu items that closes menu
+constant OPTM_G_STDSEL     : integer := 16#0100#;         -- item within a group that is selected by default
+constant OPTM_G_LINE       : integer := 16#0200#;         -- draw a line at this position
+constant OPTM_G_START      : integer := 16#0400#;         -- selector / cursor position after startup (only use once!)
+constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
+
+-- Size of menu and menu items
+-- End each line with a \n and make sure empty lines / separator lines are only consisting of a "\n"
+constant OPTM_SIZE         : integer := 18;  -- amount of items including empty lines 
+constant OPTM_ITEMS        : string :=
 
    " Demo Headline A\n" &
    "\n" & 
@@ -140,6 +155,36 @@ constant OPTM_ITEMS       : string :=
    " Item C.2\n" &
    "\n" &
    " Close Menu\n";
+        
+-- define your own constants here and choose meaningful names
+-- make sure that the range of the values is between 1 and 254 (0 means "no menu item", such as text and line and 255 means "Close Menu")
+constant OPTM_G_A          : integer := 1;
+constant OPTM_G_B          : integer := 2;
+constant OPTM_G_C          : integer := 3;
+
+-- define your menu groups: which menu items are belonging together to form a group?
+-- where are separator lines? which items should be selected by default?
+-- make sure that you have exactly the same amount of entries here than in OPTM_ITEMS and defined by OPTM_SIZE
+type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 65535;
+constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                              -- Demo Headline
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_A + OPTM_G_START,                  -- Item A.1, cursor start position
+                                             OPTM_G_A + OPTM_G_STDSEL,                 -- Item A.2, selected by default
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Headine B
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_B + OPTM_G_STDSEL,                 -- Item B.1, selected by default
+                                             OPTM_G_B,                                 -- Item B.2
+                                             OPTM_G_B,                                 -- Item B.3
+                                             OPTM_G_B,                                 -- Item B.4
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Headline C
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_C + OPTM_G_STDSEL,                 -- Item C.1, selected by default
+                                             OPTM_G_C,                                 -- Item C.2
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_CLOSE                              -- Close Menu
+                                           ); 
 
 --------------------------------------------------------------------------------------------------------------------
 -- Address Decoding 
@@ -148,6 +193,7 @@ constant OPTM_ITEMS       : string :=
 begin
 
 addr_decode : process(all)
+   variable index : integer;
    
    -- return ASCII value of given string at the position defined by address_i(11 downto 0)
    function str2data(str : string) return std_logic_vector is
@@ -160,15 +206,20 @@ addr_decode : process(all)
          return (others => '0'); -- zero terminated strings
       end if;
    end;
-   
+     
 begin
    data_o <= x"EEEE";
+   index := to_integer(unsigned(address_i(11 downto 0)));
    
    case address_i(27 downto 12) is   
       when SEL_WELCOME     => data_o <= str2data(SCR_WELCOME);
       when SEL_DIR_START   => data_o <= str2data(DIR_START);
       when SEL_OPTM_ITEMS  => data_o <= str2data(OPTM_ITEMS);
-      
+      when SEL_OPTM_GROUPS => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_GROUPS(index), 16)(7 downto 0));
+      when SEL_OPTM_STDSEL => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(8));
+      when SEL_OPTM_LINES  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(9));
+      when SEL_OPTM_START  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(10));
+             
       -- BIOS / ROM section
       -- @TODO: Add the desired amount of SEL_ROM_x_FLAG and SEL_ROM_x_FILE constants here
       when SEL_ROM_1_FLAG  => data_o <= ROM_1_FLAG;

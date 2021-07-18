@@ -84,11 +84,18 @@ HELP_MENU       INCRB
                 ; TODO: We might want to pause/unpause the core while
                 ; the Options menu is running
 
+                ; TODO: replace OPT_MENU_START
+
+                ; TODO: Instead of using the data from config.vhd to do the
+                ; initial standard selections, use persistent data from
+                ; M2M$CFM_DATA. And make sure that M2M$CFM_DATA is initialized
+                ; at the very beginning using HELP_MENU_INIT
+
                 ; Copy menu items from config.vhd to heap
                 MOVE    M2M$RAMROM_DEV, R0
                 MOVE    M2M$CONFIG, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0    ; R0: config selector
-                MOVE    M2M$CFG_OPT_MENU, @R0   ; select menu items
+                MOVE    M2M$CFG_OPTM_ITEMS, @R0 ; select menu items
                 MOVE    M2M$RAMROM_DATA, R8     ; copy men. items to heap
                 MOVE    HEAP, R9
                 ADD     OPTM_STRUCTSIZE, R9
@@ -96,6 +103,8 @@ HELP_MENU       INCRB
                 RSUB    STRCPY, 1
 
                 ; Count menu size by counting CR/LFs and literal "\n"s
+                ; All lines do count. Also empty lines.
+                ; R3 will contain the menu size
                 MOVE    R9, R2                  ; R2: string scan variable
                 XOR     R3, R3                  ; R3: menu size counter
 _HLP_1          MOVE    @R2++, R4               ; R4: current char
@@ -115,26 +124,59 @@ _HLP_2          MOVE    @R2++, R4               ; next char
 _HLP_3          ADD     1, R3                   ; R3: menu item counter
                 RBRA    _HLP_1, 1               ; next char
 
-                ; Copy menu data structure from ROM to RAM (heap) and modify
-                ; it, so that it points to the data from config.vhd
+                ; Copy menu data structure from ROM to RAM (heap)
 _HLP_4          MOVE    OPT_MENU_DATA, R8
                 MOVE    HEAP, R9
                 MOVE    OPTM_STRUCTSIZE, R10
                 SYSCALL(memcpy, 1)
 
-                ; Set menu size (using R3) and set items string (HEAP)
-                MOVE    HEAP, R8
+                ; Modify the menu data structure, so that it points to the 
+                ; data from config.vhd
+                MOVE    HEAP, R8                ; Set menu size
                 ADD     OPTM_IR_SIZE, R8
                 MOVE    R3, @R8                 ; R3: menu item counter
-                MOVE    HEAP, R8
+                MOVE    HEAP, R8                ; Set menu item string
                 ADD     OPTM_IR_ITEMS, R8
                 MOVE    R1, @R8                 ; R1: item string
 
-                ; TODO
-                ; R0 can be used to switch the config selector
-                ; R2 contains the first free word on the heap behind the
-                ; menu item string: remove the copy routine from the INIT
-                ; and make it here, as we know the menu item amount in R3
+                ; Copy the menu groups to the heap and modify the menu data
+                ; structure accordingly.
+                ; R2 contains the first free word on the heap behind the item
+                ; string, so we will copy to that point and then increase
+                ; R2 by R3 (menu item counter)
+                ; R0 is used to switch the config selector
+                MOVE    M2M$CFG_OPTM_GROUPS, @R0
+                MOVE    M2M$RAMROM_DATA, R8
+                MOVE    R2, R9                  ; R2: first free word
+                ADD     R3, R2                  ; R2: next free word
+                MOVE    R3, R10                 ; R3: amount of menu items
+                SYSCALL(memcpy, 1)
+                MOVE    HEAP, R8                ; store pointer to record
+                ADD     OPTM_IR_GROUPS, R8
+                MOVE    R9, @R8
+                MOVE    R9, R7                  ; R7: pointer to menu groups
+
+                ; Copy the standard selectors (which menu items are selected
+                ; by default) and modify the menu data structure
+                MOVE    M2M$CFG_OPTM_STDSEL, @R0
+                MOVE    M2M$RAMROM_DATA, R8
+                MOVE    R2, R9
+                ADD     R3, R2
+                MOVE    R3, R10
+                SYSCALL(memcpy, 1)
+                MOVE    HEAP, R8
+                ADD     OPTM_IR_STDSEL, R8
+                MOVE    R9, @R8
+
+                ; Copy positions of separator lines & modify men. dta. struct.
+                MOVE    M2M$CFG_OPTM_LINES, @R0
+                MOVE    M2M$RAMROM_DATA, R8
+                MOVE    R2, R9
+                MOVE    R3, R10
+                SYSCALL(memcpy, 1)
+                MOVE    HEAP, R8
+                ADD     OPTM_IR_LINES, R8
+                MOVE    R9, @R8
 
                 ; run the menu
                 RSUB    OPTM_SHOW, 1            ; fill VRAM
@@ -148,7 +190,7 @@ _HLP_4          MOVE    OPT_MENU_DATA, R8
                 ; LRS when the menu is closed via pressing the Help key again.
                 ; Otherwise (when using "Close Menu" or something like this),
                 ; restart from the default start position
-                MOVE    OPT_MENU_GROUPS, R10
+                MOVE    R7, R10
                 ADD     R8, R10
                 CMP     OPTM_CLOSE, @R10
                 RBRA    _HLP_RESETPOS, Z
@@ -172,36 +214,15 @@ HELP_MENU_INIT  RSUB    ENTER, 1
                 MOVE    SCR$OSM_O_DY, R12
                 MOVE    @R12, R12
                 RSUB    OPTM_INIT, 1
+
+                ; extract the initially selected item
                 MOVE    OPTM_SELECTED, R8
                 MOVE    OPT_MENU_START, @R8     ; TODO: use config.vhd
-                MOVE    OPT_MENU_STDSEL, R8     ; default selections/state
-                MOVE    OPT_MENU_CURSEL, R9
-                XOR     R10, R10
-                MOVE    18, R11
-_HLP_ILOOP      MOVE    @R8++, @R9++
-                ADD     1, R10
-                CMP     R11, R10
-                RBRA    _HLP_ILOOP, !Z
 
                 RSUB    LEAVE, 1
                 RET
 
 OPT_MENU_START  .EQU 2                          ; initial default selection
-OPT_MENU_MODE   .EQU 1                          ; group # for mode selection
-OPT_MENU_JOY    .EQU 2                          ; group # for joystock mapping
-OPT_MENU_COL    .EQU 3
-
-OPT_MENU_GROUPS .DW 0, 0
-                .DW OPT_MENU_MODE, OPT_MENU_MODE
-                .DW 0, 0, 0
-                .DW OPT_MENU_JOY, OPT_MENU_JOY, OPT_MENU_JOY, OPT_MENU_JOY
-                .DW 0, 0, 0
-                .DW OPT_MENU_COL, OPT_MENU_COL
-                .DW 0
-                .DW OPTM_CLOSE
-
-OPT_MENU_STDSEL .DW 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0
-OPT_MENU_LINES  .DW 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0
 
 ; Menu initialization record (needed by OPTM_INIT)
 ; Will be copied to the HEAP, together with the configuration data from
@@ -209,11 +230,8 @@ OPT_MENU_LINES  .DW 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0
 OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, SCR$PRINTSTR, SCR$PRINTSTRXY
                 .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
                 .DW     OPTM_CALLBACK,
-                .DW     M2M$OPT_SEL, 0
-                .DW     0, 0,
-                .DW     OPT_MENU_GROUPS,
-                .DW     OPT_MENU_CURSEL ; is in RAM to remember last settings
-                .DW     OPT_MENU_LINES
+                .DW     M2M$OPT_SEL, 0          ; selection char + zero term.
+                .DW     0, 0, 0, 0, 0           ; will be filled dynamically
 
 ; Draws a horizontal line/menu separator at the y-pos given in R8, dx in R9
 OPT_PRINTLINE   INCRB
