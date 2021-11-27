@@ -112,7 +112,7 @@ OPTM_INIT       INCRB
                 RET
 
 ; Show menu: Draw frame and fill it with the menu items
-OPTM_SHOW       RSUB    ENTER, 1
+OPTM_SHOW       SYSCALL(enter, 1)
 
                 MOVE    OPTM_DATA, R0           ; R0: string to be printed
                 MOVE    @R0, R0
@@ -176,7 +176,7 @@ _OPTM_SHOW_3    ADD     1, R6                   ; next y-pos
                 ADD     1, R0                   ; next menu item
                 RBRA    _OPTM_SHOW_1, 1
 
-_OPTM_SHOW_RET  RSUB    LEAVE, 1
+_OPTM_SHOW_RET  SYSCALL(leave, 1)
                 RET
 
 ; Runs menu and returns results
@@ -186,7 +186,7 @@ _OPTM_SHOW_RET  RSUB    LEAVE, 1
 ;   R8: Selected cursor position
 ;   plus: Will callback to OPTM_FP_CLLBCK (see above) on each press
 ;         of the selection key
-OPTM_RUN        RSUB    ENTER, 1
+OPTM_RUN        SYSCALL(enter, 1)
 
                 MOVE    OPTM_DATA, R0           ; R0: size of data structure
                 MOVE    @R0, R0
@@ -352,7 +352,7 @@ _OPTM_RUN_14    MOVE    R6, R8                  ; R8: return selected group
                 MOVE    R2, R8                  ; yes: return selected item
 
 _OPTM_RUN_RET   MOVE    R8, @--SP               ; carry R8 over the LEAVE bump
-                RSUB    LEAVE, 1
+                SYSCALL(leave, 1)
                 MOVE    @SP++, R8
                 RET
 

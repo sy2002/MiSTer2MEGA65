@@ -123,6 +123,7 @@ constant SEL_OPTM_GROUPS   : std_logic_vector(15 downto 0) := x"0301";
 constant SEL_OPTM_STDSEL   : std_logic_vector(15 downto 0) := x"0302";
 constant SEL_OPTM_LINES    : std_logic_vector(15 downto 0) := x"0303";
 constant SEL_OPTM_START    : std_logic_vector(15 downto 0) := x"0304";
+constant SEL_OPTM_ICOUNT   : std_logic_vector(15 downto 0) := x"0305";
 
 -- Configuration constants for OPTM_GROUPS (do not change their value, shell.asm and menu.asm expect them to be like this)
 constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
@@ -157,7 +158,9 @@ constant OPTM_ITEMS        : string :=
    " Close Menu\n";
         
 -- define your own constants here and choose meaningful names
--- make sure that the range of the values is between 1 and 254 (0 means "no menu item", such as text and line and 255 means "Close Menu")
+-- make sure that your first group uses the value 1 (0 means "no menu item", such as text and line),
+-- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
+-- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
 constant OPTM_G_A          : integer := 1;
 constant OPTM_G_B          : integer := 2;
 constant OPTM_G_C          : integer := 3;
@@ -219,6 +222,7 @@ begin
       when SEL_OPTM_STDSEL => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(8));
       when SEL_OPTM_LINES  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(9));
       when SEL_OPTM_START  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(10));
+      when SEL_OPTM_ICOUNT => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_SIZE, 8));
              
       -- BIOS / ROM section
       -- @TODO: Add the desired amount of SEL_ROM_x_FLAG and SEL_ROM_x_FILE constants here

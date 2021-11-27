@@ -14,3 +14,8 @@
 DBG_START1		.ASCII_P "Entering MiSTer2MEGA65 debug mode.\nPress H for "
 				.ASCII_W "help and press C R "
 DBG_START2 		.ASCII_W " to return to the Shell.\n"
+
+; ----------------------------------------------------------------------------
+; Error Messages
+; ----------------------------------------------------------------------------
+

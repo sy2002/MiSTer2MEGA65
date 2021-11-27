@@ -199,7 +199,7 @@ _DIRBR_NEWELM3  MOVE    _DIRBR_ENTRY, R7        ; copy file name
                 ADD     FAT32$DE_NAME, R7
                 MOVE    R7, R8
                 MOVE    R3, R9
-                RSUB    _DIRBR_STRCPY, 1
+                SYSCALL(strcpy, 1)
 
                 SYSCALL(strlen, 1)              ; R9 contains len of filename
                 ADD     R9, R3                  ; R3 points to zero terminator
@@ -266,7 +266,7 @@ _DIRBR_CMP      MOVE    R0, R8                  ; copy string to stack
                 SUB     R9, SP
                 MOVE    R9, R4                  ; R4: stack restore amount
                 MOVE    SP, R9
-                RSUB    _DIRBR_STRCPY, 1
+                SYSCALL(strcpy, 1)
                 MOVE    R9, R8
                 SYSCALL(str2upper, 1)
                 MOVE    R8, R0
@@ -278,7 +278,7 @@ _DIRBR_CMP      MOVE    R0, R8                  ; copy string to stack
                 SUB     R9, SP
                 ADD     R9, R4                  ; R4: update stack rest. amnt.
                 MOVE    SP, R9
-                RSUB    _DIRBR_STRCPY, 1
+                SYSCALL(strcpy, 1)
                 MOVE    R9, R8
                 SYSCALL(str2upper, 1)
                 MOVE    R8, R1
@@ -310,7 +310,7 @@ _DIRBR_FILTWRAP INCRB
                 SUB     R9, SP
                 MOVE    R9, R2
                 MOVE    SP, R9
-                RSUB    _DIRBR_STRCPY, 1
+                SYSCALL(strcpy, 1)
                 MOVE    R9, R8
                 SYSCALL(str2upper, 1)           ; R8 contains upper string
 
@@ -321,16 +321,3 @@ _DIRBR_FILTWRAP INCRB
                 MOVE    R0, R9
                 DECRB
                 RET
-
-; STRCPY copies a zero-terminated string to a destination
-; Hint: QNICE Monitor V1.7 comes with a STRCPY, but currently, the gbc4mega65
-; project is based on QNICE V1.6, so we need to have our own STRCPY function
-; R8: Pointer to the string to be copied
-; R9: Pointer to the destination
-_DIRBR_STRCPY   INCRB
-                MOVE    R8, R0
-                MOVE    R9, R1
-_DIRBR_STRCPYL  MOVE    @R0++, @R1++
-                RBRA    _DIRBR_STRCPYL, !Z
-                DECRB
-                RET                   

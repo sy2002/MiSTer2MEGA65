@@ -120,7 +120,7 @@ SCR$OSM_OFF     INCRB
 ; and fill the attribute VRAM with the default foreground/background color
 ; ----------------------------------------------------------------------------
 
-SCR$CLR         RSUB    ENTER, 1
+SCR$CLR         SYSCALL(enter, 1)
 
                 MOVE    M2M$RAMROM_4KWIN, R0    ; 4k window selector = 0
                 MOVE    0, @R0
@@ -142,7 +142,7 @@ _SCR$CLR_L      MOVE    M2M$VRAM_DATA, @R0      ; VRAM: data
                 SUB     1, R2
                 RBRA    _SCR$CLR_L, !Z
 
-                RSUB    LEAVE, 1
+                SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ SCR$GOTOXY      INCRB
 ; Oputput: R8: VRAM address
 ; ----------------------------------------------------------------------------
 
-CALC_VRAM       RSUB    ENTER, 1
+CALC_VRAM       SYSCALL(enter, 1)
 
                 MOVE    SCR$CUR_Y, R8           ; SCR$CUR_Y x SCR$SYS_DX 
                 MOVE    @R8, R8
@@ -176,7 +176,7 @@ CALC_VRAM       RSUB    ENTER, 1
                 ADD     R10, R8                 ; .. + SCR$CUR_X
 
                 MOVE    R8, @--SP
-                RSUB    LEAVE, 1
+                SYSCALL(leave, 1)
                 MOVE    @SP++, R8               ; R8 = offset
                 ADD     M2M$RAMROM_DATA, R8     ; move offset into VRAM space
 
@@ -196,7 +196,7 @@ CALC_VRAM       RSUB    ENTER, 1
 ; >  (greater than)                ditto
 ; ----------------------------------------------------------------------------
 
-SCR$PRINTSTR    RSUB    ENTER, 1
+SCR$PRINTSTR    SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: string to be printed
                 MOVE    SCR$CUR_X, R1           ; R1: running x-cursor
@@ -243,7 +243,7 @@ _PS_L3          MOVE    SCR$ILX, R12
                 RSUB    CALC_VRAM, 1
                 RBRA    _PS_L1, 1
 
-_PS_RET         RSUB    LEAVE, 1
+_PS_RET         SYSCALL(leave, 1)
                 RET
 
 ; remember any device and selector setting and change it to VRAM; this is
@@ -299,7 +299,7 @@ SCR$PRINTSTRXY  INCRB
 ; Output: None; all registers stay unmodified
 ; ----------------------------------------------------------------------------
 
-SCR$PRINTFRAME  RSUB    ENTER, 1
+SCR$PRINTFRAME  SYSCALL(enter, 1)
 
                 ; modify global inner left x coordinate for SCR$PRINTSCR
                 ; so that \n stays inside the frame
@@ -357,5 +357,5 @@ _PF_DL3         MOVE    M2M$FC_SH, @R8++        ; horizontal line
                 RBRA    _PF_DL3, !Z
                 MOVE    M2M$FC_BR, @R8          ; draw bottom/right corner
 
-                RSUB    LEAVE, 1
+                SYSCALL(leave, 1)
                 RET

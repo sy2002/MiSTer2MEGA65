@@ -12,4 +12,7 @@
 #include "screen_vars.asm"
 
 #include "menu_vars.asm"
+
+OPTM_ICOUNT		.BLOCK 1						; amount of menu items
+OPTM_START 		.BLOCK 1						; initially selected menu item
 OPTM_SELECTED   .BLOCK 1                        ; last options menu selection

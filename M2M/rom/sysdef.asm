@@ -169,3 +169,4 @@ M2M$CFG_OPTM_GROUPS .EQU 0x0301     ; Menu groups
 M2M$CFG_OPTM_STDSEL .EQU 0x0302     ; Menu items that are selected by default
 M2M$CFG_OPTM_LINES  .EQU 0x0303     ; Separator lines
 M2M$CFG_OPTM_START  .EQU 0x0304     ; Position of very first cursor pos
+M2M$CFG_OPTM_ICOUNT .EQU 0x0305     ; Amount of menu items

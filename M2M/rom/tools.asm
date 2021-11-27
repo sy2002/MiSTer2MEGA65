@@ -68,39 +68,3 @@ RESTORE_DEVSEL  INCRB
                 MOVE    @R1, @R0
                 DECRB
                 RET
-
-; ----------------------------------------------------------------------------
-; Functions that are part of QNICE Monitor V1.7 and that can be replaced
-; as soon as we update gbc4mega65 to QNICE V1.7
-; ----------------------------------------------------------------------------
-
-; Alternative to a pure INCRB that also saves R8 .. R12
-ENTER           INCRB
-                MOVE    R8, R0
-                MOVE    R9, R1
-                MOVE    R10, R2
-                MOVE    R11, R3
-                MOVE    R12, R4
-                INCRB
-                RET
-
-; Alternative to a pure DECRB that also restores R8 .. R12
-LEAVE           DECRB
-                MOVE    R0, R8
-                MOVE    R1, R9
-                MOVE    R2, R10
-                MOVE    R3, R11
-                MOVE    R4, R12
-                DECRB
-                RET
-
-; STRCPY copies a zero-terminated string to a destination
-; R8: Pointer to the string to be copied
-; R9: Pointer to the large enough destination memory
-STRCPY          INCRB
-                MOVE    R8, R0
-                MOVE    R9, R1
-_STRCPY_L       MOVE    @R0++, @R1++
-                RBRA    _STRCPY_L, !Z
-                DECRB
-                RET                   

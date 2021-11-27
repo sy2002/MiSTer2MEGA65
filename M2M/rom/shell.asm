@@ -84,7 +84,9 @@ HELP_MENU       INCRB
                 ; TODO: We might want to pause/unpause the core while
                 ; the Options menu is running
 
-                ; TODO: replace OPT_MENU_START
+                ; TODO: Search for TODO ERROR MESSAGE in this file and
+                ; implement error messages that are visible on screen as
+                ; well as via the serial debug line
 
                 ; TODO: Instead of using the data from config.vhd to do the
                 ; initial standard selections, use persistent data from
@@ -100,32 +102,21 @@ HELP_MENU       INCRB
                 MOVE    HEAP, R9
                 ADD     OPTM_STRUCTSIZE, R9
                 MOVE    R9, R1                  ; R1: points to item string
-                RSUB    STRCPY, 1
+                SYSCALL(strcpy, 1)
 
-                ; Count menu size by counting CR/LFs and literal "\n"s
-                ; All lines do count. Also empty lines.
-                ; R3 will contain the menu size
-                MOVE    R9, R2                  ; R2: string scan variable
-                XOR     R3, R3                  ; R3: menu size counter
-_HLP_1          MOVE    @R2++, R4               ; R4: current char
-                RBRA    _HLP_4, Z               ; zero terminator encountered
-                CMP     0x000D, R4              ; is it a CR?
-                RBRA    _HLP_2, Z               ; yes: process
-                CMP     0x005C, R4              ; is it a backslash?
-                RBRA    _HLP_2, Z               ; yes: process
-                RBRA    _HLP_1, 1               ; no: next char
-_HLP_2          MOVE    @R2++, R4               ; next char
-                RBRA    _HLP_4, Z               ; zero terminator encountered
-                CMP     0x000A, R4              ; is it a LF?
-                RBRA    _HLP_3, Z               ; yes: process
-                CMP     'n', R4                 ; is it a n after a \?
-                RBRA    _HLP_3, Z               ; yes: process
-                RBRA    _HLP_1, 1               ; no: next char
-_HLP_3          ADD     1, R3                   ; R3: menu item counter
-                RBRA    _HLP_1, 1               ; next char
+                ; R2 = first free word behind the menu items
+                MOVE    R9, R2
+                MOVE    R9, R8
+                SYSCALL(strlen, 1)              ; R9 = string length
+                ADD     R9, R2
+                ADD     1, R2                   ; zero terminator
+
+                ; R3 = menu size
+                MOVE    OPTM_ICOUNT, R3
+                MOVE    @R3, R3
 
                 ; Copy menu data structure from ROM to RAM (heap)
-_HLP_4          MOVE    OPT_MENU_DATA, R8
+                MOVE    OPT_MENU_DATA, R8
                 MOVE    HEAP, R9
                 MOVE    OPTM_STRUCTSIZE, R10
                 SYSCALL(memcpy, 1)
@@ -160,9 +151,9 @@ _HLP_4          MOVE    OPT_MENU_DATA, R8
                 ; by default) and modify the menu data structure
                 MOVE    M2M$CFG_OPTM_STDSEL, @R0
                 MOVE    M2M$RAMROM_DATA, R8
-                MOVE    R2, R9
-                ADD     R3, R2
-                MOVE    R3, R10
+                MOVE    R2, R9                  ; R9: free word behind groups
+                ADD     R3, R2                  ; R2: free wrd beh. selectors
+                MOVE    R3, R10                 ; R10: menu items counter
                 SYSCALL(memcpy, 1)
                 MOVE    HEAP, R8
                 ADD     OPTM_IR_STDSEL, R8
@@ -171,8 +162,8 @@ _HLP_4          MOVE    OPT_MENU_DATA, R8
                 ; Copy positions of separator lines & modify men. dta. struct.
                 MOVE    M2M$CFG_OPTM_LINES, @R0
                 MOVE    M2M$RAMROM_DATA, R8
-                MOVE    R2, R9
-                MOVE    R3, R10
+                MOVE    R2, R9                  ; R9: free word beh. selectors
+                MOVE    R3, R10                 ; R10: menu items counter
                 SYSCALL(memcpy, 1)
                 MOVE    HEAP, R8
                 ADD     OPTM_IR_LINES, R8
@@ -196,13 +187,14 @@ _HLP_4          MOVE    OPT_MENU_DATA, R8
                 RBRA    _HLP_RESETPOS, Z
                 MOVE    R8, @R9                 ; remember recently sel. line
                 RBRA    _HLP_RET, 1
-_HLP_RESETPOS   MOVE    OPT_MENU_START, @R9     ; TODO: use config.vhd
+_HLP_RESETPOS   MOVE    OPTM_START, R0
+                MOVE    @R0, @R9
 
 _HLP_RET        DECRB
                 RET
 
                 ; init/configure the menu library
-HELP_MENU_INIT  RSUB    ENTER, 1
+HELP_MENU_INIT  SYSCALL(enter, 1)
 
                 MOVE    HEAP, R8
                 MOVE    SCR$OSM_O_X, R9
@@ -215,14 +207,40 @@ HELP_MENU_INIT  RSUB    ENTER, 1
                 MOVE    @R12, R12
                 RSUB    OPTM_INIT, 1
 
-                ; extract the initially selected item
-                MOVE    OPTM_SELECTED, R8
-                MOVE    OPT_MENU_START, @R8     ; TODO: use config.vhd
+                ; extract the amount of menu items (including empty lines and
+                ; headlines) from config.vhd
+                MOVE    M2M$RAMROM_DEV, R0      ; Device=config.vhd
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R1    ; Selector=amount of items
+                MOVE    M2M$CFG_OPTM_ICOUNT, @R1
+                MOVE    M2M$RAMROM_DATA, R0
+                MOVE    @R0, R7                 ; R7=amount of items
+                MOVE    OPTM_ICOUNT, R0
+                MOVE    R7, @R0
 
-                RSUB    LEAVE, 1
+                ; TODO ERROR MESSAGE upon failed range check: legal menu size?
+
+                ; extract the initially selected item from config.vhd
+                XOR     R0, R0                  ; R1=position of start item
+                MOVE    M2M$CFG_OPTM_START, @R1 ; Selector=start flag
+                MOVE    M2M$RAMROM_DATA, R2
+_HLP_SEARCH     CMP     R0, R7
+                RBRA    _HLP_ERROR, Z
+                CMP     @R2++, 0
+                RBRA    _HLP_START, !Z
+                ADD     1, R0
+                RBRA    _HLP_SEARCH, 1
+
+                ; TODO ERROR MESSAGE: No start flag
+_HLP_ERROR      SYSCALL(exit, 1)
+
+_HLP_START      MOVE    OPTM_START, R8
+                MOVE    OPTM_SELECTED, R9
+                MOVE    R0, @R8
+                MOVE    R0, @R9
+
+                SYSCALL(leave, 1)
                 RET
-
-OPT_MENU_START  .EQU 2                          ; initial default selection
 
 ; Menu initialization record (needed by OPTM_INIT)
 ; Will be copied to the HEAP, together with the configuration data from
