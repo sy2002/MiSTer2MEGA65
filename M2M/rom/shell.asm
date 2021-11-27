@@ -13,12 +13,9 @@
 START_SHELL     MOVE    M2M$CSR, R0             ; keep core in reset state ..
                 MOVE    M2M$CSR_RESET, @R0      ; .. and clear all other flags
 
-                ; initialize libraries
+                ; initialize screen library and show welcome screen:
+                ; draw frame and print text
                 RSUB    SCR$INIT, 1             ; retrieve VHDL generics
-                RSUB    KEYB$INIT, 1            ; keyboard library
-                RSUB    HELP_MENU_INIT, 1       ; menu library
-
-                ; show welcome screen: draw frame and print text
                 RSUB    SCR$CLR, 1              ; clear screen                                
                 MOVE    SCR$OSM_M_X, R8         ; retrieve frame coordinates
                 MOVE    @R8, R8
@@ -38,6 +35,12 @@ START_SHELL     MOVE    M2M$CSR, R0             ; keep core in reset state ..
 
                 ; switch on main OSM
                 RSUB    SCR$OSM_M_ON, 1
+
+                ; initialize all other libraries as late as here, so that
+                ; error messages (if any) can be printed on screen because the
+                ; screen is already initialized using the sequence above
+                RSUB    KEYB$INIT, 1            ; keyboard library
+                RSUB    HELP_MENU_INIT, 1       ; menu library                
 
                 ; Wait for "Space to continue"
                 ; TODO: The whole startup behavior of the Shell needs to be
@@ -218,10 +221,17 @@ HELP_MENU_INIT  SYSCALL(enter, 1)
                 MOVE    OPTM_ICOUNT, R0
                 MOVE    R7, @R0
 
-                ; TODO ERROR MESSAGE upon failed range check: legal menu size?
+                ; check, if menu size in config.vhd is between 1 and 254
+                MOVE    1, R9
+                MOVE    R7, R8
+                MOVE    255, R10
+                SYSCALL(in_range_u, 1)          ; R9 <= R8 < R10?
+                RBRA    _HLP_ITEM, C           ; yes: search start item
+                MOVE    ERR_F_MENUSIZE, R8      ; no: fatal error and end
+                RBRA    FATAL, 1
 
                 ; extract the initially selected item from config.vhd
-                XOR     R0, R0                  ; R1=position of start item
+_HLP_ITEM       XOR     R0, R0                  ; R1=position of start item
                 MOVE    M2M$CFG_OPTM_START, @R1 ; Selector=start flag
                 MOVE    M2M$RAMROM_DATA, R2
 _HLP_SEARCH     CMP     R0, R7
@@ -231,9 +241,11 @@ _HLP_SEARCH     CMP     R0, R7
                 ADD     1, R0
                 RBRA    _HLP_SEARCH, 1
 
-                ; TODO ERROR MESSAGE: No start flag
-_HLP_ERROR      SYSCALL(exit, 1)
+                ; No start flag found
+_HLP_ERROR      MOVE    ERR_F_MENUSTART, R8
+                RBRA    FATAL, 1
 
+                ; store start flag
 _HLP_START      MOVE    OPTM_START, R8
                 MOVE    OPTM_SELECTED, R9
                 MOVE    R0, @R8
@@ -392,6 +404,25 @@ START_MONITOR   MOVE    DBG_START1, R8          ; print info message via UART
                 MOVE    DBG_START2, R8
                 SYSCALL(puts, 1)
                 SYSCALL(exit, 1)                ; small/irrelevant stack leak
+
+; ----------------------------------------------------------------------------
+; Fatal error:
+; Output message to the screen and to the serial terminal and then quit.
+; R8: Pointer to error message from strings.asm
+; ----------------------------------------------------------------------------
+
+FATAL           MOVE    R8, R0
+                RSUB    SCR$CLR, 1
+                MOVE    1, R8
+                MOVE    1, R9
+                RSUB    SCR$GOTOXY, 1
+                MOVE    ERR_FATAL, R8
+                RSUB    SCR$PRINTSTR, 1
+                SYSCALL(puts, 1)
+                MOVE    R0, R8
+                RSUB    SCR$PRINTSTR, 1
+                SYSCALL(puts, 1)
+                SYSCALL(exit, 1)
 
 ; ----------------------------------------------------------------------------
 ; Strings and Libraries

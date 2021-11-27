@@ -19,3 +19,8 @@ DBG_START2 		.ASCII_W " to return to the Shell.\n"
 ; Error Messages
 ; ----------------------------------------------------------------------------
 
+ERR_FATAL		.ASCII_W "FATAL ERROR:\n"
+ERR_F_MENUSIZE	.ASCII_P "config.vhd: Illegal menu size (OPTM_SIZE): Must be "
+				.ASCII_W "between 1 and 254\n"
+ERR_F_MENUSTART .ASCII_P "config.vhd: No start menu item tag (OPTM_G_START) "
+				.ASCII_W "found in OPTM_GROUPS\n"
