@@ -135,7 +135,11 @@ constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 
 -- Size of menu and menu items
 -- End each line with a \n and make sure empty lines / separator lines are only consisting of a "\n"
-constant OPTM_SIZE         : integer := 18;  -- amount of items including empty lines 
+constant OPTM_SIZE         : integer := 24;  -- amount of items including empty lines:
+                                             -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
+                                             -- Important: make sure that SHELL_O_DY in mega65.vhd is equal to OPTM_SIZE + 2,
+                                             -- so that the On-Screen window has the correct length
+                                             -- @TODO: There is for sure a more elegant way than this redundant definition
 constant OPTM_ITEMS        : string :=
 
    " Demo Headline A\n" &
@@ -155,6 +159,12 @@ constant OPTM_ITEMS        : string :=
    " Item C.1\n" &
    " Item C.2\n" &
    "\n" &
+   " Another Headline\n" &
+   "\n" &
+   " Yes\n" &
+   " No\n" &
+   " Maybe\n" &
+   "\n" &
    " Close Menu\n";
         
 -- define your own constants here and choose meaningful names
@@ -164,6 +174,7 @@ constant OPTM_ITEMS        : string :=
 constant OPTM_G_A          : integer := 1;
 constant OPTM_G_B          : integer := 2;
 constant OPTM_G_C          : integer := 3;
+constant OPTM_G_ANOTHER    : integer := 4;
 
 -- define your menu groups: which menu items are belonging together to form a group?
 -- where are separator lines? which items should be selected by default?
@@ -185,6 +196,12 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                       
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_C + OPTM_G_STDSEL,                 -- Item C.1, selected by default
                                              OPTM_G_C,                                 -- Item C.2
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Another Headline
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_ANOTHER + OPTM_G_STDSEL,           -- Item Yes
+                                             OPTM_G_ANOTHER,                           -- Item No
+                                             OPTM_G_ANOTHER,                           -- Item Maybe
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_CLOSE                              -- Close Menu
                                            ); 

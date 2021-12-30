@@ -125,7 +125,7 @@ constant SHELL_M_DY           : integer := CHARS_DY;
 constant SHELL_O_X            : integer := CHARS_DX - 20;
 constant SHELL_O_Y            : integer := 0;
 constant SHELL_O_DX           : integer := 20;
-constant SHELL_O_DY           : integer := 20;
+constant SHELL_O_DY           : integer := 26;
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain

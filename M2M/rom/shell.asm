@@ -150,6 +150,33 @@ HELP_MENU       INCRB
                 MOVE    R9, @R8
                 MOVE    R9, R7                  ; R7: pointer to menu groups
 
+;;;                ; Get the standard selectors (which menu items are selcted by
+;;;                ; default) from config.vhd and store them in M2M$CFM_DATA                
+;;;                MOVE    M2M$CFM_ADDR, R0        ; R0: select "bank"
+;;;                MOVE    0, @R0
+;;;                MOVE    M2M$CFM_DATA, R1        ; R1: write data
+;;;                MOVE    M2M$RAMROM_4KWIN, R2
+;;;                MOVE    M2M$CFG_OPTM_STDSEL, @R2
+;;;                MOVE    M2M$RAMROM_DATA, R2     ; R2: read config.vhd data
+;;;                MOVE    OPTM_ICOUNT, R3         ; R3: amount of menu items
+;;;                MOVE    @R3, R3
+;;;                XOR     R4, R4                  ; R4: bit counter for R0
+;;;                XOR     R5, R5                  ; R5: bit pattern
+;;;
+;;;_HLP_S1         MOVE    @R2++, R6               ; get bit from config.vhd
+;;;                AND     0xFFFD, SR              ; clear X
+;;;                SHL     R4, R6                  ; shift bit to correct pos.
+;;;                OR      R6, R5                  ; R5: target pattern
+;;;                ADD     1, R4                   ; next bit
+;;;                CMP     16, R4                  ; next bank for M2M$CFM_ADDR?
+;;;                RBRA    _HLP_S2, !Z             ; no: check if done
+;;;                MOVE    R5, @R1                 ; store bit pattern in ..CFM..
+;;;                XOR     R4, R4                  ; reset bit pattern counter
+;;;                XOR     R5, R5                  ; reset bit pattern
+;;;                ADD     1, @R0                  ; next "bank"
+;;;_HLP_S2         SUB     1, R3                   ; one less menu item to go
+
+;;;==> comment this out ...
                 ; Copy the standard selectors (which menu items are selected
                 ; by default) and modify the menu data structure
                 MOVE    M2M$CFG_OPTM_STDSEL, @R0
@@ -161,6 +188,11 @@ HELP_MENU       INCRB
                 MOVE    HEAP, R8
                 ADD     OPTM_IR_STDSEL, R8
                 MOVE    R9, @R8
+
+                ; Copy the standard selectors (which menu items are selected
+                ; by default) from the QNICE M2M$CFM_DATA register to the
+                ; heap and modify the menu data structure accordingly
+;;;==> ... and continue here
 
                 ; Copy positions of separator lines & modify men. dta. struct.
                 MOVE    M2M$CFG_OPTM_LINES, @R0
@@ -254,11 +286,14 @@ _HLP_START      MOVE    OPTM_START, R8
                 ; Get the standard selectors (which menu items are selcted by
                 ; default) from config.vhd and store them in M2M$CFM_DATA                
                 MOVE    M2M$CFM_ADDR, R0        ; R0: select "bank"
-                MOVE    0, @R0
                 MOVE    M2M$CFM_DATA, R1        ; R1: write data
+                MOVE    1, @R0
+                MOVE    0, @R1
+                MOVE    0, @R0
+                MOVE    0, @R1
                 MOVE    M2M$RAMROM_4KWIN, R2
                 MOVE    M2M$CFG_OPTM_STDSEL, @R2
-                MOVE    M2M$RAMROM_DATA, R2     ; R2: read data
+                MOVE    M2M$RAMROM_DATA, R2     ; R2: read config.vhd data
                 MOVE    OPTM_ICOUNT, R3         ; R3: amount of menu items
                 MOVE    @R3, R3
                 XOR     R4, R4                  ; R4: bit counter for R0
@@ -277,21 +312,11 @@ _HLP_S1         MOVE    @R2++, R6               ; get bit from config.vhd
                 ADD     1, @R0                  ; next "bank"
 _HLP_S2         SUB     1, R3                   ; one less menu item to go
                 RBRA    _HLP_S1, !Z
+                CMP     0, R4                   ; something to write to @R1?
+                RBRA    _HLP_S3, Z              ; no: do not destroy @R1
+                MOVE    R5, @R1                 ; yes: update @R1
 
-                MOVE    R4, R8            
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-                MOVE    1, @R0
-                MOVE    @R1, R8
-                SYSCALL(puthex, 1)
-                MOVE    0, @R0
-                MOVE    @R1, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-
-                SYSCALL(exit, 1)
-
-                SYSCALL(leave, 1)
+_HLP_S3         SYSCALL(leave, 1)
                 RET
 
 ; Menu initialization record (needed by OPTM_INIT)
