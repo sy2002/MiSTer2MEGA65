@@ -504,6 +504,9 @@ begin
             if cfd_data_we then
                control_d_o(((reg_cfd_addr + 1) * 16) - 1 downto (reg_cfd_addr * 16)) <= cpu_data_out;
             end if;
+            if cfm_addr_we then
+               reg_cfm_addr <= to_integer(unsigned(cpu_data_out(3 downto 0)));
+            end if;
             if cfm_data_we then
                control_m_o(((reg_cfm_addr + 1) * 16) - 1 downto (reg_cfm_addr * 16)) <= cpu_data_out;            
             end if;

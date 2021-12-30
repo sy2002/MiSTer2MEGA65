@@ -131,11 +131,15 @@ M2M$KEY_HELP        .EQU 0x0080
 ; 128-bit directly controled by the programmer:
 ; Select a window between 0 and 7 in M2M$CFD_ADDR and access the control flags
 ; sliced into 16-bit chunks via M2M$CFD_DATA
+; exposed by QNICE via control_d_o
 M2M$CFD_ADDR        .EQU 0xFFF0
 M2M$CFD_DATA        .EQU 0xFFF1
 
 ; 128-bit indirectly controled via the options menu, i.e. the menu that opens
-; when the core is running and the user presses "Help" on the keyboard
+; when the core is running and the user presses "Help" on the keyboard:
+; the bit order is: bit 0 = topmost menu entry, the mapping is 1-to-1 to
+; OPTM_ITEMS / OPTM_GROUPS in config.vhd
+; exposed by QNICE via control_m_o
 M2M$CFM_ADDR        .EQU 0xFFF2
 M2M$CFM_DATA        .EQU 0xFFF3
 

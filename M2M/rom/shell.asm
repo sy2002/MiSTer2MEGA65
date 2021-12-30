@@ -245,11 +245,51 @@ _HLP_SEARCH     CMP     R0, R7
 _HLP_ERROR      MOVE    ERR_F_MENUSTART, R8
                 RBRA    FATAL, 1
 
-                ; store start flag
+                ; store initially selected item (start flag)
 _HLP_START      MOVE    OPTM_START, R8
                 MOVE    OPTM_SELECTED, R9
                 MOVE    R0, @R8
                 MOVE    R0, @R9
+
+                ; Get the standard selectors (which menu items are selcted by
+                ; default) from config.vhd and store them in M2M$CFM_DATA                
+                MOVE    M2M$CFM_ADDR, R0        ; R0: select "bank"
+                MOVE    0, @R0
+                MOVE    M2M$CFM_DATA, R1        ; R1: write data
+                MOVE    M2M$RAMROM_4KWIN, R2
+                MOVE    M2M$CFG_OPTM_STDSEL, @R2
+                MOVE    M2M$RAMROM_DATA, R2     ; R2: read data
+                MOVE    OPTM_ICOUNT, R3         ; R3: amount of menu items
+                MOVE    @R3, R3
+                XOR     R4, R4                  ; R4: bit counter for R0
+                XOR     R5, R5                  ; R5: bit pattern
+
+_HLP_S1         MOVE    @R2++, R6               ; get bit from config.vhd
+                AND     0xFFFD, SR              ; clear X
+                SHL     R4, R6                  ; shift bit to correct pos.
+                OR      R6, R5                  ; R5: target pattern
+                ADD     1, R4                   ; next bit
+                CMP     16, R4                  ; next bank for M2M$CFM_ADDR?
+                RBRA    _HLP_S2, !Z             ; no: check if done
+                MOVE    R5, @R1                 ; store bit pattern in ..CFM..
+                XOR     R4, R4                  ; reset bit pattern counter
+                XOR     R5, R5                  ; reset bit pattern
+                ADD     1, @R0                  ; next "bank"
+_HLP_S2         SUB     1, R3                   ; one less menu item to go
+                RBRA    _HLP_S1, !Z
+
+                MOVE    R4, R8            
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)
+                MOVE    1, @R0
+                MOVE    @R1, R8
+                SYSCALL(puthex, 1)
+                MOVE    0, @R0
+                MOVE    @R1, R8
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)
+
+                SYSCALL(exit, 1)
 
                 SYSCALL(leave, 1)
                 RET
