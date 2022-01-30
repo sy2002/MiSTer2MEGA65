@@ -40,10 +40,10 @@ constant SEL_WELCOME : std_logic_vector(15 downto 0) := x"0000";
 constant SCR_WELCOME : string :=
 
    "Name of the Demo Core Version 1.0\n" &
-   "MiSTer port done by Demo Author and Another One in 2021\n\n" &
+   "MiSTer port done by Demo Author and Another One in 2022\n\n" &
    
    -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving this line in
-   "Powered by MiSTer2MEGA65 Version [WIP], done by sy2002 and MJoergen in 2021\n" &
+   "Powered by MiSTer2MEGA65 Version [WIP], done by sy2002 and MJoergen in 2022\n" &
    
    "\n\nEdit config.vhd to modify the welcome screen.\n\n" &
    "You can for example show the keyboard map.\n" &
@@ -199,7 +199,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                       
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Another Headline
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_ANOTHER + OPTM_G_STDSEL,           -- Item Yes
+                                             OPTM_G_ANOTHER + OPTM_G_STDSEL,           -- Item Yes, selected by default
                                              OPTM_G_ANOTHER,                           -- Item No
                                              OPTM_G_ANOTHER,                           -- Item Maybe
                                              OPTM_G_LINE,                              -- Line

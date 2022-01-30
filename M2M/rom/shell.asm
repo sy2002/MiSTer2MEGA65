@@ -80,7 +80,7 @@ MAIN_LOOP       RSUB    CHECK_DEBUG, 1          ; (Run/Stop+Cursor Up) + Help
 ; ----------------------------------------------------------------------------
 
                 ; Check if Help is pressed and if yes, run the Options menu
-HELP_MENU       INCRB
+HELP_MENU       SYSCALL(enter, 1)
                 CMP     M2M$KEY_HELP, R8        ; help key pressed?
                 RBRA    _HLP_RET, !Z                
 
@@ -148,51 +148,39 @@ HELP_MENU       INCRB
                 MOVE    HEAP, R8                ; store pointer to record
                 ADD     OPTM_IR_GROUPS, R8
                 MOVE    R9, @R8
-                MOVE    R9, R7                  ; R7: pointer to menu groups
-
-;;;                ; Get the standard selectors (which menu items are selcted by
-;;;                ; default) from config.vhd and store them in M2M$CFM_DATA                
-;;;                MOVE    M2M$CFM_ADDR, R0        ; R0: select "bank"
-;;;                MOVE    0, @R0
-;;;                MOVE    M2M$CFM_DATA, R1        ; R1: write data
-;;;                MOVE    M2M$RAMROM_4KWIN, R2
-;;;                MOVE    M2M$CFG_OPTM_STDSEL, @R2
-;;;                MOVE    M2M$RAMROM_DATA, R2     ; R2: read config.vhd data
-;;;                MOVE    OPTM_ICOUNT, R3         ; R3: amount of menu items
-;;;                MOVE    @R3, R3
-;;;                XOR     R4, R4                  ; R4: bit counter for R0
-;;;                XOR     R5, R5                  ; R5: bit pattern
-;;;
-;;;_HLP_S1         MOVE    @R2++, R6               ; get bit from config.vhd
-;;;                AND     0xFFFD, SR              ; clear X
-;;;                SHL     R4, R6                  ; shift bit to correct pos.
-;;;                OR      R6, R5                  ; R5: target pattern
-;;;                ADD     1, R4                   ; next bit
-;;;                CMP     16, R4                  ; next bank for M2M$CFM_ADDR?
-;;;                RBRA    _HLP_S2, !Z             ; no: check if done
-;;;                MOVE    R5, @R1                 ; store bit pattern in ..CFM..
-;;;                XOR     R4, R4                  ; reset bit pattern counter
-;;;                XOR     R5, R5                  ; reset bit pattern
-;;;                ADD     1, @R0                  ; next "bank"
-;;;_HLP_S2         SUB     1, R3                   ; one less menu item to go
-
-;;;==> comment this out ...
-                ; Copy the standard selectors (which menu items are selected
-                ; by default) and modify the menu data structure
-                MOVE    M2M$CFG_OPTM_STDSEL, @R0
-                MOVE    M2M$RAMROM_DATA, R8
-                MOVE    R2, R9                  ; R9: free word behind groups
-                ADD     R3, R2                  ; R2: free wrd beh. selectors
-                MOVE    R3, R10                 ; R10: menu items counter
-                SYSCALL(memcpy, 1)
-                MOVE    HEAP, R8
-                ADD     OPTM_IR_STDSEL, R8
-                MOVE    R9, @R8
+                MOVE    R9, R12                  ; R12: pointer to menu groups
 
                 ; Copy the standard selectors (which menu items are selected
                 ; by default) from the QNICE M2M$CFM_DATA register to the
-                ; heap and modify the menu data structure accordingly
-;;;==> ... and continue here
+                ; heap and modify the menu data structure accordingly.
+                ; (The M2M$CFM_DATA register gets its initial values from
+                ; config.vhd during HELP_MENU_INIT.)
+                MOVE    R2, R9                  ; R9: free word behind groups
+                ADD     R3, R2                  ; R2: free wrd beh. selectors                
+
+                MOVE    HEAP, R8                ; modify the menu data struct.
+                ADD     OPTM_IR_STDSEL, R8
+                MOVE    R9, @R8
+
+                MOVE    R3, R4                  ; R4: amount of menu items                
+                MOVE    M2M$CFM_ADDR, R5        ; R5: "bank" selector
+                MOVE    0, @R5                  ; start with bank 0
+                MOVE    M2M$CFM_DATA, R6        ; R6: the flag register
+
+                XOR     R7, R7                  ; bit within current "bank"
+_HLP_SSICA      ADD     1, R7                   ; at 16 bits we need to switch
+                CMP     17, R7                  ; the bank, i.e. R7 = 17
+                RBRA    _HLP_SSICS, !Z
+                ADD     1, @R5                  ; next "bank"
+                MOVE    1, R7
+_HLP_SSICS      MOVE    @R6, R8                 ; SHR is a destructive op.
+                SHR     R7, R8                  ; shift into X
+                RBRA    _HLP_SSIC0, !X          ; X = 0 (R7th bit = 0)?
+                MOVE    1, @R9++                ; selector true at this pos.
+                RBRA    _HLP_SSIC1, 1
+_HLP_SSIC0      MOVE    0, @R9++                ; selector false at this pos.
+_HLP_SSIC1      SUB     1, R4                   ; one less menu item to go
+                RBRA    _HLP_SSICA, !Z          ; next menu item
 
                 ; Copy positions of separator lines & modify men. dta. struct.
                 MOVE    M2M$CFG_OPTM_LINES, @R0
@@ -216,7 +204,7 @@ HELP_MENU       INCRB
                 ; LRS when the menu is closed via pressing the Help key again.
                 ; Otherwise (when using "Close Menu" or something like this),
                 ; restart from the default start position
-                MOVE    R7, R10
+                MOVE    R12, R10
                 ADD     R8, R10
                 CMP     OPTM_CLOSE, @R10
                 RBRA    _HLP_RESETPOS, Z
@@ -225,7 +213,7 @@ HELP_MENU       INCRB
 _HLP_RESETPOS   MOVE    OPTM_START, R0
                 MOVE    @R0, @R9
 
-_HLP_RET        DECRB
+_HLP_RET        SYSCALL(leave, 1)
                 RET
 
                 ; init/configure the menu library
@@ -285,13 +273,17 @@ _HLP_START      MOVE    OPTM_START, R8
 
                 ; Get the standard selectors (which menu items are selcted by
                 ; default) from config.vhd and store them in M2M$CFM_DATA                
-                MOVE    M2M$CFM_ADDR, R0        ; R0: select "bank"
+                MOVE    M2M$CFM_ADDR, R0        ; R0: select "bank" (0..15)
                 MOVE    M2M$CFM_DATA, R1        ; R1: write data
-                MOVE    1, @R0
-                MOVE    0, @R1
-                MOVE    0, @R0
-                MOVE    0, @R1
-                MOVE    M2M$RAMROM_4KWIN, R2
+                MOVE    16, R2                  ; init all "banks" to zero
+                MOVE    15, @R0                 ; (@R0 can only store values
+_HLP_S0         MOVE    0, @R1                  ; between 0 and 15, so we need
+                SUB     1, R2                   ; R2 to count)
+                RBRA    _HLP_S0E, Z             ; Make sure that @R0 = 0 when
+                SUB     1, @R0                  ; we leave this loop
+                RBRA    _HLP_S0, 1
+
+_HLP_S0E        MOVE    M2M$RAMROM_4KWIN, R2
                 MOVE    M2M$CFG_OPTM_STDSEL, @R2
                 MOVE    M2M$RAMROM_DATA, R2     ; R2: read config.vhd data
                 MOVE    OPTM_ICOUNT, R3         ; R3: amount of menu items
@@ -437,7 +429,50 @@ _OPTMGK_RET     DECRB
 ; R8: selected menu group (as defined in OPTM_IR_GROUPS)
 ; R9: selected item within menu group
 ;     in case of single selected items: 0=not selected, 1=selected
-OPTM_CALLBACK   RET         
+;
+; For making sure that the hardware can react in "real-time" to menu item
+; changes, i.e. even before the menu is closed, we are updating the
+; QNICE M2M$CFM_DATA register each time something changes.
+OPTM_CALLBACK   INCRB
+
+                CMP     OPTM_CLOSE, R8          ; CLOSE = no changes: leave
+                RBRA    _OPTMCB_RET, Z
+
+                MOVE    OPTM_ICOUNT, R0         ; R0: amount of menu items
+                MOVE    @R0, R0
+                MOVE    HEAP, R1                ; R1: words in consecutive..
+                ADD     OPTM_IR_STDSEL, R1      ; ..memory layout containing..
+                MOVE    @R1, R1                 ; ..the current selection
+                MOVE    M2M$CFM_ADDR, R2        ; R2: "bank" selector
+                MOVE    0, @R2
+                MOVE    M2M$CFM_DATA, R3        ; R3: QNICE target register
+                MOVE    1, R4                   ; R4: mask to set bit
+                XOR     R5, R5                  ; R5: bit counter/switch bank
+
+_OPTMCB_A       CMP     @R1++, 1                ; set or clear bit?
+                RBRA    _OPTMCB_B, !Z           ; go to: clear
+                OR      R4, @R3                 ; set
+                RBRA    _OPTMCB_C, 1
+
+_OPTMCB_B       NOT     R4, R6                  ; inverse R4 to clear bit
+                AND     R6, @R3
+                
+_OPTMCB_C       ADD     1, R5                   ; "bank" switch necessary?
+                CMP     16, R5
+                RBRA    _OPTMCB_D, !Z           ; no
+                ADD     1, @R2                  ; yes
+                XOR     R5, R5
+                MOVE    1, R4
+                RBRA    _OPTMCB_E, 1
+
+_OPTMCB_D       AND     0xFFFD, SR              ; clear X
+                SHL     1, R4                   ; next bit position
+
+_OPTMCB_E       SUB     1, R0
+                RBRA    _OPTMCB_A, !Z
+
+_OPTMCB_RET     DECRB
+                RET         
 
 ; ----------------------------------------------------------------------------
 ; Debug mode:
