@@ -87,15 +87,6 @@ HELP_MENU       SYSCALL(enter, 1)
                 ; TODO: We might want to pause/unpause the core while
                 ; the Options menu is running
 
-                ; TODO: Search for TODO ERROR MESSAGE in this file and
-                ; implement error messages that are visible on screen as
-                ; well as via the serial debug line
-
-                ; TODO: Instead of using the data from config.vhd to do the
-                ; initial standard selections, use persistent data from
-                ; M2M$CFM_DATA. And make sure that M2M$CFM_DATA is initialized
-                ; at the very beginning using HELP_MENU_INIT
-
                 ; Copy menu items from config.vhd to heap
                 MOVE    M2M$RAMROM_DEV, R0
                 MOVE    M2M$CONFIG, @R0
