@@ -22,19 +22,24 @@ TL;DR
 *Obviously, this is a shameless exaggeration of how easy it is to work with
 MiSTer2MEGA65, but you get the gist of it.*
 
-Details
--------
+Progress
+--------
 
 CAUTION: RIGHT NOW THIS IS A HEAVILY WORK-IN-PROGRESS PRE-ALPHA VERSION.
 WE WILL RELEASE THIS AS A V1.0 AS SOON AS THE FOLLOWING FIRST MILESTONE HAS
-BEEN REACHED: USING THIS FRAMEWORK, steddyman PORTED A FIRST VERSION OF
-MiSTer's TRS-80 CORE AND sy2002 PORTED A FIRST VERSION OF MiSTer's NES CORE
-AND/OR THE C64 CORE TOGETHER WITH MJOERGEN.
+BEEN REACHED: MJoergen and sy2002 PORTED THE C64 CORE.
 
-If you want to learn more about the potential of this M2M framework right now,
-then you better go to our
-[Game Boy for MEGA65 repository](https://github.com/sy2002/gbc4mega65/)
-because there you can see in action, what we are planning to do here.
+Progress of the Commodore 64 Core (which uses this framework):
+
+Have a look at [this YouTube Video](https://youtu.be/wsS1iiozeXA) to learn
+about the progress as of end of February 2022. Here is the GitHub repo
+of the Commodore 64 Core: https://github.com/MJoergen/C64MEGA65
+
+The [Game Boy for MEGA65 repository](https://github.com/sy2002/gbc4mega65/)
+shows you what we are planning to do here.
+
+Details
+-------
 
 The MEGA65 does have some significant ROM/RAM constraints compared to the
 MiSTer: There is the RAM that is contained in the FPGA and there are 8 MB up
