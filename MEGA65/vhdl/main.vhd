@@ -3,7 +3,7 @@
 --
 -- Wrapper for the MiSTer core that runs exclusively in the core's clock domanin
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -26,24 +26,24 @@ entity main is
 
       -- M2M Keyboard interface
       kb_key_num_i           : in integer range 0 to 79;    -- cycles through all MEGA65 keys
-      kb_key_pressed_n_i     : in std_logic                 -- low active: debounced feedback: is kb_key_num_i pressed right now?   
+      kb_key_pressed_n_i     : in std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?   
 
       -- MEGA65 audio
 --      pwm_l                  : out std_logic;
 --      pwm_r                  : out std_logic;
 
       -- MEGA65 joysticks
---      joy_1_up_n             : in std_logic;
---      joy_1_down_n           : in std_logic;
---      joy_1_left_n           : in std_logic;
---      joy_1_right_n          : in std_logic;
---      joy_1_fire_n           : in std_logic;
+      joy_1_up_n             : in std_logic;
+      joy_1_down_n           : in std_logic;
+      joy_1_left_n           : in std_logic;
+      joy_1_right_n          : in std_logic;
+      joy_1_fire_n           : in std_logic;
 
---      joy_2_up_n             : in std_logic;
---      joy_2_down_n           : in std_logic;
---      joy_2_left_n           : in std_logic;
---      joy_2_right_n          : in std_logic;
---      joy_2_fire_n           : in std_logic
+      joy_2_up_n             : in std_logic;
+      joy_2_down_n           : in std_logic;
+      joy_2_left_n           : in std_logic;
+      joy_2_right_n          : in std_logic;
+      joy_2_fire_n           : in std_logic
    );
 end main;
 

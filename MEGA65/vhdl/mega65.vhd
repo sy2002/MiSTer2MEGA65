@@ -3,7 +3,7 @@
 --
 -- MEGA65 main file that contains the whole machine
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -62,24 +62,24 @@ port (
    SD_RESET       : out std_logic;
    SD_CLK         : out std_logic;
    SD_MOSI        : out std_logic;
-   SD_MISO        : in std_logic
+   SD_MISO        : in std_logic;
 
    -- 3.5mm analog audio jack
 --   pwm_l          : out std_logic;
 --   pwm_r          : out std_logic;
 
---   -- Joysticks
---   joy_1_up_n     : in std_logic;
---   joy_1_down_n   : in std_logic;
---   joy_1_left_n   : in std_logic;
---   joy_1_right_n  : in std_logic;
---   joy_1_fire_n   : in std_logic;
+   -- Joysticks
+   joy_1_up_n     : in std_logic;
+   joy_1_down_n   : in std_logic;
+   joy_1_left_n   : in std_logic;
+   joy_1_right_n  : in std_logic;
+   joy_1_fire_n   : in std_logic;
 
---   joy_2_up_n     : in std_logic;
---   joy_2_down_n   : in std_logic;
---   joy_2_left_n   : in std_logic;
---   joy_2_right_n  : in std_logic;
---   joy_2_fire_n   : in std_logic
+   joy_2_up_n     : in std_logic;
+   joy_2_down_n   : in std_logic;
+   joy_2_left_n   : in std_logic;
+   joy_2_right_n  : in std_logic;
+   joy_2_fire_n   : in std_logic
 );
 end MEGA65_Core;
 
@@ -245,7 +245,20 @@ begin
          
          -- M2M Keyboard interface
          kb_key_num_i         => main_key_num,
-         kb_key_pressed_n_i   => main_key_pressed_n         
+         kb_key_pressed_n_i   => main_key_pressed_n,
+         
+         -- MEGA65 joysticks
+         joy_1_up_n           => joy_1_up_n,
+         joy_1_down_n         => joy_1_down_n,
+         joy_1_left_n         => joy_1_left_n,
+         joy_1_right_n        => joy_1_right_n,
+         joy_1_fire_n         => joy_1_fire_n,
+   
+         joy_2_up_n           => joy_2_up_n,
+         joy_2_down_n         => joy_2_down_n,
+         joy_2_left_n         => joy_2_left_n,
+         joy_2_right_n        => joy_2_right_n,
+         joy_2_fire_n         => joy_2_fire_n
       );
       
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell

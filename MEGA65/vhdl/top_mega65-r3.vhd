@@ -3,7 +3,7 @@
 --
 -- R3-Version: Top Module for synthesizing the whole machine
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library IEEE;
@@ -46,24 +46,24 @@ port (
    SD_RESET       : out std_logic;
    SD_CLK         : out std_logic;
    SD_MOSI        : out std_logic;
-   SD_MISO        : in std_logic
+   SD_MISO        : in std_logic;
    
    -- 3.5mm analog audio jack
 --   pwm_l          : out std_logic;
 --   pwm_r          : out std_logic;
       
    -- Joysticks
---   joy_1_up_n     : in std_logic;
---   joy_1_down_n   : in std_logic;
---   joy_1_left_n   : in std_logic;
---   joy_1_right_n  : in std_logic;
---   joy_1_fire_n   : in std_logic;
+   joy_1_up_n     : in std_logic;
+   joy_1_down_n   : in std_logic;
+   joy_1_left_n   : in std_logic;
+   joy_1_right_n  : in std_logic;
+   joy_1_fire_n   : in std_logic;
       
---   joy_2_up_n     : in std_logic;
---   joy_2_down_n   : in std_logic;
---   joy_2_left_n   : in std_logic;
---   joy_2_right_n  : in std_logic;
---   joy_2_fire_n   : in std_logic
+   joy_2_up_n     : in std_logic;
+   joy_2_down_n   : in std_logic;
+   joy_2_left_n   : in std_logic;
+   joy_2_right_n  : in std_logic;
+   joy_2_fire_n   : in std_logic
             
    -- Built-in HyperRAM
 --   hr_d           : inout unsigned(7 downto 0);    -- Data/Address
@@ -129,24 +129,24 @@ begin
          SD_RESET       => SD_RESET,
          SD_CLK         => SD_CLK,
          SD_MOSI        => SD_MOSI,
-         SD_MISO        => SD_MISO
+         SD_MISO        => SD_MISO,
          
 --         -- 3.5mm analog audio jack
 --         pwm_l          => pwm_l,
 --         pwm_r          => pwm_r,
             
---         -- Joysticks
---         joy_1_up_n     => joy_1_up_n,     
---         joy_1_down_n   => joy_1_down_n,
---         joy_1_left_n   => joy_1_left_n,
---         joy_1_right_n  => joy_1_right_n,  
---         joy_1_fire_n   => joy_1_fire_n,   
+         -- Joysticks
+         joy_1_up_n     => joy_1_up_n,     
+         joy_1_down_n   => joy_1_down_n,
+         joy_1_left_n   => joy_1_left_n,
+         joy_1_right_n  => joy_1_right_n,  
+         joy_1_fire_n   => joy_1_fire_n,   
             
---         joy_2_up_n     => joy_2_up_n, 
---         joy_2_down_n   => joy_2_down_n,
---         joy_2_left_n   => joy_2_left_n,   
---         joy_2_right_n  => joy_2_right_n,  
---         joy_2_fire_n   => joy_2_fire_n
+         joy_2_up_n     => joy_2_up_n, 
+         joy_2_down_n   => joy_2_down_n,
+         joy_2_left_n   => joy_2_left_n,   
+         joy_2_right_n  => joy_2_right_n,  
+         joy_2_fire_n   => joy_2_fire_n
       ); 
 
 end beh;
