@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------
--- MiSTer2MEGA65 Framework  
+-- MiSTer2MEGA65 Framework
 --
 -- MEGA65 main file that contains the whole machine
 --
@@ -23,7 +23,7 @@ generic (
    -- @TODO: Add your machine dependent generics of this core here or delete them, if there
    -- are no machine dependencies
    YOUR_GENERIC1  : natural;
-   YOUR_GENERIC2  : string; 
+   YOUR_GENERIC2  : string;
    YOUR_GENERICN  : integer
 );
 port (
@@ -91,11 +91,11 @@ constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
 --constant QNICE_FIRMWARE       : string  := "../m2m-rom/m2m-rom.rom";
 
 -- MiSTer2MEGA65 default resolution is HDMI 720p @ 60 Hz
-constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;  
+constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;
 
 -- Clock speeds
 constant CORE_CLK_SPEED       : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
-constant QNICE_CLK_SPEED      : natural := 50_000_000;
+constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- QNICE main clock @ 50 MHz
 constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 
 -- Rendering constants (in pixels)
@@ -178,7 +178,7 @@ signal qnice_vram_attr_we     : std_logic;
 signal qnice_vram_attr_data_o : std_logic_vector(7 downto 0);
 
 -- Shell configuration (config.vhd)
-signal qnice_config_data      : std_logic_vector(15 downto 0);   
+signal qnice_config_data      : std_logic_vector(15 downto 0);
 
 ---------------------------------------------------------------------------------------------
 -- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
@@ -209,18 +209,18 @@ begin
       port map (
          sys_clk_i    => CLK,             -- expects 100 MHz
          sys_rstn_i   => RESET_N,         -- Asynchronous, asserted low
-         
+
          main_clk_o   => clk_main,        -- main's @TODO 40 MHz main clock
          main_rst_o   => main_rst,        -- main's reset, synchronized
-         
+
          qnice_clk_o  => clk_qnice,       -- QNICE's 50 MHz main clock
          qnice_rst_o  => qnice_rst,       -- QNICE's reset, synchronized
-         
+
          pixel_clk_o  => clk_pixel_1x,    -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
          pixel_rst_o  => pixel_rst,       -- VGA's reset, synchronized
-         pixel_clk5_o => clk_pixel_5x     -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI         
+         pixel_clk5_o => clk_pixel_5x     -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
       );
-   
+
    ---------------------------------------------------------------------------------------------
    -- clk_main (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
@@ -229,13 +229,13 @@ begin
    i_main : entity work.main
       generic map (
          G_CORE_CLK_SPEED     => CORE_CLK_SPEED,
-         
+
          -- Demo core specific generics @TODO not sure if you need them, too
          G_OUTPUT_DX          => VGA_DX,
-         G_OUTPUT_DY          => VGA_DY,  
-         
+         G_OUTPUT_DY          => VGA_DY,
+
          -- @TODO feel free to add as many generics as your core needs
-         -- you might also pass MEGA65 model specifics to your core, if needed (e.g. R2 vs. R3 differences) 
+         -- you might also pass MEGA65 model specifics to your core, if needed (e.g. R2 vs. R3 differences)
          G_YOUR_GENERIC1      => false,
          G_ANOTHER_THING      => 123456
       )
@@ -246,14 +246,14 @@ begin
          -- M2M Keyboard interface
          kb_key_num_i         => main_key_num,
          kb_key_pressed_n_i   => main_key_pressed_n,
-         
+
          -- MEGA65 joysticks
          joy_1_up_n           => joy_1_up_n,
          joy_1_down_n         => joy_1_down_n,
          joy_1_left_n         => joy_1_left_n,
          joy_1_right_n        => joy_1_right_n,
          joy_1_fire_n         => joy_1_fire_n,
-   
+
          joy_2_up_n           => joy_2_up_n,
          joy_2_down_n         => joy_2_down_n,
          joy_2_left_n         => joy_2_left_n,
@@ -268,18 +268,18 @@ begin
       )
       port map (
          clk_main_i           => clk_main,
-             
-         -- interface to the MEGA65 keyboard controller       
+
+         -- interface to the MEGA65 keyboard controller
          kio8_o               => kb_io0,
          kio9_o               => kb_io1,
          kio10_i              => kb_io2,
-         
+
          -- interface to the core
          key_num_o            => main_key_num,
          key_pressed_n_o      => main_key_pressed_n,
-               
+
          -- interface to QNICE: used by the firmware and the Shell
-         qnice_keys_n_o       => main_qnice_keys_n          
+         qnice_keys_n_o       => main_qnice_keys_n
       );
 
    ---------------------------------------------------------------------------------------------
@@ -306,9 +306,9 @@ begin
       port map (
          clk50_i                 => clk_qnice,
          reset_n_i               => not qnice_rst,
-      
+
          -- serial communication (rxd, txd only; rts/cts are not available)
-         -- 115.200 baud, 8-N-1      
+         -- 115.200 baud, 8-N-1
          uart_rxd_i              => UART_RXD,
          uart_txd_o              => UART_TXD,
 
@@ -317,7 +317,7 @@ begin
          sd_clk_o                => SD_CLK,
          sd_mosi_o               => SD_MOSI,
          sd_miso_i               => SD_MISO,
-      
+
          -- QNICE public registers
          csr_reset_o             => open,
          csr_pause_o             => open,
@@ -327,10 +327,10 @@ begin
          csr_joy2_o              => open,
          osm_xy_o                => qnice_osm_cfg_xy,
          osm_dxdy_o              => qnice_osm_cfg_dxdy,
-         
+
          -- Keyboard input for the firmware and Shell (see sysdef.asm)
          keys_n_i                => qnice_qnice_keys_n,
-                  
+
          -- 256-bit General purpose control flags
          -- "d" = directly controled by the firmware
          -- "m" = indirectly controled by the menu system
@@ -345,48 +345,52 @@ begin
          ramrom_data_o           => qnice_ramrom_data_o,
          ramrom_data_i           => qnice_ramrom_data_i,
          ramrom_ce_o             => qnice_ramrom_ce,
-         ramrom_we_o             => qnice_ramrom_we         
+         ramrom_we_o             => qnice_ramrom_we
       );
-      
+
    shell_cfg : entity work.config
       port map (
          -- bits 27 .. 12:    select configuration data block; called "Selector" hereafter
          -- bits 11 downto 0: address the up to 4k the configuration data
          address_i               => qnice_ramrom_addr,
-         
+
          -- config data
-         data_o                  => qnice_config_data         
+         data_o                  => qnice_config_data
       );
-      
+
    -- The device selector qnice_ramrom_dev decides, which RAM/ROM-like device QNICE is writing to.
    -- Device numbers < 256 are reserved for QNICE; everything else can be used by your MiSTer core.
    qnice_ramrom_devices : process(all)
    variable strpos : integer;
    begin
+      -- MiSTer2MEGA65 reserved
       qnice_vram_we <= '0';
       qnice_vram_attr_we <= '0';
       qnice_ramrom_data_i <= x"EEEE";
-   
+
       case qnice_ramrom_dev is
+         ----------------------------------------------------------------------------
+         -- MiSTer2MEGA65 reserved devices
          -- OSM VRAM data and attributes with device numbers < 0x0100
          -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
+         ----------------------------------------------------------------------------
          when x"0000" =>
             qnice_vram_we <= qnice_ramrom_we;
             qnice_ramrom_data_i <= x"00" & qnice_vram_data_o;
          when x"0001" =>
             qnice_vram_attr_we <= qnice_ramrom_we;
             qnice_ramrom_data_i <= x"00" & qnice_vram_attr_data_o;
-            
+
          -- Shell configuration data (config.vhd)
          when x"0002" =>
             qnice_ramrom_data_i <= qnice_config_data;
-         
+
          -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) and other RAM/ROM-like devices
-         -- Device numbers need to be >= 0x0100         
-         when others => null;            
+         -- Device numbers need to be >= 0x0100
+         when others => null;
       end case;
    end process;
-      
+
    ---------------------------------------------------------------------------------------------
    -- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
    ---------------------------------------------------------------------------------------------
@@ -580,7 +584,7 @@ begin
          dest_out(31 downto 16) => vga_osm_cfg_dxdy,
          dest_out(32)           => vga_osm_cfg_enable
       );
-      
+
    -- Dual clock & dual port RAM that acts as framebuffer: the LCD display of the gameboy is
    -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
    -- using the pixel clock
