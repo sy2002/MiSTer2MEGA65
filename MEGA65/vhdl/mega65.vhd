@@ -65,8 +65,8 @@ port (
    SD_MISO        : in std_logic;
 
    -- 3.5mm analog audio jack
---   pwm_l          : out std_logic;
---   pwm_r          : out std_logic;
+   pwm_l          : out std_logic;
+   pwm_r          : out std_logic;
 
    -- Joysticks
    joy_1_up_n     : in std_logic;
@@ -144,22 +144,33 @@ signal pixel_rst              : std_logic;
 -- clk_main (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
 
+-- QNICE control and status register
+signal main_qnice_reset       : std_logic;
+signal main_qnice_pause       : std_logic;
+
 -- keyboard handling
 signal main_key_num           : integer range 0 to 79;
 signal main_key_pressed_n     : std_logic;
 signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
 
+signal main_audio_l           : signed(15 downto 0);
+signal main_audio_r           : signed(15 downto 0);
+
 ---------------------------------------------------------------------------------------------
 -- clk_qnice
 ---------------------------------------------------------------------------------------------
 
--- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
-signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
+-- Control and status register that QNICE uses to control the Core
+signal qnice_csr_reset        : std_logic;
+signal qnice_csr_pause        : std_logic;
 
 -- On-Screen-Menu (OSM)
 signal qnice_osm_cfg_enable   : std_logic;
 signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
 signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
+
+-- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
+signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
 
 -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
 -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
@@ -241,26 +252,31 @@ begin
       )
       port map (
          clk_main_i           => clk_main,
-         reset_i              => main_rst,
-         
+         reset_i              => main_rst or main_qnice_reset,
+         pause_i              => main_qnice_pause,
+
          -- M2M Keyboard interface
          kb_key_num_i         => main_key_num,
          kb_key_pressed_n_i   => main_key_pressed_n,
 
-         -- MEGA65 joysticks
-         joy_1_up_n           => joy_1_up_n,
-         joy_1_down_n         => joy_1_down_n,
-         joy_1_left_n         => joy_1_left_n,
-         joy_1_right_n        => joy_1_right_n,
-         joy_1_fire_n         => joy_1_fire_n,
+         -- Audio output
+         audio_left_o         => main_audio_l,
+         audio_right_o        => main_audio_r,
 
-         joy_2_up_n           => joy_2_up_n,
-         joy_2_down_n         => joy_2_down_n,
-         joy_2_left_n         => joy_2_left_n,
-         joy_2_right_n        => joy_2_right_n,
-         joy_2_fire_n         => joy_2_fire_n
-      );
-      
+         -- MEGA65 joysticks
+         joy_1_up_n_i         => joy_1_up_n,
+         joy_1_down_n_i       => joy_1_down_n,
+         joy_1_left_n_i       => joy_1_left_n,
+         joy_1_right_n_i      => joy_1_right_n,
+         joy_1_fire_n_i       => joy_1_fire_n,
+
+         joy_2_up_n_i         => joy_2_up_n,
+         joy_2_down_n_i       => joy_2_down_n,
+         joy_2_left_n_i       => joy_2_left_n,
+         joy_2_right_n_i      => joy_2_right_n,
+         joy_2_fire_n_i       => joy_2_fire_n
+      ); -- i_main
+
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    i_m2m_keyb : entity work.m2m_keyb
       generic map (
@@ -280,7 +296,22 @@ begin
 
          -- interface to QNICE: used by the firmware and the Shell
          qnice_keys_n_o       => main_qnice_keys_n
-      );
+      ); -- i_m2m_keyb
+
+   -- Convert the cores PCM output to pulse density modulation
+   i_pcm2pdm : entity work.pcm_to_pdm
+      port map
+      (
+         cpuclock                => clk_main,
+
+         pcm_left                => main_audio_l,
+         pcm_right               => main_audio_r,
+
+         -- Pulse Density Modulation (PDM is supposed to sound better than PWM on MEGA65)
+         pdm_left                => pwm_l,
+         pdm_right               => pwm_r,
+         audio_mode              => '0'         -- 0=PDM, 1=PWM
+      ); -- i_pcm2pdm
 
    ---------------------------------------------------------------------------------------------
    -- clk_qnice
@@ -319,8 +350,8 @@ begin
          sd_miso_i               => SD_MISO,
 
          -- QNICE public registers
-         csr_reset_o             => open,
-         csr_pause_o             => open,
+         csr_reset_o             => qnice_csr_reset,
+         csr_pause_o             => qnice_csr_pause,
          csr_osm_o               => qnice_osm_cfg_enable,
          csr_keyboard_o          => open,
          csr_joy1_o              => open,
@@ -524,40 +555,19 @@ begin
    -- timing critical. If this changed, we might introduce "high-speed" devices that are using
    -- the falling-edge and that work without WAIT_FOR_DATA.
 
---   i_qnice2main: xpm_cdc_array_single
---      generic map (
---         WIDTH => 56
---      )
---      port map (
---         src_clk                => qnice_clk,
---         src_in(0)              => qnice_qngbc_reset,
---         src_in(1)              => qnice_qngbc_pause,
---         src_in(2)              => qnice_qngbc_keyboard,
---         src_in(3)              => qnice_qngbc_joystick,
---         src_in(4)              => qnice_qngbc_color,
---         src_in(6 downto 5)     => qnice_qngbc_joy_map,
---         src_in(7)              => qnice_qngbc_color_mode,
---         src_in(15 downto 8)    => qnice_cart_cgb_flag,
---         src_in(23 downto 16)   => qnice_cart_sgb_flag,
---         src_in(31 downto 24)   => qnice_cart_mbc_type,
---         src_in(39 downto 32)   => qnice_cart_rom_size,
---         src_in(47 downto 40)   => qnice_cart_ram_size,
---         src_in(55 downto 48)   => qnice_cart_old_licensee,
---         dest_clk               => main_clk,
---         dest_out(0)            => main_qngbc_reset,
---         dest_out(1)            => main_qngbc_pause,
---         dest_out(2)            => main_qngbc_keyboard,
---         dest_out(3)            => main_qngbc_joystick,
---         dest_out(4)            => main_qngbc_color,
---         dest_out(6 downto 5)   => main_qngbc_joy_map,
---         dest_out(7)            => main_qngbc_color_mode,
---         dest_out(15 downto 8)  => main_cart_cgb_flag,
---         dest_out(23 downto 16) => main_cart_sgb_flag,
---         dest_out(31 downto 24) => main_cart_mbc_type,
---         dest_out(39 downto 32) => main_cart_rom_size,
---         dest_out(47 downto 40) => main_cart_ram_size,
---         dest_out(55 downto 48) => main_cart_old_licensee
---      );
+   -- Clock domain crossing: QNICE to C64
+   i_qnice2main: xpm_cdc_array_single
+      generic map (
+         WIDTH => 2
+      )
+      port map (
+         src_clk                => clk_qnice,
+         src_in(0)              => qnice_csr_reset,
+         src_in(1)              => qnice_csr_pause,
+         dest_clk               => clk_main,
+         dest_out(0)            => main_qnice_reset,
+         dest_out(1)            => main_qnice_pause
+      );
 
    i_main2qnice: xpm_cdc_array_single
       generic map (

@@ -8,25 +8,34 @@
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 ------------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity democore is
    generic (
       G_CORE_CLK_SPEED     : natural;
       G_OUTPUT_DX          : natural;
-      G_OUTPUT_DY          : natural    
+      G_OUTPUT_DY          : natural
    );
    port (
       clk_main_i           : in  std_logic;
       reset_i              : in  std_logic;
-      keyboard_n_i         : in  std_logic_vector(2 downto 0)
-   );
-end democore;
+      keyboard_n_i         : in  std_logic_vector(2 downto 0);
 
-architecture beh of democore is
+      -- Audio output (Signed PCM)
+      audio_left_o         : out signed(15 downto 0);
+      audio_right_o        : out signed(15 downto 0)
+
+   );
+end entity democore;
+
+architecture synthesis of democore is
 
 begin
 
+   audio_left_o  <= (others => '0');
+   audio_right_o <= (others => '0');
 
-end beh;
+end architecture synthesis;
+
