@@ -88,7 +88,7 @@ architecture beh of MEGA65_Core is
 -- QNICE Firmware: Use the regular QNICE "operating system" called "Monitor" while developing
 -- and debugging and use the MiSTer2MEGA65 firmware in the release version
 constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
---constant QNICE_FIRMWARE       : string  := "../m2m-rom/m2m-rom.rom";
+--constant QNICE_FIRMWARE       : string  := "../../MEGA65/m2m-rom/m2m-rom.rom";
 
 -- MiSTer2MEGA65 default resolution is HDMI 720p @ 60 Hz
 constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;
