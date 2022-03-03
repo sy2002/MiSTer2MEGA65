@@ -131,8 +131,8 @@ constant SHELL_O_DY           : integer := 26;
 -- Clocks and active high reset signals for each clock domain
 ---------------------------------------------------------------------------------------------
 
-signal clk_main               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
 signal clk_qnice              : std_logic;               -- QNICE main clock @ 50 MHz
+signal clk_main               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
 signal clk_pixel_1x           : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
 signal clk_pixel_5x           : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
 
@@ -221,11 +221,11 @@ begin
          sys_clk_i    => CLK,             -- expects 100 MHz
          sys_rstn_i   => RESET_N,         -- Asynchronous, asserted low
 
-         main_clk_o   => clk_main,        -- main's @TODO 40 MHz main clock
-         main_rst_o   => main_rst,        -- main's reset, synchronized
-
          qnice_clk_o  => clk_qnice,       -- QNICE's 50 MHz main clock
          qnice_rst_o  => qnice_rst,       -- QNICE's reset, synchronized
+
+         main_clk_o   => clk_main,        -- main's @TODO 40 MHz main clock
+         main_rst_o   => main_rst,        -- main's reset, synchronized
 
          pixel_clk_o  => clk_pixel_1x,    -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
          pixel_rst_o  => pixel_rst,       -- VGA's reset, synchronized
@@ -259,10 +259,6 @@ begin
          kb_key_num_i         => main_key_num,
          kb_key_pressed_n_i   => main_key_pressed_n,
 
-         -- Audio output
-         audio_left_o         => main_audio_l,
-         audio_right_o        => main_audio_r,
-
          -- MEGA65 joysticks
          joy_1_up_n_i         => joy_1_up_n,
          joy_1_down_n_i       => joy_1_down_n,
@@ -274,7 +270,11 @@ begin
          joy_2_down_n_i       => joy_2_down_n,
          joy_2_left_n_i       => joy_2_left_n,
          joy_2_right_n_i      => joy_2_right_n,
-         joy_2_fire_n_i       => joy_2_fire_n
+         joy_2_fire_n_i       => joy_2_fire_n,
+
+         -- Audio output
+         audio_left_o         => main_audio_l,
+         audio_right_o        => main_audio_r
       ); -- i_main
 
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
