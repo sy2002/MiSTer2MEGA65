@@ -110,6 +110,10 @@ signal img_size         : std_logic_vector(31 downto 0);
 
 signal sd_rd            : vd_std_array(VDNUM - 1 downto 0);
 signal sd_rd_trig_del   : vd_std_array(VDNUM - 1 downto 0);
+signal sd_lba           : vd_vec_array(VDNUM - 1 downto 0)(31 downto 0);
+signal sd_blk_cnt       : vd_vec_array(VDNUM - 1 downto 0)(5 downto 0);
+signal sd_lba_bytes     : vd_vec_array(VDNUM - 1 downto 0)(63 downto 0);
+signal sd_blk_cnt_bytes : vd_vec_array(VDNUM - 1 downto 0)(31 downto 0);
 
 signal sd_buff_addr     : std_logic_vector(AW downto 0);
 signal sd_buff_dout     : std_logic_vector(DW downto 0);
@@ -134,7 +138,15 @@ begin
    -- QNICE clock domain
    sd_buff_addr_o    <= sd_buff_addr;
    sd_buff_dout_o    <= sd_buff_dout;
-   sd_buff_wr_o      <= sd_buff_wr;   
+   sd_buff_wr_o      <= sd_buff_wr;
+   
+   -- calculate lba and block count in bytes by shifting to the left
+   g_bytecalc : for i in 0 to VDNUM - 1 generate
+      sd_lba_bytes(i)((31 + 7 + BLKSZ) downto (7 + BLKSZ))     <= sd_lba(0);
+      sd_lba_bytes(i)((7 + BLKSZ - 1) downto 0)                <= (others => '0');
+      sd_blk_cnt_bytes(i)((5 + 7 + BLKSZ) downto (7 + BLKSZ))  <= sd_blk_cnt(0);
+      sd_blk_cnt_bytes(i)((7 + BLKSZ - 1) downto 0)            <= (others => '0');
+   end generate g_bytecalc;
 
    i_cdc_main2qnice: xpm_cdc_array_single
       generic map (
@@ -183,6 +195,8 @@ begin
             sd_buff_wr <= '0';
             sd_rd <= (others => '0');
             sd_rd_trig_del <= (others => '0');
+            sd_lba <= (others => (others => '0'));
+            sd_blk_cnt <= (others => (others => '0'));
             
          -- reading sd_rd is triggering a reset of the sd_rd flag
          elsif qnice_ce_i = '1' and qnice_we_i = '0' and qnice_addr_i(27 downto 12) > x"0000" and qnice_addr_i(11 downto 0) = x"006" then
@@ -245,10 +259,13 @@ begin
             
             -- QNICE registers written by IEC
             
-            -- sd_rd: if set to 1: stay at 1 until read by QNICE
+            -- sd_rd: latch sd_rd until read by QNICE and use sd_rd as a trigger to also latch sd_lba sd_blk_cnt
             for i in 0 to VDNUM - 1 loop
                if sd_rd_i(i) = '1' then
-                  sd_rd(i) <= '1';
+                  sd_rd(i)       <= '1';
+                  sd_lba(i)      <= sd_lba_i(i);
+                  -- sd_blk_cnt oddity: MiSTer delivers value that is too small by 1, so add 1
+                  sd_blk_cnt(i)  <= std_logic_vector(to_unsigned(to_integer(unsigned(sd_blk_cnt_i(i))) + 1, 6)); 
                end if;
             end loop;            
           
@@ -304,6 +321,54 @@ begin
       -- Window 0x0001 and onwards: window 1 = drive 0, window 2 = drive 1, ...         
       elsif qnice_addr_i(27 downto 12) > x"0000" and qnice_addr_i(11 downto 4) = x"00" then
          case qnice_addr_i(3 downto 0) is
+            -- sd_lba_i: low word
+            when x"0" =>
+               for i in 0 to VDNUM - 1 loop
+                  if to_integer(unsigned(qnice_addr_i(19 downto 12))) = (i + 1) then
+                     qnice_data_o <= sd_lba(i)(15 downto 0);
+                  end if;                  
+               end loop;
+
+            -- sd_lba_i: high word
+            when x"1" =>
+               for i in 0 to VDNUM - 1 loop
+                  if to_integer(unsigned(qnice_addr_i(19 downto 12))) = (i + 1) then
+                     qnice_data_o <= sd_lba(i)(31 downto 16);
+                  end if;                  
+               end loop;
+               
+            -- sd_blk_cnt_i + 1 (because the input is too low by 1 we increase it during latching)
+            when x"2" =>
+               for i in 0 to VDNUM - 1 loop
+                  if to_integer(unsigned(qnice_addr_i(19 downto 12))) = (i + 1) then
+                     qnice_data_o(5 downto 0) <= sd_blk_cnt(i);
+                  end if;                  
+               end loop;
+
+            -- sd_lba_i in bytes: low word            
+            when x"3" =>
+               for i in 0 to VDNUM - 1 loop
+                  if to_integer(unsigned(qnice_addr_i(19 downto 12))) = (i + 1) then
+                     qnice_data_o <= sd_lba_bytes(i)(15 downto 0);
+                  end if;                  
+               end loop;               
+
+            -- sd_lba_i in bytes: high word            
+            when x"4" =>
+               for i in 0 to VDNUM - 1 loop
+                  if to_integer(unsigned(qnice_addr_i(19 downto 12))) = (i + 1) then
+                     qnice_data_o <= sd_lba_bytes(i)(31 downto 16);
+                  end if;                  
+               end loop;
+                              
+            -- (sd_blk_cnt_i + 1) in bytes
+            when x"5" =>
+               for i in 0 to VDNUM - 1 loop
+                  if to_integer(unsigned(qnice_addr_i(19 downto 12))) = (i + 1) then
+                     qnice_data_o <= sd_blk_cnt_bytes(i)(15 downto 0);
+                  end if;                  
+               end loop;
+         
             -- sd_rd_i            
             when x"6" =>
                for i in 0 to VDNUM - 1 loop
