@@ -17,7 +17,8 @@ entity dualport_2clk_ram is
 		 DATA_WIDTH     : integer := 8;
 		 MAXIMUM_SIZE   : integer := integer'high; -- Maximum size of RAM, independent from ADDR_WIDTH 
 		 ROM_PRELOAD    : boolean := false;        -- Preload a ROM
-		 ROM_FILE       : string  := "";           
+		 ROM_FILE       : string  := "";
+		 ROM_FILE_HEX   : boolean := false;        -- hexadecimal format (using hread) instead of binary format (using read)        
 		 LATCH_ADDR_A   : boolean := false;        -- latch address a when "do_latch_addr_a" = '1'
 		 LATCH_ADDR_B   : boolean := false;        -- ditto address b
 		 FALLING_A      : boolean := false;        -- read/write on falling edge for clock a
@@ -55,7 +56,11 @@ impure function InitRAMFromFile(ramfilename: string) return memory_t is
 begin
    while not endfile(ramfile) loop
       readline(ramfile, ramfileline);
-      read(ramfileline, bitvec);
+      if ROM_FILE_HEX then
+         hread(ramfileline, bitvec);
+      else
+         read(ramfileline, bitvec);
+      end if;
       ram_data(i) := to_stdlogicvector(bitvec);
       i := i + 1;
    end loop;
