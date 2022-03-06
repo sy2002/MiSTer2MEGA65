@@ -18,11 +18,12 @@
 --    0x0001   img_readonly_o
 --    0x0002   img_size_o: low word
 --    0x0003   img_size_o: high word
---    0x0004   sd_buff_addr_o
---    0x0005   sd_buff_dout_o
---    0x0006   sd_buff_wr_o
---    0x0007   Number of virtual drives
---    0x0008   Block size for LBA adressing
+--    0x0004   img_type_o: 0 = 1541 emulated GCR (D64), 1 = 1541 real GCR mode (G64, D64), 2 = 1581 (D81)
+--    0x0005   sd_buff_addr_o
+--    0x0006   sd_buff_dout_o
+--    0x0007   sd_buff_wr_o
+--    0x0008   Number of virtual drives
+--    0x0009   Block size for LBA adressing
 --
 -- Window 0x0001 and onwards: window 1 = drive 0, window 2 = drive 1, ...
 --    0x0000   sd_lba_i: low word
@@ -44,18 +45,16 @@
 -- need to worry about it. Nevertheless, we are documenting it here for our own purposes and
 -- "just in case". Currently, we only support reading.
 --
--- @TODO: img_type riddle
---
--- 1. Reset: img_mounted_o is a std_logic_vector of high active signals; drive 0 = lowest bit. As long
---    as no image is mounted for a certain drive, that drive is kept in reset: You need to make sure
---    that you are doing this, when wiring the drive to your core.
+-- 1. Reset: There are several options in the original MiSTer how and when a drive should be made
+--    available (i.e. not being reset). Implement your choice. Use drive_mounted_o as needed, because
+--    in contrast to img_mounted_o (which is only strobed), drive_mounted_o is a latched signal.
 --
 -- 2. Mount a drive: MiSTer's logic reacts on the rising edge of the img_mounted_o bits. This is why it
---    is not offering one img_readonly_o and img_size_o per drive but only one for all drives. Instead,
---    values are processed on the rising edge.of the mount bit. This means: Do not mount multiple drives
---    simultaneously, unless the img_readonly_o and img_size_o values are the same for these drives.
---    Make sure that you output these values before you actually trigger the rising edge of the mount bit.
---    Also make sure that you keep the mount bit up, as long as the drive is mounted.
+--    is not offering one img_readonly_o, img_size_o and img_type_o per drive but only one for all drives.
+--    Instead, values are processed on the rising edge.of the mount bit. This means: Do not mount multiple
+--    drives simultaneously, unless the img_readonly_o, img_size_o and img_type_o values are the same
+--    for these drives. Make sure that you output these values before you actually trigger the rising
+--    edge of the mount bit.Also sure that you only strobe the signal and do not keep it up all the time.
 --
 -- 3. rd_i should be low while no drive is not mounted. The QNICE firmware will output a warning on the
 --    serial port, if it detects high in such a situation: There might be something wrong with the logic.
@@ -70,7 +69,8 @@
 --    performance optimizations available: You can access the address and requested data amount in bytes and
 --    also in 4k windows plus offset which fits nicely in QNICE's MiSTer2MEGA architecture.
 --
--- 6. Signal acknowledge using sd_ack_o and leave the signal high during the data transfer.
+-- 6. Signal acknowledge using sd_ack_o and leave the signal high during the data transfer as
+--    MiSTer uses the sd_ack_o (per drive) in conjunction with the sd_buff_wr_o as write enable.
 --
 -- 7. Use window 0x0000 (Control and data registers) to pump the data to the core's data buffer.
 --    Set sd_buff_addr_o and sd_buff_dout_o and then strobe sd_buff_wr_o and then repeat.
@@ -109,14 +109,28 @@ port (
    clk_qnice_i       : in std_logic;
    clk_core_i        : in std_logic;
    reset_core_i      : in std_logic;
-   
-   -- MiSTer's "SD config" interface, which runs in the core's clock domain
+
+   ---------------------------------------------------------------------------------------
+   -- Core clock domain
+   ---------------------------------------------------------------------------------------
+
+   -- MiSTer's "SD config" interface:
+   -- While the appropriate bit in img_mounted_o is strobed, the other values are latched by MiSTer
    img_mounted_o     : out std_logic_vector(VDNUM - 1 downto 0);  -- signaling that new image has been mounted
    img_readonly_o    : out std_logic;                             -- mounted as read only; valid only for active bit in img_mounted
-   img_size_o        : out std_logic_vector(31 downto 0);         -- size of image in bytes; valid only for active bit in img_mounted 
+   img_size_o        : out std_logic_vector(31 downto 0);         -- size of image in bytes; valid only for active bit in img_mounted
+   img_type_o        : out std_logic_vector(1 downto 0);
+
+   -- While "img_mounted_o" needs to be strobed, "drive_mounted" latches the strobe,
+   -- so that it can be used for resetting (and unresetting) the drive.
+   drive_mounted_o   : out std_logic_vector(VDNUM - 1 downto 0);
    
-   -- MiSTer's "SD block level access" interface, which runs in QNICE's clock domain
-   -- using dedicated signal on Mister's side such as "clk_sys"
+   ---------------------------------------------------------------------------------------
+   -- QNICE clock domain
+   ---------------------------------------------------------------------------------------
+         
+   -- MiSTer's "SD block level access" interface, which runs in QNICE's clock domain using a dedicated signal
+   -- on Mister's side such as "clk_sys" (<== oddly deep down in MiSTer code "clk_sys" is not the core, but the "sd write", i.e. QNICE)
    sd_lba_i          : in vd_vec_array(VDNUM - 1 downto 0)(31 downto 0);
    sd_blk_cnt_i      : in vd_vec_array(VDNUM - 1 downto 0)(5 downto 0);  -- number of blocks-1, total size ((sd_blk_cnt+1)*(1<<(BLKSZ+7))) must be <= 16384!
    sd_rd_i           : in vd_std_array(VDNUM - 1 downto 0);
@@ -148,6 +162,7 @@ signal reset_qnice      : std_logic;
 signal img_mounted      : std_logic_vector(VDNUM - 1 downto 0);
 signal img_readonly     : std_logic;
 signal img_size         : std_logic_vector(31 downto 0);
+signal img_type         : std_logic_vector(1 downto 0);
 
 signal sd_ack           : vd_std_array(VDNUM - 1 downto 0);
 
@@ -169,13 +184,19 @@ signal sd_lba_4k_offs   : vd_vec_array(VDNUM - 1 downto 0)(11 downto 0);
 signal img_mounted_out  : std_logic_vector(VDNUM - 1 downto 0);
 signal img_readonly_out : std_logic;
 signal img_size_out     : std_logic_vector(31 downto 0);
+signal img_type_out     : std_logic_vector(1 downto 0);
+
+-- Core clock domain
+signal drive_mounted_reg : std_logic_vector(VDNUM - 1 downto 0);
 
 begin
    -- Core clock domain: Output registers
    img_mounted_o     <= img_mounted_out;
    img_readonly_o    <= img_readonly_out;
    img_size_o        <= img_size_out;
-   
+   img_type_o        <= img_type_out;
+   drive_mounted_o   <= drive_mounted_reg;
+
    i_cdc_q2m_img_mounted: xpm_cdc_array_single
       generic map (
          WIDTH => VDNUM
@@ -186,26 +207,28 @@ begin
          dest_clk                      => clk_core_i,
          dest_out(VDNUM - 1 downto 0)  => img_mounted_out(VDNUM - 1 downto 0) 
       );
-      
+
    i_cdc_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 33
+         WIDTH => 35
       )
       port map (
          src_clk                       => clk_qnice_i,
          src_in(0)                     => img_readonly,
-         src_in(32 downto 1)           => img_size,
+         src_in(2 downto 1)            => img_type,
+         src_in(34 downto 3)           => img_size,
          dest_clk                      => clk_core_i,
          dest_out(0)                   => img_readonly_out,
-         dest_out(32 downto 1)         => img_size_out
-      );   
-   
+         dest_out(2 downto 1)          => img_type_out,
+         dest_out(34 downto 3)         => img_size_out
+      );
+
    -- QNICE clock domain: Output registers
    sd_buff_addr_o    <= sd_buff_addr;
    sd_buff_dout_o    <= sd_buff_dout;
    sd_buff_wr_o      <= sd_buff_wr;
    sd_ack_o          <= sd_ack;
-   
+
    i_cdc_main2qnice: xpm_cdc_array_single
       generic map (
          WIDTH => 1
@@ -216,9 +239,11 @@ begin
          dest_clk                      => clk_qnice_i,
          dest_out(0)                   => reset_qnice
       );
-            
+
    -- speed up the QNICE firmware by doing certain calculations in hardware instead of software
    g_bytecalc : for i in 0 to VDNUM - 1 generate
+      -- MiSTer's value is too low by 1 by default, so we correct it; here is the original comment from "hps_io.sv"
+      -- "number of blocks-1, total size ((sd_blk_cnt+1)*(1<<(BLKSZ+7))) must be <= 16384!"
       sd_blk_cnt_i_corrected(i) <= std_logic_vector(to_unsigned((to_integer(unsigned(sd_blk_cnt_i(i))) + 1), 6));
 
       -- calculate lba and block count in bytes by shifting to the left
@@ -231,6 +256,27 @@ begin
       sd_lba_4k_win(i)  <= sd_lba_bytes(i)(27 downto 12);      
       sd_lba_4k_offs(i) <= sd_lba_bytes(i)(11 downto 0);      
    end generate g_bytecalc;
+
+   -- the protocol demands for a strobed img_mounted signal, but we need a constant signal
+   -- to control the drive's reset line
+   handle_drive_mounted : process(clk_core_i)
+   begin
+      if rising_edge(clk_core_i) then      
+         for i in 0 to VDNUM - 1 loop
+            if reset_core_i = '1' then
+               drive_mounted_reg(i) <= '0';
+            else
+	           if img_mounted_out(i) = '1' then
+	              if img_size_out = x"00000000" then
+	                 drive_mounted_reg(i) <= '0';
+	              else
+	                 drive_mounted_reg(i) <= '1';
+	              end if; 
+	           end if;
+	        end if;            
+         end loop;
+      end if;
+   end process;
             
    write_qnice_registers : process(clk_qnice_i)
    begin
@@ -239,6 +285,7 @@ begin
             img_mounted    <= (others => '0');
             img_readonly   <= '0';
             img_size       <= (others => '0');
+            img_type       <= (others => '0');
             sd_buff_addr   <= (others => '0');
             sd_buff_dout   <= (others => '0');
             sd_buff_wr     <= '0';
@@ -265,21 +312,25 @@ begin
                      when x"3" =>
                         img_size(31 downto 16) <= qnice_data_i;
                         
-                     -- sd_buff_addr_o
+                     -- img_type_o
                      when x"4" =>
+                        img_type <= qnice_data_i(1 downto 0);
+                        
+                     -- sd_buff_addr_o
+                     when x"5" =>
                         sd_buff_addr(AW downto 0) <= qnice_data_i(AW downto 0);
                                      
                      -- sd_buff_dout_o
-                     when x"5" =>
+                     when x"6" =>
                         sd_buff_dout(DW downto 0) <= qnice_data_i(DW downto 0);
                         
                      -- sd_buff_wr_o
-                     when x"6" =>                        
+                     when x"7" =>                        
                         sd_buff_wr <= qnice_data_i(0);
                         
                      -- 7 and 8 are read-only: Number of virtual drives and Block size for LBA adressing
-                     when x"7" =>
                      when x"8" =>
+                     when x"9" =>
                         null;
                                                
                      when others =>
@@ -323,25 +374,29 @@ begin
             -- img_size_o: high word
             when x"3" =>
                qnice_data_o <= img_size(31 downto 16);
+               
+            -- img_type_o
+            when x"4" =>
+               qnice_data_o(1 downto 0) <= img_type;
 
             -- sd_buff_addr_o
-            when x"4" =>
+            when x"5" =>
                qnice_data_o(AW downto 0) <= sd_buff_addr(AW downto 0);
                             
             -- sd_buff_dout_o
-            when x"5" =>
+            when x"6" =>
                qnice_data_o(DW downto 0) <= sd_buff_dout(DW downto 0);
                
             -- sd_buff_wr_o
-            when x"6" =>                        
+            when x"7" =>                        
                qnice_data_o(0) <= sd_buff_wr;
                
             -- Number of virtual drives
-            when x"7" =>
+            when x"8" =>
                qnice_data_o <= std_logic_vector(to_unsigned(VDNUM, 16));
 
             -- Block size for LBA adressing
-            when x"8" =>
+            when x"9" =>
                qnice_data_o(7 + BLKSZ) <= '1';           
             when others =>
                null;
