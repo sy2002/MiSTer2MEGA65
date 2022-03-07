@@ -156,6 +156,15 @@ signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
 signal main_audio_l           : signed(15 downto 0);
 signal main_audio_r           : signed(15 downto 0);
 
+-- VGA output
+signal main_vga_ce            : std_logic;
+signal main_vga_red           : std_logic_vector(7 downto 0);
+signal main_vga_green         : std_logic_vector(7 downto 0);
+signal main_vga_blue          : std_logic_vector(7 downto 0);
+signal main_vga_vs            : std_logic;
+signal main_vga_hs            : std_logic;
+signal main_vga_de            : std_logic;
+
 ---------------------------------------------------------------------------------------------
 -- clk_qnice
 ---------------------------------------------------------------------------------------------
@@ -271,6 +280,14 @@ begin
          joy_2_left_n_i       => joy_2_left_n,
          joy_2_right_n_i      => joy_2_right_n,
          joy_2_fire_n_i       => joy_2_fire_n,
+
+         vga_ce_o             => main_vga_ce,
+         vga_red_o            => main_vga_red,
+         vga_green_o          => main_vga_green,
+         vga_blue_o           => main_vga_blue,
+         vga_vs_o             => main_vga_vs,
+         vga_hs_o             => main_vga_hs,
+         vga_de_o             => main_vga_de,
 
          -- Audio output
          audio_left_o         => main_audio_l,
