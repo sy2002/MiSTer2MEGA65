@@ -81,7 +81,7 @@ port (
    joy_2_right_n  : in std_logic;
    joy_2_fire_n   : in std_logic
 );
-end MEGA65_Core;
+end entity MEGA65_Core;
 
 architecture beh of MEGA65_Core is
 
@@ -131,17 +131,17 @@ constant SHELL_O_DY           : integer := 26;
 -- Clocks and active high reset signals for each clock domain
 ---------------------------------------------------------------------------------------------
 
-signal clk_qnice              : std_logic;               -- QNICE main clock @ 50 MHz
-signal clk_main               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
-signal clk_pixel_1x           : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
-signal clk_pixel_5x           : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
+signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
+signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
+signal vga_clk                : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
+signal tmds_clk               : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
 
 signal main_rst               : std_logic;
 signal qnice_rst              : std_logic;
-signal pixel_rst              : std_logic;
+signal vga_rst                : std_logic;
 
 ---------------------------------------------------------------------------------------------
--- clk_main (MiSTer core's clock)
+-- main_clk (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
 
 -- QNICE control and status register
@@ -166,7 +166,7 @@ signal main_vga_hs            : std_logic;
 signal main_vga_de            : std_logic;
 
 ---------------------------------------------------------------------------------------------
--- clk_qnice
+-- qnice_clk
 ---------------------------------------------------------------------------------------------
 
 -- Control and status register that QNICE uses to control the Core
@@ -201,7 +201,7 @@ signal qnice_vram_attr_data_o : std_logic_vector(7 downto 0);
 signal qnice_config_data      : std_logic_vector(15 downto 0);
 
 ---------------------------------------------------------------------------------------------
--- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
+-- vga_clk (VGA pixelclock)
 ---------------------------------------------------------------------------------------------
 
 signal vga_de                 : std_logic;            -- VGA data enable (visible pixels)
@@ -230,19 +230,20 @@ begin
          sys_clk_i    => CLK,             -- expects 100 MHz
          sys_rstn_i   => RESET_N,         -- Asynchronous, asserted low
 
-         qnice_clk_o  => clk_qnice,       -- QNICE's 50 MHz main clock
+         qnice_clk_o  => qnice_clk,       -- QNICE's 50 MHz main clock
          qnice_rst_o  => qnice_rst,       -- QNICE's reset, synchronized
 
-         main_clk_o   => clk_main,        -- main's @TODO 40 MHz main clock
+         main_clk_o   => main_clk,        -- main's @TODO 40 MHz main clock
          main_rst_o   => main_rst,        -- main's reset, synchronized
 
-         pixel_clk_o  => clk_pixel_1x,    -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
-         pixel_rst_o  => pixel_rst,       -- VGA's reset, synchronized
-         pixel_clk5_o => clk_pixel_5x     -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
-      );
+         pixel_clk_o  => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
+         pixel_rst_o  => vga_rst,         -- VGA's reset, synchronized
+         pixel_clk5_o => tmds_clk         -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
+      ); -- clk_gen
+
 
    ---------------------------------------------------------------------------------------------
-   -- clk_main (MiSTer core's clock)
+   -- main_clk (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
 
    -- main.vhd contains the actual MiSTer core
@@ -260,7 +261,7 @@ begin
          G_ANOTHER_THING      => 123456
       )
       port map (
-         clk_main_i           => clk_main,
+         clk_main_i           => main_clk,
          reset_i              => main_rst or main_qnice_reset,
          pause_i              => main_qnice_pause,
 
@@ -281,15 +282,16 @@ begin
          joy_2_right_n_i      => joy_2_right_n,
          joy_2_fire_n_i       => joy_2_fire_n,
 
+         -- Video output (VGA)
          vga_ce_o             => main_vga_ce,
          vga_red_o            => main_vga_red,
          vga_green_o          => main_vga_green,
          vga_blue_o           => main_vga_blue,
-         vga_vs_o             => main_vga_vs,
-         vga_hs_o             => main_vga_hs,
+         vga_vs_o             => main_vga_vs,   -- positive polarity
+         vga_hs_o             => main_vga_hs,   -- positive polarity
          vga_de_o             => main_vga_de,
 
-         -- Audio output
+         -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_l,
          audio_right_o        => main_audio_r
       ); -- i_main
@@ -300,7 +302,7 @@ begin
          CLOCK_SPEED          => CORE_CLK_SPEED
       )
       port map (
-         clk_main_i           => clk_main,
+         clk_main_i           => main_clk,
 
          -- interface to the MEGA65 keyboard controller
          kio8_o               => kb_io0,
@@ -319,7 +321,7 @@ begin
    i_pcm2pdm : entity work.pcm_to_pdm
       port map
       (
-         cpuclock                => clk_main,
+         cpuclock                => main_clk,
 
          pcm_left                => main_audio_l,
          pcm_right               => main_audio_r,
@@ -330,8 +332,9 @@ begin
          audio_mode              => '0'         -- 0=PDM, 1=PWM
       ); -- i_pcm2pdm
 
+
    ---------------------------------------------------------------------------------------------
-   -- clk_qnice
+   -- qnice_clk
    ---------------------------------------------------------------------------------------------
 
    -- QNICE Co-Processor (System-on-a-Chip) for ROM loading and On-Screen-Menu
@@ -352,7 +355,7 @@ begin
          G_SHELL_O_DY            => SHELL_O_DY
       )
       port map (
-         clk50_i                 => clk_qnice,
+         clk50_i                 => qnice_clk,
          reset_n_i               => not qnice_rst,
 
          -- serial communication (rxd, txd only; rts/cts are not available)
@@ -394,7 +397,7 @@ begin
          ramrom_data_i           => qnice_ramrom_data_i,
          ramrom_ce_o             => qnice_ramrom_ce,
          ramrom_we_o             => qnice_ramrom_we
-      );
+      ); -- QNICE_SOC
 
    shell_cfg : entity work.config
       port map (
@@ -404,7 +407,7 @@ begin
 
          -- config data
          data_o                  => qnice_config_data
-      );
+      ); -- shell_cfg
 
    -- The device selector qnice_ramrom_dev decides, which RAM/ROM-like device QNICE is writing to.
    -- Device numbers < 256 are reserved for QNICE; everything else can be used by your MiSTer core.
@@ -437,10 +440,11 @@ begin
          -- Device numbers need to be >= 0x0100
          when others => null;
       end case;
-   end process;
+   end process qnice_ramrom_devices;
+
 
    ---------------------------------------------------------------------------------------------
-   -- clk_pixel_1x (VGA pixelclock) and clk_pixel_5x (HDMI)
+   -- vga_clk (VGA pixelclock) and tmds_clk (HDMI)
    ---------------------------------------------------------------------------------------------
 
    i_vga : entity work.vga
@@ -453,8 +457,8 @@ begin
          G_FONT_DY            => FONT_DY
       )
       port map (
-         clk_i                => clk_pixel_1x,     -- pixel clock at frequency of VGA mode being used
-         rstn_i               => not pixel_rst,    -- active low reset
+         clk_i                => vga_clk,          -- pixel clock at frequency of VGA mode being used
+         rstn_i               => not vga_rst,      -- active low reset
          vga_osm_cfg_enable_i => vga_osm_cfg_enable,
          vga_osm_cfg_xy_i     => vga_osm_cfg_xy,
          vga_osm_cfg_dxdy_i   => vga_osm_cfg_dxdy,
@@ -472,7 +476,7 @@ begin
          vdac_clk_o           => vdac_clk,
          vdac_sync_n_o        => vdac_sync_n,
          vdac_blank_n_o       => vdac_blank_n
-      );
+      ); -- i_vga
 
    i_vga_to_hdmi : entity work.vga_to_hdmi
       port map (
@@ -484,8 +488,8 @@ begin
          vs_pol       => VIDEO_MODE.V_POL,            -- horizontal polarity: negative
          hs_pol       => VIDEO_MODE.H_POL,            -- vertaical polarity: negative
 
-         vga_rst      => pixel_rst,                   -- active high reset
-         vga_clk      => clk_pixel_1x,                -- VGA pixel clock
+         vga_rst      => vga_rst,                     -- active high reset
+         vga_clk      => vga_clk,                     -- VGA pixel clock
          vga_vs       => vga_vs,
          vga_hs       => vga_hs,
          vga_de       => vga_de,
@@ -495,7 +499,7 @@ begin
 
          -- PCM audio
          pcm_rst      => main_rst,
-         pcm_clk      => clk_main,
+         pcm_clk      => main_clk,
          pcm_clken    => '0',
          pcm_l        => (others => '0'),
          pcm_r        => (others => '0'),
@@ -505,16 +509,16 @@ begin
 
          -- TMDS output (parallel)
          tmds         => vga_tmds
-      ); -- i_vga_to_hdmi: entity work.vga_to_hdmi
+      ); -- i_vga_to_hdmi
 
    -- serialiser: in this design we use TMDS SelectIO outputs
    GEN_HDMI_DATA: for i in 0 to 2 generate
    begin
       HDMI_DATA: entity work.serialiser_10to1_selectio
       port map (
-         rst     => pixel_rst,
-         clk     => clk_pixel_1x,
-         clk_x5  => clk_pixel_5x,
+         rst     => vga_rst,
+         clk     => vga_clk,
+         clk_x5  => tmds_clk,
          d       => vga_tmds(i),
          out_p   => TMDS_data_p(i),
          out_n   => TMDS_data_n(i)
@@ -523,13 +527,14 @@ begin
 
    HDMI_CLK: entity work.serialiser_10to1_selectio
    port map (
-         rst     => pixel_rst,
-         clk     => clk_pixel_1x,
-         clk_x5  => clk_pixel_5x,
+         rst     => vga_rst,
+         clk     => vga_clk,
+         clk_x5  => tmds_clk,
          d       => "0000011111",
          out_p   => TMDS_clk_p,
          out_n   => TMDS_clk_n
-      ); -- HDMI_CLK: entity work.serialiser_10to1_selectio
+      ); -- HDMI_CLK
+
 
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks
@@ -578,39 +583,39 @@ begin
          WIDTH => 2
       )
       port map (
-         src_clk                => clk_qnice,
+         src_clk                => qnice_clk,
          src_in(0)              => qnice_csr_reset,
          src_in(1)              => qnice_csr_pause,
-         dest_clk               => clk_main,
+         dest_clk               => main_clk,
          dest_out(0)            => main_qnice_reset,
          dest_out(1)            => main_qnice_pause
-      );
+      ); -- i_qnice2main
 
    i_main2qnice: xpm_cdc_array_single
       generic map (
          WIDTH => 16
       )
       port map (
-         src_clk                => clk_main,
+         src_clk                => main_clk,
          src_in(15 downto 0)    => main_qnice_keys_n,
-         dest_clk               => clk_qnice,
+         dest_clk               => qnice_clk,
          dest_out(15 downto 0)  => qnice_qnice_keys_n
-      );
+      ); -- i_main2qnice
 
    i_qnice2vga: xpm_cdc_array_single
       generic map (
          WIDTH => 33
       )
       port map (
-         src_clk                => clk_qnice,
+         src_clk                => qnice_clk,
          src_in(15 downto 0)    => qnice_osm_cfg_xy,
          src_in(31 downto 16)   => qnice_osm_cfg_dxdy,
          src_in(32)             => qnice_osm_cfg_enable,
-         dest_clk               => clk_pixel_1x,
+         dest_clk               => vga_clk,
          dest_out(15 downto 0)  => vga_osm_cfg_xy,
          dest_out(31 downto 16) => vga_osm_cfg_dxdy,
          dest_out(32)           => vga_osm_cfg_enable
-      );
+      ); -- i_qnice2vga
 
    -- Dual clock & dual port RAM that acts as framebuffer: the LCD display of the gameboy is
    -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
@@ -627,12 +632,12 @@ begin
 --         wren_a       => main_pixel_out_we,
 --         q_a          => open,
 
-         clock_b      => clk_pixel_1x,
+         clock_b      => vga_clk,
          address_b    => vga_core_vram_addr,
          data_b       => (others => '0'),
          wren_b       => '0',
          q_b          => vga_core_vram_data
-      );
+      ); -- core_frame_buffer
 
    -- Dual port & dual clock screen RAM / video RAM: contains the "ASCII" codes of the characters
    osm_vram : entity work.dualport_2clk_ram
@@ -642,16 +647,16 @@ begin
          FALLING_A    => true              -- QNICE expects read/write to happen at the falling clock edge
       )
       port map (
-         clock_a      => clk_qnice,
+         clock_a      => qnice_clk,
          address_a    => qnice_ramrom_addr(VRAM_ADDR_WIDTH-1 downto 0),
          data_a       => qnice_ramrom_data_o(7 downto 0),
          wren_a       => qnice_vram_we,
          q_a          => qnice_vram_data_o,
 
-         clock_b      => clk_pixel_1x,
+         clock_b      => vga_clk,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
          q_b          => vga_osm_vram_data
-      );
+      ); -- osm_vram
 
    -- Dual port & dual clock attribute RAM: contains inverse attribute, light/dark attrib. and colors of the chars
    -- bit 7: 1=inverse
@@ -669,16 +674,16 @@ begin
          FALLING_A    => true
       )
       port map (
-         clock_a      => clk_qnice,
+         clock_a      => qnice_clk,
          address_a    => qnice_ramrom_addr(VRAM_ADDR_WIDTH-1 downto 0),
          data_a       => qnice_ramrom_data_o(7 downto 0),
          wren_a       => qnice_vram_attr_we,
          q_a          => qnice_vram_attr_data_o,
 
-         clock_b      => clk_pixel_1x,
+         clock_b      => vga_clk,
          address_b    => vga_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),       -- same address as VRAM
          q_b          => vga_osm_vram_attr
-      );
+      ); -- osm_vram_attr
 
-end beh;
+end architecture beh;
 
