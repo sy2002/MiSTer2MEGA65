@@ -204,6 +204,7 @@ signal qnice_config_data      : std_logic_vector(15 downto 0);
 -- vga_clk (VGA pixelclock)
 ---------------------------------------------------------------------------------------------
 
+signal vga_ce                 : std_logic;            -- VGA clock enable (all pixels)
 signal vga_de                 : std_logic;            -- VGA data enable (visible pixels)
 signal vga_tmds               : slv_9_0_t(0 to 2);    -- parallel TMDS symbol stream x 3 channels
 
@@ -444,39 +445,70 @@ begin
 
 
    ---------------------------------------------------------------------------------------------
-   -- vga_clk (VGA pixelclock) and tmds_clk (HDMI)
+   -- vga_clk (VGA pixelclock)
    ---------------------------------------------------------------------------------------------
 
-   i_vga : entity work.vga
-      generic map (
-         G_VIDEO_MODE         => VIDEO_MODE,
-         G_CORE_DX            => CORE_DX,
-         G_CORE_DY            => CORE_DY,
-         G_CORE_TO_VGA_SCALE  => CORE_TO_VGA_SCALE,
-         G_FONT_DX            => FONT_DX,
-         G_FONT_DY            => FONT_DY
+--   i_vga : entity work.vga
+--      generic map (
+--         G_VIDEO_MODE         => VIDEO_MODE,
+--         G_CORE_DX            => CORE_DX,
+--         G_CORE_DY            => CORE_DY,
+--         G_CORE_TO_VGA_SCALE  => CORE_TO_VGA_SCALE,
+--         G_FONT_DX            => FONT_DX,
+--         G_FONT_DY            => FONT_DY
+--      )
+--      port map (
+--         clk_i                => vga_clk,          -- pixel clock at frequency of VGA mode being used
+--         rstn_i               => not vga_rst,      -- active low reset
+--         vga_osm_cfg_enable_i => vga_osm_cfg_enable,
+--         vga_osm_cfg_xy_i     => vga_osm_cfg_xy,
+--         vga_osm_cfg_dxdy_i   => vga_osm_cfg_dxdy,
+--         vga_osm_vram_addr_o  => vga_osm_vram_addr,
+--         vga_osm_vram_data_i  => vga_osm_vram_data,
+--         vga_osm_vram_attr_i  => vga_osm_vram_attr,
+--         vga_core_vram_addr_o => vga_core_vram_addr,
+--         vga_core_vram_data_i => vga_core_vram_data,
+--         vga_red_o            => vga_red,
+--         vga_green_o          => vga_green,
+--         vga_blue_o           => vga_blue,
+--         vga_hs_o             => vga_hs,
+--         vga_vs_o             => vga_vs,
+--         vga_de_o             => vga_de,
+--         vdac_clk_o           => vdac_clk,
+--         vdac_sync_n_o        => vdac_sync_n,
+--         vdac_blank_n_o       => vdac_blank_n
+--      ); -- i_vga
+
+   i_vga_wrapper : entity work.vga_wrapper
+      generic  map (
+         G_VGA_DX         => VIDEO_MODE.H_PIXELS,
+         G_VGA_DY         => VIDEO_MODE.V_PIXELS,
+         G_FONT_DX        => FONT_DX,
+         G_FONT_DY        => FONT_DY
       )
       port map (
-         clk_i                => vga_clk,          -- pixel clock at frequency of VGA mode being used
-         rstn_i               => not vga_rst,      -- active low reset
-         vga_osm_cfg_enable_i => vga_osm_cfg_enable,
-         vga_osm_cfg_xy_i     => vga_osm_cfg_xy,
-         vga_osm_cfg_dxdy_i   => vga_osm_cfg_dxdy,
-         vga_osm_vram_addr_o  => vga_osm_vram_addr,
-         vga_osm_vram_data_i  => vga_osm_vram_data,
-         vga_osm_vram_attr_i  => vga_osm_vram_attr,
-         vga_core_vram_addr_o => vga_core_vram_addr,
-         vga_core_vram_data_i => vga_core_vram_data,
-         vga_red_o            => vga_red,
-         vga_green_o          => vga_green,
-         vga_blue_o           => vga_blue,
-         vga_hs_o             => vga_hs,
-         vga_vs_o             => vga_vs,
-         vga_de_o             => vga_de,
-         vdac_clk_o           => vdac_clk,
-         vdac_sync_n_o        => vdac_sync_n,
-         vdac_blank_n_o       => vdac_blank_n
-      ); -- i_vga
+         vga_clk_i        => main_clk,
+         vga_ce_i         => main_vga_ce,
+         vga_red_i        => main_vga_red,
+         vga_green_i      => main_vga_green,
+         vga_blue_i       => main_vga_blue,
+         vga_hs_i         => main_vga_hs,
+         vga_vs_i         => main_vga_vs,
+         vga_de_i         => main_vga_de,
+         vga_cfg_enable_i => vga_osm_cfg_enable,
+         vga_cfg_xy_i     => vga_osm_cfg_xy,
+         vga_cfg_dxdy_i   => vga_osm_cfg_dxdy,
+         vga_vram_addr_o  => vga_osm_vram_addr,
+         vga_vram_data_i  => vga_osm_vram_data,
+         vga_vram_attr_i  => vga_osm_vram_attr,
+         vga_ce_o         => vga_ce,
+         vga_red_o        => vga_red,
+         vga_green_o      => vga_green,
+         vga_blue_o       => vga_blue,
+         vga_hs_o         => vga_hs,
+         vga_vs_o         => vga_vs,
+         vga_de_o         => vga_de
+      ); -- i_vga_wrapper
 
    i_vga_to_hdmi : entity work.vga_to_hdmi
       port map (
@@ -510,6 +542,11 @@ begin
          -- TMDS output (parallel)
          tmds         => vga_tmds
       ); -- i_vga_to_hdmi
+
+
+   ---------------------------------------------------------------------------------------------
+   -- tmds_clk (HDMI)
+   ---------------------------------------------------------------------------------------------
 
    -- serialiser: in this design we use TMDS SelectIO outputs
    GEN_HDMI_DATA: for i in 0 to 2 generate
@@ -617,27 +654,27 @@ begin
          dest_out(32)           => vga_osm_cfg_enable
       ); -- i_qnice2vga
 
-   -- Dual clock & dual port RAM that acts as framebuffer: the LCD display of the gameboy is
-   -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
-   -- using the pixel clock
-   core_frame_buffer : entity work.dualport_2clk_ram
-      generic map (
-         ADDR_WIDTH   => 15,
-         DATA_WIDTH   => 24
-      )
-      port map (
---         clock_a      => main_clk,
---         address_a    => std_logic_vector(to_unsigned(main_pixel_out_ptr, 15)),
---         data_a       => main_pixel_out_data,
---         wren_a       => main_pixel_out_we,
---         q_a          => open,
-
-         clock_b      => vga_clk,
-         address_b    => vga_core_vram_addr,
-         data_b       => (others => '0'),
-         wren_b       => '0',
-         q_b          => vga_core_vram_data
-      ); -- core_frame_buffer
+--   -- Dual clock & dual port RAM that acts as framebuffer: the LCD display of the gameboy is
+--   -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
+--   -- using the pixel clock
+--   core_frame_buffer : entity work.dualport_2clk_ram
+--      generic map (
+--         ADDR_WIDTH   => 15,
+--         DATA_WIDTH   => 24
+--      )
+--      port map (
+----         clock_a      => main_clk,
+----         address_a    => std_logic_vector(to_unsigned(main_pixel_out_ptr, 15)),
+----         data_a       => main_pixel_out_data,
+----         wren_a       => main_pixel_out_we,
+----         q_a          => open,
+--
+--         clock_b      => vga_clk,
+--         address_b    => vga_core_vram_addr,
+--         data_b       => (others => '0'),
+--         wren_b       => '0',
+--         q_b          => vga_core_vram_data
+--      ); -- core_frame_buffer
 
    -- Dual port & dual clock screen RAM / video RAM: contains the "ASCII" codes of the characters
    osm_vram : entity work.dualport_2clk_ram
