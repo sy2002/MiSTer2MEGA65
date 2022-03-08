@@ -104,9 +104,9 @@ constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 --    FONT_*  size of one OSM character
 constant VGA_DX               : natural := VIDEO_MODE.H_PIXELS;
 constant VGA_DY               : natural := VIDEO_MODE.V_PIXELS;
-constant CORE_DX              : natural := 160;
-constant CORE_DY              : natural := 144;
-constant CORE_TO_VGA_SCALE    : natural := 5;
+--constant CORE_DX              : natural := 160;
+--constant CORE_DY              : natural := 144;
+--constant CORE_TO_VGA_SCALE    : natural := 5;
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
 
@@ -132,13 +132,16 @@ constant SHELL_O_DY           : integer := 26;
 ---------------------------------------------------------------------------------------------
 
 signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
-signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
+--signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
 signal vga_clk                : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
 signal tmds_clk               : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
 
-signal main_rst               : std_logic;
+--signal main_rst               : std_logic;
 signal qnice_rst              : std_logic;
 signal vga_rst                : std_logic;
+
+alias main_clk : std_logic is vga_clk;
+alias main_rst : std_logic is vga_rst;
 
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -234,8 +237,8 @@ begin
          qnice_clk_o  => qnice_clk,       -- QNICE's 50 MHz main clock
          qnice_rst_o  => qnice_rst,       -- QNICE's reset, synchronized
 
-         main_clk_o   => main_clk,        -- main's @TODO 40 MHz main clock
-         main_rst_o   => main_rst,        -- main's reset, synchronized
+         main_clk_o   => open, -- main_clk,        -- main's @TODO 40 MHz main clock
+         main_rst_o   => open, -- main_rst,        -- main's reset, synchronized
 
          pixel_clk_o  => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
          pixel_rst_o  => vga_rst,         -- VGA's reset, synchronized
@@ -251,6 +254,7 @@ begin
    i_main : entity work.main
       generic map (
          G_CORE_CLK_SPEED     => CORE_CLK_SPEED,
+         G_VIDEO_MODE         => VIDEO_MODE,
 
          -- Demo core specific generics @TODO not sure if you need them, too
          G_OUTPUT_DX          => VGA_DX,
@@ -509,6 +513,10 @@ begin
          vga_vs_o         => vga_vs,
          vga_de_o         => vga_de
       ); -- i_vga_wrapper
+
+   vdac_sync_n  <= '0';
+   vdac_blank_n <= '1';
+   vdac_clk     <= not vga_clk; -- inverting the clock leads to a sharper signal for some reason
 
    i_vga_to_hdmi : entity work.vga_to_hdmi
       port map (

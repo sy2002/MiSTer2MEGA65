@@ -10,9 +10,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.video_modes_pkg.all;
+
 entity main is
    generic (
       G_CORE_CLK_SPEED       : natural;
+      G_VIDEO_MODE           : video_modes_t;
 
       -- @TODO adjust this to your needs
       G_OUTPUT_DX            : natural;
@@ -70,6 +74,7 @@ begin
    i_democore : entity work.democore
       generic map (
          G_CORE_CLK_SPEED     => G_CORE_CLK_SPEED,
+         G_VIDEO_MODE         => G_VIDEO_MODE,
          G_OUTPUT_DX          => G_OUTPUT_DX,
          G_OUTPUT_DY          => G_OUTPUT_DY
       )

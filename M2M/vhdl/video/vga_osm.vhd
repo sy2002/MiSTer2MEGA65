@@ -96,7 +96,7 @@ begin
    vga_osm_vram_addr_o <= std_logic_vector(to_unsigned(vga_y_div_16 * CHARS_DX + vga_x_div_16, 16));
 
    -- Read font data. (Almost) combinatorial read.
-   vga_osm_font_addr_d <= std_logic_vector(to_unsigned(to_integer(unsigned(vga_osm_vram_data_i)) * G_FONT_DY + vga_y_mod_16, 12));
+   vga_osm_font_addr_d <= std_logic_vector(to_unsigned(to_integer(unsigned(vga_osm_vram_data_i)) * G_FONT_DY + vga_y_mod_16_d, 12));
 
    -- 16x16 pixel font ROM
    -- This reads on the falling clock edge, and is therefore equivalent to a combinatorial read.
@@ -106,14 +106,14 @@ begin
          ADDR_WIDTH   => 12,
          DATA_WIDTH   => 16,
          ROM_PRELOAD  => true,
-         ROM_FILE     => "../font/Anikki-16x16.rom",         
+         ROM_FILE     => "../font/Anikki-16x16.rom",
          FALLING_A      => true
       )
       port map
       (
          clock_a           => clk_i,
-         address_a         => vga_osm_font_addr_d, 
-         q_a               => vga_osm_font_data_d      
+         address_a         => vga_osm_font_addr_d,
+         q_a               => vga_osm_font_data_d
       );
 
    p_delay : process (clk_i)
