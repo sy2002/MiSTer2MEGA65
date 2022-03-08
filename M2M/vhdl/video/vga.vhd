@@ -60,8 +60,6 @@ architecture synthesis of vga is
    signal vga_hs         : std_logic;
    signal vga_vs         : std_logic;
    signal vga_disp_en    : std_logic;
-   signal vga_col        : integer range 0 to G_VIDEO_MODE.H_PIXELS - 1;
-   signal vga_row        : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
 
    -- Delayed VGA signals
    signal vga_hs_d       : std_logic;
@@ -85,47 +83,28 @@ architecture synthesis of vga is
 
 begin
 
-   -- Component that produces VGA timings and outputs the currently active pixel coordinate (row, column)
-   vga_pixels_and_timing : entity work.vga_controller
-      port map (
-         h_pulse   => G_VIDEO_MODE.H_PULSE,     -- horizontal sync pulse width in pixels
-         h_bp      => G_VIDEO_MODE.H_BP,        -- horizontal back porch width in pixels
-         h_pixels  => G_VIDEO_MODE.H_PIXELS,    -- horizontal display width in pixels
-         h_fp      => G_VIDEO_MODE.H_FP,        -- horizontal front porch width in pixels
-         h_pol     => G_VIDEO_MODE.H_POL,       -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-         v_pulse   => G_VIDEO_MODE.V_PULSE,     -- vertical sync pulse width in rows
-         v_bp      => G_VIDEO_MODE.V_BP,        -- vertical back porch width in rows
-         v_pixels  => G_VIDEO_MODE.V_PIXELS,    -- vertical display width in rows
-         v_fp      => G_VIDEO_MODE.V_FP,        -- vertical front porch width in rows
-         v_pol     => G_VIDEO_MODE.V_POL,       -- vertical sync pulse polarity (1 = positive, 0 = negative)
-
-         pixel_clk => clk_i,       -- pixel clock at frequency of VGA mode being used
-         reset_n   => rstn_i,      -- active low asycnchronous reset
-         h_sync    => vga_hs,      -- horiztonal sync pulse
-         v_sync    => vga_vs,      -- vertical sync pulse
-         disp_ena  => vga_disp_en, -- display enable ('1' = display time, '0' = blanking time)
-         column    => vga_col,     -- horizontal pixel coordinate
-         row       => vga_row,     -- vertical pixel coordinate
-         n_blank   => open,        -- direct blacking output to DAC
-         n_sync    => open         -- sync-on-green output to DAC
-      ); -- vga_pixels_and_timing : entity work.vga_controller
-
-
-   -----------------------------------------------
-   -- Instantiate Core Display generator
-   -----------------------------------------------
-
-   i_democore_pixel : entity work.democore_pixel
-      generic  map (
-         G_VGA_DX       => G_VIDEO_MODE.H_PIXELS,
-         G_VGA_DY       => G_VIDEO_MODE.V_PIXELS
+   i_democore : entity work.democore
+      generic map (
+         G_CORE_CLK_SPEED     => 0,
+         G_VIDEO_MODE         => G_VIDEO_MODE,
+         G_OUTPUT_DX          => 0,
+         G_OUTPUT_DY          => 0
       )
       port map (
-         vga_clk_i      => clk_i,
-         vga_col_i      => vga_col,
-         vga_row_i      => vga_row,
-         vga_core_rgb_o => vga_core_rgb_d
-      ); -- i_democore_pixel
+         clk_main_i           => clk_i,
+         reset_i              => '0',
+         pause_i              => '0',
+         keyboard_n_i         => "000",
+         vga_ce_o             => open,
+         vga_red_o            => vga_core_rgb_d(23 downto 16),
+         vga_green_o          => vga_core_rgb_d(15 downto  8),
+         vga_blue_o           => vga_core_rgb_d( 7 downto  0),
+         vga_vs_o             => vga_vs,
+         vga_hs_o             => vga_hs,
+         vga_de_o             => vga_disp_en,
+         audio_left_o         => open,
+         audio_right_o        => open
+      ); -- i_democore
    vga_core_on_d <= '1';
 
 
