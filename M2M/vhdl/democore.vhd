@@ -45,168 +45,77 @@ end entity democore;
 
 architecture synthesis of democore is
 
-   signal vga_pixel_x : std_logic_vector(11 downto 0) := (others => '0');
-   signal vga_pixel_y : std_logic_vector(11 downto 0) := (others => '0');
-
-   constant C_HS_START : integer := G_VIDEO_MODE.H_PIXELS + G_VIDEO_MODE.H_FP;
-   constant C_VS_START : integer := G_VIDEO_MODE.V_PIXELS + G_VIDEO_MODE.V_FP;
-
-   constant C_H_MAX : integer := G_VIDEO_MODE.H_PIXELS + G_VIDEO_MODE.H_PULSE +
-                                 G_VIDEO_MODE.H_BP + G_VIDEO_MODE.H_FP;
-
-   constant C_V_MAX : integer := G_VIDEO_MODE.V_PIXELS + G_VIDEO_MODE.V_PULSE +
-                                 G_VIDEO_MODE.V_BP + G_VIDEO_MODE.V_FP;
-
-   constant C_BORDER  : integer := 4;  -- Number of pixels
-   constant C_SQ_SIZE : integer := 50; -- Number of pixels
-
-   signal pos_x : integer range 0 to G_VIDEO_MODE.H_PIXELS-1 := G_VIDEO_MODE.H_PIXELS/2;
-   signal pos_y : integer range 0 to G_VIDEO_MODE.V_PIXELS-1 := G_VIDEO_MODE.V_PIXELS/2;
-   signal vel_x : integer range -7 to 7         := 1;
-   signal vel_y : integer range -7 to 7         := 1;
+   signal vga_pixel_x : integer := 0;
+   signal vga_pixel_y : integer := 0;
 
    alias vga_clk_i : std_logic is clk_main_i;
 
+   signal vga_red   : std_logic_vector(7 downto 0);
+   signal vga_green : std_logic_vector(7 downto 0);
+   signal vga_blue  : std_logic_vector(7 downto 0);
+   signal vga_vs    : std_logic;
+   signal vga_hs    : std_logic;
+   signal vga_de    : std_logic;
+
 begin
+
+   i_vga_controller : entity work.vga_controller
+      port map (
+         h_pulse   => G_VIDEO_MODE.H_PULSE,
+         h_bp      => G_VIDEO_MODE.H_BP,
+         h_pixels  => G_VIDEO_MODE.H_PIXELS,
+         h_fp      => G_VIDEO_MODE.H_FP,
+         h_pol     => G_VIDEO_MODE.H_POL,
+         v_pulse   => G_VIDEO_MODE.V_PULSE,
+         v_bp      => G_VIDEO_MODE.V_BP,
+         v_pixels  => G_VIDEO_MODE.V_PIXELS,
+         v_fp      => G_VIDEO_MODE.V_FP,
+         v_pol     => G_VIDEO_MODE.V_POL,
+         pixel_clk => vga_clk_i,
+         reset_n   => '1',
+         h_sync    => vga_hs,
+         v_sync    => vga_vs,
+         disp_ena  => vga_de,
+         column    => vga_pixel_x,
+         row       => vga_pixel_y,
+         n_blank   => open,
+         n_sync    => open
+      ); -- i_vga_controller
 
    audio_left_o  <= (others => '0');
    audio_right_o <= (others => '0');
 
-
-   -------------------------------------
-   -- Generate horizontal pixel counter
-   -------------------------------------
-
-   p_pixel_x : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
-         if unsigned(vga_pixel_x) = C_H_MAX-1 then
-            vga_pixel_x <= (others => '0');
-         else
-            vga_pixel_x <= std_logic_vector(unsigned(vga_pixel_x) + 1);
-         end if;
-      end if;
-   end process p_pixel_x;
-
-
-   -----------------------------------
-   -- Generate vertical pixel counter
-   -----------------------------------
-
-   p_pixel_y : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
-         if unsigned(vga_pixel_x) = C_H_MAX-1 then
-            if unsigned(vga_pixel_y) = C_V_MAX-1 then
-               vga_pixel_y <= (others => '0');
-            else
-               vga_pixel_y <= std_logic_vector(unsigned(vga_pixel_y) + 1);
-            end if;
-         end if;
-      end if;
-   end process p_pixel_y;
-
-
-   -----------------------------------
-   -- Generate sync pulses
-   -----------------------------------
-
-   p_sync : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
-         -- Generate horizontal sync signal
-         if unsigned(vga_pixel_x) >= C_HS_START and
-            unsigned(vga_pixel_x) < C_HS_START+G_VIDEO_MODE.H_PULSE then
-
-            vga_hs_o <= G_VIDEO_MODE.H_POL;
-         else
-            vga_hs_o <= not G_VIDEO_MODE.H_POL;
-         end if;
-
-         -- Generate vertical sync signal
-         if unsigned(vga_pixel_y) >= C_VS_START and
-            unsigned(vga_pixel_y) < C_VS_START+G_VIDEO_MODE.V_PULSE then
-
-            vga_vs_o <= G_VIDEO_MODE.V_POL;
-         else
-            vga_vs_o <= not G_VIDEO_MODE.V_POL;
-         end if;
-
-         -- Default is black
-         vga_de_o <= '0';
-
-         -- Only show color when inside visible screen area
-         if unsigned(vga_pixel_x) < G_VIDEO_MODE.H_PIXELS and
-            unsigned(vga_pixel_y) < G_VIDEO_MODE.V_PIXELS then
-
-            vga_de_o <= '1';
-         end if;
-      end if;
-   end process p_sync;
-
+   i_democore_pixel : entity work.democore_pixel
+      generic  map (
+         G_VGA_DX => G_VIDEO_MODE.H_PIXELS,
+         G_VGA_DY => G_VIDEO_MODE.V_PIXELS
+      )
+      port map (
+         vga_clk_i => vga_clk_i,
+         vga_col_i => vga_pixel_x,
+         vga_row_i => vga_pixel_y,
+         vga_core_rgb_o(23 downto 16) => vga_red,
+         vga_core_rgb_o(15 downto  8) => vga_green,
+         vga_core_rgb_o( 7 downto  0) => vga_blue
+      );
 
    p_rgb : process (vga_clk_i)
    begin
       if rising_edge(vga_clk_i) then
-         -- Render background
-         vga_red_o   <= X"88";
-         vga_green_o <= X"CC";
-         vga_blue_o  <= X"AA";
-
-         -- Render white border
-         if unsigned(vga_pixel_x) < C_BORDER or unsigned(vga_pixel_x) + C_BORDER >= G_VIDEO_MODE.H_PIXELS or
-            unsigned(vga_pixel_y) < C_BORDER or unsigned(vga_pixel_y) + C_BORDER >= G_VIDEO_MODE.V_PIXELS then
-            vga_red_o   <= X"FF";
-            vga_green_o <= X"FF";
-            vga_blue_o  <= X"FF";
+         if vga_de then
+            vga_red_o   <= vga_red;
+            vga_green_o <= vga_green;
+            vga_blue_o  <= vga_blue;
+         else
+            vga_red_o   <= X"00";
+            vga_green_o <= X"00";
+            vga_blue_o  <= X"00";
          end if;
-
-         -- Render red-ish square
-         if unsigned(vga_pixel_x) >= pos_x and unsigned(vga_pixel_x) < pos_x + C_SQ_SIZE and
-            unsigned(vga_pixel_y) >= pos_y and unsigned(vga_pixel_y) < pos_y + C_SQ_SIZE then
-            vga_red_o   <= X"EE";
-            vga_green_o <= X"20";
-            vga_blue_o  <= X"40";
-         end if;
-
-         -- Make sure output is black outside visible screen
-         if unsigned(vga_pixel_x) >= G_VIDEO_MODE.H_PIXELS or
-            unsigned(vga_pixel_y) >= G_VIDEO_MODE.V_PIXELS then
-            vga_red_o   <= (others => '0');
-            vga_green_o <= (others => '0');
-            vga_blue_o  <= (others => '0');
-         end if;
+         vga_hs_o    <= vga_hs;
+         vga_vs_o    <= vga_vs;
+         vga_de_o    <= vga_de;
       end if;
    end process p_rgb;
-
-
-   -- Move the square
-   p_move : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
-         -- Update once each frame
-         if unsigned(vga_pixel_x) = 0 and unsigned(vga_pixel_y) = 0 then
-            pos_x <= pos_x + vel_x;
-            pos_y <= pos_y + vel_y;
-
-            if pos_x + vel_x >= G_VIDEO_MODE.H_PIXELS - C_SQ_SIZE - C_BORDER and vel_x > 0 then
-               vel_x <= -vel_x;
-            end if;
-
-            if pos_x + vel_x < C_BORDER and vel_x < 0 then
-               vel_x <= -vel_x;
-            end if;
-
-            if pos_y + vel_y >= G_VIDEO_MODE.V_PIXELS - C_SQ_SIZE - C_BORDER and vel_y > 0 then
-               vel_y <= -vel_y;
-            end if;
-
-            if pos_y + vel_y < C_BORDER and vel_y < 0 then
-               vel_y <= -vel_y;
-            end if;
-         end if;
-      end if;
-   end process p_move;
 
    vga_ce_o <= '1';
 

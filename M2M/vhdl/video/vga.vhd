@@ -132,28 +132,18 @@ begin
    -- Instantiate Core Display generator
    -----------------------------------------------
 
-   i_vga_core : entity work.vga_core
-      generic map (
-         G_VGA_DX               => G_VIDEO_MODE.H_PIXELS,
-         G_VGA_DY               => G_VIDEO_MODE.V_PIXELS,
-         G_CORE_DX              => G_CORE_DX,
-         G_CORE_DY              => G_CORE_DY,
-         G_CORE_TO_VGA_SCALE    => G_CORE_TO_VGA_SCALE
+   i_democore_pixel : entity work.democore_pixel
+      generic  map (
+         G_VGA_DX       => G_VIDEO_MODE.H_PIXELS,
+         G_VGA_DY       => G_VIDEO_MODE.V_PIXELS
       )
       port map (
-         -- pixel clock and current position on screen relative to pixel clock      
-         clk_i                => clk_i,
-         vga_col_i            => vga_col,
-         vga_row_i            => vga_row,
-         
-         -- 24-bit RGB VRAM data input in the core's native resolution
-         vga_core_vram_addr_o => vga_core_vram_addr_o,
-         vga_core_vram_data_i => vga_core_vram_data_i,
-         
-         -- scaled 24-bit RGB output for the current col/row
-         vga_core_on_o        => vga_core_on_d,
-         vga_core_rgb_o       => vga_core_rgb_d
-      ); -- i_vga_core : entity work.vga_core
+         vga_clk_i      => clk_i,
+         vga_col_i      => vga_col,
+         vga_row_i      => vga_row,
+         vga_core_rgb_o => vga_core_rgb_d
+      ); -- i_democore_pixel
+   vga_core_on_d <= '1';
 
 
    p_delay : process (clk_i)
