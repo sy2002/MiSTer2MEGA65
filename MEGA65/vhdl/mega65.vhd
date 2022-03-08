@@ -104,9 +104,6 @@ constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 --    FONT_*  size of one OSM character
 constant VGA_DX               : natural := VIDEO_MODE.H_PIXELS;
 constant VGA_DY               : natural := VIDEO_MODE.V_PIXELS;
-constant CORE_DX              : natural := 160;
-constant CORE_DY              : natural := 144;
-constant CORE_TO_VGA_SCALE    : natural := 5;
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
 
