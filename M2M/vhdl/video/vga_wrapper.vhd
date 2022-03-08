@@ -2,8 +2,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.video_modes_pkg.all;
+
 entity vga_wrapper is
    generic  (
+      G_VIDEO_MODE     : video_modes_t;
       G_VGA_DX         : natural;
       G_VGA_DY         : natural;
       G_FONT_DX        : natural;
@@ -42,90 +45,116 @@ end entity vga_wrapper;
 
 architecture synthesis of vga_wrapper is
 
-   signal vga_ce_1      : std_logic;
-   signal vga_pix_x_1   : std_logic_vector(10 downto 0);
-   signal vga_pix_y_1   : std_logic_vector(10 downto 0);
-   signal vga_red_1     : std_logic_vector(7 downto 0);
-   signal vga_green_1   : std_logic_vector(7 downto 0);
-   signal vga_blue_1    : std_logic_vector(7 downto 0);
-   signal vga_hs_1      : std_logic;
-   signal vga_vs_1      : std_logic;
-   signal vga_de_1      : std_logic;
+   -- Delayed VGA signals
+   signal vga_hs_d       : std_logic;
+   signal vga_vs_d       : std_logic;
+   signal vga_disp_en_d  : std_logic;
 
-   signal vga_ce_2      : std_logic;
-   signal vga_red_2     : std_logic_vector(7 downto 0);
-   signal vga_green_2   : std_logic_vector(7 downto 0);
-   signal vga_blue_2    : std_logic_vector(7 downto 0);
-   signal vga_hs_2      : std_logic;
-   signal vga_vs_2      : std_logic;
-   signal vga_de_2      : std_logic;
-   signal vga_osm_on_2  : std_logic;
-   signal vga_osm_rgb_2 : std_logic_vector(23 downto 0);
+   signal vga_pix_x_dd   : std_logic_vector(10 downto 0);
+   signal vga_pix_y_dd   : std_logic_vector(10 downto 0);
+   signal vga_red_dd     : std_logic_vector(7 downto 0);
+   signal vga_green_dd   : std_logic_vector(7 downto 0);
+   signal vga_blue_dd    : std_logic_vector(7 downto 0);
+   signal vga_hs_dd      : std_logic;
+   signal vga_vs_dd      : std_logic;
+   signal vga_disp_en_dd : std_logic;
+
+   signal vga_osm_on_d   : std_logic;
+   signal vga_osm_rgb_d  : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
 
 begin
+
+   p_delay : process (vga_clk_i)
+   begin
+      if rising_edge(vga_clk_i) then
+         vga_hs_d      <= vga_hs_i;
+         vga_vs_d      <= vga_vs_i;
+         vga_disp_en_d <= vga_de_i;
+      end if;
+   end process p_delay;
+
+
+   -----------------------------------------------
+   -- Recover pixel counters
+   -----------------------------------------------
 
    i_vga_recover_counters : entity work.vga_recover_counters
       port map (
          vga_clk_i   => vga_clk_i,
-         vga_ce_i    => vga_ce_i,
+         vga_ce_i    => '1',
          vga_red_i   => vga_red_i,
          vga_green_i => vga_green_i,
          vga_blue_i  => vga_blue_i,
-         vga_hs_i    => vga_hs_i,
-         vga_vs_i    => vga_vs_i,
-         vga_de_i    => vga_de_i,
-         vga_ce_o    => vga_ce_1,
-         vga_pix_x_o => vga_pix_x_1,
-         vga_pix_y_o => vga_pix_y_1,
-         vga_red_o   => vga_red_1,
-         vga_green_o => vga_green_1,
-         vga_blue_o  => vga_blue_1,
-         vga_hs_o    => vga_hs_1,
-         vga_vs_o    => vga_vs_1,
-         vga_de_o    => vga_de_1
+         vga_hs_i    => vga_hs_d,
+         vga_vs_i    => vga_vs_d,
+         vga_de_i    => vga_disp_en_d,
+         vga_ce_o    => open,
+         vga_pix_x_o => vga_pix_x_dd,
+         vga_pix_y_o => vga_pix_y_dd,
+         vga_red_o   => vga_red_dd,
+         vga_green_o => vga_green_dd,
+         vga_blue_o  => vga_blue_dd,
+         vga_hs_o    => vga_hs_dd,
+         vga_vs_o    => vga_vs_dd,
+         vga_de_o    => vga_disp_en_dd
       ); -- i_vga_recover_counters
 
-   p_pipeline : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
-         vga_ce_2    <= vga_ce_1;
-         vga_red_2   <= vga_red_1;
-         vga_green_2 <= vga_green_1;
-         vga_blue_2  <= vga_blue_1;
-         vga_hs_2    <= vga_hs_1;
-         vga_vs_2    <= vga_vs_1;
-         vga_de_2    <= vga_de_1;
-      end if;
-   end process p_pipeline;
+
+   -----------------------------------------------
+   -- Instantiate On-Screen-Menu generator
+   -----------------------------------------------
 
    i_vga_osm : entity work.vga_osm
-      generic  map (
-         G_VGA_DX  => G_VGA_DX,
-         G_VGA_DY  => G_VGA_DY,
-         G_FONT_DX => G_FONT_DX,
-         G_FONT_DY => G_FONT_DY
+      generic map (
+         G_VGA_DX             => G_VIDEO_MODE.H_PIXELS,
+         G_VGA_DY             => G_VIDEO_MODE.V_PIXELS,
+         G_FONT_DX            => G_FONT_DX,
+         G_FONT_DY            => G_FONT_DY
       )
       port map (
          clk_i                => vga_clk_i,
-         vga_col_i            => to_integer(unsigned(vga_pix_x_1)),
-         vga_row_i            => to_integer(unsigned(vga_pix_y_1)),
-         vga_osm_cfg_enable_i => vga_cfg_enable_i,
+         vga_col_i            => to_integer(unsigned(vga_pix_x_dd)),
+         vga_row_i            => to_integer(unsigned(vga_pix_y_dd)),
          vga_osm_cfg_xy_i     => vga_cfg_xy_i,
          vga_osm_cfg_dxdy_i   => vga_cfg_dxdy_i,
+         vga_osm_cfg_enable_i => vga_cfg_enable_i,
          vga_osm_vram_addr_o  => vga_vram_addr_o,
          vga_osm_vram_data_i  => vga_vram_data_i,
          vga_osm_vram_attr_i  => vga_vram_attr_i,
-         vga_osm_on_o         => vga_osm_on_2,
-         vga_osm_rgb_o        => vga_osm_rgb_2
-      ); -- i_vga_osm
+         vga_osm_on_o         => vga_osm_on_d,
+         vga_osm_rgb_o        => vga_osm_rgb_d
+      ); -- i_vga_osm : entity work.vga_osm
 
-   vga_ce_o    <= vga_ce_2;
-   vga_red_o   <= vga_osm_rgb_2(23 downto 16) when vga_osm_on_2 = '1' else vga_red_2;
-   vga_green_o <= vga_osm_rgb_2(15 downto  8) when vga_osm_on_2 = '1' else vga_green_2;
-   vga_blue_o  <= vga_osm_rgb_2( 7 downto  0) when vga_osm_on_2 = '1' else vga_blue_2;
-   vga_hs_o    <= vga_hs_2;
-   vga_vs_o    <= vga_vs_2;
-   vga_de_o    <= vga_de_2;
+
+
+   p_video_signal_latches : process (vga_clk_i)
+   begin
+      if rising_edge(vga_clk_i) then
+         -- Default border color
+         vga_red_o   <= (others => '0');
+         vga_blue_o  <= (others => '0');
+         vga_green_o <= (others => '0');
+
+         if vga_disp_en_d then
+            -- MiSTer core output
+            vga_red_o   <= vga_red_dd;
+            vga_green_o <= vga_green_dd;
+            vga_blue_o  <= vga_blue_dd;
+
+            -- On-Screen-Menu (OSM) output
+            if vga_osm_on_d then
+               vga_red_o   <= vga_osm_rgb_d(23 downto 16);
+               vga_green_o <= vga_osm_rgb_d(15 downto 8);
+               vga_blue_o  <= vga_osm_rgb_d(7 downto 0);
+            end if;
+         end if;
+
+         -- VGA horizontal and vertical sync
+         vga_hs_o <= vga_hs_dd;
+         vga_vs_o <= vga_vs_dd;
+         vga_de_o <= vga_disp_en_dd;
+      end if;
+   end process; -- p_video_signal_latches : process(vga_pixelclk)
 
 end architecture synthesis;
 
