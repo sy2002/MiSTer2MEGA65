@@ -61,12 +61,8 @@ architecture synthesis of vga is
    signal vga_vs         : std_logic;
    signal vga_disp_en    : std_logic;
 
---
---   -- Core and OSM pixel data
    signal vga_core_on_d  : std_logic;
    signal vga_core_rgb_d : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
---   signal vga_osm_on_d   : std_logic;
---   signal vga_osm_rgb_d  : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
 
 begin
 

@@ -452,36 +452,47 @@ begin
    -- vga_clk (VGA pixelclock)
    ---------------------------------------------------------------------------------------------
 
-   i_vga : entity work.vga
-      generic map (
-         G_VIDEO_MODE         => VIDEO_MODE,
-         G_CORE_DX            => CORE_DX,
-         G_CORE_DY            => CORE_DY,
-         G_CORE_TO_VGA_SCALE  => CORE_TO_VGA_SCALE,
-         G_FONT_DX            => FONT_DX,
-         G_FONT_DY            => FONT_DY
+   i_vga_wrapper : entity work.vga_wrapper
+      generic  map (
+         G_VIDEO_MODE     => VIDEO_MODE,
+         G_VGA_DX         => VIDEO_MODE.H_PIXELS,
+         G_VGA_DY         => VIDEO_MODE.V_PIXELS,
+         G_FONT_DX        => FONT_DX,
+         G_FONT_DY        => FONT_DY
       )
       port map (
-         clk_i                => vga_clk,          -- pixel clock at frequency of VGA mode being used
-         rstn_i               => not vga_rst,      -- active low reset
-         vga_osm_cfg_enable_i => vga_osm_cfg_enable,
-         vga_osm_cfg_xy_i     => vga_osm_cfg_xy,
-         vga_osm_cfg_dxdy_i   => vga_osm_cfg_dxdy,
-         vga_osm_vram_addr_o  => vga_osm_vram_addr,
-         vga_osm_vram_data_i  => vga_osm_vram_data,
-         vga_osm_vram_attr_i  => vga_osm_vram_attr,
-         vga_core_vram_addr_o => vga_core_vram_addr,
-         vga_core_vram_data_i => vga_core_vram_data,
-         vga_red_o            => vga_red,
-         vga_green_o          => vga_green,
-         vga_blue_o           => vga_blue,
-         vga_hs_o             => vga_hs,
-         vga_vs_o             => vga_vs,
-         vga_de_o             => vga_de,
-         vdac_clk_o           => vdac_clk,
-         vdac_sync_n_o        => vdac_sync_n,
-         vdac_blank_n_o       => vdac_blank_n
-      ); -- i_vga
+         vga_clk_i        => main_clk,
+         vga_ce_i         => main_vga_ce,
+         vga_red_i        => main_vga_red,
+         vga_green_i      => main_vga_green,
+         vga_blue_i       => main_vga_blue,
+         vga_vs_i         => main_vga_vs,   -- positive polarity
+         vga_hs_i         => main_vga_hs,   -- positive polarity
+         vga_de_i         => main_vga_de,
+         vga_cfg_enable_i => vga_osm_cfg_enable,
+         vga_cfg_xy_i     => vga_osm_cfg_xy,
+         vga_cfg_dxdy_i   => vga_osm_cfg_dxdy,
+         vga_vram_addr_o  => vga_osm_vram_addr,
+         vga_vram_data_i  => vga_osm_vram_data,
+         vga_vram_attr_i  => vga_osm_vram_attr,
+         vga_ce_o         => open,
+         vga_red_o        => vga_red,
+         vga_green_o      => vga_green,
+         vga_blue_o       => vga_blue,
+         vga_hs_o         => vga_hs,
+         vga_vs_o         => vga_vs,
+         vga_de_o         => vga_de
+      ); -- i_vga_wrapper
+
+
+   -- make the VDAC output the image
+   -- for some reason, the VDAC does not like non-zero values outside the visible window
+   -- maybe "vdac_sync_n <= '0';" activates sync-on-green?
+   -- TODO: check that
+   vdac_sync_n  <= '0';
+   vdac_blank_n <= '1';
+   vdac_clk     <= not vga_clk; -- inverting the clock leads to a sharper signal for some reason
+
 
    i_vga_to_hdmi : entity work.vga_to_hdmi
       port map (
