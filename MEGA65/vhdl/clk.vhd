@@ -21,31 +21,38 @@ use xpm.vcomponents.all;
 
 entity clk is
    port (
-      sys_clk_i    : in  std_logic;   -- expects 100 MHz
-      sys_rstn_i   : in  std_logic;   -- Asynchronous, asserted low
-      
-      main_clk_o   : out std_logic;   -- main's @TODO 40 MHz main clock
-      main_rst_o   : out std_logic;   -- main's reset, synchronized
-      
-      qnice_clk_o  : out std_logic;   -- QNICE's 50 MHz main clock
-      qnice_rst_o  : out std_logic;   -- QNICE's reset, synchronized
-      
-      pixel_clk_o  : out std_logic;   -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
-      pixel_rst_o  : out std_logic;   -- VGA's reset, synchronized
-      pixel_clk5_o : out std_logic    -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
+      sys_clk_i       : in  std_logic;   -- expects 100 MHz
+      sys_rstn_i      : in  std_logic;   -- Asynchronous, asserted low
+
+      main_clk_o      : out std_logic;   -- main's @TODO 40 MHz main clock
+      main_rst_o      : out std_logic;   -- main's reset, synchronized
+
+      qnice_clk_o     : out std_logic;   -- QNICE's 50 MHz main clock
+      qnice_rst_o     : out std_logic;   -- QNICE's reset, synchronized
+
+      hr_clk_x1_o     : out std_logic;
+      hr_clk_x2_o     : out std_logic;
+      hr_clk_x2_del_o : out std_logic;
+
+      pixel_clk_o     : out std_logic;   -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
+      pixel_rst_o     : out std_logic;   -- VGA's reset, synchronized
+      pixel_clk5_o    : out std_logic    -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
    );
 end clk;
 
 architecture rtl of clk is
 
-signal clkfb1          : std_logic;
-signal clkfb1_mmcm     : std_logic;
-signal clkfb2          : std_logic;
-signal clkfb2_mmcm     : std_logic;
-signal main_clk_mmcm   : std_logic;
-signal qnice_clk_mmcm  : std_logic;
-signal pixel_clk_mmcm  : std_logic;
-signal pixel_clk5_mmcm : std_logic;
+signal clkfb1             : std_logic;
+signal clkfb1_mmcm        : std_logic;
+signal clkfb2             : std_logic;
+signal clkfb2_mmcm        : std_logic;
+signal main_clk_mmcm      : std_logic;
+signal qnice_clk_mmcm     : std_logic;
+signal hr_clk_x1_mmcm     : std_logic;
+signal hr_clk_x2_mmcm     : std_logic;
+signal hr_clk_x2_del_mmcm : std_logic;
+signal pixel_clk_mmcm     : std_logic;
+signal pixel_clk5_mmcm    : std_logic;
 
 begin
 

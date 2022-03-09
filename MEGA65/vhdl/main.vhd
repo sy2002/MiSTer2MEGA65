@@ -33,14 +33,14 @@ entity main is
       kb_key_num_i           : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
       kb_key_pressed_n_i     : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
 
-      -- VGA output
-      vga_ce_o               : out std_logic;
-      vga_red_o              : out std_logic_vector(7 downto 0);
-      vga_green_o            : out std_logic_vector(7 downto 0);
-      vga_blue_o             : out std_logic_vector(7 downto 0);
-      vga_vs_o               : out std_logic;
-      vga_hs_o               : out std_logic;
-      vga_de_o               : out std_logic;
+      -- Video output
+      video_ce_o             : out std_logic;
+      video_red_o            : out std_logic_vector(7 downto 0);
+      video_green_o          : out std_logic_vector(7 downto 0);
+      video_blue_o           : out std_logic_vector(7 downto 0);
+      video_vs_o             : out std_logic;
+      video_hs_o             : out std_logic;
+      video_de_o             : out std_logic;
 
       -- Audio output (Signed PCM)
       audio_left_o           : out signed(15 downto 0);
@@ -83,13 +83,13 @@ begin
          reset_i              => reset_i,
          pause_i              => pause_i,
          keyboard_n_i         => keyboard_n,
-         vga_ce_o             => vga_ce_o,
-         vga_red_o            => vga_red_o,
-         vga_green_o          => vga_green_o,
-         vga_blue_o           => vga_blue_o,
-         vga_vs_o             => vga_vs_o,
-         vga_hs_o             => vga_hs_o,
-         vga_de_o             => vga_de_o,
+         vga_ce_o             => video_ce_o,
+         vga_red_o            => video_red_o,
+         vga_green_o          => video_green_o,
+         vga_blue_o           => video_blue_o,
+         vga_vs_o             => video_vs_o,
+         vga_hs_o             => video_hs_o,
+         vga_de_o             => video_de_o,
          audio_left_o         => audio_left_o,
          audio_right_o        => audio_right_o
       ); -- i_democore

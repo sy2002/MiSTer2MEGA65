@@ -79,7 +79,14 @@ port (
    joy_2_down_n   : in std_logic;
    joy_2_left_n   : in std_logic;
    joy_2_right_n  : in std_logic;
-   joy_2_fire_n   : in std_logic
+   joy_2_fire_n   : in std_logic;
+
+   -- Built-in HyperRAM
+   hr_d           : inout unsigned(7 downto 0);    -- Data/Address
+   hr_rwds        : inout std_logic;               -- RW Data strobe
+   hr_reset       : out std_logic;                 -- Active low RESET line to HyperRAM
+   hr_clk_p       : out std_logic;
+   hr_cs0         : out std_logic
 );
 end entity MEGA65_Core;
 
@@ -129,16 +136,16 @@ constant SHELL_O_DY           : integer := 26;
 ---------------------------------------------------------------------------------------------
 
 signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
---signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
+signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
 signal vga_clk                : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
 signal tmds_clk               : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
+signal hr_clk_x1              : std_logic;               -- HyperRAM @ 100 MHz
+signal hr_clk_x2              : std_logic;               -- HyperRAM @ 200 MHz
+signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz phase delayed
 
---signal main_rst               : std_logic;
+signal main_rst               : std_logic;
 signal qnice_rst              : std_logic;
 signal vga_rst                : std_logic;
-
-alias main_clk : std_logic is vga_clk;
-alias main_rst : std_logic is vga_rst;
 
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -156,14 +163,14 @@ signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
 signal main_audio_l           : signed(15 downto 0);
 signal main_audio_r           : signed(15 downto 0);
 
--- VGA output
-signal main_vga_ce            : std_logic;
-signal main_vga_red           : std_logic_vector(7 downto 0);
-signal main_vga_green         : std_logic_vector(7 downto 0);
-signal main_vga_blue          : std_logic_vector(7 downto 0);
-signal main_vga_vs            : std_logic;
-signal main_vga_hs            : std_logic;
-signal main_vga_de            : std_logic;
+-- Video output from Core
+signal main_video_ce          : std_logic;
+signal main_video_red         : std_logic_vector(7 downto 0);
+signal main_video_green       : std_logic_vector(7 downto 0);
+signal main_video_blue        : std_logic_vector(7 downto 0);
+signal main_video_vs          : std_logic;
+signal main_video_hs          : std_logic;
+signal main_video_de          : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- qnice_clk
@@ -228,18 +235,22 @@ begin
    --   HDMI 720p 60 Hz:      74.25 MHz (VGA) and 371.25 MHz (HDMI)
    clk_gen : entity work.clk
       port map (
-         sys_clk_i    => CLK,             -- expects 100 MHz
-         sys_rstn_i   => RESET_N,         -- Asynchronous, asserted low
+         sys_clk_i       => CLK,             -- expects 100 MHz
+         sys_rstn_i      => RESET_N,         -- Asynchronous, asserted low
 
-         qnice_clk_o  => qnice_clk,       -- QNICE's 50 MHz main clock
-         qnice_rst_o  => qnice_rst,       -- QNICE's reset, synchronized
+         qnice_clk_o     => qnice_clk,       -- QNICE's 50 MHz main clock
+         qnice_rst_o     => qnice_rst,       -- QNICE's reset, synchronized
 
-         main_clk_o   => open, -- main_clk,        -- main's @TODO 40 MHz main clock
-         main_rst_o   => open, -- main_rst,        -- main's reset, synchronized
+         main_clk_o      => main_clk,        -- main's @TODO 40 MHz main clock
+         main_rst_o      => main_rst,        -- main's reset, synchronized
 
-         pixel_clk_o  => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
-         pixel_rst_o  => vga_rst,         -- VGA's reset, synchronized
-         pixel_clk5_o => tmds_clk         -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
+         hr_clk_x1_o     => hr_clk_x1,
+         hr_clk_x2_o     => hr_clk_x2,
+         hr_clk_x2_del_o => hr_clk_x2_del,
+
+         pixel_clk_o     => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
+         pixel_rst_o     => vga_rst,         -- VGA's reset, synchronized
+         pixel_clk5_o    => tmds_clk         -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
       ); -- clk_gen
 
 
@@ -284,14 +295,14 @@ begin
          joy_2_right_n_i      => joy_2_right_n,
          joy_2_fire_n_i       => joy_2_fire_n,
 
-         -- Video output (VGA)
-         vga_ce_o             => main_vga_ce,
-         vga_red_o            => main_vga_red,
-         vga_green_o          => main_vga_green,
-         vga_blue_o           => main_vga_blue,
-         vga_vs_o             => main_vga_vs,   -- positive polarity
-         vga_hs_o             => main_vga_hs,   -- positive polarity
-         vga_de_o             => main_vga_de,
+         -- Video output
+         video_ce_o           => main_video_ce,
+         video_red_o          => main_video_red,
+         video_green_o        => main_video_green,
+         video_blue_o         => main_video_blue,
+         video_vs_o           => main_video_vs,   -- positive polarity
+         video_hs_o           => main_video_hs,   -- positive polarity
+         video_de_o           => main_video_de,
 
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_l,
@@ -558,6 +569,40 @@ begin
    -- Dual Clocks
    ---------------------------------------------------------------------------------------------
 
+   i_video_rescaler : entity work.video_rescaler
+      generic map (
+         G_VIDEO_MODE => G_VIDEO_MODE
+      )
+      port map (
+         reset_na_i      => reset_na,
+         core_clk_i      => main_clk,
+         core_ce_i       => main_video_ce,
+         core_r_i        => main_video_r,
+         core_g_i        => main_video_g,
+         core_b_i        => main_video_b,
+         core_hs_i       => main_video_hs,
+         core_vs_i       => main_video_vs,
+         core_de_i       => main_video_de,
+
+         vga_clk_i       => vga_clk_i,
+         vga_r_o         => vga_r,
+         vga_g_o         => vga_g,
+         vga_b_o         => vga_b,
+         vga_hs_o        => vga_hs,
+         vga_vs_o        => vga_vs,
+         vga_de_o        => vga_de,
+
+         hr_clk_x1_i     => hr_clk_x1,
+         hr_clk_x2_i     => hr_clk_x2,
+         hr_clk_x2_del_i => hr_clk_x2_del,
+         hr_reset        => hr_resetn,
+         hr_cs0          => hr_csn,
+         hr_clk_p        => hr_ck,
+         hr_rwds         => hr_rwds,
+         hr_d            => hr_dq
+      ); -- i_video_rescaler
+
+
    -- IMPORTANT THING TO PONDER AROUND DUAL-CLOCK / DUAL-PORT DEVICES SUCH AS BRAMs:
    --
    -- We might want to make sure, that all dual port dual clock RAMs here that are interacting
@@ -634,28 +679,6 @@ begin
          dest_out(31 downto 16) => vga_osm_cfg_dxdy,
          dest_out(32)           => vga_osm_cfg_enable
       ); -- i_qnice2vga
-
---   -- Dual clock & dual port RAM that acts as framebuffer: the LCD display of the gameboy is
---   -- written here by the GB core (using its local clock) and the VGA/HDMI display is being fed
---   -- using the pixel clock
---   core_frame_buffer : entity work.dualport_2clk_ram
---      generic map (
---         ADDR_WIDTH   => 15,
---         DATA_WIDTH   => 24
---      )
---      port map (
-----         clock_a      => main_clk,
-----         address_a    => std_logic_vector(to_unsigned(main_pixel_out_ptr, 15)),
-----         data_a       => main_pixel_out_data,
-----         wren_a       => main_pixel_out_we,
-----         q_a          => open,
---
---         clock_b      => vga_clk,
---         address_b    => vga_core_vram_addr,
---         data_b       => (others => '0'),
---         wren_b       => '0',
---         q_b          => vga_core_vram_data
---      ); -- core_frame_buffer
 
    -- Dual port & dual clock screen RAM / video RAM: contains the "ASCII" codes of the characters
    osm_vram : entity work.dualport_2clk_ram
