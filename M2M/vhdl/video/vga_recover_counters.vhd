@@ -57,7 +57,7 @@ begin
                vga_pix_y <= std_logic_vector(unsigned(vga_pix_y) + 1);
             end if;
 
-            if vga_vs_i = '0' then  -- TBD: Is the polarity correct ?
+            if vga_vs_i = '1' then  -- TBD: Is the polarity correct ?
                vga_pix_y <= (others => '0');
             end if;
          end if;
