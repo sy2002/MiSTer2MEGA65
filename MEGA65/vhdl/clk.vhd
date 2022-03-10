@@ -33,10 +33,11 @@ entity clk is
       hr_clk_x1_o     : out std_logic;
       hr_clk_x2_o     : out std_logic;
       hr_clk_x2_del_o : out std_logic;
+      hr_rst_o        : out std_logic;
 
-      pixel_clk_o     : out std_logic;   -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
-      pixel_rst_o     : out std_logic;   -- VGA's reset, synchronized
-      pixel_clk5_o    : out std_logic    -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
+      vga_clk_o       : out std_logic;   -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
+      vga_rst_o       : out std_logic;   -- VGA's reset, synchronized
+      tmds_clk_o      : out std_logic    -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
    );
 end clk;
 
@@ -51,8 +52,8 @@ signal qnice_clk_mmcm     : std_logic;
 signal hr_clk_x1_mmcm     : std_logic;
 signal hr_clk_x2_mmcm     : std_logic;
 signal hr_clk_x2_del_mmcm : std_logic;
-signal pixel_clk_mmcm     : std_logic;
-signal pixel_clk5_mmcm    : std_logic;
+signal vga_clk_mmcm       : std_logic;
+signal tmds_clk_mmcm      : std_logic;
 
 begin
 
@@ -71,20 +72,35 @@ begin
          CLKFBOUT_MULT_F      => 8.0,        -- 800 MHz
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => 20.000,     -- @TODO YOURCORE @ 40 MHz
+         CLKOUT0_DIVIDE_F     => 29.625,     -- @TODO YOURCORE @ 27.004 MHz
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.500,
          CLKOUT0_USE_FINE_PS  => FALSE,
          CLKOUT1_DIVIDE       => 16,         -- QNICE main @ 50 MHz
          CLKOUT1_PHASE        => 0.000,
          CLKOUT1_DUTY_CYCLE   => 0.500,
-         CLKOUT1_USE_FINE_PS  => FALSE
+         CLKOUT1_USE_FINE_PS  => FALSE,
+         CLKOUT2_DIVIDE       => 8,          -- HyperRAM @ 100 MHz
+         CLKOUT2_PHASE        => 0.000,
+         CLKOUT2_DUTY_CYCLE   => 0.500,
+         CLKOUT2_USE_FINE_PS  => FALSE,
+         CLKOUT3_DIVIDE       => 4,          -- HyperRAM @ 200 MHz
+         CLKOUT3_PHASE        => 0.000,
+         CLKOUT3_DUTY_CYCLE   => 0.500,
+         CLKOUT3_USE_FINE_PS  => FALSE,
+         CLKOUT4_DIVIDE       => 4,          -- HyperRAM @ 200 MHz phase delayed
+         CLKOUT4_PHASE        => 180.000,
+         CLKOUT4_DUTY_CYCLE   => 0.500,
+         CLKOUT4_USE_FINE_PS  => FALSE
       )
       port map (
          -- Output clocks
          CLKFBOUT            => clkfb1_mmcm,
          CLKOUT0             => main_clk_mmcm,
          CLKOUT1             => qnice_clk_mmcm,
+         CLKOUT2             => hr_clk_x1_mmcm,
+         CLKOUT3             => hr_clk_x2_mmcm,
+         CLKOUT4             => hr_clk_x2_del_mmcm,
          -- Input clock control
          CLKFBIN             => clkfb1,
          CLKIN1              => sys_clk_i,
@@ -139,8 +155,8 @@ begin
       port map (
          -- Output clocks
          CLKFBOUT            => clkfb2_mmcm,
-         CLKOUT0             => pixel_clk5_mmcm,
-         CLKOUT1             => pixel_clk_mmcm,
+         CLKOUT0             => tmds_clk_mmcm,
+         CLKOUT1             => vga_clk_mmcm,
          -- Input clock control
          CLKFBIN             => clkfb2,
          CLKIN1              => sys_clk_i,
@@ -183,29 +199,47 @@ begin
          I => clkfb2_mmcm,
          O => clkfb2
       );
-      
+
    main_clk_bufg : BUFG
       port map (
          I => main_clk_mmcm,
          O => main_clk_o
       );
-      
+
    qnice_clk_bufg : BUFG
       port map (
          I => qnice_clk_mmcm,
          O => qnice_clk_o
       );
 
-   pixel_clk_bufg : BUFG
+   hr_clk_x1_bufg : BUFG
       port map (
-         I => pixel_clk_mmcm,
-         O => pixel_clk_o
+         I => hr_clk_x1_mmcm,
+         O => hr_clk_x1_o
       );
 
-   pixel_clk5_bufg : BUFG
+   hr_clk_x2_bufg : BUFG
       port map (
-         I => pixel_clk5_mmcm,
-         O => pixel_clk5_o
+         I => hr_clk_x2_mmcm,
+         O => hr_clk_x2_o
+      );
+
+   hr_clk_x2_del_bufg : BUFG
+      port map (
+         I => hr_clk_x2_del_mmcm,
+         O => hr_clk_x2_del_o
+      );
+
+   vga_clk_bufg : BUFG
+      port map (
+         I => vga_clk_mmcm,
+         O => vga_clk_o
+      );
+
+   tmds_clk_bufg : BUFG
+      port map (
+         I => tmds_clk_mmcm,
+         O => tmds_clk_o
       );
 
    -------------------------------------
@@ -234,15 +268,27 @@ begin
                                        -- This output is registered.
       );
 
+   i_xpm_cdc_sync_rst_hr : xpm_cdc_sync_rst
+      generic map (
+         INIT_SYNC_FF => 1  -- Enable simulation init values
+      )
+      port map (
+         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
+         dest_clk => hr_clk_x1_o,      -- 1-bit input: Destination clock.
+         dest_rst => hr_rst_o          -- 1-bit output: src_rst synchronized to the destination clock domain.
+                                       -- This output is registered.
+      );
+
    i_xpm_cdc_sync_rst_pixel : xpm_cdc_sync_rst
       generic map (
          INIT_SYNC_FF => 1  -- Enable simulation init values
       )
       port map (
          src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
-         dest_clk => pixel_clk_o,      -- 1-bit input: Destination clock.
-         dest_rst => pixel_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
+         dest_clk => vga_clk_o,        -- 1-bit input: Destination clock.
+         dest_rst => vga_rst_o         -- 1-bit output: src_rst synchronized to the destination clock domain.
                                        -- This output is registered.
       );
-      
+
 end architecture rtl;
+

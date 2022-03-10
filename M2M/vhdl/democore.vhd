@@ -17,10 +17,20 @@ use work.video_modes_pkg.all;
 
 entity democore is
    generic (
-      G_CORE_CLK_SPEED     : natural;
-      G_VIDEO_MODE         : video_modes_t;
-      G_OUTPUT_DX          : natural;
-      G_OUTPUT_DY          : natural
+      -- The democore is configured to generate a PAL signal at 720x576 @ 50 Hz resolution.
+      CLK_KHZ   : integer := 27000;
+      H_PIXELS  : integer :=   720;      -- horizontal display width in pixels
+      V_PIXELS  : integer :=   576;      -- vertical display width in rows
+      H_FP      : integer :=    17;      -- horizontal front porch width in pixels
+      H_PULSE   : integer :=    64;      -- horizontal sync pulse width in pixels
+      H_BP      : integer :=    63;      -- horizontal back porch width in pixels
+      V_FP      : integer :=     5;      -- vertical front porch width in rows
+      V_PULSE   : integer :=     5;      -- vertical sync pulse width in rows
+      V_BP      : integer :=    39;      -- vertical back porch width in rows
+      H_MAX     : integer :=   864;
+      V_MAX     : integer :=   625;
+      H_POL     : std_logic := '1';     -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      V_POL     : std_logic := '1'      -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
    port (
       clk_main_i           : in  std_logic;
@@ -61,16 +71,16 @@ begin
 
    i_vga_controller : entity work.vga_controller
       port map (
-         h_pulse   => G_VIDEO_MODE.H_PULSE,
-         h_bp      => G_VIDEO_MODE.H_BP,
-         h_pixels  => G_VIDEO_MODE.H_PIXELS,
-         h_fp      => G_VIDEO_MODE.H_FP,
-         h_pol     => G_VIDEO_MODE.H_POL,
-         v_pulse   => G_VIDEO_MODE.V_PULSE,
-         v_bp      => G_VIDEO_MODE.V_BP,
-         v_pixels  => G_VIDEO_MODE.V_PIXELS,
-         v_fp      => G_VIDEO_MODE.V_FP,
-         v_pol     => G_VIDEO_MODE.V_POL,
+         h_pulse   => H_PULSE,
+         h_bp      => H_BP,
+         h_pixels  => H_PIXELS,
+         h_fp      => H_FP,
+         h_pol     => H_POL,
+         v_pulse   => V_PULSE,
+         v_bp      => V_BP,
+         v_pixels  => V_PIXELS,
+         v_fp      => V_FP,
+         v_pol     => V_POL,
          pixel_clk => video_clk_i,
          reset_n   => '1',
          h_sync    => video_hs,
@@ -87,8 +97,8 @@ begin
 
    i_democore_pixel : entity work.democore_pixel
       generic  map (
-         G_VGA_DX => G_VIDEO_MODE.H_PIXELS,
-         G_VGA_DY => G_VIDEO_MODE.V_PIXELS
+         G_VGA_DX => H_PIXELS,
+         G_VGA_DY => V_PIXELS
       )
       port map (
          vga_clk_i => video_clk_i,

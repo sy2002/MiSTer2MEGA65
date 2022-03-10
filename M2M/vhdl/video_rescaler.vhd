@@ -23,6 +23,7 @@ entity video_rescaler is
       core_de_i         : in    std_logic;   -- display enable
 
       vga_clk_i         : in    std_logic;
+      vga_ce_i          : in    std_logic;
       vga_r_o           : out   std_logic_vector(7 downto 0);
       vga_g_o           : out   std_logic_vector(7 downto 0);
       vga_b_o           : out   std_logic_vector(7 downto 0);
@@ -34,6 +35,7 @@ entity video_rescaler is
       hr_clk_x1_i       : in    std_logic;
       hr_clk_x2_i       : in    std_logic;
       hr_clk_x2_del_i   : in    std_logic;
+      hr_rst_i          : in    std_logic;
 
       hr_resetn         : out   std_logic;
       hr_csn            : out   std_logic;
@@ -60,15 +62,10 @@ architecture synthesis of video_rescaler is
    constant C_VMAX    : integer := G_VIDEO_MODE.V_PIXELS-1;
 
    -- Clocks
-   signal clk_x1     : std_logic;
-   signal clk_x2     : std_logic;
-   signal clk_x2_del : std_logic;
-   signal locked     : std_logic;
-   alias  avl_clk    : std_logic is clk_x1;
+   alias  avl_clk    : std_logic is hr_clk_x1_i;
 
    -- Resets
-   signal avl_rst    : std_logic;
-   signal global_rst : std_logic;   -- Asynchronous, active high
+   alias avl_rst     : std_logic is hr_rst_i;
 
    constant C_AVM_ADDRESS_SIZE : integer := 19;
    constant C_AVM_DATA_SIZE    : integer := 128;
@@ -84,7 +81,15 @@ architecture synthesis of video_rescaler is
    signal avl_readdata        : std_logic_vector(C_AVM_DATA_SIZE-1 DOWNTO 0);
    signal avl_readdatavalid   : std_logic;
 
+   signal vga_r               : unsigned(7 downto 0);
+   signal vga_g               : unsigned(7 downto 0);
+   signal vga_b               : unsigned(7 downto 0);
+
 begin
+
+   vga_r_o <= std_logic_vector(vga_r);
+   vga_g_o <= std_logic_vector(vga_g);
+   vga_b_o <= std_logic_vector(vga_b);
 
    --------------------------------------------------------
    -- Instantiate video rescaler
@@ -118,14 +123,14 @@ begin
          i_de              => core_de_i,                    -- input
          i_ce              => core_ce_i,                    -- input
          i_clk             => core_clk_i,                   -- input
-         o_r               => vga_r_o,                      -- output
-         o_g               => vga_g_o,                      -- output
-         o_b               => vga_b_o,                      -- output
+         o_r               => vga_r,                        -- output
+         o_g               => vga_g,                        -- output
+         o_b               => vga_b,                        -- output
          o_hs              => vga_hs_o,                     -- output
          o_vs              => vga_vs_o,                     -- output
          o_de              => vga_de_o,                     -- output
          o_vbl             => open,                         -- output
-         o_ce              => '1',                          -- input
+         o_ce              => vga_ce_i,                     -- input
          o_clk             => vga_clk_i,                    -- input
          o_border          => X"886644",                    -- input
          o_fb_ena          => '0',                          -- input
@@ -183,7 +188,7 @@ begin
          avl_write         => avl_write,                    -- output
          avl_read          => avl_read,                     -- output
          avl_byteenable    => avl_byteenable,               -- output
-         reset_na          => locked and core_pll_locked_i  -- input
+         reset_na          => reset_na_i                    -- input
       ); -- i_ascal
 
 
@@ -208,8 +213,8 @@ begin
          avl_waitrequest_o   => avl_waitrequest,
          avl_readdata_o      => avl_readdata,
          avl_readdatavalid_o => avl_readdatavalid,
-         clk_x2_i            => clk_x2,
-         clk_x2_del_i        => clk_x2_del,
+         clk_x2_i            => hr_clk_x2_i,
+         clk_x2_del_i        => hr_clk_x2_del_i,
          hr_resetn_o         => hr_resetn,
          hr_csn_o            => hr_csn,
          hr_ck_o             => hr_ck,

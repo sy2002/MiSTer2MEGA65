@@ -16,7 +16,6 @@ use work.video_modes_pkg.all;
 entity main is
    generic (
       G_CORE_CLK_SPEED       : natural;
-      G_VIDEO_MODE           : video_modes_t;
 
       -- @TODO adjust this to your needs
       G_OUTPUT_DX            : natural;
@@ -72,24 +71,18 @@ begin
    -- The demo core's purpose is to show a test image and to make sure, that the MiSTer2MEGA65 framework
    -- can be synthesized and run stand-alone without an actual MiSTer core being there, yet
    i_democore : entity work.democore
-      generic map (
-         G_CORE_CLK_SPEED     => G_CORE_CLK_SPEED,
-         G_VIDEO_MODE         => G_VIDEO_MODE,
-         G_OUTPUT_DX          => G_OUTPUT_DX,
-         G_OUTPUT_DY          => G_OUTPUT_DY
-      )
       port map (
          clk_main_i           => clk_main_i,
          reset_i              => reset_i,
          pause_i              => pause_i,
          keyboard_n_i         => keyboard_n,
-         vga_ce_o             => video_ce_o,
-         vga_red_o            => video_red_o,
-         vga_green_o          => video_green_o,
-         vga_blue_o           => video_blue_o,
-         vga_vs_o             => video_vs_o,
-         vga_hs_o             => video_hs_o,
-         vga_de_o             => video_de_o,
+         video_ce_o           => video_ce_o,
+         video_red_o          => video_red_o,
+         video_green_o        => video_green_o,
+         video_blue_o         => video_blue_o,
+         video_vs_o           => video_vs_o,
+         video_hs_o           => video_hs_o,
+         video_de_o           => video_de_o,
          audio_left_o         => audio_left_o,
          audio_right_o        => audio_right_o
       ); -- i_democore

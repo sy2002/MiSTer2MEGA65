@@ -82,7 +82,7 @@ port (
    joy_2_fire_n   : in std_logic;
 
    -- Built-in HyperRAM
-   hr_d           : inout unsigned(7 downto 0);    -- Data/Address
+   hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
    hr_rwds        : inout std_logic;               -- RW Data strobe
    hr_reset       : out std_logic;                 -- Active low RESET line to HyperRAM
    hr_clk_p       : out std_logic;
@@ -97,11 +97,11 @@ architecture beh of MEGA65_Core is
 --constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
 constant QNICE_FIRMWARE       : string  := "../../MEGA65/m2m-rom/m2m-rom.rom";
 
--- MiSTer2MEGA65 default resolution is HDMI 720p @ 60 Hz
-constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;
+-- MiSTer2MEGA65 default resolution is HDMI 720p @ 50 Hz
+constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_50;
 
 -- Clock speeds
-constant CORE_CLK_SPEED       : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
+constant CORE_CLK_SPEED       : natural := 27_000_000;   -- @TODO YOURCORE expects 27 MHz
 constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- QNICE main clock @ 50 MHz
 constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 
@@ -146,6 +146,9 @@ signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz p
 signal main_rst               : std_logic;
 signal qnice_rst              : std_logic;
 signal vga_rst                : std_logic;
+signal hr_rst                 : std_logic;
+signal reset_na               : std_logic;
+
 
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -211,6 +214,21 @@ signal qnice_config_data      : std_logic_vector(15 downto 0);
 -- vga_clk (VGA pixelclock)
 ---------------------------------------------------------------------------------------------
 
+-- Output from video rescaler
+signal vga_scaled_red         : std_logic_vector(7 downto 0);
+signal vga_scaled_green       : std_logic_vector(7 downto 0);
+signal vga_scaled_blue        : std_logic_vector(7 downto 0);
+signal vga_scaled_vs          : std_logic;
+signal vga_scaled_hs          : std_logic;
+signal vga_scaled_de          : std_logic;
+
+signal vga_osm_red            : std_logic_vector(7 downto 0);
+signal vga_osm_green          : std_logic_vector(7 downto 0);
+signal vga_osm_blue           : std_logic_vector(7 downto 0);
+signal vga_osm_vs             : std_logic;
+signal vga_osm_hs             : std_logic;
+signal vga_osm_de             : std_logic;
+
 signal vga_ce                 : std_logic;            -- VGA clock enable (all pixels)
 signal vga_de                 : std_logic;            -- VGA data enable (visible pixels)
 signal vga_tmds               : slv_9_0_t(0 to 2);    -- parallel TMDS symbol stream x 3 channels
@@ -228,6 +246,21 @@ signal vga_osm_vram_data      : std_logic_vector(7 downto 0);
 signal vga_osm_vram_attr      : std_logic_vector(7 downto 0);
 
 begin
+
+   -- make the VDAC output the image
+   -- for some reason, the VDAC does not like non-zero values outside the visible window
+   -- maybe "vdac_sync_n <= '0';" activates sync-on-green?
+   -- TODO: check that
+   vdac_sync_n  <= '0';
+   vdac_blank_n <= '1';
+   vdac_clk     <= not vga_clk; -- inverting the clock leads to a sharper signal for some reason
+
+   vga_red   <= vga_osm_red   when vga_osm_de else (others => '0');
+   vga_green <= vga_osm_green when vga_osm_de else (others => '0');
+   vga_blue  <= vga_osm_blue  when vga_osm_de else (others => '0');
+   vga_vs    <= vga_osm_vs;
+   vga_hs    <= vga_osm_hs;
+   vga_de    <= vga_osm_de;
 
    -- MMCME2_ADV clock generators:
    --   @TODO YOURCORE:       40 MHz
@@ -248,9 +281,9 @@ begin
          hr_clk_x2_o     => hr_clk_x2,
          hr_clk_x2_del_o => hr_clk_x2_del,
 
-         pixel_clk_o     => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
-         pixel_rst_o     => vga_rst,         -- VGA's reset, synchronized
-         pixel_clk5_o    => tmds_clk         -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
+         vga_clk_o       => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
+         vga_rst_o       => vga_rst,         -- VGA's reset, synchronized
+         tmds_clk_o      => tmds_clk         -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
       ); -- clk_gen
 
 
@@ -262,7 +295,6 @@ begin
    i_main : entity work.main
       generic map (
          G_CORE_CLK_SPEED     => CORE_CLK_SPEED,
-         G_VIDEO_MODE         => VIDEO_MODE,
 
          -- Demo core specific generics @TODO not sure if you need them, too
          G_OUTPUT_DX          => VGA_DX,
@@ -460,6 +492,44 @@ begin
    -- vga_clk (VGA pixelclock)
    ---------------------------------------------------------------------------------------------
 
+   reset_na <= not (main_rst or vga_rst or hr_rst);
+
+   i_video_rescaler : entity work.video_rescaler
+      generic map (
+         G_VIDEO_MODE => VIDEO_MODE
+      )
+      port map (
+         reset_na_i      => reset_na,
+         core_clk_i      => main_clk,
+         core_ce_i       => main_video_ce,
+         core_r_i        => main_video_red,
+         core_g_i        => main_video_green,
+         core_b_i        => main_video_blue,
+         core_hs_i       => main_video_hs,
+         core_vs_i       => main_video_vs,
+         core_de_i       => main_video_de,
+
+         vga_clk_i       => vga_clk,
+         vga_ce_i        => '1',
+         vga_r_o         => vga_scaled_red,
+         vga_g_o         => vga_scaled_green,
+         vga_b_o         => vga_scaled_blue,
+         vga_hs_o        => vga_scaled_hs,
+         vga_vs_o        => vga_scaled_vs,
+         vga_de_o        => vga_scaled_de,
+
+         hr_clk_x1_i     => hr_clk_x1,
+         hr_clk_x2_i     => hr_clk_x2,
+         hr_clk_x2_del_i => hr_clk_x2_del,
+         hr_rst_i        => hr_rst,
+         hr_resetn       => hr_reset,
+         hr_csn          => hr_cs0,
+         hr_ck           => hr_clk_p,
+         hr_rwds         => hr_rwds,
+         hr_dq           => hr_d
+      ); -- i_video_rescaler
+
+
    i_vga_wrapper : entity work.vga_wrapper
       generic  map (
          G_VIDEO_MODE     => VIDEO_MODE,
@@ -469,14 +539,14 @@ begin
          G_FONT_DY        => FONT_DY
       )
       port map (
-         vga_clk_i        => main_clk,
-         vga_ce_i         => main_vga_ce,
-         vga_red_i        => main_vga_red,
-         vga_green_i      => main_vga_green,
-         vga_blue_i       => main_vga_blue,
-         vga_vs_i         => main_vga_vs,   -- positive polarity
-         vga_hs_i         => main_vga_hs,   -- positive polarity
-         vga_de_i         => main_vga_de,
+         vga_clk_i        => vga_clk,
+         vga_ce_i         => '1',
+         vga_red_i        => vga_scaled_red,
+         vga_green_i      => vga_scaled_green,
+         vga_blue_i       => vga_scaled_blue,
+         vga_vs_i         => vga_scaled_vs,   -- positive polarity
+         vga_hs_i         => vga_scaled_hs,   -- positive polarity
+         vga_de_i         => vga_scaled_de,
          vga_cfg_enable_i => vga_osm_cfg_enable,
          vga_cfg_xy_i     => vga_osm_cfg_xy,
          vga_cfg_dxdy_i   => vga_osm_cfg_dxdy,
@@ -484,22 +554,13 @@ begin
          vga_vram_data_i  => vga_osm_vram_data,
          vga_vram_attr_i  => vga_osm_vram_attr,
          vga_ce_o         => open,
-         vga_red_o        => vga_red,
-         vga_green_o      => vga_green,
-         vga_blue_o       => vga_blue,
-         vga_hs_o         => vga_hs,
-         vga_vs_o         => vga_vs,
-         vga_de_o         => vga_de
+         vga_red_o        => vga_osm_red,
+         vga_green_o      => vga_osm_green,
+         vga_blue_o       => vga_osm_blue,
+         vga_hs_o         => vga_osm_hs,
+         vga_vs_o         => vga_osm_vs,
+         vga_de_o         => vga_osm_de
       ); -- i_vga_wrapper
-
-
-   -- make the VDAC output the image
-   -- for some reason, the VDAC does not like non-zero values outside the visible window
-   -- maybe "vdac_sync_n <= '0';" activates sync-on-green?
-   -- TODO: check that
-   vdac_sync_n  <= '0';
-   vdac_blank_n <= '1';
-   vdac_clk     <= not vga_clk; -- inverting the clock leads to a sharper signal for some reason
 
 
    i_vga_to_hdmi : entity work.vga_to_hdmi
@@ -568,40 +629,6 @@ begin
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks
    ---------------------------------------------------------------------------------------------
-
-   i_video_rescaler : entity work.video_rescaler
-      generic map (
-         G_VIDEO_MODE => G_VIDEO_MODE
-      )
-      port map (
-         reset_na_i      => reset_na,
-         core_clk_i      => main_clk,
-         core_ce_i       => main_video_ce,
-         core_r_i        => main_video_r,
-         core_g_i        => main_video_g,
-         core_b_i        => main_video_b,
-         core_hs_i       => main_video_hs,
-         core_vs_i       => main_video_vs,
-         core_de_i       => main_video_de,
-
-         vga_clk_i       => vga_clk_i,
-         vga_r_o         => vga_r,
-         vga_g_o         => vga_g,
-         vga_b_o         => vga_b,
-         vga_hs_o        => vga_hs,
-         vga_vs_o        => vga_vs,
-         vga_de_o        => vga_de,
-
-         hr_clk_x1_i     => hr_clk_x1,
-         hr_clk_x2_i     => hr_clk_x2,
-         hr_clk_x2_del_i => hr_clk_x2_del,
-         hr_reset        => hr_resetn,
-         hr_cs0          => hr_csn,
-         hr_clk_p        => hr_ck,
-         hr_rwds         => hr_rwds,
-         hr_d            => hr_dq
-      ); -- i_video_rescaler
-
 
    -- IMPORTANT THING TO PONDER AROUND DUAL-CLOCK / DUAL-PORT DEVICES SUCH AS BRAMs:
    --
