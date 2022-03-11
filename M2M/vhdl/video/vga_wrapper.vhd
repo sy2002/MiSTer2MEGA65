@@ -6,7 +6,6 @@ use work.video_modes_pkg.all;
 
 entity vga_wrapper is
    generic  (
-      G_VIDEO_MODE     : video_modes_t;
       G_VGA_DX         : natural;
       G_VGA_DY         : natural;
       G_FONT_DX        : natural;
@@ -92,8 +91,8 @@ begin
 
    i_vga_osm : entity work.vga_osm
       generic map (
-         G_VGA_DX             => G_VIDEO_MODE.H_PIXELS,
-         G_VGA_DY             => G_VIDEO_MODE.V_PIXELS,
+         G_VGA_DX             => G_VGA_DX,
+         G_VGA_DY             => G_VGA_DY,
          G_FONT_DX            => G_FONT_DX,
          G_FONT_DY            => G_FONT_DY
       )

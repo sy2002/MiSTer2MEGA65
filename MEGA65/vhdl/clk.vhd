@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------
--- MiSTer2MEGA65 Framework  
+-- MiSTer2MEGA65 Framework
 --
 -- Main clock, pixel clock and QNICE-clock generator using the Xilinx specific MMCME2_ADV:
 --

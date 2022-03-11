@@ -103,11 +103,9 @@ constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_50;
 -- Clock speeds
 constant CORE_CLK_SPEED       : natural := 27_000_000;   -- @TODO YOURCORE expects 27 MHz
 constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- QNICE main clock @ 50 MHz
-constant PIXEL_CLK_SPEED      : natural := VIDEO_MODE.CLK_KHZ * 1000;
 
 -- Rendering constants (in pixels)
 --    VGA_*   size of the final output on the screen
---    CORE_*  size of the input resolution coming from the core and scaling factor
 --    FONT_*  size of one OSM character
 constant VGA_DX               : natural := VIDEO_MODE.H_PIXELS;
 constant VGA_DY               : natural := VIDEO_MODE.V_PIXELS;
@@ -247,21 +245,6 @@ signal vga_osm_vram_attr      : std_logic_vector(7 downto 0);
 
 begin
 
-   -- make the VDAC output the image
-   -- for some reason, the VDAC does not like non-zero values outside the visible window
-   -- maybe "vdac_sync_n <= '0';" activates sync-on-green?
-   -- TODO: check that
-   vdac_sync_n  <= '0';
-   vdac_blank_n <= '1';
-   vdac_clk     <= not vga_clk; -- inverting the clock leads to a sharper signal for some reason
-
-   vga_red   <= vga_osm_red   when vga_osm_de else (others => '0');
-   vga_green <= vga_osm_green when vga_osm_de else (others => '0');
-   vga_blue  <= vga_osm_blue  when vga_osm_de else (others => '0');
-   vga_vs    <= vga_osm_vs;
-   vga_hs    <= vga_osm_hs;
-   vga_de    <= vga_osm_de;
-
    -- MMCME2_ADV clock generators:
    --   @TODO YOURCORE:       40 MHz
    --   QNICE:                50 MHz
@@ -327,7 +310,7 @@ begin
          joy_2_right_n_i      => joy_2_right_n,
          joy_2_fire_n_i       => joy_2_fire_n,
 
-         -- Video output
+         -- Video output: 720x576 @ 50 Hz
          video_ce_o           => main_video_ce,
          video_red_o          => main_video_red,
          video_green_o        => main_video_green,
@@ -532,9 +515,8 @@ begin
 
    i_vga_wrapper : entity work.vga_wrapper
       generic  map (
-         G_VIDEO_MODE     => VIDEO_MODE,
-         G_VGA_DX         => VIDEO_MODE.H_PIXELS,
-         G_VGA_DY         => VIDEO_MODE.V_PIXELS,
+         G_VGA_DX         => VGA_DX,
+         G_VGA_DY         => VGA_DY,
          G_FONT_DX        => FONT_DX,
          G_FONT_DY        => FONT_DY
       )
@@ -561,6 +543,18 @@ begin
          vga_vs_o         => vga_osm_vs,
          vga_de_o         => vga_osm_de
       ); -- i_vga_wrapper
+
+   vga_red   <= vga_osm_red   when vga_osm_de else (others => '0');
+   vga_green <= vga_osm_green when vga_osm_de else (others => '0');
+   vga_blue  <= vga_osm_blue  when vga_osm_de else (others => '0');
+   vga_vs    <= vga_osm_vs;
+   vga_hs    <= vga_osm_hs;
+   vga_de    <= vga_osm_de;
+
+   -- Make the VDAC output the image
+   vdac_sync_n  <= '0';
+   vdac_blank_n <= '1';
+   vdac_clk     <= not vga_clk; -- inverting the clock leads to a sharper signal for some reason
 
 
    i_vga_to_hdmi : entity work.vga_to_hdmi
