@@ -14,16 +14,16 @@ create_clock -period 10.000 -name CLK [get_ports CLK]
 ## Important: Using them in subsequent statements, e.g. clock dividers requries that they
 ## have been named/defined here before
 ## otherwise Vivado does not find the pins)
-create_generated_clock -name main_clk      [get_pins */clk_gen/i_clk_main_qnice/CLKOUT0]
-create_generated_clock -name qnice_clk     [get_pins */clk_gen/i_clk_main_qnice/CLKOUT1]
-create_generated_clock -name hr_clk_x1     [get_pins */clk_gen/i_clk_main_qnice/CLKOUT2]
-create_generated_clock -name hr_clk_x2     [get_pins */clk_gen/i_clk_main_qnice/CLKOUT3]
-create_generated_clock -name hr_clk_x2_del [get_pins */clk_gen/i_clk_main_qnice/CLKOUT4]
-create_generated_clock -name tmds_clk      [get_pins */clk_gen/i_clk_720p_hdmi/CLKOUT0]
-create_generated_clock -name vga_clk       [get_pins */clk_gen/i_clk_720p_hdmi/CLKOUT1]
+create_generated_clock -name qnice_clk     [get_pins */clk_gen/i_clk_qnice/CLKOUT0]
+create_generated_clock -name hr_clk_x1     [get_pins */clk_gen/i_clk_qnice/CLKOUT1]
+create_generated_clock -name hr_clk_x2     [get_pins */clk_gen/i_clk_qnice/CLKOUT2]
+create_generated_clock -name hr_clk_x2_del [get_pins */clk_gen/i_clk_qnice/CLKOUT3]
+create_generated_clock -name tmds_clk      [get_pins */clk_gen/i_clk_hdmi/CLKOUT0]
+create_generated_clock -name vga_clk       [get_pins */clk_gen/i_clk_hdmi/CLKOUT1]
+create_generated_clock -name main_clk      [get_pins */clk_gen/i_clk_main/CLKOUT0]
 
 ## Clock divider sdcardclk that creates the 25 MHz used by sd_spi.vhd
-create_generated_clock -name sdcardclk -source [get_pins */clk_gen/i_clk_main_qnice/CLKOUT1] -divide_by 2 [get_pins MEGA65/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
+create_generated_clock -name sdcard_clk -source [get_pins */clk_gen/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins MEGA65/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path

@@ -134,17 +134,17 @@ constant SHELL_O_DY           : integer := 26;
 ---------------------------------------------------------------------------------------------
 
 signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
-signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 40.00 MHz
-signal vga_clk                : std_logic;               -- pixel clock at normal speed (default: 720p @ 60 Hz = 74.25 MHz)
-signal tmds_clk               : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 60 Hz = 371.25 MHz)
 signal hr_clk_x1              : std_logic;               -- HyperRAM @ 100 MHz
 signal hr_clk_x2              : std_logic;               -- HyperRAM @ 200 MHz
 signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz phase delayed
+signal tmds_clk               : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 50 Hz = 371.25 MHz)
+signal vga_clk                : std_logic;               -- pixel clock at normal speed (default: 720p @ 50 Hz = 74.25 MHz)
+signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 27.00 MHz
 
-signal main_rst               : std_logic;
 signal qnice_rst              : std_logic;
-signal vga_rst                : std_logic;
 signal hr_rst                 : std_logic;
+signal vga_rst                : std_logic;
+signal main_rst               : std_logic;
 signal reset_na               : std_logic;
 
 
@@ -246,9 +246,9 @@ signal vga_osm_vram_attr      : std_logic_vector(7 downto 0);
 begin
 
    -- MMCME2_ADV clock generators:
-   --   @TODO YOURCORE:       40 MHz
+   --   @TODO YOURCORE:       27 MHz
    --   QNICE:                50 MHz
-   --   HDMI 720p 60 Hz:      74.25 MHz (VGA) and 371.25 MHz (HDMI)
+   --   HDMI 720p 50 Hz:      74.25 MHz (HDMI) and 371.25 MHz (TMDS)
    clk_gen : entity work.clk
       port map (
          sys_clk_i       => CLK,             -- expects 100 MHz
@@ -257,16 +257,17 @@ begin
          qnice_clk_o     => qnice_clk,       -- QNICE's 50 MHz main clock
          qnice_rst_o     => qnice_rst,       -- QNICE's reset, synchronized
 
-         main_clk_o      => main_clk,        -- main's @TODO 40 MHz main clock
-         main_rst_o      => main_rst,        -- main's reset, synchronized
-
          hr_clk_x1_o     => hr_clk_x1,
          hr_clk_x2_o     => hr_clk_x2,
          hr_clk_x2_del_o => hr_clk_x2_del,
+         hr_rst_o        => hr_rst,
 
-         vga_clk_o       => vga_clk,         -- VGA 74.25 MHz pixelclock for 720p @ 60 Hz
-         vga_rst_o       => vga_rst,         -- VGA's reset, synchronized
-         tmds_clk_o      => tmds_clk         -- VGA's 371.25 MHz pixelclock (74.25 MHz x 5) for HDMI
+         tmds_clk_o      => tmds_clk,        -- HDMI's 371.25 MHz pixelclock (74.25 MHz x 5) for TMDS
+         hdmi_clk_o      => vga_clk,         -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
+         hdmi_rst_o      => vga_rst,         -- HDMI's reset, synchronized
+
+         main_clk_o      => main_clk,        -- main's @TODO 27 MHz main clock
+         main_rst_o      => main_rst         -- main's reset, synchronized
       ); -- clk_gen
 
 
@@ -561,7 +562,7 @@ begin
       port map (
          select_44100 => '0',
          dvi          => '0',                         -- DVI mode: if activated, HDMI extensions like sound are deactivated
-         vic          => std_logic_vector(to_unsigned(VIDEO_MODE.CEA_CTA_VIC, 8)),  -- CEA/CTA VIC 4=720p @ 60 Hz
+         vic          => std_logic_vector(to_unsigned(VIDEO_MODE.CEA_CTA_VIC, 8)),  -- CEA/CTA VIC 4=720p @ 50 Hz
          aspect       => VIDEO_MODE.ASPECT,           -- "10" which means 16:9 at fits for 720p
          pix_rep      => VIDEO_MODE.PIXEL_REP,        -- no pixel repetition for 720p
          vs_pol       => VIDEO_MODE.V_POL,            -- horizontal polarity: negative
