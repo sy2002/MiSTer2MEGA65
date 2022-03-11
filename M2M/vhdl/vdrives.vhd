@@ -353,7 +353,7 @@ begin
       end if;
    end process;
    
-   read_qnice_registers : process(clk_qnice_i)
+   read_qnice_registers : process(all)
    begin
       qnice_data_o <= x"0000";
       -- Address window 0x0000 and address < 0xF            
