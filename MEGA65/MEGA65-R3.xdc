@@ -19,7 +19,7 @@ create_generated_clock -name hr_clk_x1     [get_pins */clk_gen/i_clk_qnice/CLKOU
 create_generated_clock -name hr_clk_x2     [get_pins */clk_gen/i_clk_qnice/CLKOUT2]
 create_generated_clock -name hr_clk_x2_del [get_pins */clk_gen/i_clk_qnice/CLKOUT3]
 create_generated_clock -name tmds_clk      [get_pins */clk_gen/i_clk_hdmi/CLKOUT0]
-create_generated_clock -name vga_clk       [get_pins */clk_gen/i_clk_hdmi/CLKOUT1]
+create_generated_clock -name hdmi_clk      [get_pins */clk_gen/i_clk_hdmi/CLKOUT1]
 create_generated_clock -name main_clk      [get_pins */clk_gen/i_clk_main/CLKOUT0]
 
 ## Clock divider sdcardclk that creates the 25 MHz used by sd_spi.vhd
@@ -41,12 +41,12 @@ add_cells_to_pblock pblock_i_hyperram [get_cells [list MEGA65/i_video_rescaler/i
 endgroup
 
 # Timing between ascal.vhd and HyperRAM is asynchronous.
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks vga_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks vga_clk]
+set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks hdmi_clk]
+set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks hdmi_clk]
 set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks main_clk]
-set_false_path -from [get_clocks vga_clk]      -to [get_clocks main_clk]
-set_false_path   -to [get_clocks vga_clk]    -from [get_clocks main_clk]
+set_false_path -from [get_clocks hdmi_clk]     -to [get_clocks main_clk]
+set_false_path   -to [get_clocks hdmi_clk]   -from [get_clocks main_clk]
 
 ## Reset button
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports RESET_N]

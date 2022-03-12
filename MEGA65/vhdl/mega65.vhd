@@ -137,8 +137,8 @@ signal qnice_clk              : std_logic;               -- QNICE main clock @ 5
 signal hr_clk_x1              : std_logic;               -- HyperRAM @ 100 MHz
 signal hr_clk_x2              : std_logic;               -- HyperRAM @ 200 MHz
 signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz phase delayed
-signal tmds_clk               : std_logic;               -- pixel clock at 5x speed for HDMI (default: 720p @ 50 Hz = 371.25 MHz)
-signal vga_clk                : std_logic;               -- pixel clock at normal speed (default: 720p @ 50 Hz = 74.25 MHz)
+signal tmds_clk               : std_logic;               -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
+signal vga_clk                : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
 signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 27.00 MHz
 
 signal qnice_rst              : std_logic;
@@ -246,9 +246,10 @@ signal vga_osm_vram_attr      : std_logic_vector(7 downto 0);
 begin
 
    -- MMCME2_ADV clock generators:
-   --   @TODO YOURCORE:       27 MHz
    --   QNICE:                50 MHz
+   --   HyperRAM:             100 MHz
    --   HDMI 720p 50 Hz:      74.25 MHz (HDMI) and 371.25 MHz (TMDS)
+   --   @TODO YOURCORE:       27 MHz
    clk_gen : entity work.clk
       port map (
          sys_clk_i       => CLK,             -- expects 100 MHz
@@ -311,7 +312,7 @@ begin
          joy_2_right_n_i      => joy_2_right_n,
          joy_2_fire_n_i       => joy_2_fire_n,
 
-         -- Video output: 720x576 @ 50 Hz
+         -- Video output: 720x576 @ 50 Hz, synchronous to main_clk
          video_ce_o           => main_video_ce,
          video_red_o          => main_video_red,
          video_green_o        => main_video_green,
