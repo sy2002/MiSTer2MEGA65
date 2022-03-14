@@ -12,9 +12,9 @@ use ieee.numeric_std.all;
 --use work.debugtools.all;
 
 entity matrix_to_keynum is
-  generic (scan_frequency : integer := 1000;
-           clock_frequency : integer);
+  generic (scan_frequency : integer := 1000);
   port (Clk : in std_logic;
+        clock_frequency : in natural;
         reset_in : in std_logic;
 
         matrix_col : in std_logic_vector(7 downto 0);
@@ -45,20 +45,20 @@ architecture beh of matrix_to_keynum is
   -- Number of the highest key to read from the hardware controller's matrix RAM
   constant MAXKEY : integer := 79;
   
-  -- Number of CPU cycles between each key scan event.
-  constant keyscan_delay : integer := clock_frequency/(72*scan_frequency);
+  -- Number of CPU cycles between each key scan event
+  signal keyscan_delay : natural;  
+  signal keyscan_counter : integer := 0;
   
-  signal keyscan_counter : integer range 0 to keyscan_delay := 0;
   -- Automatic key repeat (just repeats ascii_key_valid strobe periodically)
   -- (As key repeat is checked on each of the 72 key tests, we don't need to
   -- divide the maximum repeat counters by 72.)
   signal repeat_key : integer range 0 to MAXKEY := 0;
-  constant repeat_start_timer : integer := clock_frequency/scan_frequency/2; -- 0.5 sec
-  constant repeat_again_timer : integer := clock_frequency/scan_frequency/10; -- 0.1 sec
+  signal repeat_start_timer : integer;
+  signal repeat_again_timer : integer;
 
   signal ascii_key_valid_countdown : integer range 0 to 65535 := 0;
 
-  signal repeat_key_timer : integer range 0 to repeat_start_timer := 0;
+  signal repeat_key_timer : integer := 0;
 
   -- This one snoops the input and gets atomically snapshotted at each keyscan interval
   signal matrix_in : std_logic_vector(MAXKEY downto 0);
@@ -175,6 +175,13 @@ architecture beh of matrix_to_keynum is
   signal key_num : integer range 0 to MAXKEY := 0;
 
 begin
+
+  -- The clock_frequency of the system is not changing very often. At some cores that switch between
+  -- PAL and NTSC, it is for example changing. Therefore we can do the following math combinatorially
+  -- as long as we constrain it correctly in the XDC file (for example using False Paths)
+  keyscan_delay      <= clock_frequency / (72 * scan_frequency);
+  repeat_start_timer <= clock_frequency / scan_frequency / 2;  -- 0.5 sec
+  repeat_again_timer <= clock_frequency / scan_frequency / 10; -- 0.1 sec
   
   -- This is our first local copy that gets updated continuously by snooping
   -- the incoming column state from the keymapper.  It exists mostly so we have

@@ -23,11 +23,11 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity m2m_keyb is
    generic (
-      CLOCK_SPEED          : integer;                          -- core clock speed in Herz
       SCAN_FREQUENCY       : integer := 1000                   -- keyboard scan frequency in Herz, default: 1 kHz      
    );
    port (
       clk_main_i           : in std_logic;                     -- core clock
+      clk_main_speed_i     : in natural;                       -- speed of core clock in Hz
        
       -- interface to the MEGA65 keyboard controller       
       kio8_o               : out std_logic;                    -- clock to keyboard
@@ -79,12 +79,12 @@ begin
    m65matrix_to_keynum : entity work.matrix_to_keynum
    generic map
    (
-      scan_frequency    => SCAN_FREQUENCY,
-      clock_frequency   => CLOCK_SPEED      
+      scan_frequency    => SCAN_FREQUENCY  
    )
    port map
    (
       clk               => clk_main_i,
+      clock_frequency   => clk_main_speed_i,
       reset_in          => '0',
 
       matrix_col => matrix_col,

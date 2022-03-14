@@ -14,17 +14,9 @@ library work;
 use work.video_modes_pkg.all;
 
 entity main is
-   generic (
-      G_CORE_CLK_SPEED       : natural;
-
-      -- @TODO adjust this to your needs
-      G_OUTPUT_DX            : natural;
-      G_OUTPUT_DY            : natural;
-      G_YOUR_GENERIC1        : boolean;
-      G_ANOTHER_THING        : natural
-   );
    port (
       clk_main_i             : in  std_logic;
+      clk_main_speed_i       : in  natural;
       reset_i                : in  std_logic;
       pause_i                : in  std_logic;
 

@@ -277,20 +277,9 @@ begin
 
    -- main.vhd contains the actual MiSTer core
    i_main : entity work.main
-      generic map (
-         G_CORE_CLK_SPEED     => CORE_CLK_SPEED,
-
-         -- Demo core specific generics @TODO not sure if you need them, too
-         G_OUTPUT_DX          => VGA_DX,
-         G_OUTPUT_DY          => VGA_DY,
-
-         -- @TODO feel free to add as many generics as your core needs
-         -- you might also pass MEGA65 model specifics to your core, if needed (e.g. R2 vs. R3 differences)
-         G_YOUR_GENERIC1      => false,
-         G_ANOTHER_THING      => 123456
-      )
       port map (
          clk_main_i           => main_clk,
+         clk_main_speed_i     => CORE_CLK_SPEED,
          reset_i              => main_rst or main_qnice_reset,
          pause_i              => main_qnice_pause,
 
@@ -327,11 +316,9 @@ begin
 
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    i_m2m_keyb : entity work.m2m_keyb
-      generic map (
-         CLOCK_SPEED          => CORE_CLK_SPEED
-      )
       port map (
          clk_main_i           => main_clk,
+         clk_main_speed_i     => CORE_CLK_SPEED,         
 
          -- interface to the MEGA65 keyboard controller
          kio8_o               => kb_io0,
