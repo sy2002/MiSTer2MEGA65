@@ -155,6 +155,9 @@ signal reset_na               : std_logic;
 -- QNICE control and status register
 signal main_qnice_reset       : std_logic;
 signal main_qnice_pause       : std_logic;
+signal main_csr_keyboard_on   : std_logic;
+signal main_csr_joy1_on       : std_logic;
+signal main_csr_joy2_on       : std_logic;
 
 -- keyboard handling
 signal main_key_num           : integer range 0 to 79;
@@ -180,6 +183,9 @@ signal main_video_de          : std_logic;
 -- Control and status register that QNICE uses to control the Core
 signal qnice_csr_reset        : std_logic;
 signal qnice_csr_pause        : std_logic;
+signal qnice_csr_keyboard_on  : std_logic;
+signal qnice_csr_joy1_on      : std_logic;
+signal qnice_csr_joy2_on      : std_logic;
 
 -- On-Screen-Menu (OSM)
 signal qnice_osm_cfg_enable   : std_logic;
@@ -327,6 +333,7 @@ begin
          kio10_i              => kb_io2,
 
          -- interface to the core
+         enable_core_i        => main_csr_keyboard_on,         
          key_num_o            => main_key_num,
          key_pressed_n_o      => main_key_pressed_n,
 
@@ -390,9 +397,9 @@ begin
          csr_reset_o             => qnice_csr_reset,
          csr_pause_o             => qnice_csr_pause,
          csr_osm_o               => qnice_osm_cfg_enable,
-         csr_keyboard_o          => open,
-         csr_joy1_o              => open,
-         csr_joy2_o              => open,
+         csr_keyboard_o          => qnice_csr_keyboard_on,
+         csr_joy1_o              => qnice_csr_joy1_on,
+         csr_joy2_o              => qnice_csr_joy2_on,
          osm_xy_o                => qnice_osm_cfg_xy,
          osm_dxdy_o              => qnice_osm_cfg_dxdy,
 
@@ -650,20 +657,27 @@ begin
    -- timing critical. If this changed, we might introduce "high-speed" devices that are using
    -- the falling-edge and that work without WAIT_FOR_DATA.
 
-   -- Clock domain crossing: QNICE to C64
+   -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 2
+         WIDTH => 5
       )
       port map (
          src_clk                => qnice_clk,
          src_in(0)              => qnice_csr_reset,
          src_in(1)              => qnice_csr_pause,
+         src_in(2)              => qnice_csr_keyboard_on,
+         src_in(3)              => qnice_csr_joy1_on,
+         src_in(4)              => qnice_csr_joy2_on,
          dest_clk               => main_clk,
          dest_out(0)            => main_qnice_reset,
-         dest_out(1)            => main_qnice_pause
+         dest_out(1)            => main_qnice_pause,
+         dest_out(2)            => main_csr_keyboard_on,
+         dest_out(3)            => main_csr_joy1_on,
+         dest_out(4)            => main_csr_joy2_on
       ); -- i_qnice2main
 
+   -- Clock domain crossing: Core to QNICE
    i_main2qnice: xpm_cdc_array_single
       generic map (
          WIDTH => 16
@@ -675,6 +689,7 @@ begin
          dest_out(15 downto 0)  => qnice_qnice_keys_n
       ); -- i_main2qnice
 
+   -- Clock domain crossing: QNICE to QNICE-On-Screen-Display
    i_qnice2vga: xpm_cdc_array_single
       generic map (
          WIDTH => 33
