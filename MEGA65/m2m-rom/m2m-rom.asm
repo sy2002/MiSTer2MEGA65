@@ -38,9 +38,15 @@
 ; Firmware: Main Code
 ; ----------------------------------------------------------------------------
 
-                ; Run the shell: This is where you could put your own system
+                ; Run the Shell: This is where you could put your own system
                 ; instead of the shell
 START_FIRMWARE  RBRA    START_SHELL, 1
+
+; ----------------------------------------------------------------------------
+; Firmware: Core specific IO handler (called by the Shell)
+; ----------------------------------------------------------------------------
+
+HANDLE_CORE_IO  RET
 
 ; ----------------------------------------------------------------------------
 ; Variables: Need to be located in RAM
@@ -54,7 +60,7 @@ START_FIRMWARE  RBRA    START_SHELL, 1
 ; add your own variables here
 ;
 
-; M2M shell variables (only include, if you included "shell.asm" above)
+; M2M Shell variables (only include, if you included "shell.asm" above)
 #include "../../M2M/rom/shell_vars.asm"
 
 ; ----------------------------------------------------------------------------
