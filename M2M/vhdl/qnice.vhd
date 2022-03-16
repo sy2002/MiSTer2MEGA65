@@ -7,7 +7,7 @@
 -- QNICE reads/writes registers and memory at the falling edge of the clock
 --
 -- QNICE Co-Processor is based on QNICE-FPGA done by The QNICE Development Team
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -400,6 +400,7 @@ begin
    -- 0xFFE2: OSM dx|dy width|height (in chars)
    -- 0xFFE3 .. 0xFFE6: read-only registers for OSM presets
    -- 0xFFE7: read-only register for hardware screen size in chars (width and height)
+   -- 0xFFE8: Low active realtime snapshot of the currently pressed keys (read-only)
    -- 0xFFF0 .. 0xFFF3: access 256-bit general purpose control flags via address/data pairs
    -- 0xFFF4 -- 0xFFF5: 4k-segmented access to RAMs, ROMs and similarily behaving devices
    ramrom_en                  <= '1' when cpu_addr(15 downto 12) = x"7" else '0';

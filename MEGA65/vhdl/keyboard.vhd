@@ -17,7 +17,7 @@
 -- keyboard is scanned 1000 times per second. kb_key_pressed_n_i is already debounced and signals
 -- low active, if a certain key is being pressed right now.
 -- 
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ---------------------------------------------------------------------------------------------------------
 
 library IEEE;
@@ -26,11 +26,24 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity keyboard is
    port (
-      clk_main_i           : in std_logic;                     -- core clock
+      clk_main_i           : in std_logic;               -- core clock
          
-      -- interface to the MEGA65 keyboard
-      key_num_i            : in integer range 0 to 79;    -- cycles through all MEGA65 keys
-      key_pressed_n_i      : in std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
+      -- Interface to the MEGA65 keyboard
+      key_num_i            : in integer range 0 to 79;   -- cycles through all MEGA65 keys
+      key_pressed_n_i      : in std_logic;               -- low active: debounced feedback: is kb_key_num_i pressed right now?
+      
+      -- Interface to the MEGA65 joysticks
+      joy_1_up_n             : in std_logic;
+      joy_1_down_n           : in std_logic;
+      joy_1_left_n           : in std_logic;
+      joy_1_right_n          : in std_logic;
+      joy_1_fire_n           : in std_logic;
+
+      joy_2_up_n             : in std_logic;
+      joy_2_down_n           : in std_logic;
+      joy_2_left_n           : in std_logic;
+      joy_2_right_n          : in std_logic;
+      joy_2_fire_n           : in std_logic;      
       
       -- @TODO: Create the kind of keyboard output that your core needs
       -- "example_n_o" is a low active register and used by the demo core:

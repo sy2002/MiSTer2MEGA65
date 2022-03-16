@@ -78,6 +78,25 @@ package video_modes_pkg is
       V_POL       => '0'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
 
+   -- HDMI 720p @ 50 Hz (1280x720)
+   -- Taken from section 4.3 in the document CEA-861-D
+   constant C_HDMI_720p_50 : video_modes_t := (
+      CLK_KHZ     => 74250,      -- 74.25 MHz
+      CEA_CTA_VIC => 19,         -- CEA/CTA VIC 4=720p @ 60 Hz
+      ASPECT      => "10",       -- apsect ratio: 01=4:3, 10=16:9: "10" for 720p
+      PIXEL_REP   => '0',        -- no pixel repetition
+      H_PIXELS    => 1280,       -- horizontal display width in pixels
+      V_PIXELS    => 720,        -- vertical display width in rows
+      H_FP        => 440,        -- horizontal front porch width in pixels
+      H_PULSE     => 40,         -- horizontal sync pulse width in pixels
+      H_BP        => 220,        -- horizontal back porch width in pixels
+      V_FP        => 5,          -- vertical front porch width in rows
+      V_PULSE     => 5,          -- vertical sync pulse width in rows
+      V_BP        => 20,         -- vertical back porch width in rows
+      H_POL       => '1',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      V_POL       => '1'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
+   );
+
 end package video_modes_pkg;
 
 package body video_modes_pkg is

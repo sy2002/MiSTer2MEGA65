@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------------
--- MiSTer2MEGA65 Framework  
+-- MiSTer2MEGA65 Framework
 --
 -- VGA On-Screen-Menu (OSM)
 --
@@ -29,8 +29,8 @@ entity vga_osm is
    port (
       clk_i                : in  std_logic;
 
-      vga_col_i            : in  integer range 0 to G_VGA_DX - 1;
-      vga_row_i            : in  integer range 0 to G_VGA_DY - 1;
+      vga_col_i            : in  integer range 0 to 2047;
+      vga_row_i            : in  integer range 0 to 2047;
 
       vga_osm_cfg_enable_i : in  std_logic;
       vga_osm_cfg_xy_i     : in  std_logic_vector(15 downto 0);
@@ -51,18 +51,18 @@ architecture synthesis of vga_osm is
    constant CHARS_DY          : integer := G_VGA_DY / G_FONT_DY;
 
    -- VGA signals
-   signal vga_osm_x1          : integer range 0 to CHARS_DX - 1;
-   signal vga_osm_x2          : integer range 0 to CHARS_DX - 1;
-   signal vga_osm_y1          : integer range 0 to CHARS_DY - 1;
-   signal vga_osm_y2          : integer range 0 to CHARS_DY - 1;
+   signal vga_osm_x1          : integer range 0 to 127;
+   signal vga_osm_x2          : integer range 0 to 127;
+   signal vga_osm_y1          : integer range 0 to 127;
+   signal vga_osm_y2          : integer range 0 to 127;
 
-   signal vga_x_div_16        : integer range 0 to CHARS_DX - 1;
-   signal vga_y_div_16        : integer range 0 to CHARS_DY - 1;
+   signal vga_x_div_16        : integer range 0 to 127;
+   signal vga_y_div_16        : integer range 0 to 127;
    signal vga_x_mod_16        : integer range 0 to 15;
    signal vga_y_mod_16        : integer range 0 to 15;
 
-   signal vga_x_div_16_d      : integer range 0 to CHARS_DX - 1;
-   signal vga_y_div_16_d      : integer range 0 to CHARS_DY - 1;
+   signal vga_x_div_16_d      : integer range 0 to 127;
+   signal vga_y_div_16_d      : integer range 0 to 127;
    signal vga_x_mod_16_d      : integer range 0 to 15;
    signal vga_y_mod_16_d      : integer range 0 to 15;
 
@@ -72,8 +72,8 @@ architecture synthesis of vga_osm is
 begin
 
    calc_boundaries : process (all)
-      variable vga_osm_x : integer range 0 to CHARS_DX - 1;
-      variable vga_osm_y : integer range 0 to CHARS_DY - 1;
+      variable vga_osm_x : integer range 0 to 127;
+      variable vga_osm_y : integer range 0 to 127;
    begin
       vga_osm_x  := to_integer(unsigned(vga_osm_cfg_xy_i(15 downto 8)));
       vga_osm_y  := to_integer(unsigned(vga_osm_cfg_xy_i(7 downto 0)));
@@ -86,7 +86,7 @@ begin
    -- Hardcoded for 16x16 font since we are doing div 16 and mod 16
    -- This cannot be easily changed to be flexible using "/" and "mod" because on the one hand this leads
    -- to very tight timing (danger of no timing closure) plus some probably timing-related strange effects:
-   -- Needs complete refactoring around the delay between the calculation of the address and when the data arrives   
+   -- Needs complete refactoring around the delay between the calculation of the address and when the data arrives
    vga_x_div_16 <= to_integer(to_unsigned(vga_col_i, 16)(10 downto 4));
    vga_y_div_16 <= to_integer(to_unsigned(vga_row_i, 16)(10 downto 4));
    vga_x_mod_16 <= to_integer(to_unsigned(vga_col_i, 16)(3 downto 0));
@@ -96,7 +96,7 @@ begin
    vga_osm_vram_addr_o <= std_logic_vector(to_unsigned(vga_y_div_16 * CHARS_DX + vga_x_div_16, 16));
 
    -- Read font data. (Almost) combinatorial read.
-   vga_osm_font_addr_d <= std_logic_vector(to_unsigned(to_integer(unsigned(vga_osm_vram_data_i)) * G_FONT_DY + vga_y_mod_16_d, 12));
+   vga_osm_font_addr_d <= std_logic_vector(to_unsigned(to_integer(unsigned(vga_osm_vram_data_i)) * G_FONT_DY + vga_y_mod_16, 12));
 
    -- 16x16 pixel font ROM
    -- This reads on the falling clock edge, and is therefore equivalent to a combinatorial read.

@@ -29,13 +29,13 @@ entity democore is
       keyboard_n_i         : in  std_logic_vector(2 downto 0);
 
       -- Video output
-      video_ce_o           : out std_logic;
-      video_red_o          : out std_logic_vector(7 downto 0);
-      video_green_o        : out std_logic_vector(7 downto 0);
-      video_blue_o         : out std_logic_vector(7 downto 0);
-      video_vs_o           : out std_logic;
-      video_hs_o           : out std_logic;
-      video_de_o           : out std_logic;
+      vga_ce_o             : out std_logic;
+      vga_red_o            : out std_logic_vector(7 downto 0);
+      vga_green_o          : out std_logic_vector(7 downto 0);
+      vga_blue_o           : out std_logic_vector(7 downto 0);
+      vga_vs_o             : out std_logic;
+      vga_hs_o             : out std_logic;
+      vga_de_o             : out std_logic;
 
       -- Audio output (Signed PCM)
       audio_left_o         : out signed(15 downto 0);
@@ -103,21 +103,21 @@ begin
    begin
       if rising_edge(video_clk_i) then
          if video_de then
-            video_red_o   <= video_red;
-            video_green_o <= video_green;
-            video_blue_o  <= video_blue;
+            vga_red_o   <= video_red;
+            vga_green_o <= video_green;
+            vga_blue_o  <= video_blue;
          else
-            video_red_o   <= X"00";
-            video_green_o <= X"00";
-            video_blue_o  <= X"00";
+            vga_red_o   <= X"00";
+            vga_green_o <= X"00";
+            vga_blue_o  <= X"00";
          end if;
-         video_hs_o    <= video_hs;
-         video_vs_o    <= video_vs;
-         video_de_o    <= video_de;
+         vga_hs_o    <= video_hs;
+         vga_vs_o    <= video_vs;
+         vga_de_o    <= video_de;
       end if;
    end process p_rgb;
 
-   video_ce_o <= '1';
+   vga_ce_o <= '1';
 
 end architecture synthesis;
 

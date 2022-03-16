@@ -23,11 +23,11 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity m2m_keyb is
    generic (
-      CLOCK_SPEED          : integer;                          -- core clock speed in Herz
       SCAN_FREQUENCY       : integer := 1000                   -- keyboard scan frequency in Herz, default: 1 kHz      
    );
    port (
       clk_main_i           : in std_logic;                     -- core clock
+      clk_main_speed_i     : in natural;                       -- speed of core clock in Hz
        
       -- interface to the MEGA65 keyboard controller       
       kio8_o               : out std_logic;                    -- clock to keyboard
@@ -35,6 +35,7 @@ entity m2m_keyb is
       kio10_i              : in std_logic;                     -- data input from keyboard
       
       -- interface to the core
+      enable_core_i        : in std_logic;                     -- 0 = core is decoupled from the keyboard, 1 = standard operation      
       key_num_o            : out integer range 0 to 79;        -- cycles through all keys with SCAN_FREQUENCY
       key_pressed_n_o      : out std_logic;                    -- low active: debounced feedback: is kb_key_num_o pressed right now?
             
@@ -54,7 +55,9 @@ signal keys_n              : std_logic_vector(15 downto 0) := x"FFFF"; -- low ac
 begin
    -- output the keyboard interface for the core
    key_num_o         <= key_num;
-   key_pressed_n_o   <= key_status_n;
+   key_pressed_n_o   <= key_status_n when enable_core_i else '1';
+   
+   -- output the keyboard interface for QNICE
    qnice_keys_n_o    <= keys_n;
    
    m65driver : entity work.mega65kbd_to_matrix
@@ -79,12 +82,12 @@ begin
    m65matrix_to_keynum : entity work.matrix_to_keynum
    generic map
    (
-      scan_frequency    => SCAN_FREQUENCY,
-      clock_frequency   => CLOCK_SPEED      
+      scan_frequency    => SCAN_FREQUENCY  
    )
    port map
    (
       clk               => clk_main_i,
+      clock_frequency   => clk_main_speed_i,
       reset_in          => '0',
 
       matrix_col => matrix_col,
