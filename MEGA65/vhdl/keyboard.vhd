@@ -5,7 +5,7 @@
 --
 -- Runs in the clock domain of the core.
 --
--- Basic philosophy of keyboard handling in MiSTer2MEGA: 
+-- This is how MiSTer2MEGA65 provides access to the MEGA65 keyboard: 
 --
 -- Each core is treating the keyboard in a different way: Some need low-active "matrices", some
 -- might need small high-active keyboard memories, etc. This is why the MiSTer2MEGA65 framework

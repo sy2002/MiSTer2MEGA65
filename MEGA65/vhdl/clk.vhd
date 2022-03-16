@@ -1,14 +1,14 @@
-----------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework  
 --
--- Main clock, pixel clock and QNICE-clock generator using the Xilinx specific MMCME2_ADV:
+-- Clock Generator using the Xilinx specific MMCME2_ADV:
 --
---   @TODO YOURCORE expects 40 MHz
+--   @TODO YOURCORE expects 27 MHz
 --   QNICE expects 50 MHz
---   HDMI 720p 60 Hz expects 74.25 MHz (VGA) and 371.25 MHz (HDMI)
+--   HDMI 720p 60 Hz expects 74.25 MHz (HDMI) and 371.25 MHz (TMDS)
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
-----------------------------------------------------------------------------------
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+-------------------------------------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -36,10 +36,10 @@ entity clk is
       hdmi_clk_o      : out std_logic;   -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
       hdmi_rst_o      : out std_logic;   -- HDMI's reset, synchronized
 
-      main_clk_o      : out std_logic;   -- main's @TODO 40 MHz main clock
+      main_clk_o      : out std_logic;   -- main's @TODO 27 MHz main clock
       main_rst_o      : out std_logic    -- main's reset, synchronized
    );
-end clk;
+end entity clk;
 
 architecture rtl of clk is
 
@@ -190,10 +190,10 @@ begin
          CLKIN1_PERIOD        => 10.0,       -- INPUT @ 100 MHz
          REF_JITTER1          => 0.010,
          DIVCLK_DIVIDE        => 1,
-         CLKFBOUT_MULT_F      => 8.000,      -- 800 MHz
+         CLKFBOUT_MULT_F      => 6.750,      -- 675 MHz
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
-         CLKOUT0_DIVIDE_F     => 20.000,     -- 40 MHz
+         CLKOUT0_DIVIDE_F     => 25.000,     -- 27 MHz
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.500,
          CLKOUT0_USE_FINE_PS  => FALSE

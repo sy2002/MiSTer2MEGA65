@@ -97,11 +97,13 @@ architecture beh of MEGA65_Core is
 --constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";
 constant QNICE_FIRMWARE       : string  := "../../MEGA65/m2m-rom/m2m-rom.rom";
 
--- MiSTer2MEGA65 default resolution is HDMI 720p @ 60 Hz
+-- HDMI 1280x720 @ 60 Hz resolution
 constant VIDEO_MODE           : video_modes_t := C_HDMI_720p_60;
 
--- Clock speeds
-constant CORE_CLK_SPEED       : natural := 40_000_000;   -- @TODO YOURCORE expects 40 MHz
+-- CORE clock speed
+constant CORE_CLK_SPEED       : natural := 27_000_000;   -- @TODO YOURCORE expects 27 MHz
+
+-- QNICE clock speed
 constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- QNICE main clock @ 50 MHz
 
 -- Rendering constants (in pixels)
@@ -253,7 +255,7 @@ begin
    --   QNICE:                50 MHz
    --   HyperRAM:             100 MHz and 200 MHz
    --   HDMI 720p 50 Hz:      74.25 MHz (HDMI) and 371.25 MHz (TMDS)
-   --   @TODO YOURCORE:       40 MHz
+   --   @TODO YOURCORE:       27 MHz
    clk_gen : entity work.clk
       port map (
          sys_clk_i       => CLK,             -- expects 100 MHz
@@ -271,7 +273,7 @@ begin
          hdmi_clk_o      => hdmi_clk,        -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
          hdmi_rst_o      => hdmi_rst,        -- HDMI's reset, synchronized
 
-         main_clk_o      => main_clk,        -- CORE's 40 MHz clock
+         main_clk_o      => main_clk,        -- CORE's 27 MHz clock
          main_rst_o      => main_rst         -- CORE's reset, synchronized
       ); -- clk_gen
 
@@ -319,7 +321,7 @@ begin
          joy_2_fire_n_i       => joy_2_fire_n,
 
          -- Video output
-         -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (40 MHz).
+         -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (27 MHz).
          vga_ce_o             => main_video_ce,
          vga_red_o            => main_video_red,
          vga_green_o          => main_video_green,
@@ -463,8 +465,6 @@ begin
       end case;
    end process qnice_ramrom_devices;
 
-
-
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks
    ---------------------------------------------------------------------------------------------
@@ -526,6 +526,7 @@ begin
          dest_out(4)            => main_csr_joy2_on
       ); -- i_qnice2main
 
+   -- Clock domain crossing: CORE to QNICE
    i_main2qnice: xpm_cdc_array_single
       generic map (
          WIDTH => 16

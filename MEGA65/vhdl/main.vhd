@@ -25,9 +25,9 @@ entity main is
       G_ANOTHER_THING        : natural
    );
    port (
-      clk_main_i              : in  std_logic;
-      reset_i                 : in  std_logic;
-      pause_i                 : in  std_logic;
+      clk_main_i              : in std_logic;
+      reset_i                 : in std_logic;
+      pause_i                 : in std_logic;
 
       -- MiSTer core main clock speed:      
       -- Make sure you pass very exact numbers here, because they are used for avoiding clock drift at derived clocks
