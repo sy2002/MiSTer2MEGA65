@@ -1,9 +1,10 @@
 ----------------------------------------------------------------------------------
--- MiSTer2MEGA65 Framework
+-- Commodore 64 for MEGA65  
 --
--- R3-Version: Top Module for synthesizing the whole machine
+-- MEGA65 R3 main file that contains the whole machine
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+-- based on C64_MiSTer by the MiSTer development team
+-- port done by MJoergen and sy2002 in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -42,11 +43,19 @@ port (
    kb_io1         : out std_logic;                 -- data output to keyboard
    kb_io2         : in  std_logic;                 -- data input from keyboard
 
-   -- SD Card
+   -- SD Card (internal on bottom)
    SD_RESET       : out std_logic;
    SD_CLK         : out std_logic;
    SD_MOSI        : out std_logic;
-   SD_MISO        : in  std_logic;
+   SD_MISO        : in std_logic;
+   SD_CD          : in std_logic;
+
+   -- SD Card (external on back)
+   SD2_RESET      : out std_logic;
+   SD2_CLK        : out std_logic;
+   SD2_MOSI       : out std_logic;
+   SD2_MISO       : in std_logic;
+   SD2_CD         : in std_logic;
 
    -- 3.5mm analog audio jack
    pwm_l          : out std_logic;
@@ -86,14 +95,6 @@ architecture synthesis of mega65_r3 is
 begin
 
    MEGA65 : entity work.MEGA65_Core
-      generic map
-      (
-         -- @TODO: Add your MEGA65 revision machine dependent generics (MEGA65 R2, R3, ...) here
-         -- or delete them if your core does not have machine dependencies
-         YOUR_GENERIC1  => 1,
-         YOUR_GENERIC2  => "MiSTer2MEGA65",
-         YOUR_GENERICN  => 1234
-      )
       port map
       (
          CLK            => CLK,
@@ -126,11 +127,19 @@ begin
          kb_io1         => kb_io1,
          kb_io2         => kb_io2,
 
-         -- SD Card
+         -- SD Card (internal on bottom)
          SD_RESET       => SD_RESET,
          SD_CLK         => SD_CLK,
          SD_MOSI        => SD_MOSI,
          SD_MISO        => SD_MISO,
+         SD_CD          => SD_CD,
+
+         -- SD Card (external on back)
+         SD2_RESET      => SD2_RESET,
+         SD2_CLK        => SD2_CLK,
+         SD2_MOSI       => SD2_MOSI,
+         SD2_MISO       => SD2_MISO,
+         SD2_CD         => SD2_CD,
 
          -- 3.5mm analog audio jack
          pwm_l          => pwm_l,
@@ -154,7 +163,7 @@ begin
          hr_reset       => hr_reset,
          hr_clk_p       => hr_clk_p,
          hr_cs0         => hr_cs0
-      ); -- MEGA65
+      );
 
 end architecture synthesis;
 

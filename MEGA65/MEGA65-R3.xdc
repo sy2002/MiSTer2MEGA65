@@ -37,7 +37,7 @@ set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_
 startgroup
 create_pblock pblock_i_hyperram
 resize_pblock pblock_i_hyperram -add {SLICE_X0Y200:SLICE_X7Y224}
-add_cells_to_pblock pblock_i_hyperram [get_cells [list MEGA65/i_video_rescaler/i_hyperram_wrapper/i_hyperram]]
+add_cells_to_pblock pblock_i_hyperram [get_cells [list MEGA65/i_hyperram]]
 endgroup
 
 # Timing between ascal.vhd and HyperRAM is asynchronous.
@@ -65,6 +65,14 @@ set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports SD_RESET]
 set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports SD_CLK]
 set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
 set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports SD_MISO]
+set_property -dict {PACKAGE_PIN D17 IOSTANDARD LVCMOS33} [get_ports SD_CD]
+
+## Micro SD Connector (external slot at back of the cover)
+set_property -dict {PACKAGE_PIN K2  IOSTANDARD LVCMOS33} [get_ports SD2_RESET]
+set_property -dict {PACKAGE_PIN G2  IOSTANDARD LVCMOS33} [get_ports SD2_CLK]
+set_property -dict {PACKAGE_PIN J2  IOSTANDARD LVCMOS33} [get_ports SD2_MOSI]
+set_property -dict {PACKAGE_PIN H2  IOSTANDARD LVCMOS33} [get_ports SD2_MISO]
+set_property -dict {PACKAGE_PIN K1  IOSTANDARD LVCMOS33} [get_ports SD2_CD]
 
 ## Joystick port A
 set_property -dict {PACKAGE_PIN C14 IOSTANDARD LVCMOS33} [get_ports joy_1_up_n]

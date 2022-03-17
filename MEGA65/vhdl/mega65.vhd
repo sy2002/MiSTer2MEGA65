@@ -58,11 +58,19 @@ port (
    kb_io1         : out std_logic;                 -- data output to keyboard
    kb_io2         : in std_logic;                  -- data input from keyboard
 
-   -- SD Card
+   -- SD Card (internal on bottom)
    SD_RESET       : out std_logic;
    SD_CLK         : out std_logic;
    SD_MOSI        : out std_logic;
    SD_MISO        : in std_logic;
+   SD_CD          : in std_logic;
+
+   -- SD Card (external on back)
+   SD2_RESET      : out std_logic;
+   SD2_CLK        : out std_logic;
+   SD2_MOSI       : out std_logic;
+   SD2_MISO       : in std_logic;
+   SD2_CD         : in std_logic;
 
    -- 3.5mm analog audio jack
    pwm_l          : out std_logic;
@@ -226,12 +234,8 @@ signal vga_scaled_vs          : std_logic;
 signal vga_scaled_hs          : std_logic;
 signal vga_scaled_de          : std_logic;
 
-signal vga_osm_red            : std_logic_vector(7 downto 0);
-signal vga_osm_green          : std_logic_vector(7 downto 0);
-signal vga_osm_blue           : std_logic_vector(7 downto 0);
-signal vga_osm_vs             : std_logic;
-signal vga_osm_hs             : std_logic;
-signal vga_osm_de             : std_logic;
+-- QNICE On Screen Menu selections
+signal qnice_control_m : std_logic_vector(255 downto 0);
 
 signal vga_ce                 : std_logic;            -- VGA clock enable (all pixels)
 signal vga_de                 : std_logic;            -- VGA data enable (visible pixels)
@@ -387,11 +391,19 @@ begin
          uart_rxd_i              => UART_RXD,
          uart_txd_o              => UART_TXD,
 
-         -- SD Card
+         -- SD Card (internal on bottom)
          sd_reset_o              => SD_RESET,
          sd_clk_o                => SD_CLK,
          sd_mosi_o               => SD_MOSI,
          sd_miso_i               => SD_MISO,
+         sd_cd_i                 => SD_CD,
+            
+         -- SD Card (external on back)
+         sd2_reset_o             => SD2_RESET,
+         sd2_clk_o               => SD2_CLK,
+         sd2_mosi_o              => SD2_MOSI,
+         sd2_miso_i              => SD2_MISO,
+         sd2_cd_i                => SD2_CD,         
 
          -- QNICE public registers
          csr_reset_o             => qnice_csr_reset,
@@ -410,7 +422,7 @@ begin
          -- "d" = directly controled by the firmware
          -- "m" = indirectly controled by the menu system
          control_d_o             => open,
-         control_m_o             => open,
+         control_m_o             => qnice_control_m,
 
          -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
          -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
