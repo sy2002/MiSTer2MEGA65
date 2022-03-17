@@ -286,7 +286,7 @@ begin
    i_main : entity work.main
       generic map (
          G_CORE_CLK_SPEED     => CORE_CLK_SPEED,
-         G_VIDEO_MODE         => VIDEO_MODE,
+         G_VIDEO_MODE         => C_PAL_720_576_50,
 
          -- Demo core specific generics @TODO not sure if you need them, too
          G_OUTPUT_DX          => VGA_DX,
