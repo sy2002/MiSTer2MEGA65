@@ -52,6 +52,11 @@ M2M$CSR_UN_SD_DET_EXT   .EQU 0xF7FF
 M2M$CSR_KBD_JOY         .EQU 0x0038
 M2M$CSR_UN_KBD_JOY      .EQU 0xFFC7
 
+; @TODO: DELETE THESE TWO
+; As soon as we merge the new firmware from the C64
+M2M$CSR_OSM_ON      .EQU 0x0006
+M2M$CSR_OSM_OFF     .EQU 0x0038
+
 ; ----------------------------------------------------------------------------
 ; VGA and On-Screen-Menu (OSM)
 ; ----------------------------------------------------------------------------

@@ -308,7 +308,7 @@ _HLP_S3         SYSCALL(leave, 1)
 OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, SCR$PRINTSTR, SCR$PRINTSTRXY
                 .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
                 .DW     OPTM_CALLBACK,
-                .DW     M2M$OPT_SEL, 0          ; selection char + zero term.
+                .DW     M2M$OPT_SEL_MULTI, 0    ; selection char + zero term.
                 .DW     0, 0, 0, 0, 0           ; will be filled dynamically
 
 ; Draws a horizontal line/menu separator at the y-pos given in R8, dx in R9
