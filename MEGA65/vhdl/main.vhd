@@ -68,13 +68,13 @@ begin
          reset_i              => reset_i,
          pause_i              => pause_i,
          keyboard_n_i         => keyboard_n,
-         video_ce_o           => video_ce_o,
-         video_red_o          => video_red_o,
-         video_green_o        => video_green_o,
-         video_blue_o         => video_blue_o,
-         video_vs_o           => video_vs_o,
-         video_hs_o           => video_hs_o,
-         video_de_o           => video_de_o,
+         vga_ce_o             => vga_ce_o,
+         vga_red_o            => vga_red_o,
+         vga_green_o          => vga_green_o,
+         vga_blue_o           => vga_blue_o,
+         vga_vs_o             => vga_vs_o,
+         vga_hs_o             => vga_hs_o,
+         vga_de_o             => vga_de_o,
          audio_left_o         => audio_left_o,
          audio_right_o        => audio_right_o
       ); -- i_democore
@@ -88,7 +88,7 @@ begin
       port map (
          clk_main_i           => clk_main_i,
 
-         -- interface to the MEGA65 keyboard
+         -- Interface to the MEGA65 keyboard
          key_num_i            => kb_key_num_i,
          key_pressed_n_i      => kb_key_pressed_n_i,
 

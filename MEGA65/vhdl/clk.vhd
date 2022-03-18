@@ -1,13 +1,21 @@
 -------------------------------------------------------------------------------------------------------------
+<<<<<<< HEAD
 -- MiSTer2MEGA65 Framework
+=======
+-- MiSTer2MEGA65 Framework  
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
 --
--- Main clock, pixel clock and QNICE-clock generator using the Xilinx specific MMCME2_ADV:
+-- Clock Generator using the Xilinx specific MMCME2_ADV:
 --
 --   @TODO YOURCORE expects 27 MHz
 --   QNICE expects 50 MHz
 --   HDMI 720p 60 Hz expects 74.25 MHz (HDMI) and 371.25 MHz (TMDS)
 --
+<<<<<<< HEAD
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+=======
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
 -------------------------------------------------------------------------------------------------------------
 
 library ieee;
@@ -181,9 +189,12 @@ begin
          RST                 => '0'
       ); -- i_clk_hdmi
 
+<<<<<<< HEAD
    -- generate @TODO-YOUR-CORE
    -- VCO frequency range for Artix 7 speed grade -1 : 600 MHz - 1200 MHz
    -- f_VCO = f_CLKIN * CLKFBOUT_MULT_F / DIVCLK_DIVIDE
+=======
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
    i_clk_main : MMCME2_ADV
       generic map (
          BANDWIDTH            => "OPTIMIZED",
@@ -193,10 +204,17 @@ begin
          CLKIN1_PERIOD        => 10.0,       -- INPUT @ 100 MHz
          REF_JITTER1          => 0.010,
          DIVCLK_DIVIDE        => 1,
+<<<<<<< HEAD
          CLKFBOUT_MULT_F      => 8.0,        -- 800 MHz
          CLKFBOUT_PHASE       => 0.000,
          CLKFBOUT_USE_FINE_PS => FALSE,
          CLKOUT0_DIVIDE_F     => 29.625,     -- @TODO YOURCORE @ 27.004 MHz
+=======
+         CLKFBOUT_MULT_F      => 6.750,      -- 675 MHz
+         CLKFBOUT_PHASE       => 0.000,
+         CLKFBOUT_USE_FINE_PS => FALSE,
+         CLKOUT0_DIVIDE_F     => 25.000,     -- 27 MHz
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
          CLKOUT0_PHASE        => 0.000,
          CLKOUT0_DUTY_CYCLE   => 0.500,
          CLKOUT0_USE_FINE_PS  => FALSE
@@ -319,6 +337,12 @@ begin
          src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
          dest_clk => hr_clk_x1_o,      -- 1-bit input: Destination clock.
          dest_rst => hr_rst_o          -- 1-bit output: src_rst synchronized to the destination clock domain.
+<<<<<<< HEAD
+                                       -- This output is registered.
+      );
+
+   i_xpm_cdc_sync_rst_hdmi : xpm_cdc_sync_rst
+=======
                                        -- This output is registered.
       );
 
@@ -328,6 +352,19 @@ begin
       )
       port map (
          src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
+         dest_clk => hdmi_clk_o,       -- 1-bit input: Destination clock.
+         dest_rst => hdmi_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
+                                       -- This output is registered.
+      );
+
+   i_xpm_cdc_sync_rst_main : xpm_cdc_sync_rst
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
+      generic map (
+         INIT_SYNC_FF => 1  -- Enable simulation init values
+      )
+      port map (
+         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
+<<<<<<< HEAD
          dest_clk => hdmi_clk_o,       -- 1-bit input: Destination clock.
          dest_rst => hdmi_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
                                        -- This output is registered.
@@ -344,5 +381,12 @@ begin
                                        -- This output is registered.
       );
 
+=======
+         dest_clk => main_clk_o,       -- 1-bit input: Destination clock.
+         dest_rst => main_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
+                                       -- This output is registered.
+      );
+
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
 end architecture rtl;
 

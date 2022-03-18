@@ -32,6 +32,7 @@ architecture synthesis of vga_recover_counters is
 
    signal vga_pix_x : std_logic_vector(10 downto 0);
    signal vga_pix_y : std_logic_vector(10 downto 0);
+   signal new_frame : std_logic;
 
 begin
 
@@ -55,10 +56,19 @@ begin
             if vga_de_o = '0' and vga_de_i = '1' then -- Detect rising edge of DE signal
                vga_pix_x <= (others => '0');
                vga_pix_y <= std_logic_vector(unsigned(vga_pix_y) + 1);
+
+               if new_frame = '1' then
+                  vga_pix_y <= (others => '0');
+                  new_frame <= '0';
+               end if;
             end if;
 
             if vga_vs_i = '1' then  -- TBD: Is the polarity correct ?
+<<<<<<< HEAD
                vga_pix_y <= (others => '0');
+=======
+               new_frame <= '1';
+>>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
             end if;
          end if;
       end if;
