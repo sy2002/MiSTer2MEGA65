@@ -19,13 +19,6 @@ library xpm;
 use xpm.vcomponents.all;
 
 entity MEGA65_Core is
-generic (
-   -- @TODO: Add your machine dependent generics of this core here or delete them, if there
-   -- are no machine dependencies
-   YOUR_GENERIC1  : natural;
-   YOUR_GENERIC2  : string;
-   YOUR_GENERICN  : integer
-);
 port (
    CLK            : in std_logic;                  -- 100 MHz clock
    RESET_N        : in std_logic;                  -- CPU reset button
