@@ -234,6 +234,13 @@ signal vga_scaled_vs          : std_logic;
 signal vga_scaled_hs          : std_logic;
 signal vga_scaled_de          : std_logic;
 
+signal vga_osm_red            : std_logic_vector(7 downto 0);
+signal vga_osm_green          : std_logic_vector(7 downto 0);
+signal vga_osm_blue           : std_logic_vector(7 downto 0);
+signal vga_osm_vs             : std_logic;
+signal vga_osm_hs             : std_logic;
+signal vga_osm_de             : std_logic;
+
 -- QNICE On Screen Menu selections
 signal qnice_control_m : std_logic_vector(255 downto 0);
 
