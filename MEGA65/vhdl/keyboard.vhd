@@ -31,20 +31,7 @@ entity keyboard is
       -- Interface to the MEGA65 keyboard
       key_num_i            : in integer range 0 to 79;   -- cycles through all MEGA65 keys
       key_pressed_n_i      : in std_logic;               -- low active: debounced feedback: is kb_key_num_i pressed right now?
-      
-      -- Interface to the MEGA65 joysticks
-      joy_1_up_n             : in std_logic;
-      joy_1_down_n           : in std_logic;
-      joy_1_left_n           : in std_logic;
-      joy_1_right_n          : in std_logic;
-      joy_1_fire_n           : in std_logic;
-
-      joy_2_up_n             : in std_logic;
-      joy_2_down_n           : in std_logic;
-      joy_2_left_n           : in std_logic;
-      joy_2_right_n          : in std_logic;
-      joy_2_fire_n           : in std_logic;      
-      
+               
       -- @TODO: Create the kind of keyboard output that your core needs
       -- "example_n_o" is a low active register and used by the demo core:
       --    bit 0: Space

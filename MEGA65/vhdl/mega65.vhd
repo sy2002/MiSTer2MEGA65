@@ -143,8 +143,8 @@ signal hr_clk_x1              : std_logic;               -- HyperRAM @ 100 MHz
 signal hr_clk_x2              : std_logic;               -- HyperRAM @ 200 MHz
 signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz phase delayed
 signal tmds_clk               : std_logic;               -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
-signal vga_clk                : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
-signal main_clk               : std_logic;               -- @TODO YOUR CORE's main clock @ 27.00 MHz
+signal hdmi_clk               : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
+signal main_clk               : std_logic;               -- Core main clock
 
 signal qnice_rst              : std_logic;
 signal hr_rst                 : std_logic;
@@ -310,13 +310,13 @@ begin
 
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (27 MHz).
-         vga_ce_o             => main_video_ce,
-         vga_red_o            => main_video_red,
-         vga_green_o          => main_video_green,
-         vga_blue_o           => main_video_blue,
-         vga_vs_o             => main_video_vs,   -- positive polarity
-         vga_hs_o             => main_video_hs,   -- positive polarity
-         vga_de_o             => main_video_de,
+         video_ce_o             => main_video_ce,
+         video_red_o            => main_video_red,
+         video_green_o          => main_video_green,
+         video_blue_o           => main_video_blue,
+         video_vs_o             => main_video_vs,   -- positive polarity
+         video_hs_o             => main_video_hs,   -- positive polarity
+         video_de_o             => main_video_de,
 
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_l,
@@ -405,7 +405,7 @@ begin
          -- "d" = directly controled by the firmware
          -- "m" = indirectly controled by the menu system
          control_d_o             => open,
-         control_m_o             => qnice_control_m,
+         control_m_o             => open,
 
          -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
          -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device

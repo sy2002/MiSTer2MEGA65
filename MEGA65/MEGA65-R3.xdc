@@ -61,10 +61,10 @@ set_property -dict {PACKAGE_PIN A13 IOSTANDARD LVCMOS33} [get_ports kb_io1]
 set_property -dict {PACKAGE_PIN C13 IOSTANDARD LVCMOS33} [get_ports kb_io2]
 
 ## Micro SD Connector (this is the slot at the bottom side of the case under the cover)
-set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports SD_RESET]
-set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports SD_CLK]
-set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
-set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports SD_MISO]
+set_property -dict {PACKAGE_PIN B15 IOSTANDARD LVCMOS33} [get_ports SD_RESET]
+set_property -dict {PACKAGE_PIN B17 IOSTANDARD LVCMOS33} [get_ports SD_CLK]
+set_property -dict {PACKAGE_PIN B16 IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
+set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports SD_MISO]
 set_property -dict {PACKAGE_PIN D17 IOSTANDARD LVCMOS33} [get_ports SD_CD]
 
 ## Micro SD Connector (external slot at back of the cover)

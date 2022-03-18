@@ -64,11 +64,7 @@ begin
             end if;
 
             if vga_vs_i = '1' then  -- TBD: Is the polarity correct ?
-<<<<<<< HEAD
-               vga_pix_y <= (others => '0');
-=======
                new_frame <= '1';
->>>>>>> c987fceb5524161dac1b83b7221d7dc8c72cc320
             end if;
          end if;
       end if;
