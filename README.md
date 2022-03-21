@@ -1,6 +1,8 @@
 MiSTer2MEGA65 (HEAVILY WORK-IN-PROGRESS)
 ========================================
 
+![Title Image](doc/wiki/assets/MiSTer2MEGA65-Title.png)
+
 MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
 
 TL;DR
