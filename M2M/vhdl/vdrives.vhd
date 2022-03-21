@@ -24,6 +24,7 @@
 --    0x0007   sd_buff_wr_o
 --    0x0008   Number of virtual drives
 --    0x0009   Block size for LBA adressing
+--    0x000A   drive_mounted_o (in contrast to the strobed img_mounted_o, see below)
 --
 -- Window 0x0001 and onwards: window 1 = drive 0, window 2 = drive 1, ...
 --    0x0000   sd_lba_i: low word
@@ -54,7 +55,7 @@
 --    Instead, values are processed on the rising edge.of the mount bit. This means: Do not mount multiple
 --    drives simultaneously, unless the img_readonly_o, img_size_o and img_type_o values are the same
 --    for these drives. Make sure that you output these values before you actually trigger the rising
---    edge of the mount bit.Also sure that you only strobe the signal and do not keep it up all the time.
+--    edge of the mount bit. Also make sure that you only strobe the signal and do not keep it up all the time.
 --
 -- 3. rd_i should be low while no drive is not mounted. The QNICE firmware will output a warning on the
 --    serial port, if it detects high in such a situation: There might be something wrong with the logic.
@@ -76,6 +77,10 @@
 --    Set sd_buff_addr_o and sd_buff_dout_o and then strobe sd_buff_wr_o and then repeat.
 --
 -- 8. Lower sd_ack_o when done and go back to step 4 (i.e. wait until rd_i is high).
+--
+-- The difference between "mounting a drive" and "mounting an image": If a drive is mounted, it is
+-- actually "switched on" and if it is unmounted, it is "switched off" (will be kept in reset state).
+-- "Mounting an image" is more like inserting a disk into a drive. 
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
 -------------------------------------------------------------------------------------------------------------
@@ -186,8 +191,9 @@ signal img_readonly_out : std_logic;
 signal img_size_out     : std_logic_vector(31 downto 0);
 signal img_type_out     : std_logic_vector(1 downto 0);
 
--- Core clock domain
-signal drive_mounted_reg : std_logic_vector(VDNUM - 1 downto 0);
+-- Drive mounted register in core's ane QNICE's clock domain
+signal drive_mounted_reg         : std_logic_vector(VDNUM - 1 downto 0);
+signal drive_mounted_reg_qnice   : std_logic_vector(VDNUM - 1 downto 0);
 
 begin
    -- Core clock domain: Output registers
@@ -231,13 +237,15 @@ begin
 
    i_cdc_main2qnice: xpm_cdc_array_single
       generic map (
-         WIDTH => 1
+         WIDTH => 1 + VDNUM
       )
       port map (
-         src_clk                       => clk_core_i,
-         src_in(0)                     => reset_core_i,
-         dest_clk                      => clk_qnice_i,
-         dest_out(0)                   => reset_qnice
+         src_clk                             => clk_core_i,
+         src_in(0)                           => reset_core_i,
+         src_in((1 + VDNUM - 1) downto 1)    => drive_mounted_reg,
+         dest_clk                            => clk_qnice_i,
+         dest_out(0)                         => reset_qnice,
+         dest_out((1 + VDNUM - 1) downto 1)  => drive_mounted_reg_qnice
       );
 
    -- speed up the QNICE firmware by doing certain calculations in hardware instead of software
@@ -265,15 +273,16 @@ begin
          for i in 0 to VDNUM - 1 loop
             if reset_core_i = '1' then
                drive_mounted_reg(i) <= '0';
-            else
-	           if img_mounted_out(i) = '1' then
-	              if img_size_out = x"00000000" then
-	                 drive_mounted_reg(i) <= '0';
-	              else
-	                 drive_mounted_reg(i) <= '1';
-	              end if; 
-	           end if;
-	        end if;            
+            elsif img_mounted_out(i) = '1' then
+               -- to unmount a drive: strobe img_mounted while having the image size set to zero
+               if img_size_out = x"00000000" then
+                  drive_mounted_reg(i) <= '0';
+                  
+               -- to mount a drive: strobe img_mounted while having a nonzero image size
+               else
+                  drive_mounted_reg(i) <= '1';
+               end if; 
+            end if;            
          end loop;
       end if;
    end process;
@@ -397,7 +406,11 @@ begin
 
             -- Block size for LBA adressing
             when x"9" =>
-               qnice_data_o(7 + BLKSZ) <= '1';           
+               qnice_data_o(7 + BLKSZ) <= '1';    
+               
+            when x"A" =>
+               qnice_data_o(VDNUM - 1 downto 0) <= drive_mounted_reg_qnice;
+                      
             when others =>
                null;
          end case;
