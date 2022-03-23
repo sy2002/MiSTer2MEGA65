@@ -134,7 +134,9 @@ constant OPTM_G_START      : integer := 16#0400#;         -- selector / cursor p
 constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 
 -- Size of menu and menu items
--- End each line with a \n and make sure empty lines / separator lines are only consisting of a "\n"
+   
+-- CAUTION: End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
+--          Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 constant OPTM_SIZE         : integer := 24;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
                                              -- Important: make sure that SHELL_O_DY in mega65.vhd is equal to OPTM_SIZE + 2,
