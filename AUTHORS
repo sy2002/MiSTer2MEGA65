@@ -52,6 +52,12 @@ THE FOLLOWING LIST NEEDS ALWAYS TO BE PART OF YOUR LIST:
   * VGA to HDMI converter IP core, done by Adam Barnes
     https://github.com/amb5l/tyto_project
 
+  * AVALON SCALER used for scaling to 720p for HDMI, done by temlib.org
+    http://temlib.org/site/?page_id=10
+
+  * HyperRAM controller, done by MJoergen
+    https://mjoergen.github.io/HyperRAM/
+
   * Debouncer: I/O debouncing used for the joysticks, done by Scott Larson
     https://www.digikey.com/eewiki/pages/viewpage.action?pageId=4980758
 

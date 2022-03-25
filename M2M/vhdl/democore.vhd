@@ -17,20 +17,7 @@ use work.video_modes_pkg.all;
 
 entity democore is
    generic (
-      -- The democore is configured to generate a PAL signal at 720x576 @ 50 Hz resolution.
-      CLK_KHZ   : integer := 27000;
-      H_PIXELS  : integer :=   720;      -- horizontal display width in pixels
-      V_PIXELS  : integer :=   576;      -- vertical display width in rows
-      H_FP      : integer :=    17;      -- horizontal front porch width in pixels
-      H_PULSE   : integer :=    64;      -- horizontal sync pulse width in pixels
-      H_BP      : integer :=    63;      -- horizontal back porch width in pixels
-      V_FP      : integer :=     5;      -- vertical front porch width in rows
-      V_PULSE   : integer :=     5;      -- vertical sync pulse width in rows
-      V_BP      : integer :=    39;      -- vertical back porch width in rows
-      H_MAX     : integer :=   864;
-      V_MAX     : integer :=   625;
-      H_POL     : std_logic := '1';     -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-      V_POL     : std_logic := '1'      -- vertical sync pulse polarity (1 = positive, 0 = negative)
+      G_VIDEO_MODE : video_modes_t := C_PAL_720_576_50
    );
    port (
       clk_main_i           : in  std_logic;
@@ -66,22 +53,24 @@ architecture synthesis of democore is
    signal video_vs    : std_logic;
    signal video_hs    : std_logic;
    signal video_de    : std_logic;
+   signal video_ce    : std_logic;
 
 begin
 
    i_vga_controller : entity work.vga_controller
       port map (
-         h_pulse   => H_PULSE,
-         h_bp      => H_BP,
-         h_pixels  => H_PIXELS,
-         h_fp      => H_FP,
-         h_pol     => H_POL,
-         v_pulse   => V_PULSE,
-         v_bp      => V_BP,
-         v_pixels  => V_PIXELS,
-         v_fp      => V_FP,
-         v_pol     => V_POL,
-         pixel_clk => video_clk_i,
+         h_pulse   => G_VIDEO_MODE.H_PULSE,
+         h_bp      => G_VIDEO_MODE.H_BP,
+         h_pixels  => G_VIDEO_MODE.H_PIXELS,
+         h_fp      => G_VIDEO_MODE.H_FP,
+         h_pol     => '1',
+         v_pulse   => G_VIDEO_MODE.V_PULSE,
+         v_bp      => G_VIDEO_MODE.V_BP,
+         v_pixels  => G_VIDEO_MODE.V_PIXELS,
+         v_fp      => G_VIDEO_MODE.V_FP,
+         v_pol     => '1',
+         clk_i     => video_clk_i,
+         ce_i      => video_ce,
          reset_n   => '1',
          h_sync    => video_hs,
          v_sync    => video_vs,
@@ -92,13 +81,10 @@ begin
          n_sync    => open
       ); -- i_vga_controller
 
-   audio_left_o  <= (others => '0');
-   audio_right_o <= (others => '0');
-
    i_democore_pixel : entity work.democore_pixel
       generic  map (
-         G_VGA_DX => H_PIXELS,
-         G_VGA_DY => V_PIXELS
+         G_VGA_DX => G_VIDEO_MODE.H_PIXELS,
+         G_VGA_DY => G_VIDEO_MODE.V_PIXELS
       )
       port map (
          vga_clk_i => video_clk_i,
@@ -112,6 +98,7 @@ begin
    p_rgb : process (video_clk_i)
    begin
       if rising_edge(video_clk_i) then
+         video_ce <= not video_ce;
          if video_de then
             vga_red_o   <= video_red;
             vga_green_o <= video_green;
@@ -121,13 +108,21 @@ begin
             vga_green_o <= X"00";
             vga_blue_o  <= X"00";
          end if;
-         vga_hs_o    <= video_hs;
-         vga_vs_o    <= video_vs;
-         vga_de_o    <= video_de;
+         vga_hs_o <= video_hs;
+         vga_vs_o <= video_vs;
+         vga_de_o <= video_de;
       end if;
    end process p_rgb;
 
-   vga_ce_o <= '1';
+   vga_ce_o <= video_ce;
+
+   p_audio : process (clk_main_i)
+   begin
+      if rising_edge(clk_main_i) then
+         audio_left_o  <= audio_left_o + 2;  -- Left is one octave higher.
+         audio_right_o <= audio_right_o - 1;
+      end if;
+   end process p_audio;
 
 end architecture synthesis;
 

@@ -40,30 +40,25 @@ constant SEL_WELCOME : std_logic_vector(15 downto 0) := x"0000";
 constant SCR_WELCOME : string :=
 
    "Name of the Demo Core Version 1.0\n" &
-   "MiSTer port done by Demo Author and Another One in 2022\n\n" &
-   
-   -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving this line in
-   "Powered by MiSTer2MEGA65 Version [WIP], done by sy2002 and MJoergen in 2022\n" &
-   
-   "\n\nEdit config.vhd to modify the welcome screen.\n\n" &
+   "MiSTer port done by Demo Author in 2022\n\n" &
+
+   -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving these lines in
+   "Powered by MiSTer2MEGA65 Version [WIP],\n" &
+   "done by sy2002 and MJoergen in 2022\n" &
+
+   "\n\nEdit config.vhd to modify welcome screen.\n\n" &
    "You can for example show the keyboard map.\n" &
-   "Look at this example from Game Boy Color for MEGA65 (gbc4mega65):\n\n\n" &
-   
+   "Look at this example from Game Boy Color:\n\n\n" &
+
    "    MEGA65               Game Boy\n" & 
-   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_5 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
+   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
    "    Cursor keys          Joypad\n" &
    "    Space                Start\n" &
    "    Enter                Select\n" &
    "    Left Shift           A\n" &
    "    MEGA65 key           B\n" &
    "    Help                 Options menu\n\n\n" &
-   
-   "    File Browser\n" &
-   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_5 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
-   "    Run/Stop             Enter/leave file browser\n" &
-   "    Up/Down cursor key   Navigate one file up/down\n" &
-   "    Left/Right cursor    One page forward/backward\n" &
-   "    Enter                Start game/change folder\n" &
+
    "\n\n    Press Space to continue.\n\n\n";
 
 -- @TODO: We want to support multiple help/screens more screens that can be browsed, maybe even linked
@@ -151,16 +146,16 @@ constant OPTM_ITEMS        : string :=
    "\n" &
    " Headline B\n" &
    "\n" &
-   " Item B.1\n" &
-   " Item B.2\n" &
-   " Item B.3\n" &
-   " Item B.4\n" &
-   "\n" &
-   " Headline C\n" &
-   "\n" &
-   " Item C.1\n" &
-   " Item C.2\n" &
-   "\n" &
+   " Triple Buffering\n"   &
+   "\n"                    &
+   " On\n"                 &
+   " Off\n"                &
+   "\n"                    &
+   " 60 Hz\n"              &
+   "\n"                    &
+   " On\n"                 &
+   " Off\n"                &
+   "\n"                    &
    " Another Headline\n" &
    "\n" &
    " Yes\n" &
@@ -175,8 +170,9 @@ constant OPTM_ITEMS        : string :=
 -- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
 constant OPTM_G_A          : integer := 1;
 constant OPTM_G_B          : integer := 2;
-constant OPTM_G_C          : integer := 3;
-constant OPTM_G_ANOTHER    : integer := 4;
+constant OPTM_G_AUDIO      : integer := 3;
+constant OPTM_G_VIDEO      : integer := 4;
+constant OPTM_G_ANOTHER    : integer := 5;
 
 -- define your menu groups: which menu items are belonging together to form a group?
 -- where are separator lines? which items should be selected by default?
@@ -189,16 +185,16 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                       
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headine B
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_B + OPTM_G_STDSEL,                 -- Item B.1, selected by default
-                                             OPTM_G_B,                                 -- Item B.2
-                                             OPTM_G_B,                                 -- Item B.3
-                                             OPTM_G_B,                                 -- Item B.4
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headline C
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_C + OPTM_G_STDSEL,                 -- Item C.1, selected by default
-                                             OPTM_G_C,                                 -- Item C.2
-                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,
+                                             OPTM_G_LINE,
+                                             OPTM_G_AUDIO   + OPTM_G_STDSEL,
+                                             OPTM_G_AUDIO,
+                                             OPTM_G_LINE,
+                                             OPTM_G_TEXT,
+                                             OPTM_G_LINE,
+                                             OPTM_G_VIDEO   + OPTM_G_STDSEL,
+                                             OPTM_G_VIDEO,
+                                             OPTM_G_LINE,
                                              OPTM_G_TEXT,                              -- Another Headline
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_ANOTHER + OPTM_G_STDSEL,           -- Item Yes, selected by default

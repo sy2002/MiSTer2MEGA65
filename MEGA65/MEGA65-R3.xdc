@@ -18,20 +18,24 @@ create_generated_clock -name qnice_clk     [get_pins */clk_gen/i_clk_qnice/CLKOU
 create_generated_clock -name hr_clk_x1     [get_pins */clk_gen/i_clk_qnice/CLKOUT1]
 create_generated_clock -name hr_clk_x2     [get_pins */clk_gen/i_clk_qnice/CLKOUT2]
 create_generated_clock -name hr_clk_x2_del [get_pins */clk_gen/i_clk_qnice/CLKOUT3]
+create_generated_clock -name audio_clk     [get_pins */clk_gen/i_clk_qnice/CLKOUT4]
 create_generated_clock -name tmds_clk      [get_pins */clk_gen/i_clk_hdmi/CLKOUT0]
 create_generated_clock -name hdmi_clk      [get_pins */clk_gen/i_clk_hdmi/CLKOUT1]
 create_generated_clock -name main_clk      [get_pins */clk_gen/i_clk_main/CLKOUT0]
 
-## Clock divider sdcardclk that creates the 25 MHz used by sd_spi.vhd
+## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins */clk_gen/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins MEGA65/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
+
+## Clock divider pcm_clk (@ 12.288 MHz) is generated from audio_clk (@ 60 MHz). The ratio is 4.88, but rounded down to 4.
+create_generated_clock -name pcm_clk -source [get_pins */clk_gen/i_clk_qnice/CLKOUT4] -divide_by 4 [get_pins MEGA65/i_audio_video_pipeline/i_clk_synthetic/dest_clk_reg/Q]
 
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]*} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]*}}] \
-   -to [get_cells -include_replicated {MEGA65/QNICE_SOC/eae_inst/res_reg[*]*}] -setup 3
-set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]*} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]*}}] \
-   -to [get_cells -include_replicated {MEGA65/QNICE_SOC/eae_inst/res_reg[*]*}] -hold 2
+set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] \
+   -to [get_cells -include_replicated {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
+set_multicycle_path -from [get_cells -include_replicated {{MEGA65/QNICE_SOC/eae_inst/op0_reg[*]} {MEGA65/QNICE_SOC/eae_inst/op1_reg[*]}}] \
+   -to [get_cells -include_replicated {MEGA65/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
 
 # Place HyperRAM close to I/O pins
 startgroup
@@ -47,6 +51,8 @@ set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks main_clk]
 set_false_path -from [get_clocks hdmi_clk]     -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hdmi_clk]   -from [get_clocks main_clk]
+
+set_false_path -from [get_clocks main_clk]     -to [get_clocks audio_clk]
 
 ## Reset button
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports RESET_N]
