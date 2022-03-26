@@ -14,3 +14,6 @@ OPTM_DY         .BLOCK 1
 
 ; pointer to initialization record (see menu.asm for more details)
 OPTM_DATA       .BLOCK 1
+
+; single-select vs multi-select item flag
+OPTM_SSMS  		.BLOCK 1

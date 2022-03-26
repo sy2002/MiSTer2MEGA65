@@ -7,6 +7,33 @@
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
+; WAIT1SEC
+;   Waits about 1 second
+; WAIT333MS
+;   Waits about 1/3 second
+; ----------------------------------------------------------------------------
+
+WAIT1SEC        INCRB
+                MOVE    0x0060, R0
+_W1S_L1         MOVE    0xFFFF, R1
+_W1S_L2         SUB     1, R1
+                RBRA    _W1S_L2, !Z
+                SUB     1, R0
+                RBRA    _W1S_L1, !Z
+                DECRB
+                RET
+
+WAIT333MS       INCRB
+                MOVE    0x0020, R0
+_W333MS_L1      MOVE    0xFFFF, R1
+_W333MS_L2      SUB     1, R1
+                RBRA    _W333MS_L2, !Z
+                SUB     1, R0
+                RBRA    _W333MS_L1, !Z
+                DECRB
+                RET
+
+; ----------------------------------------------------------------------------
 ; WORD2HEXSTR
 ;    Convert a word into its hexadecimal zero-terminated string representation
 ;    R8: word

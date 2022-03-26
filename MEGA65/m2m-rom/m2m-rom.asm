@@ -43,10 +43,45 @@
 START_FIRMWARE  RBRA    START_SHELL, 1
 
 ; ----------------------------------------------------------------------------
-; Firmware: Core specific IO handler (called by the Shell)
+; Core specific callback functions: File browsing and disk image mounting
 ; ----------------------------------------------------------------------------
 
-HANDLE_CORE_IO  RET
+; FILTER_FILES callback function:
+;
+; Called by the file- and directory browser. Used to make sure that the 
+; browser is only showing valid files and directories.
+;
+; Input:
+;   R8: Name of the file in capital letters
+;   R9: 0=file, 1=directory
+; Output:
+;   R8: 0=do not filter file, i.e. show file
+FILTER_FILES    XOR     R8, R8                  ; R8 = 0 = do not filter file
+                RET
+
+; PREP_LOAD_IMAGE callback function:
+;
+; Some images need to be parsed, for example to extract configuration data or
+; to move the file read pointer to the start position of the actual data.
+; Sanity checks ("is this a valid file") can also be implemented here.
+; Last but not least: The mount system supports the concept of a 2-bit
+; "image type". In case this is used at the core of your choice, make sure
+; you return the correct image type.
+;
+; Input:
+;   R8: File handle: You are allowed to modify the read pointer of the handle
+; Output:
+;   R8: 0=OK, error code otherwise
+;   R9: image type if R8=0, otherwise 0 or optional ptr to  error msg string
+PREP_LOAD_IMAGE XOR     R8, R8                  ; no errors
+                XOR     R9, R9                  ; image type hardcoded to 0
+                RET
+
+; ----------------------------------------------------------------------------
+; Core specific constants and strings
+; ----------------------------------------------------------------------------
+
+; Add your core specific constants and strings here
 
 ; ----------------------------------------------------------------------------
 ; Variables: Need to be located in RAM
@@ -67,41 +102,48 @@ HANDLE_CORE_IO  RET
 ; Heap and Stack: Need to be located in RAM after the variables
 ; ----------------------------------------------------------------------------
 
-; TODO TODO TODO COMPLETELY REDO THIS AS THIS IS COPY/PASTE FROM gbc4mega65
+; The On-Screen-Menu uses the heap for several data structures. This heap
+; is located before the main system heap in memory.
+; You need to deduct MENU_HEAP_SIZE from the actual heap size below.
+; Example: If your HEAP_SIZE would be 29696, then you write 29696-1024=28672
+; instead, but when doing the sanity check calculations, you use 29696
+MENU_HEAP_SIZE  .EQU 1024
 
-; in DEVELOPMENT mode: 6k of heap, so that we are not colliding with
-; MEM_CARTRIDGE_WIN at 0xB000
 #ifndef RELEASE
 
 ; heap for storing the sorted structure of the current directory entries
 ; this needs to be the last variable before the monitor variables as it is
 ; only defined as "BLOCK 1" to avoid a large amount of null-values in
 ; the ROM file
-HEAP_SIZE       .EQU 6144
+HEAP_SIZE       .EQU 6144                       ; 7168 - 1024 = 6144
 HEAP            .BLOCK 1
 
-; in RELEASE mode: 11k of heap which leads to a better user experience when
+; in RELEASE mode: 16k of heap which leads to a better user experience when
 ; it comes to folders with a lot of files
 #else
 
-HEAP_SIZE       .EQU 11264
+HEAP_SIZE       .EQU 28672                      ; 29696 - 1024 = 28672
 HEAP            .BLOCK 1
 
-; TODO TODO TODO
-; THIS IS STILL THE gbc4MEGA65 comment: Completely redo
-; 
 ; The monitor variables use 20 words, round to 32 for being safe and subtract
-; it from B000 because this is at the moment the highest address that we
-; can use as RAM: 0xAFE0
-; The stack starts at 0xAFE0 (search var VAR$STACK_START in osm_rom.lis to
+; it from FF00 because this is at the moment the highest address that we
+; can use as RAM: 0xFEE0
+; The stack starts at 0xFEE0 (search var VAR$STACK_START in osm_rom.lis to
 ; calculate the address). To see, if there is enough room for the stack
-; given the HEAP_SIZE do this calculation: Add 11.264 words to HEAP which
-; is currently 0x8157 and subtract the result from 0xAFE0. This yields
-; currently a stack size of 649 words, which is sufficient for this program.
+; given the HEAP_SIZE do this calculation: Add 29696 words to HEAP which
+; is currently 0xXXXX and subtract the result from 0xFEE0. This yields
+; currently a stack size of more than 1.5k words, which is sufficient
+; for this program.
 
-                .ORG    0xAFE0                  ; TODO: automate calculation
+                .ORG    0xFEE0                  ; TODO: automate calculation
 #endif
 
-STACK_SIZE      .EQU    649
+; STACK_SIZE: Size of the global stack and should be a minimum of 768 words
+; after you subtract B_STACK_SIZE.
+; B_STACK_SIZE: Size of local stack of the the file- and directory browser. It
+; should also have a minimum size of 768 words. If you are not using the
+; Shell, then B_STACK_SIZE is not used.
+STACK_SIZE      .EQU    1536
+B_STACK_SIZE    .EQU    768
 
 #include "../../M2M/rom/main_vars.asm"

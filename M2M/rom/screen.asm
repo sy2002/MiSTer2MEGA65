@@ -81,7 +81,7 @@ SCR$OSM_M_ON    INCRB
                 MOVE    @R1, @R0
 
                 MOVE    M2M$CSR, R0             ; activate OSM
-                OR      M2M$CSR_OSM_ON, @R0
+                OR      M2M$CSR_OSM, @R0
 
                 DECRB
                 RET
@@ -100,7 +100,7 @@ SCR$OSM_O_ON    INCRB
                 MOVE    @R1, @R0
 
                 MOVE    M2M$CSR, R0             ; activate OSM
-                OR      M2M$CSR_OSM_ON, @R0
+                OR      M2M$CSR_OSM, @R0
 
                 DECRB
                 RET
@@ -142,7 +142,57 @@ _SCR$CLR_L      MOVE    M2M$VRAM_DATA, @R0      ; VRAM: data
                 SUB     1, R2
                 RBRA    _SCR$CLR_L, !Z
 
+                ; reset internal cursor and left margin
+                MOVE    SCR$CUR_X, R0
+                MOVE    0, @R0
+                MOVE    SCR$CUR_Y, R0
+                MOVE    0, @R0             
+                MOVE    SCR$ILX, R0
+                MOVE    0, @R0
+
                 SYSCALL(leave, 1)
+                RET
+
+; clear inner part of the screen (leave the frame)
+SCR$CLRINNER    INCRB
+
+                MOVE    M2M$RAMROM_4KWIN, R0    ; 4k window selector = 0
+                MOVE    0, @R0
+
+                MOVE    M2M$RAMROM_DEV, R0      ; device selector
+                MOVE    M2M$RAMROM_DATA, R1     ; 4k MMIO window
+
+                MOVE    SCR$OSM_M_DX, R2        ; width = DX minus 2 (frame)
+                MOVE    @R2, R2
+                SUB     2, R2
+                MOVE    SCR$OSM_M_DY, R3        ; height = DY minus 2 (frame)
+                MOVE    @R3, R3
+                SUB     2, R3
+
+                ; start address = DX + 1, because we need to skip the frame
+                MOVE    SCR$OSM_M_DX, R4
+                MOVE    @R4, R4
+                ADD     1, R4
+                ADD     R4, R1
+
+_SCR$CLRINNER1  MOVE    R2, R4
+_SCR$CLRINNER2  MOVE    M2M$VRAM_DATA, @R0      ; VRAM: data
+                MOVE    0, @R1                  ; 0 = CLR = space character
+                MOVE    M2M$VRAM_ATTR, @R0      ; VRAM: attributes
+                MOVE    M2M$SA_COL_STD, @R1++
+                SUB     1, R4
+                RBRA    _SCR$CLRINNER2, !Z
+                ADD     2, R1
+                SUB     1, R3
+                RBRA    _SCR$CLRINNER1, !Z
+                
+                ; move cursor to the upper/left inner area of the frame
+                MOVE    SCR$CUR_X, R0
+                MOVE    1, @R0
+                MOVE    SCR$CUR_Y, R0
+                MOVE    1, @R0
+
+                DECRB
                 RET
 
 ; ----------------------------------------------------------------------------

@@ -1,15 +1,9 @@
 ; ****************************************************************************
-; Game Boy Color for MEGA65 (gbc4mega65)
+; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
 ; Directory Browser (with sorted output)
 ;
-; File browser component for the gbc4mega65.
-; Meant to be resusable, so that it could for example be merged upstream to
-; QNICE-FPGA as part of a newly to-be-defined library of optional
-; functionality (i.e. not part of Monitor).
-;
-; gbc4mega65 machine is based on Gameboy_MiSTer
-; MEGA65 port done by sy2002 in February 2021 and licensed under GPL v3
+; done by sy2002 in 2022 and licensed under GPL v3
 ; ****************************************************************************
 
 #include "llist.asm"

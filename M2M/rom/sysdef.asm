@@ -52,11 +52,6 @@ M2M$CSR_UN_SD_DET_EXT   .EQU 0xF7FF
 M2M$CSR_KBD_JOY         .EQU 0x0038
 M2M$CSR_UN_KBD_JOY      .EQU 0xFFC7
 
-; @TODO: DELETE THESE TWO
-; As soon as we merge the new firmware from the C64
-M2M$CSR_OSM_ON      .EQU 0x0006
-M2M$CSR_OSM_OFF     .EQU 0x0038
-
 ; ----------------------------------------------------------------------------
 ; VGA and On-Screen-Menu (OSM)
 ; ----------------------------------------------------------------------------
@@ -114,7 +109,7 @@ M2M$NC_VE_RIGHT     .EQU 182    ; normal vertical line end: right part
 M2M$DIR_L           .EQU 17     ; left char for displaying a directory
 M2M$DIR_R           .EQU 16     ; right char for displaying a directory
 M2M$OPT_SEL_MULTI   .EQU 7      ; selection char for options menu: multi-sel.
-M2M$OPT_SEL_SINGLE  .EQU 35     ; ditto for single select
+M2M$OPT_SEL_SINGLE  .EQU 61     ; ditto for single select
 
 ; ----------------------------------------------------------------------------
 ; Keyboard for the framework (independent from the keyboard of the core)
@@ -193,3 +188,39 @@ M2M$CFG_OPTM_START  .EQU 0x0304     ; Position of very first cursor pos
 M2M$CFG_OPTM_ICOUNT .EQU 0x0305     ; Amount of menu items
 M2M$CFG_OPTM_MOUNT  .EQU 0x0306     ; Menu item = mount a drive
 M2M$CFG_OPTM_SINGLE .EQU 0x0307     ; Single-select menu item
+M2M$CFG_OPTM_MSTR   .EQU 0x0308     ; Mount string to display instead of %s
+
+; ----------------------------------------------------------------------------
+; Virtual Drives Device for MiSTer "SD" interface (vdrives.vhd)
+; ----------------------------------------------------------------------------
+
+; window selectors for vdrives.vhd
+VD_IEC_WIN_CAD      .EQU 0x0000     ; control and data registers
+VD_IEC_WIN_DRV      .EQU 0x0001     ; drive 0, next window = drive 1, ...
+
+; VD_IEC_WIN_CAD: control and data registers
+VD_IEC_IMG_MOUNT    .EQU 0x7000     ; image mounted, lowest bit = drive 0
+VD_IEC_RO           .EQU 0x7001     ; read-only for currently mounted drive
+VD_IEC_SIZE_L       .EQU 0x7002     ; image file size, low word
+VD_IEC_SIZE_H       .EQU 0x7003     ; image file size, high word
+VD_IEC_TYPE         .EQU 0x7004     ; image file type (2-bit value)
+VD_IEC_B_ADDR       .EQU 0x7005     ; drive buffer: address
+VD_IEC_B_DOUT       .EQU 0x7006     ; drive buffer: data out (to drive)
+VD_IEC_B_WREN       .EQU 0x7007     ; drive buffer: write enable (also needs ack)
+VD_IEC_VDNUM        .EQU 0x7008     ; number of virtual drives
+VD_IEC_BLKSZ        .EQU 0x7009     ; block size for LBA in bytes
+VD_IEC_DRV_MOUNT    .EQU 0x700A     ; drive mounted, lowest bit = drive 0
+
+; VD_IEC_WIN_DRV (and onwards): virtual drive specific registers
+VD_IEC_LBA_L        .EQU 0x7000     ; SD LBA low word
+VD_IEC_LBA_H        .EQU 0x7001     ; SD LBA high word
+VD_IEC_BLKCNT       .EQU 0x7002     ; SD block count
+VD_IEC_BYTES_L      .EQU 0x7003     ; SD block address in bytes: low word
+VD_IEC_BYTES_H      .EQU 0x7004     ; SD block address in bytes: high word
+VD_IEC_SIZEB        .EQU 0x7005     ; SD block data amount in bytes
+VD_IEC_4K_WIN       .EQU 0x7006     ; SD block address in 4k win logic: window
+VD_IEC_4K_OFFS      .EQU 0x7007     ; SD block address in 4k win logic: offset
+VD_IEC_RD           .EQU 0x7008     ; SD read request
+VD_IEC_WR           .EQU 0x7009     ; SD write request
+VD_IEC_ACK          .EQU 0x700A     ; SD acknowledge
+VD_IEC_B_DIN        .EQU 0x700B     ; drive buffer: data in (from drive)
