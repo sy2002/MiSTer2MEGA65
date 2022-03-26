@@ -130,8 +130,10 @@ constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 
 -- Size of menu and menu items
    
--- CAUTION: End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
---          Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
+-- CAUTION: 1. End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
+--             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
+--          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
+--             otherwise you will experience visual glitches.
 constant OPTM_SIZE         : integer := 24;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
                                              -- Important: make sure that SHELL_O_DY in mega65.vhd is equal to OPTM_SIZE + 2,
@@ -168,6 +170,7 @@ constant OPTM_ITEMS        : string :=
 -- make sure that your first group uses the value 1 (0 means "no menu item", such as text and line),
 -- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
 -- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
+-- single-select items and therefore also drive mount items need to have unique identifiers
 constant OPTM_G_A          : integer := 1;
 constant OPTM_G_B          : integer := 2;
 constant OPTM_G_AUDIO      : integer := 3;
