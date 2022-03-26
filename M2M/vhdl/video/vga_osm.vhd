@@ -107,14 +107,14 @@ begin
          DATA_WIDTH   => 16,
          ROM_PRELOAD  => true,
          ROM_FILE     => "../font/Anikki-16x16.rom",
-         FALLING_A      => true
+         FALLING_A    => true
       )
       port map
       (
-         clock_a           => clk_i,
-         address_a         => vga_osm_font_addr_d,
-         q_a               => vga_osm_font_data_d
-      );
+         clock_a      => clk_i,
+         address_a    => vga_osm_font_addr_d,
+         q_a          => vga_osm_font_data_d
+      ); -- font
 
    p_delay : process (clk_i)
    begin

@@ -39,7 +39,8 @@ entity vga_controller is
       v_pixels  : in  integer;    -- vertical display width in rows
       v_fp      : in  integer;    -- vertical front porch width in rows
       v_pol     : in  std_logic;  -- vertical sync pulse polarity (1 = positive, 0 = negative)
-      pixel_clk : in  std_logic;  -- pixel clock at frequency of vga mode being used
+      clk_i     : in  std_logic;  -- pixel clock at frequency of vga mode being used
+      ce_i      : in  std_logic;  -- Clock enable
       reset_n   : in  std_logic;  -- active low sycnchronous reset
       h_sync    : out std_logic;  -- horiztonal sync pulse
       v_sync    : out std_logic;  -- vertical sync pulse
@@ -69,52 +70,54 @@ begin
    n_blank <= '1';  -- no direct blanking
    n_sync  <= '0';  -- no sync on green
    
-   process (pixel_clk)
+   process (clk_i)
       variable h_count : natural range 0 to 2047 := 0;  -- horizontal counter (counts the columns)
       variable v_count : natural range 0 to 2047 := 0;  -- vertical counter (counts the rows)
    begin
    
-      if rising_edge(pixel_clk) then
+      if rising_edge(clk_i) then
 
-         -- counters
-         if h_count < h_period - 1 then     -- horizontal counter (pixels)
-            h_count := h_count + 1;
-         else
-            h_count := 0;
-            if v_count < v_period - 1 then  -- veritcal counter (rows)
-               v_count := v_count + 1;
+         if ce_i = '1' then
+            -- counters
+            if h_count < h_period - 1 then     -- horizontal counter (pixels)
+               h_count := h_count + 1;
             else
-               v_count := 0;
+               h_count := 0;
+               if v_count < v_period - 1 then  -- veritcal counter (rows)
+                  v_count := v_count + 1;
+               else
+                  v_count := 0;
+               end if;
             end if;
-         end if;
 
-         -- horizontal sync signal
-         if h_count >= h_sync_first and h_count <= h_sync_last then
-            h_sync <= h_pol;           -- assert horizontal sync pulse
-         else
-            h_sync <= not h_pol;       -- deassert horizontal sync pulse
-         end if;
-         
-         -- vertical sync signal
-         if v_count >= v_sync_first and v_count <= v_sync_last then
-            v_sync <= v_pol;           -- assert vertical sync pulse
-         else
-            v_sync <= not v_pol;       -- deassert vertical sync pulse
-         end if;
-         
-         -- set pixel coordinates
-         if h_count < h_pixels then    -- horizontal display time
-            column <= h_count;         -- set horizontal pixel coordinate
-         end if;
-         if v_count < v_pixels then    -- vertical display time
-            row <= v_count;            -- set vertical pixel coordinate
-         end if;
+            -- horizontal sync signal
+            if h_count >= h_sync_first and h_count <= h_sync_last then
+               h_sync <= h_pol;           -- assert horizontal sync pulse
+            else
+               h_sync <= not h_pol;       -- deassert horizontal sync pulse
+            end if;
+            
+            -- vertical sync signal
+            if v_count >= v_sync_first and v_count <= v_sync_last then
+               v_sync <= v_pol;           -- assert vertical sync pulse
+            else
+               v_sync <= not v_pol;       -- deassert vertical sync pulse
+            end if;
+            
+            -- set pixel coordinates
+            if h_count < h_pixels then    -- horizontal display time
+               column <= h_count;         -- set horizontal pixel coordinate
+            end if;
+            if v_count < v_pixels then    -- vertical display time
+               row <= v_count;            -- set vertical pixel coordinate
+            end if;
 
-         -- set display enable output
-         if h_count < h_pixels and v_count < v_pixels then     -- display time
-            disp_ena <= '1';                                   -- enable display
-         else                                                  -- blanking time
-            disp_ena <= '0';                                   -- disable display
+            -- set display enable output
+            if h_count < h_pixels and v_count < v_pixels then     -- display time
+               disp_ena <= '1';                                   -- enable display
+            else                                                  -- blanking time
+               disp_ena <= '0';                                   -- disable display
+            end if;
          end if;
 
          if reset_n = '0' then      -- reset asserted

@@ -97,6 +97,8 @@ package video_modes_pkg is
       V_POL       => '1'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
 
+   type video_modes_vector is array(natural range<>) of video_modes_t;
+
 end package video_modes_pkg;
 
 package body video_modes_pkg is

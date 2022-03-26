@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 entity video_overlay is
    generic  (
+      G_SHIFT          : integer := 0;    -- Deprecated. Will be removed in future release
       G_VGA_DX         : natural;
       G_VGA_DY         : natural;
       G_FONT_DX        : natural;
@@ -60,6 +61,7 @@ architecture synthesis of video_overlay is
    signal vga_hs_dd      : std_logic;
    signal vga_vs_dd      : std_logic;
    signal vga_de_dd      : std_logic;
+   signal vga_ce_dd      : std_logic;
 
 begin
 
@@ -102,7 +104,7 @@ begin
       )
       port map (
          clk_i                => vga_clk_i,
-         vga_col_i            => to_integer(unsigned(vga_pix_x_d)),
+         vga_col_i            => to_integer(unsigned(vga_pix_x_d)) - G_SHIFT,
          vga_row_i            => to_integer(unsigned(vga_pix_y_d)),
          vga_osm_cfg_xy_i     => vga_cfg_xy_i,
          vga_osm_cfg_dxdy_i   => vga_cfg_dxdy_i,
@@ -133,6 +135,7 @@ begin
          vga_hs_dd <= vga_hs_d;
          vga_vs_dd <= vga_vs_d;
          vga_de_dd <= vga_de_d;
+         vga_ce_dd <= vga_ce_d;
       end if;
    end process; -- p_clear_invisible
 
@@ -154,6 +157,7 @@ begin
          vga_hs_o    <= vga_hs_dd;
          vga_vs_o    <= vga_vs_dd;
          vga_de_o    <= vga_de_dd;
+         vga_ce_o    <= vga_ce_dd;
       end if;
    end process; -- p_output_registers
 

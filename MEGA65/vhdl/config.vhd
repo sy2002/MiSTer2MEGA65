@@ -40,30 +40,25 @@ constant SEL_WELCOME : std_logic_vector(15 downto 0) := x"0000";
 constant SCR_WELCOME : string :=
 
    "Name of the Demo Core Version 1.0\n" &
-   "MiSTer port done by Demo Author and Another One in 2022\n\n" &
-   
-   -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving this line in
-   "Powered by MiSTer2MEGA65 Version [WIP], done by sy2002 and MJoergen in 2022\n" &
-   
-   "\n\nEdit config.vhd to modify the welcome screen.\n\n" &
+   "MiSTer port done by Demo Author in 2022\n\n" &
+
+   -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving these lines in
+   "Powered by MiSTer2MEGA65 Version [WIP],\n" &
+   "done by sy2002 and MJoergen in 2022\n" &
+
+   "\n\nEdit config.vhd to modify welcome screen.\n\n" &
    "You can for example show the keyboard map.\n" &
-   "Look at this example from Game Boy Color for MEGA65 (gbc4mega65):\n\n\n" &
-   
+   "Look at this example from Game Boy Color:\n\n\n" &
+
    "    MEGA65               Game Boy\n" & 
-   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_5 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
+   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
    "    Cursor keys          Joypad\n" &
    "    Space                Start\n" &
    "    Enter                Select\n" &
    "    Left Shift           A\n" &
    "    MEGA65 key           B\n" &
    "    Help                 Options menu\n\n\n" &
-   
-   "    File Browser\n" &
-   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_5 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
-   "    Run/Stop             Enter/leave file browser\n" &
-   "    Up/Down cursor key   Navigate one file up/down\n" &
-   "    Left/Right cursor    One page forward/backward\n" &
-   "    Enter                Start game/change folder\n" &
+
    "\n\n    Press Space to continue.\n\n\n";
 
 -- @TODO: We want to support multiple help/screens more screens that can be browsed, maybe even linked
@@ -134,7 +129,11 @@ constant OPTM_G_START      : integer := 16#0400#;         -- selector / cursor p
 constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 
 -- Size of menu and menu items
--- End each line with a \n and make sure empty lines / separator lines are only consisting of a "\n"
+   
+-- CAUTION: 1. End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
+--             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
+--          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
+--             otherwise you will experience visual glitches.
 constant OPTM_SIZE         : integer := 24;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
                                              -- Important: make sure that SHELL_O_DY in mega65.vhd is equal to OPTM_SIZE + 2,
@@ -149,16 +148,16 @@ constant OPTM_ITEMS        : string :=
    "\n" &
    " Headline B\n" &
    "\n" &
-   " Item B.1\n" &
-   " Item B.2\n" &
-   " Item B.3\n" &
-   " Item B.4\n" &
-   "\n" &
-   " Headline C\n" &
-   "\n" &
-   " Item C.1\n" &
-   " Item C.2\n" &
-   "\n" &
+   " Triple Buffering\n"   &
+   "\n"                    &
+   " On\n"                 &
+   " Off\n"                &
+   "\n"                    &
+   " 60 Hz\n"              &
+   "\n"                    &
+   " On\n"                 &
+   " Off\n"                &
+   "\n"                    &
    " Another Headline\n" &
    "\n" &
    " Yes\n" &
@@ -171,10 +170,12 @@ constant OPTM_ITEMS        : string :=
 -- make sure that your first group uses the value 1 (0 means "no menu item", such as text and line),
 -- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
 -- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
+-- single-select items and therefore also drive mount items need to have unique identifiers
 constant OPTM_G_A          : integer := 1;
 constant OPTM_G_B          : integer := 2;
-constant OPTM_G_C          : integer := 3;
-constant OPTM_G_ANOTHER    : integer := 4;
+constant OPTM_G_AUDIO      : integer := 3;
+constant OPTM_G_VIDEO      : integer := 4;
+constant OPTM_G_ANOTHER    : integer := 5;
 
 -- define your menu groups: which menu items are belonging together to form a group?
 -- where are separator lines? which items should be selected by default?
@@ -187,16 +188,16 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                       
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headine B
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_B + OPTM_G_STDSEL,                 -- Item B.1, selected by default
-                                             OPTM_G_B,                                 -- Item B.2
-                                             OPTM_G_B,                                 -- Item B.3
-                                             OPTM_G_B,                                 -- Item B.4
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headline C
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_C + OPTM_G_STDSEL,                 -- Item C.1, selected by default
-                                             OPTM_G_C,                                 -- Item C.2
-                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,
+                                             OPTM_G_LINE,
+                                             OPTM_G_AUDIO   + OPTM_G_STDSEL,
+                                             OPTM_G_AUDIO,
+                                             OPTM_G_LINE,
+                                             OPTM_G_TEXT,
+                                             OPTM_G_LINE,
+                                             OPTM_G_VIDEO   + OPTM_G_STDSEL,
+                                             OPTM_G_VIDEO,
+                                             OPTM_G_LINE,
                                              OPTM_G_TEXT,                              -- Another Headline
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_ANOTHER + OPTM_G_STDSEL,           -- Item Yes, selected by default
