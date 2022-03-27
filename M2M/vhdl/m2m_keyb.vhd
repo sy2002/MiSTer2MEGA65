@@ -14,7 +14,7 @@
 --    on certain mappings (and behaviors) to be always available, independent
 --    of the core specific way to handle the keyboard.
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library IEEE;
@@ -126,7 +126,9 @@ begin
             when 1         => keys_n(4) <= key_status_n;     -- Return
             when 60        => keys_n(5) <= key_status_n;     -- Space
             when 63        => keys_n(6) <= key_status_n;     -- Run/Stop
-            when 67        => keys_n(7) <= key_status_n;     -- Help  
+            when 67        => keys_n(7) <= key_status_n;     -- Help
+            when 4         => keys_n(8) <= key_status_n;     -- F1
+            when 5         => keys_n(9) <= key_status_n;     -- F3
             when others    => null;
          end case;
       end if;

@@ -121,6 +121,8 @@ M2M$KEY_RETURN      .EQU 0x0010
 M2M$KEY_SPACE       .EQU 0x0020
 M2M$KEY_RUNSTOP     .EQU 0x0040
 M2M$KEY_HELP        .EQU 0x0080
+M2M$KEY_F1          .EQU 0x0100
+M2M$KEY_F3          .EQU 0x0200
 
 ; ----------------------------------------------------------------------------
 ; 256-bit General purpose control flags
