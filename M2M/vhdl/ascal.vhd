@@ -1057,17 +1057,73 @@ ARCHITECTURE rtl OF ascal IS
     RETURN p;
   END FUNCTION;
 
-   constant C_DEBUG_MODE                       : boolean := false;
-   attribute mark_debug                        : boolean;
-   attribute mark_debug of o_reset_na          : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_copy              : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_state             : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_read_pre          : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_readlev           : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_copylev           : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_hsp               : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_readack           : signal is C_DEBUG_MODE;
-   attribute mark_debug of o_readdataack       : signal is C_DEBUG_MODE;
+   constant C_DEBUG_MODE                   : boolean := false;
+   attribute mark_debug                    : boolean;
+   attribute mark_debug of i_acpt          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_adrsi         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_adrs          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_alt           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_count         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_de_delay      : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_dw            : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_eol           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_freeze        : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_hbcpt         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_hburst        : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_hdown         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_hmax          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_hmin          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_hnp           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_iauto         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pce           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pde           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pushend2      : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pushend       : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pushhead2     : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pushhead3     : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pushhead      : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_push          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_pvs           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_reset_na      : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_vdown         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_ven6          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_ven           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_vmax          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_vmin          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_vnp           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_wad           : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_wdelay        : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_wreq_mem      : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_wreq          : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_write         : signal is C_DEBUG_MODE;
+   attribute mark_debug of i_wr            : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_address     : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_rad_c       : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_rad         : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_readack     : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_readdataack : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_read_i      : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_read_pulse  : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_read_sr     : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_read_sync2  : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_read_sync   : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_reset_na    : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_state       : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_wad         : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_write_i     : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_write_pulse : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_write_sr    : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_write_sync2 : signal is C_DEBUG_MODE;
+   attribute mark_debug of avl_write_sync  : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_copylev       : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_copy          : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_hsp           : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_readack       : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_readdataack   : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_readlev       : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_read_pre      : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_reset_na      : signal is C_DEBUG_MODE;
+   attribute mark_debug of o_state         : signal is C_DEBUG_MODE;
   -- 4 DSP 18*18 + 18*18
   FUNCTION poly_lerp(a : poly_phase_t;
                      b : poly_phase_t;
@@ -1149,6 +1205,21 @@ BEGIN
   BEGIN
     IF i_reset_na='0' THEN
       i_write<='0';
+      i_push<='0';
+      i_pushend<='0';
+      i_pushend2<='0';
+      i_pushhead<='0';
+      i_pushhead2<='0';
+      i_pushhead3<='0';
+      i_eol<='0';
+      i_freeze <='0';
+      i_iauto<='0';
+      i_wreq<='0';
+      i_wreq_mem<='0';
+      i_wr<='0';
+      i_wdelay<=0;
+      i_hburst<=0;
+      i_hbcpt<=0;
       
     ELSIF rising_edge(i_clk) THEN
       i_push<='0';
@@ -1657,6 +1728,15 @@ BEGIN
       avl_readack<='0';
       avl_read_i<='0';
       avl_write_i<='0';
+      avl_write_sync<='0';
+      avl_write_sync2<='0';
+      avl_write_pulse<='0';
+      avl_read_sync<='0';
+      avl_read_sync2<='0';
+      avl_read_pulse<='0';
+      avl_wadrs <=(others => '0');
+      avl_wline <='0';
+      avl_walt  <='0';
       
     ELSIF rising_edge(avl_clk) THEN
       ----------------------------------
@@ -1852,6 +1932,7 @@ BEGIN
     IF o_reset_na='0' THEN
       o_copy<=sWAIT;
       o_state<=sDISP;
+      o_read<='0';
       o_read_pre<='0';
       o_readlev<=0;
       o_copylev<=0;

@@ -65,20 +65,6 @@ M2M$CSR_UN_KBD_JOY      .EQU 0xFFC7
 M2M$OSM_XY          .EQU 0xFFE1     ; x|y coordinates
 M2M$OSM_DXDY        .EQU 0xFFE2     ; dx|dy width and height
 
-; The following read-only registers are meant to be used by the QNICE
-; firmware. They enable the ability to specify the main screen of the Shell
-; and the Help menu via VHDL generics: "M" = main screen; "O" = options menu
-M2M$SHELL_M_XY      .EQU 0xFFE3     ; main screen: x|y start coordinates
-M2M$SHELL_M_DXDY    .EQU 0xFFE4     ; main screen: dx|dy width and height
-M2M$SHELL_O_XY      .EQU 0xFFE5     ; options menu: x|y start coordinates
-M2M$SHELL_O_DXDY    .EQU 0xFFE6     ; options menu: dx|dy width and height
-
-; The followint read-only register is meant to be used by the QNICE firmware.
-; They are used to determine the current screen hardware-resolution in
-; characters (width and height). This values are used to calculate video
-; RAM and video attribute RAM coordinates
-M2M$SYS_DXDY        .EQU 0xFFE7
-
 ; Screen attributes: Single bits
 M2M$SA_INVERSE      .EQU 0x80
 M2M$SA_DARK         .EQU 0x40
@@ -168,9 +154,22 @@ M2M$RAMROM_DEV      .EQU 0xFFF4
 M2M$VRAM_DATA       .EQU 0x0000     ; Device for VRAM: Data
 M2M$VRAM_ATTR       .EQU 0x0001     ; Device for VRAM: Attributes
 M2M$CONFIG          .EQU 0x0002     ; Static Shell config data (config.vhd)
+M2M$SYS_INFO        .EQU 0x00FF     ; Device for System Info
 
 M2M$RAMROM_4KWIN    .EQU 0xFFF5     ; 4k window selector
 M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
+
+M2M$SYS_VGA         .EQU 0x0010     ; Sys Info window for graphics adapter 0 (VGA)
+M2M$SYS_HDMI        .EQU 0x0011     ; Sys Info window for graphics adapter 1 (HDMI)
+
+; The following read-only registers are meant to be used by the QNICE
+; firmware. They enable the ability to specify the main screen of the Shell
+; and the Help menu via VHDL generics: "M" = main screen; "O" = options menu
+M2M$SHELL_M_XY      .EQU 0x7000     ; main screen: x|y start coordinates
+M2M$SHELL_M_DXDY    .EQU 0x7001     ; main screen: dx|dy width and height
+M2M$SHELL_O_XY      .EQU 0x7002     ; options menu: x|y start coordinates
+M2M$SHELL_O_DXDY    .EQU 0x7003     ; options menu: dx|dy width and height
+M2M$SYS_DXDY        .EQU 0x7004
 
 ; ----------------------------------------------------------------------------
 ; Selectors for static Shell configuration data (config.vhd)

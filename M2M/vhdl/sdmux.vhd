@@ -10,12 +10,10 @@
 -- The smart multiplexer also makes sure that the QNICE SD card controller is
 -- being reset as soon as the SD card is switched. 
 --
--- CAVEAT: RIGHT NOW WE CANNOT DETECT THE TRAY SD CARD. THIS IS EITHER
--- BECAUSE THE MEGA65 R3 BOARD HAS A BUG AND THIS WIRE IS MISSING OR BECAUSE THE
--- TRENZ PLAN SHOWS US THE WRONG PIN D17.
+-- CAVEAT: RIGHT NOW WE CANNOT DETECT THE TRAY SD CARD on R3 machines. This
+-- is a PCB bug and it has been fixed on R3A machines.
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;

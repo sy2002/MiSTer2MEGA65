@@ -22,17 +22,7 @@ generic (
    G_VGA_DX          : natural;                          -- output screen width in pixel
    G_VGA_DY          : natural;                          -- ditto height
    G_FONT_DX         : natural;                          -- character width in pixel
-   G_FONT_DY         : natural;                          -- ditto height         
-   
-   -- x|y start positions and dx|dy dimensions of the two standard windows of the Shell: main window and options menu
-   G_SHELL_M_X       : integer;
-   G_SHELL_M_Y       : integer;
-   G_SHELL_M_DX      : integer;
-   G_SHELL_M_DY      : integer;
-   G_SHELL_O_X       : integer;
-   G_SHELL_O_Y       : integer;
-   G_SHELL_O_DX      : integer;
-   G_SHELL_O_DY      : integer   
+   G_FONT_DY         : natural                           -- ditto height
 );
 port (
    -- QNICE MEGA65 hardware interface
@@ -155,16 +145,6 @@ signal osm_xy_data_out           : std_logic_vector(15 downto 0);
 signal osm_dxdy_en               : std_logic;                        -- $FFE2
 signal osm_dxdy_we               : std_logic;
 signal osm_dxdy_data_out         : std_logic_vector(15 downto 0);
-signal shell_m_xy_en             : std_logic;                        -- $FFE3
-signal shell_m_xy_data_out       : std_logic_vector(15 downto 0);
-signal shell_m_dxdy_en           : std_logic;                        -- $FFE4
-signal shell_m_dxdy_data_out     : std_logic_vector(15 downto 0);
-signal shell_o_xy_en             : std_logic;                        -- $FFE5
-signal shell_o_xy_data_out       : std_logic_vector(15 downto 0);
-signal shell_o_dxdy_en           : std_logic;                        -- $FFE6
-signal shell_o_dxdy_data_out     : std_logic_vector(15 downto 0);
-signal sys_dxdy_en               : std_logic;                        -- $FFE7
-signal sys_dxdy_data_out         : std_logic_vector(15 downto 0);
 signal keys_en                   : std_logic;                        -- $FFE8
 signal keys_data_out             : std_logic_vector(15 downto 0);
 signal cfd_addr_en               : std_logic;                        -- $FFF0
@@ -209,11 +189,6 @@ begin
                   csr_data_out               or
                   osm_xy_data_out            or
                   osm_dxdy_data_out          or                  
-                  shell_m_xy_data_out        or
-                  shell_m_dxdy_data_out      or
-                  shell_o_xy_data_out        or
-                  shell_o_dxdy_data_out      or
-                  sys_dxdy_data_out          or
                   keys_data_out              or                 
                   cfd_addr_data_out          or
                   cfd_data_data_out          or
@@ -487,21 +462,6 @@ begin
    osm_dxdy_we                <= osm_dxdy_en and cpu_data_dir and cpu_data_valid;
    osm_dxdy_data_out          <= osm_dxdy_o when osm_dxdy_en = '1' and osm_dxdy_we = '0' else (others => '0');
       
-   shell_m_xy_en              <= '1' when cpu_addr = x"FFE3" else '0';
-   shell_m_xy_data_out        <= std_logic_vector(to_unsigned(G_SHELL_M_X * 256 + G_SHELL_M_Y, 16)) when shell_m_xy_en = '1' and cpu_data_dir = '0' else (others => '0');  
-
-   shell_m_dxdy_en            <= '1' when cpu_addr = x"FFE4" else '0';
-   shell_m_dxdy_data_out      <= std_logic_vector(to_unsigned(G_SHELL_M_DX * 256 + G_SHELL_M_DY, 16)) when shell_m_dxdy_en = '1' and cpu_data_dir = '0' else (others => '0');
-
-   shell_o_xy_en              <= '1' when cpu_addr = x"FFE5" else '0';
-   shell_o_xy_data_out        <= std_logic_vector(to_unsigned(G_SHELL_O_X * 256 + G_SHELL_O_Y, 16)) when shell_o_xy_en = '1' and cpu_data_dir = '0' else (others => '0');
-
-   shell_o_dxdy_en            <= '1' when cpu_addr = x"FFE6" else '0';
-   shell_o_dxdy_data_out      <= std_logic_vector(to_unsigned(G_SHELL_O_DX * 256 + G_SHELL_O_DY, 16)) when shell_o_dxdy_en = '1' and cpu_data_dir = '0' else (others => '0');
-   
-   sys_dxdy_en                <= '1' when cpu_addr = x"FFE7" else '0';
-   sys_dxdy_data_out          <= std_logic_vector(to_unsigned(CHARS_DX * 256 + CHARS_DY, 16)) when sys_dxdy_en = '1' and cpu_data_dir = '0' else (others => '0');
-   
    keys_en                    <= '1' when cpu_addr = x"FFE8" else '0';
    keys_data_out              <= keys_n_i when keys_en = '1' and cpu_data_dir = '0' else (others => '0');
    

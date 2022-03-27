@@ -141,7 +141,7 @@ constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : integer := 24;  -- amount of items including empty lines:
+constant OPTM_SIZE         : integer := 25;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
                                              -- Important: make sure that OSM_DY in mega65.vhd is equal to OPTM_SIZE + 2,
                                              -- so that the On-Screen window has the correct length
@@ -155,24 +155,25 @@ constant OPTM_ITEMS        : string :=
    " Item A.3\n"           &
    " Item A.4\n"           &
    "\n"                    &
-   " HDMI Frequency"       &
+   " HDMI Frequency\n"     &
    "\n"                    &
    " 50 Hz\n"              &
    " 60 Hz\n"              &
    "\n"                    &
-   " Drives"               &
+   " Drives\n"             &
    "\n"                    &
-   " Drive X:%s"           &
-   " Drive Y:%s"           &
-   " Drive Z:%s"           &
+   " Drive X:%s\n"         &
+   " Drive Y:%s\n"         &
+   " Drive Z:%s\n"         &
    "\n"                    &
    " Another Headline\n"   &
+   "\n"                    &
    " Select me!\n"         &
    " Or better me?!\n"     &
    " Well, maybe me.\n"    &
-   "\n" &
+   "\n"                    &
    " Close Menu\n";
-        
+
 -- define your own constants here and choose meaningful names
 -- make sure that your first group uses the value 1 (0 means "no menu item", such as text and line),
 -- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
@@ -200,7 +201,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                       
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "HDMI Frequency"
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_HDMI,                              -- 50 Hz
+                                             OPTM_G_HDMI + OPTM_G_STDSEL,              -- 50 Hz, selected by default
                                              OPTM_G_HDMI,                              -- 60 Hz
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "Drives"

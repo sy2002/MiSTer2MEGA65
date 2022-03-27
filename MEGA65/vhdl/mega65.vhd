@@ -95,14 +95,15 @@ architecture beh of MEGA65_Core is
 
 -- QNICE Firmware: Use the regular QNICE "operating system" called "Monitor" while developing
 -- and debugging and use the MiSTer2MEGA65 firmware in the release version
---constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";  -- debug/development
-constant QNICE_FIRMWARE       : string  := "../../MEGA65/m2m-rom/m2m-rom.rom";   -- release
+constant QNICE_FIRMWARE       : string  := "../../QNICE/monitor/monitor.rom";  -- debug/development
+--constant QNICE_FIRMWARE       : string  := "../../MEGA65/m2m-rom/m2m-rom.rom";   -- release
 
 -- HDMI 1280x720 @ 60 Hz resolution
 constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 1) := (C_HDMI_720p_60, C_HDMI_720p_50);
 
 -- CORE clock speed
 constant CORE_CLK_SPEED       : natural := 54_000_000;   -- @TODO YOURCORE expects 54 MHz
+constant HDMI_CLK_SPEED       : natural := 74_250_000;
 
 -- Rendering constants (in pixels)
 --    VGA_*   size of the final output on the screen
@@ -112,24 +113,15 @@ constant VGA_DY               : natural := 576;
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
 
+-- OSM size: Important: Make sure that the OSM's height (OSM_DY) equals config.vhd's OPTM_SIZE + 2
+constant OSM_DX               : natural := 20;
+constant OSM_DY               : natural := 25 + 2;
+
 -- Constants for the OSM screen memory
 constant CHARS_DX             : natural := VGA_DX / FONT_DX;
 constant CHARS_DY             : natural := VGA_DY / FONT_DY;
 constant CHAR_MEM_SIZE        : natural := CHARS_DX * CHARS_DY;
 constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
-
--- Shell rendering constants (in characters)
--- The Shell uses the OSM mechanism to display itself
--- SHELL_M_* full screen menu and file browser
-constant SHELL_M_X            : integer := 0;
-constant SHELL_M_Y            : integer := 0;
-constant SHELL_M_DX           : integer := CHARS_DX;
-constant SHELL_M_DY           : integer := CHARS_DY;
--- SHELL_O_* (smaller) on-screen menu, overlayed on top of the cores video.
-constant SHELL_O_X            : integer := CHARS_DX - 20;
-constant SHELL_O_Y            : integer := 0;
-constant SHELL_O_DX           : integer := 20;
-constant SHELL_O_DY           : integer := 26;
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -143,12 +135,14 @@ signal audio_clk              : std_logic;               -- Audio clock @ 60 MHz
 signal tmds_clk               : std_logic;               -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
 signal hdmi_clk               : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
 signal main_clk               : std_logic;               -- Core main clock
+signal video_clk              : std_logic;               -- Core pixel clock
 
 signal qnice_rst              : std_logic;
 signal hr_rst                 : std_logic;
 signal audio_rst              : std_logic;
 signal hdmi_rst               : std_logic;
 signal main_rst               : std_logic;
+signal video_rst              : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -166,6 +160,11 @@ signal main_key_num           : integer range 0 to 79;
 signal main_key_pressed_n     : std_logic;
 signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
 
+-- QNICE On Screen Menu selections
+signal main_osm_control_m     : std_logic_vector(255 downto 0);
+
+-- signed audio from the core
+-- if the core outputs unsigned audio, make sure you convert properly to prevent a loss in audio quality
 signal main_audio_l           : signed(15 downto 0);
 signal main_audio_r           : signed(15 downto 0);
 
@@ -228,6 +227,12 @@ signal qnice_ramrom_we        : std_logic;
 constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
 constant C_DEV_VRAM_ATTR      : std_logic_vector(15 downto 0) := x"0001";
 constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
+constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
+constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
+constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
+
+signal sys_info_vga  : std_logic_vector(79 downto 0);
+signal sys_info_hdmi : std_logic_vector(79 downto 0);
 
 -- VRAM
 signal qnice_vram_data        : std_logic_vector(15 downto 0);
@@ -239,9 +244,6 @@ signal qnice_config_data      : std_logic_vector(15 downto 0);
 
 -- QNICE On Screen Menu selections
 signal qnice_osm_control_m : std_logic_vector(255 downto 0);
-
-constant C_MENU_TRIPLE_BUFFERING : natural := 9;
-constant C_MENU_50_HZ            : natural := 14;
 
 -- HyperRAM
 signal hr_write         : std_logic;
@@ -260,6 +262,23 @@ signal hr_rwds_oe       : std_logic;   -- Output enable for RWDS
 signal hr_dq_in         : std_logic_vector(7 downto 0);
 signal hr_dq_out        : std_logic_vector(7 downto 0);
 signal hr_dq_oe         : std_logic;   -- Output enable for DQ
+
+---------------------------------------------------------------------------------------------
+-- Democore & example stuff: Delete before starting to port your own core
+---------------------------------------------------------------------------------------------
+
+-- the example menu allows you to switch the HDMI output frequency between 50Hz and 60Hz
+constant C_MENU_60_HZ      : natural := 10;
+
+-- example virtual drive handler, which is connected to nothing and only here to demo
+-- the file- and directory browsing capabilities of the firmware
+constant C_DEV_DEMO_VD     : std_logic_vector(15 downto 0) := x"0101";
+constant C_DEMO_VD_AMOUNT  : natural := 3;
+
+-- QNICE clock domain
+signal qnice_demo_vd_data_o : std_logic_vector(15 downto 0);
+signal qnice_demo_vd_ce     : std_logic;
+signal qnice_demo_vd_we     : std_logic;
 
 begin
 
@@ -369,15 +388,7 @@ begin
          G_VGA_DX                => VGA_DX,
          G_VGA_DY                => VGA_DY,
          G_FONT_DX               => FONT_DX,
-         G_FONT_DY               => FONT_DY,
-         G_SHELL_M_X             => SHELL_M_X,
-         G_SHELL_M_Y             => SHELL_M_Y,
-         G_SHELL_M_DX            => SHELL_M_DX,
-         G_SHELL_M_DY            => SHELL_M_DY,
-         G_SHELL_O_X             => SHELL_O_X,
-         G_SHELL_O_Y             => SHELL_O_Y,
-         G_SHELL_O_DX            => SHELL_O_DX,
-         G_SHELL_O_DY            => SHELL_O_DY
+         G_FONT_DY               => FONT_DY
       )
       port map (
          clk50_i                 => qnice_clk,
@@ -451,6 +462,10 @@ begin
       qnice_vram_we        <= '0';
       qnice_vram_attr_we   <= '0';
       qnice_ramrom_data_i  <= x"EEEE";
+      
+      -- Demo core specific: Delete before starting to port your core
+      qnice_demo_vd_ce     <= '0';
+      qnice_demo_vd_we     <= '0';       
 
       case qnice_ramrom_dev is
          ----------------------------------------------------------------------------
@@ -469,12 +484,49 @@ begin
          when C_DEV_OSM_CONFIG =>
             qnice_ramrom_data_i        <= qnice_config_data;
 
-         -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) and other RAM/ROM-like devices
+         -- Read-only System Info
+         when C_DEV_SYS_INFO =>
+            case qnice_ramrom_addr(27 downto 12) is
+               when X"0010" => -- Graphics card VGA
+                  case qnice_ramrom_addr(11 downto 0) is
+                     when X"000" => qnice_ramrom_data_i <= sys_info_vga(15 downto  0);
+                     when X"001" => qnice_ramrom_data_i <= sys_info_vga(31 downto 16);
+                     when X"002" => qnice_ramrom_data_i <= sys_info_vga(47 downto 32);
+                     when X"003" => qnice_ramrom_data_i <= sys_info_vga(63 downto 48);
+                     when X"004" => qnice_ramrom_data_i <= sys_info_vga(79 downto 64);
+                     when others => null;
+                  end case;
+
+               when X"0011" => -- Graphics card HDMI
+                  case qnice_ramrom_addr(11 downto 0) is
+                     when X"000" => qnice_ramrom_data_i <= sys_info_hdmi(15 downto  0);
+                     when X"001" => qnice_ramrom_data_i <= sys_info_hdmi(31 downto 16);
+                     when X"002" => qnice_ramrom_data_i <= sys_info_hdmi(47 downto 32);
+                     when X"003" => qnice_ramrom_data_i <= sys_info_hdmi(63 downto 48);
+                     when X"004" => qnice_ramrom_data_i <= sys_info_hdmi(79 downto 64);
+                     when others => null;
+                  end case;
+
+               when others => null;
+            end case;
+
+         ----------------------------------------------------------------------------
+         -- Core specific devices
+         ----------------------------------------------------------------------------
+         
+         -- Demo core specific stuff: delete before porting your own core
+         when C_DEV_DEMO_VD =>
+            qnice_demo_vd_ce     <= qnice_ramrom_ce;
+            qnice_demo_vd_we     <= qnice_ramrom_we;
+            qnice_ramrom_data_i  <= qnice_demo_vd_data_o; 
+         
+         -- @TODO YOUR RAMs or ROMs (e.g. for cartridges)
          -- Device numbers need to be >= 0x0100
+
          when others => null;
       end case;
    end process qnice_ramrom_devices;
-
+ 
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks
    ---------------------------------------------------------------------------------------------
@@ -519,7 +571,7 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 5
+         WIDTH => 261
       )
       port map (
          src_clk                => qnice_clk,
@@ -528,12 +580,14 @@ begin
          src_in(2)              => qnice_csr_keyboard_on,
          src_in(3)              => qnice_csr_joy1_on,
          src_in(4)              => qnice_csr_joy2_on,
+         src_in(260 downto 5)   => qnice_osm_control_m,
          dest_clk               => main_clk,
          dest_out(0)            => main_qnice_reset,
          dest_out(1)            => main_qnice_pause,
          dest_out(2)            => main_csr_keyboard_on,
          dest_out(3)            => main_csr_joy1_on,
-         dest_out(4)            => main_csr_joy2_on
+         dest_out(4)            => main_csr_joy2_on,
+         dest_out(260 downto 5) => main_osm_control_m
       ); -- i_qnice2main
 
    -- Clock domain crossing: CORE to QNICE
@@ -582,8 +636,6 @@ begin
          dest_out(288 downto 33) => hdmi_osm_control_m
       ); -- i_qnice2hdmi
 
-
-
    i_osm_vram_vga : entity work.dualport_2clk_ram_byteenable
       generic map (
          G_ADDR_WIDTH   => VRAM_ADDR_WIDTH,
@@ -630,17 +682,20 @@ begin
    -- Audio and Video processing pipeline
    --------------------------------------------------------
 
-   hdmi_video_mode <= 0 when hdmi_osm_control_m(C_MENU_50_HZ) else 1;
+   hdmi_video_mode <= 0 when hdmi_osm_control_m(C_MENU_60_HZ) else 1;
 
    i_audio_video_pipeline : entity work.audio_video_pipeline
       generic map (
+         G_HDMI_CLK_SPEED    => HDMI_CLK_SPEED,
          G_SHIFT_HDMI        => VIDEO_MODE_VECTOR(0).H_PIXELS - VGA_DX,    -- Deprecated. Will be removed in future release
                                                                            -- The purpose is to right-shift the position of the OSM
                                                                            -- on the HDMI output. This will be removed when the
                                                                            -- M2M framework supports two different OSM VRAMs.
          G_VIDEO_MODE_VECTOR => VIDEO_MODE_VECTOR,
          G_VGA_DX            => VGA_DX,
-         G_VGA_DY            => VGA_DY
+         G_VGA_DY            => VGA_DY,
+         G_OSM_DX            => OSM_DX,
+         G_OSM_DY            => OSM_DY         
       )
       port map (
          -- Input from Core (video and audio)
@@ -682,13 +737,15 @@ begin
          video_osm_cfg_dxdy_i     => main_osm_cfg_dxdy,
          video_osm_vram_addr_o    => main_osm_vram_addr,
          video_osm_vram_data_i    => main_osm_vram_data,
-         hdmi_triple_buffering_i  => hdmi_osm_control_m(C_MENU_TRIPLE_BUFFERING),
+         hdmi_triple_buffering_i  => '0',
          hdmi_video_mode_i        => hdmi_video_mode,
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
          hdmi_osm_cfg_xy_i        => hdmi_osm_cfg_xy,
          hdmi_osm_cfg_dxdy_i      => hdmi_osm_cfg_dxdy,
          hdmi_osm_vram_addr_o     => hdmi_osm_vram_addr,
          hdmi_osm_vram_data_i     => hdmi_osm_vram_data,
+         sys_info_vga_o           => sys_info_vga,
+         sys_info_hdmi_o          => sys_info_hdmi,
          -- Connect to HyperRAM controller
          hr_clk_i                 => hr_clk_x1,
          hr_rst_i                 => hr_rst,
@@ -739,5 +796,54 @@ begin
    hr_d       <= hr_dq_out   when hr_dq_oe   = '1' else (others => 'Z');
    hr_rwds_in <= hr_rwds;
    hr_dq_in   <= hr_d;
+
+   ---------------------------------------------------------------------------------------
+   -- Virtual drive handler
+   --
+   -- Only added for demo-purposes at this place, so that we can demonstrate the
+   -- firmware's ability to browse files and folders. It is very likely, that the
+   -- virtual drive handler needs to be placed somewhere else, for example inside
+   -- main.vhd. We advise to delete this before starting to port a core and re-adding
+   -- it later (and at the right place), if and when needed.
+   ---------------------------------------------------------------------------------------
+
+   i_vdrives : entity work.vdrives
+      generic map (
+         VDNUM       => C_DEMO_VD_AMOUNT
+      )
+      port map
+      (
+         clk_qnice_i       => qnice_clk,
+         clk_core_i        => main_clk,
+         reset_core_i      => main_rst or main_qnice_reset,
+      
+         -- Core clock domain
+         img_mounted_o     => open,
+         img_readonly_o    => open,
+         img_size_o        => open,
+         img_type_o        => open,
+         drive_mounted_o   => open,
+         
+         -- QNICE clock domain
+               
+         sd_lba_i          => (others => (others => '0')),
+         sd_blk_cnt_i      => (others => (others => '0')),
+         sd_rd_i           => (others => '0'),
+         sd_wr_i           => (others => '0'),
+         sd_ack_o          => open, 
+      
+         sd_buff_addr_o    => open,
+         sd_buff_dout_o    => open,
+         sd_buff_din_i     => (others => (others => '0')),
+         sd_buff_wr_o      => open,
+         
+         -- QNICE interface (MMIO, 4k-segmented)
+         -- qnice_addr is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
+         qnice_addr_i      => qnice_ramrom_addr,
+         qnice_data_i      => qnice_ramrom_data_o,
+         qnice_data_o      => qnice_demo_vd_data_o,
+         qnice_ce_i        => qnice_demo_vd_ce,
+         qnice_we_i        => qnice_demo_vd_we  
+      );
 
 end architecture beh;

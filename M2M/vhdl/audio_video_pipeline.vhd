@@ -20,10 +20,13 @@ use xpm.vcomponents.all;
 
 entity audio_video_pipeline is
    generic (
+      G_HDMI_CLK_SPEED       : natural;              -- HDMI clock speed in Hz    
       G_SHIFT_HDMI           : integer;              -- Deprecated. Will be removed in future release
       G_VIDEO_MODE_VECTOR    : video_modes_vector;   -- Desired video format of HDMI output.
       G_VGA_DX               : natural;              -- Actual format of video from Core (in pixels).
-      G_VGA_DY               : natural
+      G_VGA_DY               : natural;
+      G_OSM_DX               : natural;              -- On-Screen-Menu width and height
+      G_OSM_DY               : natural
    );
    port (
       -- Input from Core (video and audio)
@@ -75,6 +78,8 @@ entity audio_video_pipeline is
       hdmi_osm_cfg_dxdy_i      : in  std_logic_vector(15 downto 0);
       hdmi_osm_vram_addr_o     : out std_logic_vector(15 downto 0);
       hdmi_osm_vram_data_i     : in  std_logic_vector(15 downto 0);
+      sys_info_vga_o           : out std_logic_vector(79 downto 0);
+      sys_info_hdmi_o          : out std_logic_vector(79 downto 0);
 
       -- Connect to HyperRAM controller
       hr_clk_i                 : in  std_logic;
@@ -100,13 +105,12 @@ architecture synthesis of audio_video_pipeline is
    -- pcm_clk
    ---------------------------------------------------------------------------------------------
 
-   -- HDMI PCM sampling rate
+   -- HDMI PCM sampling rate hardcoded to 48 kHz (should be the most compatible mode)
+   -- If this should ever be switchable, don't forget that the signal "select_44100" in
+   -- i_vga_to_hdmi would need to be adjusted, too
    constant HDMI_PCM_SAMPLING      : natural := 48_000;
-   constant GB_CLK_SPEED           : natural := 31_527_778;   -- C64 main clock in PAL mode @ 31,527,778 MHz
-   constant PIXEL_CLK_SPEED        : natural := 74_250_000; -- TBD
 
    constant pcm_acr_cnt_range      : integer := (HDMI_PCM_SAMPLING * 256) / 1000;
-   constant pcm_audio_cnt_interval : integer := (4 * GB_CLK_SPEED) / HDMI_PCM_SAMPLING;
 
    signal count : integer range 0 to 255;
    signal pcm_rst                  : std_logic;
@@ -179,6 +183,32 @@ architecture synthesis of audio_video_pipeline is
    signal video_ce_hdmi          : std_logic_vector(3 downto 0) := "1000"; -- Clock divider 1/4
 
 begin
+
+   -- SHELL_M_XY
+   sys_info_vga_o(15 downto  0) <=
+      X"0000";
+
+   -- SHELL_M_DXDY
+   sys_info_vga_o(31 downto 16) <=
+      std_logic_vector(to_unsigned((G_VGA_DX/C_FONT_DX) * 256 + (G_VGA_DY/C_FONT_DY), 16));
+
+   -- SHELL_O_XY
+   sys_info_vga_o(47 downto 32) <=
+      std_logic_vector(to_unsigned((G_VGA_DX/C_FONT_DX-G_OSM_DX) * 256, 16));
+
+   -- SHELL_O_DXDY
+   sys_info_vga_o(63 downto 48) <=
+      std_logic_vector(to_unsigned(G_OSM_DX * 256 + G_OSM_DY, 16));
+
+   -- SYS_DXDY
+   sys_info_vga_o(79 downto 64) <=
+      std_logic_vector(to_unsigned((G_VGA_DX/C_FONT_DX) * 256 + (G_VGA_DY/C_FONT_DY), 16));
+
+   sys_info_hdmi_o(15 downto  0) <= X"CCCC"; -- SHELL_M_XY
+   sys_info_hdmi_o(31 downto 16) <= X"CCCC"; -- SHELL_M_DXDY
+   sys_info_hdmi_o(47 downto 32) <= X"CCCC"; -- SHELL_O_XY
+   sys_info_hdmi_o(63 downto 48) <= X"CCCC"; -- SHELL_O_DXDY
+   sys_info_hdmi_o(79 downto 64) <= X"CCCC"; -- SYS_DXDY
 
    hdmi_video_mode <= G_VIDEO_MODE_VECTOR(hdmi_video_mode_i);
    hdmi_htotal     <= hdmi_video_mode.H_PIXELS + hdmi_video_mode.H_FP + hdmi_video_mode.H_PULSE + hdmi_video_mode.H_BP;
@@ -286,7 +316,7 @@ begin
    -- N and CTS values for HDMI Audio Clock Regeneration.
    -- depends on pixel clock and audio sample rate
    pcm_n   <= std_logic_vector(to_unsigned((HDMI_PCM_SAMPLING * 128) / 1000, pcm_n'length)); -- 6144 is correct according to HDMI spec.
-   pcm_cts <= std_logic_vector(to_unsigned(PIXEL_CLK_SPEED / 1000, pcm_cts'length));
+   pcm_cts <= std_logic_vector(to_unsigned(G_HDMI_CLK_SPEED / 1000, pcm_cts'length));
 
    -- ACR packet rate should be 128fs/N = 1kHz
    -- pcm_clk is at 12.288 MHz
@@ -320,7 +350,6 @@ begin
          end if;
       end if;
    end process p_sample;
-
 
    ---------------------------------------------------------------------------------------------
    -- Digital output (HDMI) - Video part
@@ -463,7 +492,6 @@ begin
          m_avm_waitrequest_i   => hr_waitrequest_i
       ); -- i_avm_decrease
 
-
    i_video_overlay_hdmi : entity work.video_overlay
       generic  map (
          G_SHIFT          => G_SHIFT_HDMI,   -- Deprecated. Will be removed in future release
@@ -527,7 +555,6 @@ begin
          -- TMDS output (parallel)
          tmds         => hdmi_tmds
       ); -- i_vga_to_hdmi
-
 
    ---------------------------------------------------------------------------------------------
    -- tmds_clk (HDMI)

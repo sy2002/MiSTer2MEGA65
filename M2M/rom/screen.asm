@@ -12,6 +12,13 @@
 
 SCR$INIT        INCRB
 
+                MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..
+                MOVE    M2M$SYS_VGA, R1         ; .. for VGA graphics 0
+                MOVE    R1, @R0
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$SYS_INFO, R1
+                MOVE    R1, @R0
+
                 MOVE    M2M$SYS_DXDY, R0        ; save hardware dx
                 MOVE    SCR$SYS_DX, R1
                 SWAP    @R0, @R1
@@ -73,6 +80,13 @@ SCR$INIT        INCRB
                 
 SCR$OSM_M_ON    INCRB
 
+                MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..
+                MOVE    M2M$SYS_VGA, R1         ; .. for VGA graphics 0
+                MOVE    R1, @R0
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$SYS_INFO, R1
+                MOVE    R1, @R0
+
                 MOVE    M2M$OSM_XY, R0          ; take x|y of OSM from ..
                 MOVE    M2M$SHELL_M_XY, R1      ; .. VHDL generics
                 MOVE    @R1, @R0
@@ -91,6 +105,13 @@ SCR$OSM_M_ON    INCRB
 ; ----------------------------------------------------------------------------
 
 SCR$OSM_O_ON    INCRB
+
+                MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..
+                MOVE    M2M$SYS_VGA, R1         ; .. for VGA graphics 0
+                MOVE    R1, @R0
+                MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$SYS_INFO, R1
+                MOVE    R1, @R0
 
                 MOVE    M2M$OSM_XY, R0          ; take x|y of OSM from ..
                 MOVE    M2M$SHELL_O_XY, R1      ; .. VHDL generics
