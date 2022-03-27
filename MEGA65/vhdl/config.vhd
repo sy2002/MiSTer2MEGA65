@@ -113,18 +113,18 @@ constant ROM_2_FILE       : string := "/m2m/test_opt.rom";
 -- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0307) 
 --------------------------------------------------------------------------------------------------------------------
 
-constant SEL_OPTM_ITEMS    : std_logic_vector(15 downto 0) := x"0300";
-constant SEL_OPTM_GROUPS   : std_logic_vector(15 downto 0) := x"0301";
-constant SEL_OPTM_STDSEL   : std_logic_vector(15 downto 0) := x"0302";
-constant SEL_OPTM_LINES    : std_logic_vector(15 downto 0) := x"0303";
-constant SEL_OPTM_START    : std_logic_vector(15 downto 0) := x"0304";
-constant SEL_OPTM_ICOUNT   : std_logic_vector(15 downto 0) := x"0305";
+constant SEL_OPTM_ITEMS       : std_logic_vector(15 downto 0) := x"0300";
+constant SEL_OPTM_GROUPS      : std_logic_vector(15 downto 0) := x"0301";
+constant SEL_OPTM_STDSEL      : std_logic_vector(15 downto 0) := x"0302";
+constant SEL_OPTM_LINES       : std_logic_vector(15 downto 0) := x"0303";
+constant SEL_OPTM_START       : std_logic_vector(15 downto 0) := x"0304";
+constant SEL_OPTM_ICOUNT      : std_logic_vector(15 downto 0) := x"0305";
 constant SEL_OPTM_MOUNT_DRV   : std_logic_vector(15 downto 0) := x"0306";
 constant SEL_OPTM_SINGLESEL   : std_logic_vector(15 downto 0) := x"0307";
 constant SEL_OPTM_MOUNT_STR   : std_logic_vector(15 downto 0) := x"0308";
 
 -- String with which %s will be replaced in case the menu item is of type OPTM_G_MOUNT_DRV
-constant OPTM_S_MOUNT         : string :=  "<Mount Drive>";
+constant OPTM_S_MOUNT         : string :=  "<Mount>";
 
 -- Configuration constants for OPTM_GROUPS (do not change their value, shell.asm and menu.asm expect them to be like this)
 constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
@@ -148,28 +148,28 @@ constant OPTM_SIZE         : integer := 24;  -- amount of items including empty 
                                              -- @TODO: There is for sure a more elegant way than this redundant definition
 constant OPTM_ITEMS        : string :=
 
-   " Demo Headline A\n" &
-   "\n" & 
-   " Item A.1\n" &
-   " Item A.2\n" &
-   "\n" &
-   " Headline B\n" &
-   "\n" &
-   " Triple Buffering\n"   &
+   " Demo Headline A\n"    &
+   "\n"                    & 
+   " Item A.1\n"           &
+   " Item A.2\n"           &
+   " Item A.3\n"           &
+   " Item A.4\n"           &
    "\n"                    &
-   " On\n"                 &
-   " Off\n"                &
+   " HDMI Frequency"       &
    "\n"                    &
+   " 50 Hz\n"              &
    " 60 Hz\n"              &
    "\n"                    &
-   " On\n"                 &
-   " Off\n"                &
+   " Drives"               &
    "\n"                    &
-   " Another Headline\n" &
-   "\n" &
-   " Yes\n" &
-   " No\n" &
-   " Maybe\n" &
+   " Drive X:%s"           &
+   " Drive Y:%s"           &
+   " Drive Z:%s"           &
+   "\n"                    &
+   " Another Headline\n"   &
+   " Select me!\n"         &
+   " Or better me?!\n"     &
+   " Well, maybe me.\n"    &
    "\n" &
    " Close Menu\n";
         
@@ -178,38 +178,42 @@ constant OPTM_ITEMS        : string :=
 -- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
 -- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
 -- single-select items and therefore also drive mount items need to have unique identifiers
-constant OPTM_G_A          : integer := 1;
-constant OPTM_G_B          : integer := 2;
-constant OPTM_G_AUDIO      : integer := 3;
-constant OPTM_G_VIDEO      : integer := 4;
-constant OPTM_G_ANOTHER    : integer := 5;
+constant OPTM_G_Demo_A     : integer := 1;
+constant OPTM_G_HDMI       : integer := 2;
+constant OPTM_G_Drive_X    : integer := 3;
+constant OPTM_G_Drive_Y    : integer := 4;
+constant OPTM_G_Drive_Z    : integer := 5;
+constant OPTM_G_Single_1   : integer := 6;
+constant OPTM_G_Single_2   : integer := 7;
+constant OPTM_G_Single_3   : integer := 8;
 
 -- define your menu groups: which menu items are belonging together to form a group?
 -- where are separator lines? which items should be selected by default?
 -- make sure that you have exactly the same amount of entries here than in OPTM_ITEMS and defined by OPTM_SIZE
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 65535;
-constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                              -- Demo Headline
+constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                              -- Headline "Demo Headline"
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_A + OPTM_G_START,                  -- Item A.1, cursor start position
-                                             OPTM_G_A + OPTM_G_STDSEL,                 -- Item A.2, selected by default
+                                             OPTM_G_Demo_A + OPTM_G_START,             -- Item A.1, cursor start position
+                                             OPTM_G_Demo_A + OPTM_G_STDSEL,            -- Item A.2, selected by default
+                                             OPTM_G_DEMO_A,                            -- Item A.3
+                                             OPTM_G_DEMO_A,                            -- Item A.4
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headine B
+                                             OPTM_G_TEXT,                              -- Headline "HDMI Frequency"
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,
-                                             OPTM_G_LINE,
-                                             OPTM_G_AUDIO   + OPTM_G_STDSEL,
-                                             OPTM_G_AUDIO,
-                                             OPTM_G_LINE,
-                                             OPTM_G_TEXT,
-                                             OPTM_G_LINE,
-                                             OPTM_G_VIDEO   + OPTM_G_STDSEL,
-                                             OPTM_G_VIDEO,
-                                             OPTM_G_LINE,
-                                             OPTM_G_TEXT,                              -- Another Headline
+                                             OPTM_G_HDMI,                              -- 50 Hz
+                                             OPTM_G_HDMI,                              -- 60 Hz
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_ANOTHER + OPTM_G_STDSEL,           -- Item Yes, selected by default
-                                             OPTM_G_ANOTHER,                           -- Item No
-                                             OPTM_G_ANOTHER,                           -- Item Maybe
+                                             OPTM_G_TEXT,                              -- Headline "Drives"
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_Single_1 + OPTM_G_MOUNT_DRV,       -- Drive X
+                                             OPTM_G_Single_2 + OPTM_G_MOUNT_DRV,       -- Drive Y
+                                             OPTM_G_Single_3 + OPTM_G_MOUNT_DRV,       -- Drive Z
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Headline "Another Headline"
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_Single_1 + OPTM_G_SINGLESEL,       -- On/Off toggle ("Single Select")
+                                             OPTM_G_Single_2 + OPTM_G_SINGLESEL,       -- On/Off toggle ("Single Select")
+                                             OPTM_G_Single_3 + OPTM_G_SINGLESEL,       -- On/Off toggle ("Single Select")
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_CLOSE                              -- Close Menu
                                            ); 
