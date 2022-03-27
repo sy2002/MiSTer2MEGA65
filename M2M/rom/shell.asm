@@ -54,7 +54,7 @@ _RESET_A_WHILE  SUB     1, R1
                 MOVE    0x0101, @R8             ; IEC device sits at 0x0101
                 MOVE    VDRIVES_BUFS, R8
                 MOVE    0xEEEE, @R8++           ; no RAM buffer connected
-                MOVE    0xEEEE, @R8
+                MOVE    0xEEEE, @R8++
                 MOVE    0xEEEE, @R8
 
                 ; initialize device (SD card) and file handle
