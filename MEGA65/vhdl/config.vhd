@@ -110,7 +110,7 @@ constant ROM_2_FLAG       : std_logic_vector(15 downto 0) := x"000" & "0000"; --
 constant ROM_2_FILE       : string := "/m2m/test_opt.rom";
 
 --------------------------------------------------------------------------------------------------------------------
--- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0304) 
+-- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0307) 
 --------------------------------------------------------------------------------------------------------------------
 
 constant SEL_OPTM_ITEMS    : std_logic_vector(15 downto 0) := x"0300";
@@ -119,6 +119,12 @@ constant SEL_OPTM_STDSEL   : std_logic_vector(15 downto 0) := x"0302";
 constant SEL_OPTM_LINES    : std_logic_vector(15 downto 0) := x"0303";
 constant SEL_OPTM_START    : std_logic_vector(15 downto 0) := x"0304";
 constant SEL_OPTM_ICOUNT   : std_logic_vector(15 downto 0) := x"0305";
+constant SEL_OPTM_MOUNT_DRV   : std_logic_vector(15 downto 0) := x"0306";
+constant SEL_OPTM_SINGLESEL   : std_logic_vector(15 downto 0) := x"0307";
+constant SEL_OPTM_MOUNT_STR   : std_logic_vector(15 downto 0) := x"0308";
+
+-- String with which %s will be replaced in case the menu item is of type OPTM_G_MOUNT_DRV
+constant OPTM_S_MOUNT         : string :=  "<Mount Drive>";
 
 -- Configuration constants for OPTM_GROUPS (do not change their value, shell.asm and menu.asm expect them to be like this)
 constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
@@ -126,6 +132,7 @@ constant OPTM_G_CLOSE      : integer := 16#00FF#;         -- menu items that clo
 constant OPTM_G_STDSEL     : integer := 16#0100#;         -- item within a group that is selected by default
 constant OPTM_G_LINE       : integer := 16#0200#;         -- draw a line at this position
 constant OPTM_G_START      : integer := 16#0400#;         -- selector / cursor position after startup (only use once!)
+constant OPTM_G_MOUNT_DRV  : integer := 16#8800#;         -- line item means: mount drive; first occurance = drive 0, second = drive 1, ...
 constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 
 -- Size of menu and menu items
@@ -136,7 +143,7 @@ constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 --             otherwise you will experience visual glitches.
 constant OPTM_SIZE         : integer := 24;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
-                                             -- Important: make sure that SHELL_O_DY in mega65.vhd is equal to OPTM_SIZE + 2,
+                                             -- Important: make sure that OSM_DY in mega65.vhd is equal to OPTM_SIZE + 2,
                                              -- so that the On-Screen window has the correct length
                                              -- @TODO: There is for sure a more elegant way than this redundant definition
 constant OPTM_ITEMS        : string :=
@@ -236,10 +243,14 @@ begin
       when SEL_WELCOME     => data_o <= str2data(SCR_WELCOME);
       when SEL_DIR_START   => data_o <= str2data(DIR_START);
       when SEL_OPTM_ITEMS  => data_o <= str2data(OPTM_ITEMS);
-      when SEL_OPTM_GROUPS => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_GROUPS(index), 16)(7 downto 0));
+      when SEL_OPTM_MOUNT_STR => data_o <= str2data(OPTM_S_MOUNT);
+      when SEL_OPTM_GROUPS    => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), 16)(15)) & "000" & x"0" &
+                                           std_logic_vector(to_unsigned(OPTM_GROUPS(index), 16)(7 downto 0));
       when SEL_OPTM_STDSEL => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(8));
       when SEL_OPTM_LINES  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(9));
       when SEL_OPTM_START  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(10));
+      when SEL_OPTM_MOUNT_DRV => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(11));
+      when SEL_OPTM_SINGLESEL => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(15));      
       when SEL_OPTM_ICOUNT => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_SIZE, 8));
              
       -- BIOS / ROM section
