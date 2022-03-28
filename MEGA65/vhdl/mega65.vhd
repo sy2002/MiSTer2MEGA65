@@ -456,7 +456,6 @@ begin
    -- The device selector qnice_ramrom_dev decides, which RAM/ROM-like device QNICE is writing to.
    -- Device numbers < 256 are reserved for QNICE; everything else can be used by your MiSTer core.
    qnice_ramrom_devices : process(all)
-   variable strpos : integer;
    begin
       -- MiSTer2MEGA65 reserved
       qnice_vram_we        <= '0';
@@ -602,7 +601,7 @@ begin
          dest_out(15 downto 0)  => qnice_qnice_keys_n
       ); -- i_main2qnice
 
-   -- Clock domain crossing: QNICE to QNICE-On-Screen-Display
+   -- Clock domain crossing: QNICE to VGA QNICE-On-Screen-Display
    i_qnice2video: xpm_cdc_array_single
       generic map (
          WIDTH => 33
@@ -618,7 +617,7 @@ begin
          dest_out(32)           => main_osm_cfg_enable
       ); -- i_qnice2video
 
-   -- Clock domain crossing: QNICE to QNICE-On-Screen-Display
+   -- Clock domain crossing: QNICE to HDMI QNICE-On-Screen-Display
    i_qnice2hdmi: xpm_cdc_array_single
       generic map (
          WIDTH => 289
@@ -712,6 +711,7 @@ begin
          audio_rst_i              => audio_rst,
          audio_left_i             => main_audio_l,
          audio_right_i            => main_audio_r,
+
          -- Analog output (VGA and audio jack)
          vga_red_o                => vga_red,
          vga_green_o              => vga_green,
@@ -723,6 +723,7 @@ begin
          vdac_blankn_o            => vdac_blank_n,
          pwm_l_o                  => pwm_l,
          pwm_r_o                  => pwm_r,
+
          -- Digital output (HDMI)
          hdmi_clk_i               => hdmi_clk,
          hdmi_rst_i               => hdmi_rst,
@@ -731,6 +732,7 @@ begin
          tmds_data_n_o            => tmds_data_n,
          tmds_clk_p_o             => tmds_clk_p,
          tmds_clk_n_o             => tmds_clk_n,
+
          -- Connect to QNICE and Video RAM
          video_osm_cfg_enable_i   => main_osm_cfg_enable,
          video_osm_cfg_xy_i       => main_osm_cfg_xy,
@@ -744,8 +746,11 @@ begin
          hdmi_osm_cfg_dxdy_i      => hdmi_osm_cfg_dxdy,
          hdmi_osm_vram_addr_o     => hdmi_osm_vram_addr,
          hdmi_osm_vram_data_i     => hdmi_osm_vram_data,
+
+         -- System info device
          sys_info_vga_o           => sys_info_vga,
          sys_info_hdmi_o          => sys_info_hdmi,
+
          -- Connect to HyperRAM controller
          hr_clk_i                 => hr_clk_x1,
          hr_rst_i                 => hr_rst,
