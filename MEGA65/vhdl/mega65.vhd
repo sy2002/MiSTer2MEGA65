@@ -114,7 +114,7 @@ constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
 
 -- OSM size: Important: Make sure that the OSM's height (OSM_DY) equals config.vhd's OPTM_SIZE + 2
-constant OSM_DX               : natural := 20;
+constant OSM_DX               : natural := 22;
 constant OSM_DY               : natural := 25 + 2;
 
 -- Constants for the OSM screen memory
@@ -256,7 +256,7 @@ constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
 -- Otherwise make sure that you wire C_VD_DEVICE in the qnice_ramrom_devices process and that you
 -- have as many appropriately sized RAM buffers for disk images as you have drives
 type vd_buf_array is array(natural range <>) of std_logic_vector;
-constant C_VDNUM              : natural := 1;                                          -- amount of virtual drives; if more than 5: also adjust VDRIVES_MAX in M2M/rom/shell_vars.asm, maximum is 15
+constant C_VDNUM              : natural := 3;                                          -- amount of virtual drives; if more than 5: also adjust VDRIVES_MAX in M2M/rom/shell_vars.asm, maximum is 15
 constant C_VD_DEVICE          : std_logic_vector(15 downto 0) := C_DEV_DEMO_VD;        -- device number of vdrives.vhd device
 constant C_VD_BUFFER          : vd_buf_array := (  C_DEV_DEMO_NOBUFFER,
                                                    C_DEV_DEMO_NOBUFFER,

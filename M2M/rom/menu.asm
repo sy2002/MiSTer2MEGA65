@@ -410,7 +410,7 @@ _OPTM_KU_NWA    SUB     1, R2                   ; one element up
 
 _OPTM_RUN_2     MOVE    OPTM_FP_SELECT, R7      ; unselect old item
                 MOVE    R3, R8
-                XOR     OPTM_SEL_STD, R9
+                MOVE    OPTM_SEL_STD, R9
                 RSUB    _OPTM_CALL, 1
                 MOVE    R2, R3                  ; remember current item as old
                 RBRA    _OPTM_RUN_SEL, 1
@@ -426,7 +426,7 @@ _OPTM_KD_NWA    ADD     1, R2                   ; one element down
                 MOVE    R1, R6                  ; find next menu item: ascend.
                 ADD     R2, R6
                 MOVE    @R6, R6
-                AND     0x00FF, R6              ; mask out headline flag             
+                AND     0x00FF, R6              ; mask out headline flag
                 CMP     0, R6                   ; menu item found?
                 RBRA    _OPTM_RUN_2, !Z         ; yes: unselect cur. and go on
                 RBRA    _OPTM_RUN_4, 1          ; no: continue searching

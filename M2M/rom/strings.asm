@@ -49,10 +49,11 @@ STR_INITWAIT    .ASCII_W "Initializing. Please wait..."
 ; Warnings
 ; ----------------------------------------------------------------------------
 
-WRN_MAXFILES    .ASCII_P "Warning: This directory contains more files\n"
-                .ASCII_P "than this core is able to load into memory.\n\n"
-                .ASCII_P "Please split the files into multiple folders.\n\n"
-                .ASCII_P "If you choose to continue by pressing SPACE,\n"
+WRN_MAXFILES    .ASCII_P "Warning: This directory contains more\n"
+                .ASCII_P "files than this core is able to load\n"
+                .ASCII_P "into memory.\n\n"
+                .ASCII_P "Split the files into multiple folders.\n\n"
+                .ASCII_P "If you continue by pressing SPACE,\n"
                 .ASCII_P "be aware that random files will be missing.\n\n"
                 .ASCII_W "Press SPACE to continue.\n"
 
