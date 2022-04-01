@@ -3,8 +3,51 @@
 ;
 ; Miscellaneous tools and helper functions
 ;
-; done by sy2002 in 2021 and licensed under GPL v3
+; done by sy2002 in 2022 and licensed under GPL v3
 ; ****************************************************************************
+
+; ----------------------------------------------------------------------------
+; M2M$CHK_EXT
+; 
+; Checks if the given filename has the given extension. Is case-sensitive, so
+; you need to convert to upper- or lower-case before, if you want to check
+; non-case-sensitive. Per definition, the extension need to be at the end
+; of the string, not just somewhere in the middle.
+;
+; Input:  R8: String: Filename
+;         R9: String: Extension
+; Output: Carry-flag = 1 if the given filename has the extension, else 0 
+; ----------------------------------------------------------------------------
+
+M2M$CHK_EXT     INCRB
+                MOVE    R8, R0                  ; save R8..R10
+                MOVE    R9, R1
+                MOVE    R10, R2
+
+                SYSCALL(strstr, 1)              ; search extension substring
+                CMP     0, R10                  ; R10: pointer to substring
+                RBRA    _M2M$CHK_EX_C0, Z       ; not found: C=0 and return
+
+                ; is the extension actually at the end of the string?
+                ; we add the length of the extension to the position where
+                ; we found the extension and check, if we reach the end of
+                ; the soruce string
+                MOVE    R9, R8
+                SYSCALL(strlen, 1)
+                ADD     R9, R10
+                CMP     0, @R10
+                RBRA    _M2M$CHK_EX_C1, Z
+
+_M2M$CHK_EX_C0  AND     0xFFFB, SR              ; clear Carry
+                RBRA    _M2M$CHK_EX_RET, 1
+
+_M2M$CHK_EX_C1  OR      0x0004, SR              ; set Carry
+                
+_M2M$CHK_EX_RET MOVE    R0, R8                  ; restore R8..R10
+                MOVE    R1, R9
+                MOVE    R2, R10
+                DECRB
+                RET
 
 ; ----------------------------------------------------------------------------
 ; WAIT1SEC

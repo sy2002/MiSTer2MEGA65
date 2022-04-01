@@ -11,6 +11,7 @@
 ; ----------------------------------------------------------------------------
 
 OPTM_CLOSE      .EQU 0x00FF                     ; menu item that closes menu
+OPTM_HEADLINE   .EQU 0x1000                     ; AND mask: headline/title itm
 OPTM_SINGLESEL  .EQU 0x8000                     ; AND mask: single select item
 
 ; ----------------------------------------------------------------------------
@@ -21,6 +22,15 @@ OPTM_KEY_UP     .EQU 1
 OPTM_KEY_DOWN   .EQU 2
 OPTM_KEY_SELECT .EQU 3
 OPTM_KEY_CLOSE  .EQU 4
+
+; ----------------------------------------------------------------------------
+; Action codes for the OPTM_FP_SELECT function
+; ----------------------------------------------------------------------------
+
+OPTM_SEL_STD    .EQU 0
+OPTM_SEL_SEL    .EQU 1
+OPTM_SEL_TLL    .EQU 2
+OPTM_SEL_TLLSEL .EQU 3
 
 ; ----------------------------------------------------------------------------
 ; Initialization record that is filled using OPTM_INIT
@@ -44,8 +54,11 @@ OPTM_FP_PRINTXY .EQU 3
 OPTM_FP_LINE    .EQU 4
 
 ; Selects/unselects menu item in R8 (counting from 0 and counting also
-; non-selectable menu entries such as lines)
-; R9=0: unselect   R9=1: select
+; non-selectable menu entries such as lines) and highlights headlines/titles
+; R9=0: unselect
+; R9=1: select
+; R9=2: print headline/title highlighted
+; R9=3: select highlighted headline/title
 OPTM_FP_SELECT  .EQU 5
 
 ; Waits until one of the four Option Menu keys is pressed
@@ -176,6 +189,39 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 MOVE    R0, R8
                 MOVE    OPTM_FP_PRINT, R7       ; print menu
                 RSUB    _OPTM_CALL, 1
+
+                ; ------------------------------------------------------------
+                ; Highlight Headlines/Titles
+                ; ------------------------------------------------------------
+
+                INCRB                           ; protect R0..R7
+
+                MOVE    OPTM_DATA, R0
+                MOVE    @R0, R0
+                ADD     OPTM_IR_GROUPS, R0
+                MOVE    @R0, R0                 ; bit flag: #12 in menu group
+                XOR     R1, R1
+                MOVE    OPTM_DATA, R2           ; amount of menu items
+                MOVE    @R2, R2
+                ADD     OPTM_IR_SIZE, R2
+                MOVE    @R2, R2
+_OPTM_TT_0      MOVE    @R0++, R3
+
+                AND     OPTM_HEADLINE, R3
+                RBRA    _OPTM_TT_1, Z           ; flag not set: continue
+
+                ; flag is set, so print the menu item in highlighted mode
+                MOVE    OPTM_FP_SELECT, R7
+                MOVE    R1, R8
+                MOVE    OPTM_SEL_TLL, R9
+                RSUB    _OPTM_CALL, 1
+
+                ; iterate
+_OPTM_TT_1      ADD     1, R1
+                CMP     R1, R2                  ; end of menu structure?
+                RBRA    _OPTM_TT_0, !Z          ; no: continue
+
+                DECRB                           ; restore R0..R7
 
                 ; ------------------------------------------------------------
                 ; Handle "%s" in menu items
@@ -342,7 +388,7 @@ OPTM_RUN        SYSCALL(enter, 1)
 
 _OPTM_RUN_SEL   MOVE    OPTM_FP_SELECT, R7      ; select line
                 MOVE    R2, R8                  ; R8: selected item
-                MOVE    1, R9
+                MOVE    OPTM_SEL_SEL, R9
                 RSUB    _OPTM_CALL, 1
 
                 MOVE    OPTM_FP_GETKEY, R7      ; get next keypress
@@ -356,13 +402,15 @@ _OPTM_RUN_1     CMP     0, R2                   ; yes: wrap around at top?
 _OPTM_KU_NWA    SUB     1, R2                   ; one element up
                 MOVE    R1, R6                  ; find next menu item: descnd.
                 ADD     R2, R6
-                CMP     0, @R6                  ; menu item found?
+                MOVE    @R6, R6
+                AND     0x00FF, R6              ; mask flags such as headline
+                CMP     0, R6                   ; menu item found?
                 RBRA    _OPTM_RUN_2, !Z         ; yes: unselect cur. and go on
                 RBRA    _OPTM_RUN_1, 1          ; no: continue searching
 
 _OPTM_RUN_2     MOVE    OPTM_FP_SELECT, R7      ; unselect old item
                 MOVE    R3, R8
-                XOR     R9, R9
+                XOR     OPTM_SEL_STD, R9
                 RSUB    _OPTM_CALL, 1
                 MOVE    R2, R3                  ; remember current item as old
                 RBRA    _OPTM_RUN_SEL, 1
@@ -377,7 +425,9 @@ _OPTM_RUN_4     MOVE    R0, R7                  ; yes: wrap around at bottom?
 _OPTM_KD_NWA    ADD     1, R2                   ; one element down
                 MOVE    R1, R6                  ; find next menu item: ascend.
                 ADD     R2, R6
-                CMP     0, @R6                  ; menu item found?
+                MOVE    @R6, R6
+                AND     0x00FF, R6              ; mask out headline flag             
+                CMP     0, R6                   ; menu item found?
                 RBRA    _OPTM_RUN_2, !Z         ; yes: unselect cur. and go on
                 RBRA    _OPTM_RUN_4, 1          ; no: continue searching
 

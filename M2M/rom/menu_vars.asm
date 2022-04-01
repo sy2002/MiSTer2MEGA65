@@ -16,4 +16,4 @@ OPTM_DY         .BLOCK 1
 OPTM_DATA       .BLOCK 1
 
 ; single-select vs multi-select item flag
-OPTM_SSMS  		.BLOCK 1
+OPTM_SSMS       .BLOCK 1

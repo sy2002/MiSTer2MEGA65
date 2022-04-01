@@ -21,9 +21,10 @@ _DIRBR_DSDESIZE .EQU    2                       ; amount of characters in sum
 ;  R10: Pointer to heap
 ;  R11: Maximum amount of available heap memory
 ;  R12: Optional filter function that filters out files of a certain name.
-;       The filter function takes a pointer to a string in R8 and returns
-;       0 in R8, if the file shall not be filtered and 1 if it shall be
-;       filtered. The string provided in R8 is always in upper case.
+;       The filter function takes a pointer to a string in R8 and a directory
+;       flag in R9 (0=it is a file, 1=it is a directory) and returns 0 in R8,
+;       if the file shall not be filtered and 1 if it shall be filtered.
+;       The string provided in R8 is always in upper case.
 ;       If R12 is zero, then no filter is applied.
 ; Output:
 ;   R8: (unchanged) Pointer to valid device handle
@@ -301,6 +302,11 @@ _DIRBR_FILTWRAP INCRB
                 ADD     SLL$DATA, R8            ; R8: pointer to string
                 SYSCALL(strlen, 1)              ; R9: length of string
                 ADD     1, R9
+
+                MOVE    R9, R3                  ; behind string sits flag
+                ADD     R8, R3
+                MOVE    @R3, R3                 ; R3: file/directory flag
+
                 SUB     R9, SP
                 MOVE    R9, R2
                 MOVE    SP, R9
@@ -308,6 +314,11 @@ _DIRBR_FILTWRAP INCRB
                 MOVE    R9, R8
                 SYSCALL(str2upper, 1)           ; R8 contains upper string
 
+                MOVE    R3, R9
+
+                ; call filter function (callback function)
+                ; R8: filename in upper-case
+                ; R9: 0=file/1=directory
                 MOVE    _DIRBR_FILTERFN, R1
                 ASUB    @R1, 1
 

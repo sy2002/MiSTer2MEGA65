@@ -1,5 +1,5 @@
 ; ****************************************************************************
-; Game Boy Color for MEGA65 (gbc4mega65)
+; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
 ; QNICE ROM: Modified monitor variable section that does not have a hardcoded
 ; .ORG statement
@@ -7,8 +7,7 @@
 ; This solution is not (Q)NICE - so with QNICE V1.7 we should find a more
 ; elegant solution that works without QNICE Monitor code hacking.
 ;
-; gbc4mega65 machine is based on Gameboy_MiSTer
-; MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+; done by sy2002 in 2022 and licensed under GPL v3
 ; ****************************************************************************
 
 ;;=========================================================================================

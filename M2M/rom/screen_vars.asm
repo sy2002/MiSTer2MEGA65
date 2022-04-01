@@ -28,7 +28,7 @@ SCR$OSM_O_DY    .BLOCK 1
 
 ; inner left start coordinate for SCR$PRINTSTR: It depends on the
 ; x-coordinate of the frame
-SCR$ILX 		.BLOCK 1
+SCR$ILX         .BLOCK 1
 
 ; Scratch variables
 TEMP_2W         .BLOCK 2

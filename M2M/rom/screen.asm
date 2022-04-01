@@ -75,9 +75,9 @@ SCR$INIT        INCRB
                 RET
 
 ; ----------------------------------------------------------------------------
-; Show main OSM 
+; Show main OSM
 ; ----------------------------------------------------------------------------
-                
+
 SCR$OSM_M_ON    INCRB
 
                 MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..

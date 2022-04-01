@@ -42,20 +42,32 @@ _RESET_A_WHILE  SUB     1, R1
                 SYSCALL(puts, 1)
 
                 ; ------------------------------------------------------------
-                ; Initialize variables, libraries, IO and show welcome screen
+                ; More robust SD card reading
                 ; ------------------------------------------------------------
 
-                ; @TODO these hardcoded values need to be retrieved via
-                ; the SYS_INFO device and/or other means
-                ; The settings here correspond to the demo menu in config.vhd
-                MOVE    VDRIVES_NUM, R8
-                MOVE    3, @R8                  ; 3 virtual drives
-                MOVE    VDRIVES_IEC, R8
-                MOVE    0x0101, @R8             ; IEC device sits at 0x0101
-                MOVE    VDRIVES_BUFS, R8
-                MOVE    0xEEEE, @R8++           ; no RAM buffer connected
-                MOVE    0xEEEE, @R8++
-                MOVE    0xEEEE, @R8
+                ; Workaround that stabilizes the SD card handling: After a
+                ; reset or a power-on: Wait a while. This is obviously neither
+                ; a great nor a robust solution, but it increases the amount
+                ; of readable SD cards greatly. It seems like the more used
+                ; an SD card gets, the longer the initial startup sequence
+                ; seems to last.
+
+                ; Remember cycle counter for SD Card "stabilization" via
+                ; waiting at least three seconds before allowing to mount it
+                ; IO$CYC_MID updates with 50 MHz / 65535 = 763 Hz
+                ; 3 seconds are 2289 updates of IO$CYC_MID (2289 = 0x08F1)
+                MOVE    SD_WAIT_DONE, R8        ; set boolean flag to false
+                MOVE    0, @R8                            
+                MOVE    SD_CYC_MID, R8
+                MOVE    IO$CYC_MID, R9          ; "mid-word" of sys. cyc. cntr
+                MOVE    @R9, @R8
+                MOVE    SD_CYC_HI, R8
+                MOVE    IO$CYC_HI, R9           ; "hi-word" of sys. cyc. cntr
+                MOVE    @R9, @R8
+
+                ; ------------------------------------------------------------
+                ; Initialize variables, libraries, IO and show welcome screen
+                ; ------------------------------------------------------------
 
                 ; initialize device (SD card) and file handle
                 MOVE    HANDLE_DEV, R8
@@ -95,10 +107,52 @@ _RESET_A_WHILE  SUB     1, R1
                 MOVE    OPTM_HEAP_SIZE, R8
                 MOVE    0, @R8
 
-                ; initialize screen library and show welcome screen:
-                ; draw frame and print text
+                ; initialize screen library and draw the OSM frame
                 RSUB    SCR$INIT, 1             ; retrieve VHDL generics
                 RSUB    FRAME_FULLSCR, 1        ; draw fullscreen frame
+
+                ; use the sysinfo device to initialize the vdrives system:
+                ; get the amount of virtual drives, the device id of the
+                ; vdrives.vhd device and an array of RAM buffers for
+                ; the disk images
+                MOVE    M2M$RAMROM_DEV, R8
+                MOVE    M2M$SYS_INFO, @R8
+                MOVE    M2M$RAMROM_4KWIN, R8
+                MOVE    M2M$SYS_VDRIVES, @R8
+                MOVE    VD_NUM, R8
+                MOVE    VDRIVES_NUM, R0         ; number of virtual drives
+                MOVE    @R8, @R0
+                MOVE    @R0, R0
+                MOVE    VDRIVES_MAX, R1
+                CMP     R0, @R1                 ; vdrives > maximum?
+                RBRA    START_VD, !N            ; no: continue
+
+                MOVE    ERR_FATAL_VDMAX, R8     ; yes: stop core
+                MOVE    R0, R9
+                RBRA    FATAL, 1
+
+START_VD        MOVE    VD_DEVICE, R1           ; device id of vdrives.vhd
+                MOVE    VDRIVES_DEVICE, R2
+                MOVE    @R1, @R2
+
+                XOR     R1, R1                  ; loop var for buffer array
+                MOVE    VD_RAM_BUFFERS, R2      ; Source data from config.vhd
+                MOVE    VDRIVES_BUFS, R3        ; Dest. buf. in shell_vars.asm
+
+START_VD_CPY_1  MOVE    @R2++, @R3
+
+                RBRA    START_VD_CPY_F, Z       ; illegal values for buffer..
+                CMP     0xEEEE, @R3++           ; ..ptrs indicate that there..
+                RBRA    START_VD_CPY_2, !Z      ; ..are not enough of them:
+START_VD_CPY_F  MOVE    ERR_FATAL_VDBUF, R8     ; stop core
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+START_VD_CPY_2  ADD     1, R1
+                CMP     R0, R1
+                RBRA    START_VD_CPY_1, !Z
+
+                ; Show the welcome screen                
                 MOVE    M2M$RAMROM_DEV, R0      ; Device = config data
                 MOVE    M2M$CONFIG, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0    ; Selector = Welcome screen
@@ -123,20 +177,16 @@ START_SPACE     RSUB    KEYB$SCAN, 1
                 CMP     M2M$KEY_SPACE, R8
                 RBRA    START_SPACE, !Z         ; loop until Space was pressed
 
-                ; Hide OSM and connect keyboard and joysticks to the core
+                ; Hide OSM
                 RSUB    SCR$OSM_OFF, 1
 
+                ; Connect keyboard and joysticks to the core.
                 ; Avoid that the keypress to exit the splash screen gets
                 ; noticed by the core: Wait 1 second and only after that
                 ; connect the keyboard and the joysticks to the core
                 RSUB    WAIT333MS, 1
                 MOVE    M2M$CSR, R0
                 OR      M2M$CSR_KBD_JOY, @R0
-
-                ; if drives have been mounted, the mount strobe needs to be
-                ; renewed after a reset, as the reset signal also resets
-                ; the state of vdrives.vhd
-                ;RSUB    PREPARE_CORE_IO, 1
 
                 ; ------------------------------------------------------------
                 ; Main loop:
@@ -217,6 +267,7 @@ _HM_SDUNMOUNTED MOVE    1, R9                   ; partition #1 hardcoded
                 RBRA    _HM_SDMOUNTED2, Z
 
                 ; Mounting did not work - offer retry
+                RSUB    SCR$CLRINNER, 1
                 MOVE    ERR_MOUNT, R8
                 RSUB    SCR$PRINTSTR, 1
                 MOVE    R9, R8
@@ -370,7 +421,25 @@ _HM_SDMOUNTED5  MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 ; none of the errors that LOAD_IMAGE returns is fatal, so we
                 ; will show an error message to the user and then we will
                 ; let him chose another file
-                SYSCALL(exit, 1)                
+                RSUB    SCR$CLRINNER, 1         ; print error message
+                MOVE    R8, R0
+                MOVE    R9, R1
+                MOVE    WRN_ERROR_CODE, R8
+                RSUB    SCR$PRINTSTR, 1
+                MOVE    R0, R8
+                MOVE    SCRATCH_HEX, R9
+                RSUB    WORD2HEXSTR, 1
+                MOVE    R9, R8
+                RSUB    SCR$PRINTSTR, 1
+                MOVE    R1, R8
+                RSUB    SCR$PRINTSTR, 1
+_HM_SDMOUNTED5A RSUB    HANDLE_IO, 1            ; wait for Space to be pressed
+                RSUB    KEYB$SCAN, 1
+                RSUB    KEYB$GETKEY, 1
+                CMP     M2M$KEY_SPACE, R8
+                RBRA    _HM_SDMOUNTED5A, !Z
+                RSUB    SCR$CLRINNER, 1         ; next try
+                RBRA    _HM_SDMOUNTED2, 1
 
 _HM_SDMOUNTED6  MOVE    R9, R6                  ; R6: disk image type
                 RSUB    SCR$OSM_OFF, 1          ; hide the big window
@@ -562,7 +631,7 @@ _LI_FREAD_RET   MOVE    R6, @--SP               ; lift return codes over ...
 ; Meant to be polled in the main loop and while waiting for keys in the OSM
 ; ----------------------------------------------------------------------------
 
-HANDLE_IO       INCRB
+HANDLE_IO       SYSCALL(enter, 1)
 
                 ; Loop through all VDRIVES and check for read requests
                 XOR     R0, R0                  ; R0: number of virtual drive
@@ -585,7 +654,7 @@ _HANDLE_IO_NXT  ADD     1, R0                   ; next drive
                 CMP     R0, R1                  ; done?
                 RBRA    _HANDLE_IO_1, !Z        ; no, continue
 
-                DECRB
+                SYSCALL(leave, 1)
                 RET
 
 ; Handle read request from drive number in R8:

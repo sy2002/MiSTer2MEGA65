@@ -78,6 +78,8 @@ M2M$SA_FG_BLUE      .EQU 0x01
 ; Screen attributes: Common bit-combinations
 M2M$SA_COL_STD      .EQU 0x0B   ; cyan font on blue background
 M2M$SA_COL_STD_INV  .EQU 0x8B   ; inverse standard
+M2M$SA_COL_TTLE     .EQU 0x0E   ; Title: Yellow on blue background
+M2M$SA_COL_TTLE_INV .EQU 0x8E   ; inverse Title
 M2M$SA_COL_SEL      .EQU 0x0F   ; selection: white font on blue background
 
 ; Special characters in font Anikki-16x16
@@ -161,8 +163,13 @@ M2M$SYS_INFO        .EQU 0x00FF     ; Device for System Info
 M2M$RAMROM_4KWIN    .EQU 0xFFF5     ; 4k window selector
 M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
 
-M2M$SYS_VGA         .EQU 0x0010     ; Sys Info window for graphics adapter 0 (VGA)
-M2M$SYS_HDMI        .EQU 0x0011     ; Sys Info window for graphics adapter 1 (HDMI)
+M2M$SYS_VDRIVES     .EQU 0x0000     ; sysinfo 4k win for vdrives constants
+M2M$SYS_VGA         .EQU 0x0010     ; sysinfo 4k win for gfx adaptor 0: VGA
+M2M$SYS_HDMI        .EQU 0x0011     ; sysinfo 4k win for gfx adaptor 1: HDMI
+
+; ----------------------------------------------------------------------------
+; Sysinfo data for graphics adaptors
+; ----------------------------------------------------------------------------
 
 ; The following read-only registers are meant to be used by the QNICE
 ; firmware. They enable the ability to specify the main screen of the Shell
@@ -194,6 +201,11 @@ M2M$CFG_OPTM_MSTR   .EQU 0x0308     ; Mount string to display instead of %s
 ; ----------------------------------------------------------------------------
 ; Virtual Drives Device for MiSTer "SD" interface (vdrives.vhd)
 ; ----------------------------------------------------------------------------
+
+; sysinfo addresses
+VD_NUM              .EQU 0x7000     ; amount of virtual drives
+VD_DEVICE           .EQU 0x7001     ; address of the vdrives.vhd device
+VD_RAM_BUFFERS      .EQU 0x7100     ; array of RAM buffers to store dsk images
 
 ; window selectors for vdrives.vhd
 VD_IEC_WIN_CAD      .EQU 0x0000     ; control and data registers

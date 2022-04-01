@@ -7,6 +7,5 @@
 ; ****************************************************************************
 
 #ifdef RELEASE
-	#include "qmon_vars.asm"
+    #include "qmon_vars.asm"
 #endif
-
