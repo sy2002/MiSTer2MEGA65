@@ -80,7 +80,7 @@ is to be expected, and can be safely ignored in this situation.
 
 ## Data flow
 
-* The video data stream enters on the input clock domain `i_clk` and is the
+* The video data stream enters on the input clock domain `i_clk` and is then
   written into `i_dpram` internal Dual Port memory (in lines 1691-1699).
 * From there it is read out using the `avl_clk` clock domain in line 1701
 * and written to the external memory using the `avl_*` port signals.
@@ -110,4 +110,28 @@ IF o_mode(3)='0' THEN
   o_ibuf1<=0;
 END IF;
 ```
+
+## Scaling
+
+The video rescaler stores the input frame as-is in HyperRAM. It's only when
+rendering the output image from HyperRAM that scaling is performed. This is
+done by maintaining pixel counters for input and output pixels.
+
+The signals `o_ihsize` and `o_ivsize` contain the visible dimensions of the
+input stream while the signals `o_hsize` and `o_vsize` contain the visible
+dimensions of the output stream.
+
+Each clock of the output stream is exactly one output pixel.  The corresponding input
+pixel counters are maintained in the signals `o_hacpt` and `o_vacpt` as integer
+values, and the corresponding fractional values are in `o_hacc` and `o_vacc` in
+units of twice the output dimensions (and offset by the sum of input and output
+dimensions). The fractional units are stored in `o_hfrac(0)` and `o_vfrac(0)`
+three clock cycles later.
+
+### Example
+Let the input dimensions be 384x540 and the output dimensions be 960x720. Then the
+10'th output pixel corresponds to (10\*2\*384+960+384)/(2\*960) = 4.7'th input pixel.
+So `o_hacpt=4`. The fractional part is either 0.7\*2\*960 = 1344, which is the
+value of `o_hacc`. Or it is 0.7\*16 = 11.2, so `o_hfrac(0) = 0xb00` three clock
+cycles later.
 

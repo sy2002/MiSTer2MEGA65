@@ -1,13 +1,12 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework
 --
 -- QNICE Memory Mapped IO Controller
--- based on QNICE-FPGA V1.6
+-- based on QNICE-FPGA V1.61
 --
 -- Meant to be integrated upstream (for example in QNICE-FPGA V1.7) so that
 -- this specific implemention will become redundant in future.
 --
--- gbc4mega65 machine is based on Gameboy_MiSTer
 -- QNICE Co-Processor is based on QNICE-FPGA done by The QNICE Development Team
 -- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
 ----------------------------------------------------------------------------------

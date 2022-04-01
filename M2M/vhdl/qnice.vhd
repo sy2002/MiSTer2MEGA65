@@ -124,6 +124,10 @@ signal sd_en                     : std_logic;
 signal sd_we                     : std_logic;
 signal sd_reg                    : std_logic_vector(2 downto 0);
 signal sd_data_out               : std_logic_vector(15 downto 0);
+signal cyc_count_en              : std_logic;
+signal cyc_count_we              : std_logic;
+signal cyc_count_reg             : std_logic_vector(1 downto 0);
+signal cyc_count_data_out        : std_logic_vector(15 downto 0);
 
 -- MEGA65 SD card specific MMIO signals (see sysdef.asm)
 signal sd_mode                    : std_logic;
@@ -185,6 +189,7 @@ begin
                   uart_data_out              or
                   eae_data_out               or
                   sd_data_out                or
+                  cyc_count_data_out         or
                   ramrom_data_out            or
                   csr_data_out               or
                   osm_xy_data_out            or
@@ -294,7 +299,7 @@ begin
          data_out             => eae_data_out
       );
       
-   -- Smart SD card multiplexer: handles the two different SD Card slots of the MEGA65 (see also gbc.asm)       
+   -- Smart SD card multiplexer: handles the two different SD Card slots of the MEGA65 (see also sysdef.asm)       
    i_sdmux : entity work.sdmux
       port map
       (
@@ -347,6 +352,21 @@ begin
          sd_mosi              => sd_mux_mosi,
          sd_miso              => sd_mux_miso
       );
+    
+   -- Cycle Counter: used by the M2M firmware for measuring delays
+   i_cyc_count: entity work.cycle_counter
+      port map (
+         clk                  => clk50_i,
+         impulse              => '1',
+         reset                => reset_ctl,
+         
+         -- cycle counter's registers
+         en                   => cyc_count_en,
+         we                   => cyc_count_we,
+         reg                  => cyc_count_reg,
+         data_in              => cpu_data_out,
+         data_out             => cyc_count_data_out
+      );   
     
    -- Standard QNICE-FPGA MMIO controller  
    mmio_std : entity work.mmio_mux
@@ -404,15 +424,17 @@ begin
          reset_pre_pore       => reset_pre_pore,
          reset_post_pore      => reset_post_pore,
                                  
-         -- QNICE hardware unsupported by gbc4MEGA65
+         -- Cycle Counter
+         cyc_en               => cyc_count_en,
+         cyc_we               => cyc_count_we,
+         cyc_reg              => cyc_count_reg,
+
+         -- QNICE hardware unsupported by MiSTer2MEGA65
          til_reg0_enable      => open,
          til_reg1_enable      => open,         
          kbd_en               => open,
          kbd_we               => open,
          kbd_reg              => open,
-         cyc_en               => open,
-         cyc_we               => open,
-         cyc_reg              => open,
          ins_en               => open,
          ins_we               => open,
          ins_reg              => open,

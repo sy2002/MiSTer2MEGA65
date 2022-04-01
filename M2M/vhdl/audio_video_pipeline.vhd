@@ -71,7 +71,6 @@ entity audio_video_pipeline is
       video_osm_cfg_dxdy_i     : in  std_logic_vector(15 downto 0);
       video_osm_vram_addr_o    : out std_logic_vector(15 downto 0);
       video_osm_vram_data_i    : in  std_logic_vector(15 downto 0);
-      hdmi_triple_buffering_i  : in  std_logic;
       hdmi_video_mode_i        : in  natural;
       hdmi_osm_cfg_enable_i    : in  std_logic;
       hdmi_osm_cfg_xy_i        : in  std_logic_vector(15 downto 0);
@@ -370,21 +369,24 @@ begin
       generic map (
          MASK      => x"ff",
          RAMBASE   => (others => '0'),
-         RAMSIZE   => x"0020_0000", -- = 2MB
-         INTER     => true,
-         HEADER    => true,
-         DOWNSCALE => true,
+         RAMSIZE   => x"0020_0000", -- = 2MB for input buffer : dx * dy * 3 byte (RGB) per pixel and then a power of two
+         INTER     => false,        -- Not needed: Progressive input only
+         HEADER    => false,        -- Not needed: Used on MiSTer to read the sampled image back from the ARM side to do screenshots. The header provides informations such as image size.
+         DOWNSCALE => false,        -- Not needed: We use ascal only to upscale
+         DOWNSCALE_NN => true,      -- Not needed: true = remove logic
          BYTESWAP  => true,
-         PALETTE   => true,
-         PALETTE2  => true,
-         FRAC      => 4,
-         OHRES     => 2048,
-         IHRES     => 2048,
+         ADAPTIVE  => true,         -- Needed for advanced scanlines emulation in polyphase mode
+         PALETTE   => false,        -- Not needed: Only useful for the framebuffer mode, where the scaler is used to upscale a framebuffer in RAM, without using the scaler input.
+         PALETTE2  => false,        -- Not needed: Same, for framebuffer 256 colours mode. 
+         FRAC      => 6,            -- 2^value subpixels; MiSTer starts to settle on FRAC => 8, but this older version of ascal does not seem to support 8 (at C64 still at 6)
+         OHRES     => 2048,         -- Maximum horizontal output resolution. (There is no parameter for vertical resolution.)
+         IHRES     => 1024,         -- Maximum horizontal input resolution. (Also here no paramter for vertical.)
          N_DW      => C_AVM_DATA_SIZE,
          N_AW      => C_AVM_ADDRESS_SIZE,
          N_BURST   => 256  -- 256 bytes per burst
       )
       port map (
+         -- Input video
          i_r               => unsigned(video_red_i),        -- input
          i_g               => unsigned(video_green_i),      -- input
          i_b               => unsigned(video_blue_i),       -- input
@@ -394,6 +396,8 @@ begin
          i_de              => video_de_i,                   -- input
          i_ce              => video_ce_hdmi(0),             -- input
          i_clk             => video_clk_i,                  -- input
+         
+         -- Output video
          o_r               => hdmi_red,                     -- output
          o_g               => hdmi_green,                   -- output
          o_b               => hdmi_blue,                    -- output
@@ -403,35 +407,55 @@ begin
          o_vbl             => open,                         -- output
          o_ce              => '1',                          -- input
          o_clk             => hdmi_clk_i,                   -- input
+         
+         -- Border colour R G B
          o_border          => X"000000",                    -- input
-         o_fb_ena          => '0',                          -- input
+         
+         -- Framebuffer mode
+         o_fb_ena          => '0',                          -- input: do not use framebuffer mode
          o_fb_hsize        => 0,                            -- input
          o_fb_vsize        => 0,                            -- input
-         o_fb_format       => "000100",                     -- input
+         o_fb_format       => "000101",                     -- input: 101=24bpp: 8-bit for R, G and B 
          o_fb_base         => x"0000_0000",                 -- input
          o_fb_stride       => (others => '0'),              -- input
+         
+         -- Framebuffer palette in 8bpp mode
          pal1_clk          => '0',                          -- input
          pal1_dw           => x"000000000000",              -- input
          pal1_dr           => open,                         -- output
          pal1_a            => "0000000",                    -- input
          pal1_wr           => '0',                          -- input
          pal_n             => '0',                          -- input
+                  
          pal2_clk          => '0',                          -- input
          pal2_dw           => x"000000",                    -- input
          pal2_dr           => open,                         -- output
          pal2_a            => "00000000",                   -- input
          pal2_wr           => '0',                          -- input
+         
+         -- Low lag PLL tuning
          o_lltune          => open,                         -- output
+         
+         -- Input video parameters
          iauto             => '1',                          -- input
          himin             => 0,                            -- input
          himax             => 0,                            -- input
          vimin             => 0,                            -- input
          vimax             => 0,                            -- input
+         
+         -- Detected input image size
          i_hdmax           => open,                         -- output
          i_vdmax           => open,                         -- output
+         
+         -- Output video parameters
          run               => '1',                          -- input
          freeze            => '0',                          -- input
-         mode              => "0" & hdmi_triple_buffering_i & "000", -- input
+         mode              => "00000",                      -- input: mode(2 downto 0)="000": "Nearest" interpolation, mode(3)=0: no triple buffering, mode(4) currently unused by ascal
+         
+         -- SYNC  |_________________________/"""""""""\_______|
+         -- DE    |""""""""""""""""""\________________________|
+         -- RGB   |    <#IMAGE#>      ^HDISP                  |
+         --            ^HMIN   ^HMAX        ^HSSTART  ^HSEND  ^HTOTAL         
          htotal            => hdmi_htotal,                  -- input
          hsstart           => hdmi_hsstart,                 -- input
          hsend             => hdmi_hsend,                   -- input
@@ -444,11 +468,17 @@ begin
          hmax              => hdmi_hmax,                    -- input
          vmin              => hdmi_vmin,                    -- input
          vmax              => hdmi_vmax,                    -- input
-         format            => "01",                         -- input
+         
+         -- Scaler format. 00=16bpp 565, 01=24bpp 10=32bpp
+         format            => "01",                         -- input: 24bpp
+         
+         -- Polyphase filter coefficients (not used by us)         
          poly_clk          => '0',                          -- input
          poly_dw           => (others => '0'),              -- input
          poly_a            => (others => '0'),              -- input
          poly_wr           => '0',                          -- input
+         
+         -- Avalon Memory interface
          avl_clk           => hr_clk_i,                     -- input
          avl_waitrequest   => hr_wide_waitrequest,          -- input
          avl_readdata      => hr_wide_readdata,             -- input
@@ -459,6 +489,8 @@ begin
          avl_write         => hr_wide_write,                -- output
          avl_read          => hr_wide_read,                 -- output
          avl_byteenable    => hr_wide_byteenable,           -- output
+         
+         -- Asynchronous reset, active low
          reset_na          => reset_na                      -- input
       ); -- i_ascal
 

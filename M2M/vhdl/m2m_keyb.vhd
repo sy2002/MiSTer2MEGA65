@@ -39,6 +39,9 @@ entity m2m_keyb is
       key_num_o            : out integer range 0 to 79;        -- cycles through all keys with SCAN_FREQUENCY
       key_pressed_n_o      : out std_logic;                    -- low active: debounced feedback: is kb_key_num_o pressed right now?
             
+      -- control the drive led on the MEGA65 keyboard
+      drive_led_i          : in std_logic;
+            
       -- interface to QNICE: used by the firmware and the Shell (see sysdef.asm for details)
       qnice_keys_n_o       : out std_logic_vector(15 downto 0)
    );
@@ -66,7 +69,7 @@ begin
        ioclock          => clk_main_i,
       
        flopmotor        => '0',
-       flopled          => '0',
+       flopled          => drive_led_i,
        powerled         => '1',    
        
        kio8             => kio8_o,

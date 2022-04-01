@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework
 --
 -- Dual Port Dual Clock RAM: Drop-in replacement for "dpram.vhd"
 --

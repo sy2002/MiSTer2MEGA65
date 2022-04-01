@@ -132,6 +132,7 @@ constant OPTM_G_CLOSE      : integer := 16#00FF#;         -- menu items that clo
 constant OPTM_G_STDSEL     : integer := 16#0100#;         -- item within a group that is selected by default
 constant OPTM_G_LINE       : integer := 16#0200#;         -- draw a line at this position
 constant OPTM_G_START      : integer := 16#0400#;         -- selector / cursor position after startup (only use once!)
+constant OPTM_G_HEADLINE   : integer := 16#1000#;         -- like OPTM_G_TEXT but will be shown in a brigher color
 constant OPTM_G_MOUNT_DRV  : integer := 16#8800#;         -- line item means: mount drive; first occurance = drive 0, second = drive 1, ...
 constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 
@@ -192,7 +193,7 @@ constant OPTM_G_Single_3   : integer := 8;
 -- where are separator lines? which items should be selected by default?
 -- make sure that you have exactly the same amount of entries here than in OPTM_ITEMS and defined by OPTM_SIZE
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 65535;
-constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT,                              -- Headline "Demo Headline"
+constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Demo Headline"
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_Demo_A + OPTM_G_START,             -- Item A.1, cursor start position
                                              OPTM_G_Demo_A + OPTM_G_STDSEL,            -- Item A.2, selected by default
@@ -249,7 +250,8 @@ begin
       when SEL_DIR_START   => data_o <= str2data(DIR_START);
       when SEL_OPTM_ITEMS  => data_o <= str2data(OPTM_ITEMS);
       when SEL_OPTM_MOUNT_STR => data_o <= str2data(OPTM_S_MOUNT);
-      when SEL_OPTM_GROUPS    => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), 16)(15)) & "000" & x"0" &
+      when SEL_OPTM_GROUPS    => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), 16)(15)) & "00" & 
+                                           std_logic(to_unsigned(OPTM_GROUPS(index), 16)(12)) & "0000" &
                                            std_logic_vector(to_unsigned(OPTM_GROUPS(index), 16)(7 downto 0));
       when SEL_OPTM_STDSEL => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(8));
       when SEL_OPTM_LINES  => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(9));

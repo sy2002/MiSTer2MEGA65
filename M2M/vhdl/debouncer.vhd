@@ -1,10 +1,9 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework 
 --
 -- Debouncer for the joystick ports
 --
--- This machine is based on Gameboy_MiSTer
--- MEGA65 port done by sy2002 in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 

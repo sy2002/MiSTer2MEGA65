@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------
--- Game Boy Color for MEGA65 (gbc4mega65)
+-- MiSTer2MEGA65 Framework
 --
 -- Smart MEGA65 SD Card multiplexer
 --

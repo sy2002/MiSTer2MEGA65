@@ -14,6 +14,9 @@ library work;
 use work.video_modes_pkg.all;
 
 entity main is
+   generic (
+      G_VDNUM                 : natural                     -- amount of virtual drives     
+   );
    port (
       clk_main_i             : in  std_logic;
       clk_main_speed_i       : in  natural;
