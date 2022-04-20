@@ -46,6 +46,7 @@ architecture synthesis of democore is
    signal video_pixel_y : integer := 0;
 
    alias video_clk_i : std_logic is clk_main_i;
+   alias audio_clk_i : std_logic is clk_main_i;
 
    signal video_red   : std_logic_vector(7 downto 0);
    signal video_green : std_logic_vector(7 downto 0);
@@ -54,6 +55,13 @@ architecture synthesis of democore is
    signal video_hs    : std_logic;
    signal video_de    : std_logic;
    signal video_ce    : std_logic;
+
+   signal video_pos_x : std_logic_vector(15 downto 0);
+   signal video_pos_y : std_logic_vector(15 downto 0);
+
+   signal audio_freq      : std_logic_vector(15 downto 0);
+   signal audio_vol_left  : std_logic_vector(15 downto 0);
+   signal audio_vol_right : std_logic_vector(15 downto 0);
 
 begin
 
@@ -92,7 +100,9 @@ begin
          vga_row_i => video_pixel_y,
          vga_core_rgb_o(23 downto 16) => video_red,
          vga_core_rgb_o(15 downto  8) => video_green,
-         vga_core_rgb_o( 7 downto  0) => video_blue
+         vga_core_rgb_o( 7 downto  0) => video_blue,
+         vga_pos_x_o => video_pos_x,
+         vga_pos_y_o => video_pos_y
       );
 
    p_rgb : process (video_clk_i)
@@ -116,13 +126,23 @@ begin
 
    vga_ce_o <= video_ce;
 
-   p_audio : process (clk_main_i)
-   begin
-      if rising_edge(clk_main_i) then
-         audio_left_o  <= audio_left_o + 2;  -- Left is one octave higher.
-         audio_right_o <= audio_right_o - 1;
-      end if;
-   end process p_audio;
+   audio_freq      <= video_pos_y;
+   audio_vol_left  <= video_pos_x;
+   audio_vol_right <= not video_pos_x;
+
+   i_democore_audio : entity work.democore_audio
+      generic map (
+         G_CLOCK_FREQ_HZ => G_VIDEO_MODE.CLK_KHZ * 1000
+      )
+      port map (
+         clk_i         => audio_clk_i,
+         rst_i         => reset_i,
+         freq_i        => audio_freq,
+         vol_left_i    => audio_vol_left,
+         vol_right_i   => audio_vol_right,
+         audio_left_o  => audio_left_o,
+         audio_right_o => audio_right_o
+      ); -- i_democore_audio
 
 end architecture synthesis;
 

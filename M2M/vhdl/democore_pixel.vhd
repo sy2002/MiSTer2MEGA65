@@ -11,7 +11,9 @@ entity democore_pixel is
       vga_clk_i            : in  std_logic;
       vga_col_i            : in  integer range 0 to G_VGA_DX - 1;
       vga_row_i            : in  integer range 0 to G_VGA_DY - 1;
-      vga_core_rgb_o       : out std_logic_vector(23 downto 0)    -- 23..0 = RGB, 8 bits each
+      vga_core_rgb_o       : out std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
+      vga_pos_x_o          : out std_logic_vector(15 downto 0);
+      vga_pos_y_o          : out std_logic_vector(15 downto 0)
    );
 end entity democore_pixel;
 
@@ -26,6 +28,9 @@ architecture synthesis of democore_pixel is
    signal vel_y : integer range -7 to 7         := 1;
 
 begin
+
+   vga_pos_x_o <= std_logic_vector(to_unsigned(pos_x, 16));
+   vga_pos_y_o <= std_logic_vector(to_unsigned(pos_y, 16));
 
    p_rgb : process (vga_clk_i)
    begin
