@@ -126,9 +126,9 @@ begin
 
    vga_ce_o <= video_ce;
 
-   audio_freq      <= video_pos_y;
-   audio_vol_left  <= video_pos_x;
-   audio_vol_right <= not video_pos_x;
+   audio_freq      <= std_logic_vector(unsigned(video_pos_y) + G_VIDEO_MODE.V_PIXELS);
+   audio_vol_left  <= std_logic_vector(G_VIDEO_MODE.H_PIXELS - unsigned(video_pos_x));
+   audio_vol_right <= std_logic_vector(unsigned(video_pos_x));
 
    i_democore_audio : entity work.democore_audio
       generic map (

@@ -5,7 +5,7 @@
 -- can be synthesized and tested stand alone even before the MiSTer core is being
 -- applied. The MEGA65 "Help" menu can be used to change the behavior of the core.
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2021 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ------------------------------------------------------------------------------------
 
 library ieee;
@@ -45,6 +45,18 @@ architecture synthesis of democore_audio is
       res(7 downto 0) := arg;
       return res;
    end function sign_extend;
+
+   constant C_DEBUG_MODE                 : boolean := true;
+   attribute mark_debug                  : boolean;
+   attribute mark_debug of freq_i        : signal is C_DEBUG_MODE;
+   attribute mark_debug of vol_left_i    : signal is C_DEBUG_MODE;
+   attribute mark_debug of vol_right_i   : signal is C_DEBUG_MODE;
+   attribute mark_debug of x             : signal is C_DEBUG_MODE;
+   attribute mark_debug of y             : signal is C_DEBUG_MODE;
+   attribute mark_debug of accum         : signal is C_DEBUG_MODE;
+   attribute mark_debug of step          : signal is C_DEBUG_MODE;
+   attribute mark_debug of audio_left_o  : signal is C_DEBUG_MODE;
+   attribute mark_debug of audio_right_o : signal is C_DEBUG_MODE;
 
 begin
 
