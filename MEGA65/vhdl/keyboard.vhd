@@ -27,17 +27,31 @@ use IEEE.NUMERIC_STD.ALL;
 entity keyboard is
    port (
       clk_main_i           : in std_logic;               -- core clock
+      flip_joys_i          : in std_logic;               -- flip joystick port 1 and 2
          
       -- Interface to the MEGA65 keyboard
       key_num_i            : in integer range 0 to 79;   -- cycles through all MEGA65 keys
       key_pressed_n_i      : in std_logic;               -- low active: debounced feedback: is kb_key_num_i pressed right now?
+
+      -- Interface to the MEGA65 joysticks
+      joy_1_up_n             : in std_logic;
+      joy_1_down_n           : in std_logic;
+      joy_1_left_n           : in std_logic;
+      joy_1_right_n          : in std_logic;
+      joy_1_fire_n           : in std_logic;
+
+      joy_2_up_n             : in std_logic;
+      joy_2_down_n           : in std_logic;
+      joy_2_left_n           : in std_logic;
+      joy_2_right_n          : in std_logic;
+      joy_2_fire_n           : in std_logic;            
                
       -- @TODO: Create the kind of keyboard output that your core needs
       -- "example_n_o" is a low active register and used by the demo core:
       --    bit 0: Space
       --    bit 1: Return
       --    bit 2: Run/Stop
-      example_n_o          : out std_logic_vector(2 downto 0)
+      example_n_o          : out std_logic_vector(79 downto 0)
    );
 end keyboard;
 
@@ -121,28 +135,42 @@ constant m65_capslock      : integer := 72;
 constant m65_up_crsr       : integer := 73;  -- cursor up
 constant m65_left_crsr     : integer := 74;  -- cursor left
 constant m65_restore       : integer := 75;
---    76  (again: INST/DEL                  unclear why, do not use)
---    77  (again: RETURN                    unclear why,do not use)
---    78  (again: CAPS LOCK, but hi active  unclear why,do not use)
---    79  ???
 
--- @TODO remove this demo signal
-signal   keys_n: std_logic_vector(2 downto 0) := "111"; -- low active: no key pressed
+signal key_pressed_n : std_logic_vector(79 downto 0);
+
+signal j1_up_n             : std_logic;
+signal j1_down_n           : std_logic;
+signal j1_left_n           : std_logic;
+signal j1_right_n          : std_logic;
+signal j1_fire_n           : std_logic;
+
+signal j2_up_n             : std_logic;
+signal j2_down_n           : std_logic;
+signal j2_left_n           : std_logic;
+signal j2_right_n          : std_logic;
+signal j2_fire_n           : std_logic;
 
 begin
 
-   example_n_o <= keys_n;
+   example_n_o <= key_pressed_n;
 
-   -- @TODO: Replace this demo keyboard handler (which is used by the M2M demo core) by your actual keyboard logic
-   demo_core_handle_keys : process(clk_main_i)
+   j1_up_n     <= joy_2_up_n    when flip_joys_i else joy_1_up_n; 
+   j1_down_n   <= joy_2_down_n  when flip_joys_i else joy_1_down_n;
+   j1_left_n   <= joy_2_left_n  when flip_joys_i else joy_1_left_n;
+   j1_right_n  <= joy_2_right_n when flip_joys_i else joy_1_right_n;
+   j1_fire_n   <= joy_2_fire_n  when flip_joys_i else joy_1_fire_n;
+   
+   j2_up_n     <= joy_1_up_n    when flip_joys_i else joy_2_up_n; 
+   j2_down_n   <= joy_1_down_n  when flip_joys_i else joy_2_down_n;
+   j2_left_n   <= joy_1_left_n  when flip_joys_i else joy_2_left_n;
+   j2_right_n  <= joy_1_right_n when flip_joys_i else joy_2_right_n;
+   j2_fire_n   <= joy_1_fire_n  when flip_joys_i else joy_2_fire_n;
+   
+   keyboard_state : process(clk_main_i)
    begin
-      if rising_edge(clk_main_i) then      
-         case key_num_i is
-            when 1         => keys_n(1) <= key_pressed_n_i;   -- Return
-            when 60        => keys_n(0) <= key_pressed_n_i;   -- Space
-            when 63        => keys_n(2) <= key_pressed_n_i;   -- Run/Stop
-            when others    => null;
-         end case;
+      if rising_edge(clk_main_i) then
+         key_pressed_n(key_num_i) <= key_pressed_n_i;
       end if;
-   end process;      
+   end process;
+
 end beh;

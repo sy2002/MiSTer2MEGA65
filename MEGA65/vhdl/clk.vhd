@@ -36,7 +36,7 @@ entity clk is
       hdmi_clk_o      : out std_logic;   -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
       hdmi_rst_o      : out std_logic;   -- HDMI's reset, synchronized
 
-      audio_clk_o     : out std_logic;   -- Audio's 60 MHz clock
+      audio_clk_o     : out std_logic;   -- Audio's 30 MHz clock
       audio_rst_o     : out std_logic;   -- Audio's reset, synchronized
 
       main_clk_o      : out std_logic;   -- main's @TODO 54 MHz main clock
@@ -61,11 +61,19 @@ signal tmds_clk_mmcm      : std_logic;
 signal hdmi_clk_mmcm      : std_logic;
 signal main_clk_mmcm      : std_logic;
 
+signal qnice_locked       : std_logic;
+signal hdmi_locked        : std_logic;
+signal main_locked        : std_logic;
+
 begin
 
-   -- generate QNICE and HyperRAM clock
+   -------------------------------------------------------------------------------------
+   -- Generate QNICE and HyperRAM clock
+   -------------------------------------------------------------------------------------
+
    -- VCO frequency range for Artix 7 speed grade -1 : 600 MHz - 1200 MHz
    -- f_VCO = f_CLKIN * CLKFBOUT_MULT_F / DIVCLK_DIVIDE
+   
    i_clk_qnice : MMCME2_ADV
       generic map (
          BANDWIDTH            => "OPTIMIZED",
@@ -94,8 +102,8 @@ begin
          CLKOUT3_PHASE        => 180.000,
          CLKOUT3_DUTY_CYCLE   => 0.500,
          CLKOUT3_USE_FINE_PS  => FALSE,
-         CLKOUT4_DIVIDE       => 20,         -- Audio @ 60 MHz
-         CLKOUT4_PHASE        => 180.000,
+         CLKOUT4_DIVIDE       => 40,         -- Audio @ 30 MHz
+         CLKOUT4_PHASE        => 0.000,
          CLKOUT4_DUTY_CYCLE   => 0.500,
          CLKOUT4_USE_FINE_PS  => FALSE
       )
@@ -127,16 +135,17 @@ begin
          PSINCDEC            => '0',
          PSDONE              => open,
          -- Other control and status signals
-         LOCKED              => open,
+         LOCKED              => qnice_locked,
          CLKINSTOPPED        => open,
          CLKFBSTOPPED        => open,
          PWRDWN              => '0',
          RST                 => '0'
       ); -- i_clk_qnice
 
-   -- generate 74.25 MHz for 720p @ 50 Hz and 5x74.25 MHz = 371.25 MHz for TMDS
-   -- VCO frequency range for Artix 7 speed grade -1 : 600 MHz - 1200 MHz
-   -- f_VCO = f_CLKIN * CLKFBOUT_MULT_F / DIVCLK_DIVIDE
+   -------------------------------------------------------------------------------------
+   -- Generate 74.25 MHz for 720p @ 50 Hz and 5x74.25 MHz = 371.25 MHz for TMDS
+   -------------------------------------------------------------------------------------
+
    i_clk_hdmi : MMCME2_ADV
       generic map (
          BANDWIDTH            => "OPTIMIZED",
@@ -183,7 +192,7 @@ begin
          PSINCDEC            => '0',
          PSDONE              => open,
          -- Other control and status signals
-         LOCKED              => open,
+         LOCKED              => hdmi_locked,
          CLKINSTOPPED        => open,
          CLKFBSTOPPED        => open,
          PWRDWN              => '0',
@@ -231,16 +240,16 @@ begin
          PSINCDEC            => '0',
          PSDONE              => open,
          -- Other control and status signals
-         LOCKED              => open,
+         LOCKED              => main_locked,
          CLKINSTOPPED        => open,
          CLKFBSTOPPED        => open,
          PWRDWN              => '0',
          RST                 => '0'
       ); -- i_clk_main
 
-   -------------------------------------
+   -------------------------------------------------------------------------------------
    -- Output buffering
-   -------------------------------------
+   -------------------------------------------------------------------------------------
 
    clkfb1_bufg : BUFG
       port map (
@@ -312,58 +321,66 @@ begin
    -- Reset generation
    -------------------------------------
 
-   i_xpm_cdc_sync_rst_qnice : xpm_cdc_sync_rst
+   i_xpm_cdc_async_rst_qnice : xpm_cdc_async_rst
       generic map (
-         INIT_SYNC_FF => 1  -- Enable simulation init values
+         RST_ACTIVE_HIGH => 1
       )
       port map (
-         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
-         dest_clk => qnice_clk_o,      -- 1-bit input: Destination clock.
-         dest_rst => qnice_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
+         src_arst  => not (qnice_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         dest_clk  => qnice_clk_o,      -- 1-bit input: Destination clock.
+         dest_arst => qnice_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
+                                        -- This output is registered.
+      );
+
+   i_xpm_cdc_async_rst_hr : xpm_cdc_async_rst
+      generic map (
+         RST_ACTIVE_HIGH => 1,
+         DEST_SYNC_FF    => 10
+      )
+      port map (
+         -- 1-bit input: Source reset signal
+         -- Important: The HyperRAM needs to be reset when ascal is being reset! The Avalon memory interface
+         --  assumes that both ends maintain state information and agree on this state information. Therefore,
+         -- one side can not be reset in the middle of e.g. a burst transaction, without the other end becoming confused.         
+         src_arst  => not (qnice_locked and sys_rstn_i) or main_rst_o or hdmi_rst_o,
+         dest_clk  => hr_clk_x1_o,      -- 1-bit input: Destination clock.
+         dest_arst => hr_rst_o          -- 1-bit output: src_rst synchronized to the destination clock domain.
+                                        -- This output is registered.
+      );
+
+   i_xpm_cdc_async_rst_audio : xpm_cdc_async_rst
+      generic map (
+         RST_ACTIVE_HIGH => 1,
+         DEST_SYNC_FF    => 10
+      )
+      port map (
+         src_arst  => not (qnice_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         dest_clk  => audio_clk_o,      -- 1-bit input: Destination clock.
+         dest_arst => audio_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
+                                        -- This output is registered.
+      );
+
+   i_xpm_cdc_async_rst_hdmi : xpm_cdc_async_rst
+      generic map (
+         RST_ACTIVE_HIGH => 1,
+         DEST_SYNC_FF    => 10
+      )
+      port map (
+         src_arst  => not (hdmi_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         dest_clk  => hdmi_clk_o,       -- 1-bit input: Destination clock.
+         dest_arst => hdmi_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
                                        -- This output is registered.
       );
 
-   i_xpm_cdc_sync_rst_hr : xpm_cdc_sync_rst
+   i_xpm_cdc_async_rst_main : xpm_cdc_async_rst
       generic map (
-         INIT_SYNC_FF => 1  -- Enable simulation init values
+         RST_ACTIVE_HIGH => 1,
+         DEST_SYNC_FF    => 10
       )
       port map (
-         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
-         dest_clk => hr_clk_x1_o,      -- 1-bit input: Destination clock.
-         dest_rst => hr_rst_o          -- 1-bit output: src_rst synchronized to the destination clock domain.
-                                       -- This output is registered.
-      );
-
-   i_xpm_cdc_sync_rst_audio : xpm_cdc_sync_rst
-      generic map (
-         INIT_SYNC_FF => 1  -- Enable simulation init values
-      )
-      port map (
-         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
-         dest_clk => audio_clk_o,      -- 1-bit input: Destination clock.
-         dest_rst => audio_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
-                                       -- This output is registered.
-      );
-
-   i_xpm_cdc_sync_rst_hdmi : xpm_cdc_sync_rst
-      generic map (
-         INIT_SYNC_FF => 1  -- Enable simulation init values
-      )
-      port map (
-         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
-         dest_clk => hdmi_clk_o,       -- 1-bit input: Destination clock.
-         dest_rst => hdmi_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
-                                       -- This output is registered.
-      );
-
-   i_xpm_cdc_sync_rst_main : xpm_cdc_sync_rst
-      generic map (
-         INIT_SYNC_FF => 1  -- Enable simulation init values
-      )
-      port map (
-         src_rst  => not sys_rstn_i,   -- 1-bit input: Source reset signal.
-         dest_clk => main_clk_o,       -- 1-bit input: Destination clock.
-         dest_rst => main_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
+         src_arst  => not (main_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         dest_clk  => main_clk_o,       -- 1-bit input: Destination clock.
+         dest_arst => main_rst_o        -- 1-bit output: src_rst synchronized to the destination clock domain.
                                        -- This output is registered.
       );
 

@@ -27,7 +27,7 @@ entity digital_pipeline is
       G_VGA_DY               : natural;
       G_FONT_FILE            : string;
       G_FONT_DX              : natural;
-      G_FONT_DY              : natural
+      G_FONT_DY              : natural      
    );
    port (
       -- Input from Core (video and audio)

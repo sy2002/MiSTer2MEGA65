@@ -126,6 +126,7 @@ begin
          if rst_i = '1' then
             s_avm_write <= '0';
             s_avm_read  <= '0';
+            s_read_pos  <= 0;
             state       <= IDLE_ST;
          end if;
 

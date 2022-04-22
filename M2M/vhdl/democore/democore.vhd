@@ -23,7 +23,7 @@ entity democore is
       clk_main_i           : in  std_logic;
       reset_i              : in  std_logic;
       pause_i              : in  std_logic;
-      keyboard_n_i         : in  std_logic_vector(2 downto 0);
+      keyboard_n_i         : in  std_logic_vector(79 downto 0);
 
       -- Video output
       vga_ce_o             : out std_logic;

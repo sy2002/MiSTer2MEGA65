@@ -53,7 +53,7 @@ architecture beh of matrix_to_keynum is
   -- (As key repeat is checked on each of the 72 key tests, we don't need to
   -- divide the maximum repeat counters by 72.)
   signal repeat_key : integer range 0 to MAXKEY := 0;
-  signal repeat_start_timer : integer;
+  --signal repeat_start_timer : integer;
   signal repeat_again_timer : integer;
 
   signal ascii_key_valid_countdown : integer range 0 to 65535 := 0;
@@ -180,7 +180,7 @@ begin
   -- PAL and NTSC, it is for example changing. Therefore we can do the following math combinatorially
   -- as long as we constrain it correctly in the XDC file (for example using False Paths)
   keyscan_delay      <= clock_frequency / (72 * scan_frequency);
-  repeat_start_timer <= clock_frequency / scan_frequency / 2;  -- 0.5 sec
+  --repeat_start_timer <= clock_frequency / scan_frequency / 2;  -- 0.5 sec
   repeat_again_timer <= clock_frequency / scan_frequency / 10; -- 0.1 sec
   
   -- This is our first local copy that gets updated continuously by snooping

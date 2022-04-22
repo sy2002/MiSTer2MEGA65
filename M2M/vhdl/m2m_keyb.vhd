@@ -38,8 +38,8 @@ entity m2m_keyb is
       enable_core_i        : in std_logic;                     -- 0 = core is decoupled from the keyboard, 1 = standard operation      
       key_num_o            : out integer range 0 to 79;        -- cycles through all keys with SCAN_FREQUENCY
       key_pressed_n_o      : out std_logic;                    -- low active: debounced feedback: is kb_key_num_o pressed right now?
-            
-      -- control the drive led on the MEGA65 keyboard
+
+      -- control the drive led on the MEGA65 keyboard      
       drive_led_i          : in std_logic;
             
       -- interface to QNICE: used by the firmware and the Shell (see sysdef.asm for details)
