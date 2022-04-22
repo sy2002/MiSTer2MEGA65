@@ -12,17 +12,21 @@
 
 SCR$INIT        INCRB
 
+                ; @TODO: Right now we only support one "graphics card" for
+                ; QNICE, i.e. we use the same kind of screen real-estate on
+                ; both: HDMI and VGA. We plan to change this in future. The
+                ; hardware already supports it. Right now we ignore the
+                ; HDMI settings and use the VGA settings for both.
+                MOVE    M2M$RAMROM_DEV, R0      ; sysinfo device
+                MOVE    M2M$SYS_INFO, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..
-                MOVE    M2M$SYS_VGA, R1         ; .. for VGA graphics 0
-                MOVE    R1, @R0
-                MOVE    M2M$RAMROM_DEV, R0
-                MOVE    M2M$SYS_INFO, R1
-                MOVE    R1, @R0
+                MOVE    M2M$SYS_VGA, @R0        ; .. for VGA graphics 0
 
                 MOVE    M2M$SYS_DXDY, R0        ; save hardware dx
                 MOVE    SCR$SYS_DX, R1
                 SWAP    @R0, @R1
                 AND     0x00FF, @R1
+                MOVE    @R1, R2                 ; R2: remember hardware dx
 
                 MOVE    SCR$SYS_DY, R1          ; save hardware dy
                 MOVE    @R0, @R1
@@ -46,23 +50,28 @@ SCR$INIT        INCRB
                 MOVE    @R0, @R1
                 AND     0x00FF, @R1
 
-                MOVE    M2M$SHELL_O_XY, R0      ; save option/help OSM x
-                MOVE    SCR$OSM_O_X, R1
-                SWAP    @R0, @R1
-                AND     0x00FF, @R1
+                ; Option/Help menu
+                ; the position of the OSM on screen is derived from the
+                ; width: We align it at the top/right corner of the screen
+                MOVE    M2M$RAMROM_DEV, R0      ; config.vhd device
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0    ; "dimenions" selector
+                MOVE    M2M$CFG_OPTM_DIM, @R0
 
-                MOVE    SCR$OSM_O_Y, R1         ; save option/help OSM y
-                MOVE    @R0, @R1
-                AND     0x00FF, @R1
-
-                MOVE    M2M$SHELL_O_DXDY, R0    ; save option/help OSM dx
+                MOVE    M2M$SHELL_O_DX, R0      ; save option/help OSM dx
                 MOVE    SCR$OSM_O_DX, R1
-                SWAP    @R0, @R1
-                AND     0x00FF, @R1
-
-                MOVE    SCR$OSM_O_DY, R1        ; save option/help OSM dy
                 MOVE    @R0, @R1
-                AND     0x00FF, @R1
+
+                MOVE    SCR$OSM_O_X, R3         ; find out OSM x start pos
+                SUB     @R1, R2                 ; R2 still contains screen dx
+                MOVE    R2, @R3
+
+                MOVE    SCR$OSM_O_Y, R0         ; y start pos = 0
+                MOVE    0, @R0
+
+                MOVE    M2M$SHELL_O_DY, R0      ; save option/help OSM dy
+                MOVE    SCR$OSM_O_DY, R1
+                MOVE    @R0, @R1
 
                 MOVE    SCR$ILX, R0             ; inner left x coordinate
                 MOVE    0, @R0
@@ -80,19 +89,25 @@ SCR$INIT        INCRB
 
 SCR$OSM_M_ON    INCRB
 
-                MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..
-                MOVE    M2M$SYS_VGA, R1         ; .. for VGA graphics 0
-                MOVE    R1, @R0
-                MOVE    M2M$RAMROM_DEV, R0
-                MOVE    M2M$SYS_INFO, R1
-                MOVE    R1, @R0
+                MOVE    SCR$OSM_M_X, R0
+                MOVE    @R0, R0
+                SWAP    R0, R0
+                MOVE    SCR$OSM_M_Y, R1
+                MOVE    @R1, R1
+                AND     0x00FF, R1
+                OR      R1, R0
+                MOVE    M2M$OSM_XY, R1
+                MOVE    R0, @R1
 
-                MOVE    M2M$OSM_XY, R0          ; take x|y of OSM from ..
-                MOVE    M2M$SHELL_M_XY, R1      ; .. VHDL generics
-                MOVE    @R1, @R0
-                MOVE    M2M$OSM_DXDY, R0        ; take dx|dy of OSM from ..
-                MOVE    M2M$SHELL_M_DXDY, R1    ; .. VHDL generics
-                MOVE    @R1, @R0
+                MOVE    SCR$OSM_M_DX, R0
+                MOVE    @R0, R0
+                SWAP    R0, R0
+                MOVE    SCR$OSM_M_DY, R1
+                MOVE    @R1, R1
+                AND     0x00FF, R1
+                OR      R1, R0
+                MOVE    M2M$OSM_DXDY, R1
+                MOVE    R0, @R1
 
                 MOVE    M2M$CSR, R0             ; activate OSM
                 OR      M2M$CSR_OSM, @R0
@@ -106,19 +121,25 @@ SCR$OSM_M_ON    INCRB
 
 SCR$OSM_O_ON    INCRB
 
-                MOVE    M2M$RAMROM_4KWIN, R0    ; select system info window..
-                MOVE    M2M$SYS_VGA, R1         ; .. for VGA graphics 0
-                MOVE    R1, @R0
-                MOVE    M2M$RAMROM_DEV, R0
-                MOVE    M2M$SYS_INFO, R1
-                MOVE    R1, @R0
+                MOVE    SCR$OSM_O_X, R0
+                MOVE    @R0, R0
+                SWAP    R0, R0
+                MOVE    SCR$OSM_O_Y, R1
+                MOVE    @R1, R1
+                AND     0x00FF, R1
+                OR      R1, R0
+                MOVE    M2M$OSM_XY, R1
+                MOVE    R0, @R1
 
-                MOVE    M2M$OSM_XY, R0          ; take x|y of OSM from ..
-                MOVE    M2M$SHELL_O_XY, R1      ; .. VHDL generics
-                MOVE    @R1, @R0
-                MOVE    M2M$OSM_DXDY, R0        ; take dx|dy of OSM from ..
-                MOVE    M2M$SHELL_O_DXDY, R1    ; .. VHDL generics
-                MOVE    @R1, @R0
+                MOVE    SCR$OSM_O_DX, R0
+                MOVE    @R0, R0
+                SWAP    R0, R0
+                MOVE    SCR$OSM_O_DY, R1
+                MOVE    @R1, R1
+                AND     0x00FF, R1
+                OR      R1, R0
+                MOVE    M2M$OSM_DXDY, R1
+                MOVE    R0, @R1
 
                 MOVE    M2M$CSR, R0             ; activate OSM
                 OR      M2M$CSR_OSM, @R0

@@ -22,10 +22,10 @@ HELP_MENU       SYSCALL(enter, 1)
                 CMP     M2M$KEY_HELP, R8        ; help key pressed?
                 RBRA    _HLP_RET_DIRECT, !Z                
 
-                ; Deactivate keyboard and joysticks, so that the key strokes
-                ; done during the OSD is on are not passed along to the core
-                MOVE    M2M$CSR, R0
-                AND     M2M$CSR_UN_KBD_JOY, @R0
+                ; If configured in config.vhd, deactivate keyboard and
+                ; joysticks, so that the key strokes done during the OSD is on
+                ; are not passed along to the core
+                RSUB    RP_OPTM_START, 1
 
                 ; Copy menu items from config.vhd to heap
                 MOVE    M2M$RAMROM_DEV, R0
@@ -194,8 +194,11 @@ _HLP_RESETPOS   MOVE    OPTM_START, R0
                 ; that the Return key press is not registered by the core
                 RSUB    WAIT333MS, 1
 
-                ; Reactivate keyboard and joysticks
+                ; Unpause (in case the core was at pause state due to
+                ; OPTM_PAUSE in config.vhd) and reactivate keyboard and
+                ; joysticks in case they were inactive
 _HLP_RET        MOVE    M2M$CSR, R0
+                AND     M2M$CSR_UN_PAUSE, @R0
                 OR      M2M$CSR_KBD_JOY, @R0
 
 _HLP_RET_DIRECT SYSCALL(leave, 1)
@@ -401,37 +404,122 @@ _OPTM_FPS_L     CMP     R2, R4
 _OPTM_FPS_RET   DECRB
                 RET                
 
-; Waits until one of the four Option Menu keys is pressed
+; Waits until one of the five Option Menu keys is pressed
 ; and returns the OPTM_KEY_* code in R8
 OPT_MENU_GETKEY INCRB
 _OPTMGK_LOOP    RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
+                RSUB    VD_MNT_ST_GET, 1        ; did mount status change..
+                RSUB    _OPTM_GK_MNT, C         ; ..while OPTM is open?
                 RSUB    KEYB$SCAN, 1            ; wait until key is pressed
                 RSUB    KEYB$GETKEY, 1
                 CMP     0, R8
                 RBRA    _OPTMGK_LOOP, Z
 
-                CMP     M2M$KEY_UP, R8          ; up
+                CMP     M2M$KEY_UP, R8          ; Up
                 RBRA    _OPTM_GK_1, !Z
                 MOVE    OPTM_KEY_UP, R8
                 RBRA    _OPTMGK_RET, 1
 
-_OPTM_GK_1      CMP     M2M$KEY_DOWN, R8        ; down
-                RBRA    _OPTM_GK_2, !Z
+_OPTM_GK_1      CMP     M2M$KEY_DOWN, R8        ; Down
+                RBRA    _OPTM_GK_2A, !Z
                 MOVE    OPTM_KEY_DOWN, R8
                 RBRA    _OPTMGK_RET, 1
 
-_OPTM_GK_2      CMP     M2M$KEY_RETURN, R8      ; return (select)
-                RBRA    _OPTM_GK_3, !Z
+_OPTM_GK_2A     CMP     M2M$KEY_RETURN, R8      ; Return (select)
+                RBRA    _OPTM_GK_2B, !Z
                 MOVE    OPTM_KEY_SELECT, R8
                 RBRA    _OPTMGK_RET, 1
 
-_OPTM_GK_3      CMP     M2M$KEY_HELP, R8        ; help (close menu)
+_OPTM_GK_2B     CMP     M2M$KEY_SPACE, R8       ; Space (alternative select)
+                RBRA    _OPTM_GK_3, !Z
+                MOVE    OPTM_KEY_SELALT, R8
+                RBRA    _OPTMGK_RET, 1           
+
+_OPTM_GK_3      CMP     M2M$KEY_HELP, R8        ; Help (close menu)
                 RBRA    _OPTMGK_LOOP, !Z        ; other key: ignore
                 MOVE    OPTM_KEY_CLOSE, R8
 
 _OPTMGK_RET     DECRB
                 RET
 
+                ; the archetypical situation that the mount status changes
+                ; "in the background" (i.e. not controlled by any) callback
+                ; function, while the OPTM is open is a "Smart Reset" reset of
+                ; the core. "Core" as in "core only", not the M2M framework.
+_OPTM_GK_MNT    SYSCALL(enter, 1)
+
+                RSUB    VD_ACTIVE, 1            ; are there any vdrives?
+                RBRA    _OPTM_GK_MNT_R, !C      ; no: return
+
+                ; reset the menu data structure according to the mount status
+                ; of the vdrives: iterate through each bit of the mount status
+                ; and set the data structure accordingly
+                XOR     R0, R0                  ; vdrive counter
+                MOVE    VDRIVES_NUM, R1         ; R1: amount of vdrives
+                MOVE    @R1, R1
+                RSUB    VD_MNT_ST_GET, 1        ; R2: current status
+                MOVE    R8, R2
+
+_OPTM_GK_MNT_1  MOVE    R0, R8                  ; R9: index of vdrive men. itm
+                RSUB    VD_MENGRP, 1
+                RBRA    _OPTM_GK_MNT_2, C
+
+                MOVE    ERR_FATAL_INST, R8      ; no menu itm for drive: fatal
+                MOVE    ERR_FATAL_INST4, R9
+                RBRA    FATAL, 1
+
+_OPTM_GK_MNT_2  MOVE    R9, R8
+                SHR     1, R2                   ; read next status bit
+                RBRA    _OPTM_GK_MNT_X1, X
+                MOVE    0, R9
+                RBRA    _OPTM_GK_MNT_3, 1
+_OPTM_GK_MNT_X1 MOVE    1, R9
+
+_OPTM_GK_MNT_3  RSUB    _HM_SETMENU, 1          ; set/unset menu item
+                                                ; (R8=menu item, R9=value)
+
+                ; update M2M$CFM_DATA accordingly:
+                ; window within M2M$CFM_DATA = R0 / 16
+                ; bit within window = R0 % 16
+                MOVE    R8, R3
+                MOVE    R8, R4
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     4, R3                   ; R3 = R0 / 16
+                AND     0x000F, R4              ; R4 = R0 % 16
+                MOVE    M2M$CFM_ADDR, R5
+                MOVE    R3, @R5
+
+                MOVE    1, R6                   ; will be used to set/del bit
+                AND     0xFFFD, SR              ; clear X
+                SHL     R4, R6
+
+                MOVE    M2M$CFM_DATA, R5
+
+                CMP     0, R9
+                RBRA    _OPTM_GK_MNT_4, !Z
+                NOT     R6, R6
+                AND     R6, @R5                 ; clear bit                               
+
+                RBRA    _OPTM_GK_MNT_5, 1
+
+_OPTM_GK_MNT_4  OR      R6, @R5                 ; set bit
+
+_OPTM_GK_MNT_5  ADD     1, R0
+                CMP     R0, R1
+                RBRA    _OPTM_GK_MNT_1, !Z              
+
+                ; a core-reset unmounts some or all drives: redraw menu to
+                ; make sure that the drives are not shown as mounted any more
+                RSUB    OPTM_SHOW, 1
+
+                ; re-show the currently selected item
+                MOVE    OPTM_CUR_SEL, R8
+                MOVE    @R8, R8
+                MOVE    OPTM_SEL_SEL, R9
+                RSUB    OPTM_SELECT, 1
+
+_OPTM_GK_MNT_R  SYSCALL(leave, 1)
+                RET
 
 ; ----------------------------------------------------------------------------
 ; Callback function that is called during the execution of the menu (OPTM_RUN)
@@ -440,9 +528,8 @@ _OPTMGK_RET     DECRB
 ; R9: selected item within menu group
 ;     in case of single selected items: 0=not selected, 1=selected
 ;
-; @TODO:
-; R10: 0=selection was done via pressing Return
-;      1=selection was done via pressing Space
+; R10: OPTM_KEY_SELECT (normally means "Return") or
+;      OPTM_KEY_SELALT (normally means "Space")
 ;
 ; For making sure that the hardware can react in "real-time" to menu item
 ; changes, i.e. even before the menu is closed, we are updating the
@@ -451,8 +538,9 @@ _OPTMGK_RET     DECRB
 
 OPTM_CB_SEL     INCRB
 
-                ; @TODO: support this feature and do not hardcode
-                MOVE    0, R10
+                ; Special treatment for help menu items
+                RSUB    HANDLE_HELP, 1
+                RBRA    _OPTMC_NOMNT, C         ; if help then no drive mount
 
                 ; Special treatment for drive-mount items: Drive-mount items
                 ; are per definition also single-select items
@@ -469,15 +557,17 @@ OPTM_CB_SEL     INCRB
                 ; Handle mounting
                 ; Input:
                 ;   R8 contains the drive number at this point
-                ;   R9: 0=unmount drive, if it has been mounted before
-                ;       1=just replace the disk image, if it has been mounted
-                ;         before without unmounting the drive (aka resetting
-                ;         the drive/"switching the drive on/off")
+                ;   R9=OPTM_KEY_SELECT:
+                ;      Just replace the disk image, if it has been mounted
+                ;      before without unmounting the drive (aka without
+                ;      resetting the drive/"switching the drive on/off")
+                ;   R9=OPTM_KEY_SELALT:
+                ;      Unmount the drive (aka "switch the drive off")
                 ;
                 ; It is important that the standard behavior runs after the
                 ; mounting is done, this is why we do RSUB and not RBRA
                 MOVE    R10, R9
-                RSUB    HANDLE_MOUNTING, 1                
+                RSUB    HANDLE_MOUNTING, 1             
 
                 ; Standard behavior
 _OPTMC_NOMNT    CMP     OPTM_CLOSE, R8          ; CLOSE = no changes: leave

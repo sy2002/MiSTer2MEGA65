@@ -6,7 +6,7 @@
 ; The intention of the Shell is to provide a uniform user interface and core
 ; automation for all MiSTer2MEGA65 projects.
 ;
-; done by sy2002 in 2021 and licensed under GPL v3
+; done by sy2002 in 2022 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -16,29 +16,9 @@
 ; The call is performed doing an RBRA not an RSUB, so the main program is
 ; not supposed to return to the caller.
 ; ----------------------------------------------------------------------------
-
-                ; ------------------------------------------------------------
-                ; Reset management
-                ; ------------------------------------------------------------
-
-                ; @TODO: different behavior of C64 core than in the framework
-                ; make reset and pause behavior configurable in config.vhd
-                ; Make sure that SCR$OSM_O_ON (and the others) are behaving
-                ; consistent to this setting in config.vhd
-                ; And anyway, as a first step the shell should keep the core
-                ; in reset state for "a while" so that it can settle and we
-                ; have no reset related bugs
-START_SHELL     MOVE    M2M$CSR, R0             ; Reset core and clear all
-                MOVE    M2M$CSR_RESET, @R0      ; other CSR flags, so that
-                                                ; no keypress propagates to
-                                                ; the core
-                MOVE    100, R1
-_RESET_A_WHILE  SUB     1, R1
-                RBRA    _RESET_A_WHILE, !Z
-                MOVE    0, @R0                  ; remove reset signal
-
+     
                 ; log M2M message to serial terminal (not visible to end user)
-                MOVE    LOG_M2M, R8
+START_SHELL     MOVE    LOG_M2M, R8
                 SYSCALL(puts, 1)
 
                 ; ------------------------------------------------------------
@@ -66,7 +46,7 @@ _RESET_A_WHILE  SUB     1, R1
                 MOVE    @R9, @R8
 
                 ; ------------------------------------------------------------
-                ; Initialize variables, libraries, IO and show welcome screen
+                ; Initialize stack, heap, variables, libraries and IO
                 ; ------------------------------------------------------------
 
                 ; initialize device (SD card) and file handle
@@ -107,85 +87,47 @@ _RESET_A_WHILE  SUB     1, R1
                 MOVE    OPTM_HEAP_SIZE, R8
                 MOVE    0, @R8
 
-                ; initialize screen library and draw the OSM frame
+                ; Initialize libraries: The order in which these libraries are
+                ; initialized matters and the initialization needs to happen
+                ; before RP_SYSTEM_START is called.
                 RSUB    SCR$INIT, 1             ; retrieve VHDL generics
                 RSUB    FRAME_FULLSCR, 1        ; draw fullscreen frame
-
-                ; use the sysinfo device to initialize the vdrives system:
-                ; get the amount of virtual drives, the device id of the
-                ; vdrives.vhd device and an array of RAM buffers for
-                ; the disk images
-                MOVE    M2M$RAMROM_DEV, R8
-                MOVE    M2M$SYS_INFO, @R8
-                MOVE    M2M$RAMROM_4KWIN, R8
-                MOVE    M2M$SYS_VDRIVES, @R8
-                MOVE    VD_NUM, R8
-                MOVE    VDRIVES_NUM, R0         ; number of virtual drives
-                MOVE    @R8, @R0
-                MOVE    @R0, R0
-                MOVE    VDRIVES_MAX, R1
-                CMP     R0, @R1                 ; vdrives > maximum?
-                RBRA    START_VD, !N            ; no: continue
-
-                MOVE    ERR_FATAL_VDMAX, R8     ; yes: stop core
-                MOVE    R0, R9
-                RBRA    FATAL, 1
-
-START_VD        MOVE    VD_DEVICE, R1           ; device id of vdrives.vhd
-                MOVE    VDRIVES_DEVICE, R2
-                MOVE    @R1, @R2
-
-                XOR     R1, R1                  ; loop var for buffer array
-                MOVE    VD_RAM_BUFFERS, R2      ; Source data from config.vhd
-                MOVE    VDRIVES_BUFS, R3        ; Dest. buf. in shell_vars.asm
-
-START_VD_CPY_1  MOVE    @R2++, @R3
-
-                RBRA    START_VD_CPY_F, Z       ; illegal values for buffer..
-                CMP     0xEEEE, @R3++           ; ..ptrs indicate that there..
-                RBRA    START_VD_CPY_2, !Z      ; ..are not enough of them:
-START_VD_CPY_F  MOVE    ERR_FATAL_VDBUF, R8     ; stop core
-                XOR     R9, R9
-                RBRA    FATAL, 1
-
-START_VD_CPY_2  ADD     1, R1
-                CMP     R0, R1
-                RBRA    START_VD_CPY_1, !Z
-
-                ; Show the welcome screen                
-                MOVE    M2M$RAMROM_DEV, R0      ; Device = config data
-                MOVE    M2M$CONFIG, @R0
-                MOVE    M2M$RAMROM_4KWIN, R0    ; Selector = Welcome screen
-                MOVE    M2M$CFG_WELCOME, @R0
-                MOVE    M2M$RAMROM_DATA, R8     ; R8 = welcome screen string
-                RSUB    SCR$PRINTSTR, 1
-
-                ; switch on main OSM
-                RSUB    SCR$OSM_M_ON, 1
-
-                ; initialize all other libraries as late as here, so that
-                ; error messages (if any) can be printed on screen because the
-                ; screen is already initialized using the sequence above
+                RSUB    VD_INIT, 1              ; virtual drive system
                 RSUB    KEYB$INIT, 1            ; keyboard library
-                RSUB    HELP_MENU_INIT, 1       ; menu library                
+                RSUB    HELP_MENU_INIT, 1       ; menu library
 
-                ; Wait for "Space to continue"
-                ; TODO: The whole startup behavior of the Shell needs to be
-                ; more flexible than this, see also README.md
-START_SPACE     RSUB    KEYB$SCAN, 1
-                RSUB    KEYB$GETKEY, 1
-                CMP     M2M$KEY_SPACE, R8
-                RBRA    START_SPACE, !Z         ; loop until Space was pressed
+                ; ------------------------------------------------------------
+                ; Reset management
+                ; ------------------------------------------------------------
 
-                ; Hide OSM
-                RSUB    SCR$OSM_OFF, 1
+                ; The reset management should be executed after HELP_MENU_INIT
+                ; so that option menu default settings that affect clock
+                ; speeds are already set in the M2M$CFM_DATA register and
+                ; therefore influencing the core directly after reset.
+                ; Of course this happens only when config.vhd is configured
+                ; such, that the core is reset at all at this point in time.
+                ; The Control & Status Register (M2M$CSR) is reset/initialized
+                ; too, so any setting done before this line is ignored
+                RSUB    RP_SYSTEM_START, 1
 
-                ; Connect keyboard and joysticks to the core.
-                ; Avoid that the keypress to exit the splash screen gets
-                ; noticed by the core: Wait 1 second and only after that
-                ; connect the keyboard and the joysticks to the core
-                RSUB    WAIT333MS, 1
+                ; ------------------------------------------------------------
+                ; Welcome screen
+                ; ------------------------------------------------------------
+
+                ; Show welcome screen at all?
+                RSUB    RP_WELCOME, 1
+                RBRA    START_CONNECT, !C
+                RSUB    SHOW_WELCOME, 1
+
+                ; Unreset (in case the core is still in reset at this point
+                ; due to RESET_KEEP in config.vhd) and connect keyboard and
+                ; joysticks to the core (in case they were disconnected)
+                ; Avoid that the keypress to exit the splash screen (if any)
+                ; gets noticed by the core: Wait 0.3 second and only after
+                ; that connect the keyboard and the joysticks to the core
+START_CONNECT   RSUB    WAIT333MS, 1
                 MOVE    M2M$CSR, R0
+                AND     M2M$CSR_UN_RESET, @R0
                 OR      M2M$CSR_KBD_JOY, @R0
 
                 ; ------------------------------------------------------------
@@ -223,11 +165,12 @@ MAIN_LOOP       RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
 ;
 ; Input:
 ;   R8 contains the drive number
-;   R9: 0=unmount drive, if it has been mounted before
-;       @TODO:
-;       1=just replace the disk image, if it has been mounted
-;         before without unmounting the drive (aka resetting
-;         the drive/"switching the drive on/off")
+;   R9=OPTM_KEY_SELECT:
+;      Just replace the disk image, if it has been mounted
+;      before without unmounting the drive (aka without
+;      resetting the drive/"switching the drive on/off")
+;   R9=OPTM_KEY_SELALT:
+;      Unmount the drive (aka "switch the drive off")
 HANDLE_MOUNTING SYSCALL(enter, 1)
 
                 MOVE    R8, R7                  ; R7: drive number
@@ -468,10 +411,18 @@ _HM_SDMOUNTED7  RSUB    OPTM_SHOW, 1
                 RBRA    _HM_RET, 1
 
                 ; Virtual drive (number in R8) is already mounted
-                ; @TODO: Support two cases:
-                ; R9=0 (see function description above) and R9=1
-                ; Right now we just switch the disk image in the drive, i.e
-                ; we are hardcoded performing the case R9=1
+_HM_MOUNTED     CMP     OPTM_KEY_SELALT, R6     ; unmount the whole drive?
+                RBRA    _HM_MOUNTED_S, !Z       ; no
+
+                ; Unmount the whole drive by stobing the image mount signal
+                ; while setting the image size to zero
+                MOVE    R7, R8                  ; virtual drive number
+                XOR     R9, R9                  ; low word of image size
+                XOR     R10, R10                ; high word of image size
+                XOR     R11, R11                ; read-only
+                XOR     R12, R12
+                RSUB    VD_STROBE_IM, 1
+                RBRA    _HM_SDMOUNTED7, 1       ; redraw menu and exit
 
                 ; Make sure the current drive stays selected in M2M$CFM_DATA.
                 ; The standard semantics of menu.asm is that single-select
@@ -487,7 +438,7 @@ _HM_SDMOUNTED7  RSUB    OPTM_SHOW, 1
                 ; But menu.asm already has deleted the visual representation
                 ; at this point, so we need to hack the visual representation
                 ; of the currently open menu and actually print it.
-_HM_MOUNTED     MOVE    R7, R8                  ; R7: virtual drive number
+_HM_MOUNTED_S   MOVE    R7, R8                  ; R7: virtual drive number
                 RSUB    VD_MENGRP, 1            ; get index of menu item
                 RBRA    _HM_MOUNTED_1, C
 
@@ -500,7 +451,8 @@ _HM_MOUNTED_1   MOVE    R9, R8                  ; menu index
                 RSUB    _HM_SETMENU, 1
                 RBRA    _HM_START_MOUNT, 1      ; show browser and mount
 
-_HM_RET         SYSCALL(leave, 1)
+_HM_RET         RSUB    VD_MNT_ST_SET, 1        ; remember mount status
+                SYSCALL(leave, 1)
                 RET
 
 ; helper function that executes the menu and data structure modification
@@ -521,7 +473,7 @@ _HM_SETMENU     SYSCALL(enter, 1)
                 MOVE    R0, R11                 ; save menu index
                 MOVE    R1, @R8                 ; re-set single-select flag
 
-                MOVE    0, R8                   ; R8 = space (unset)
+                MOVE    SPACE, R8               ; R8 = space (unset)
                 CMP     0, R1
                 RBRA    _HM_SETMENU_1, Z
 
@@ -640,7 +592,7 @@ HANDLE_IO       SYSCALL(enter, 1)
 
                 ; read request pending?
 _HANDLE_IO_1    MOVE    R0, R8
-                MOVE    VD_IEC_RD, R9
+                MOVE    VD_RD, R9
                 RSUB    VD_DRV_READ, 1
                 CMP     1, R8                   ; read request?
                 RBRA    _HANDLE_IO_NXT, !Z      ; no: next drive, if any
@@ -665,21 +617,21 @@ HANDLE_DRV_RD   SYSCALL(enter, 1)
 
                 MOVE    R8, R11                 ; R11: virtual drive ID
 
-                MOVE    VD_IEC_SIZEB, R9        ; virtual drive ID still in R8
+                MOVE    VD_SIZEB, R9            ; virtual drive ID still in R8
                 RSUB    VD_DRV_READ, 1
                 MOVE    R8, R0                  ; R0=# bytes to be transmitted
                 MOVE    R11, R8
-                MOVE    VD_IEC_4K_WIN, R9
+                MOVE    VD_4K_WIN, R9
                 RSUB    VD_DRV_READ, 1
                 MOVE    R8, R1                  ; R1=start 4k win of transmis.
                 MOVE    R11, R8
-                MOVE    VD_IEC_4K_OFFS, R9
+                MOVE    VD_4K_OFFS, R9
                 RSUB    VD_DRV_READ, 1
                 MOVE    R8, R2                  ; R2=start offs in 4k win
 
                 ; transmit data to internal buffer of drive
                 MOVE    R11, R8
-                MOVE    VD_IEC_ACK, R9          ; ackknowledge sd_rd_i
+                MOVE    VD_ACK, R9              ; ackknowledge sd_rd_i
                 MOVE    1, R10
                 RSUB    VD_DRV_WRITE, 1
 
@@ -700,15 +652,15 @@ _HDR_SEND_LOOP  CMP     R6, R0                  ; transmission done?
                 MOVE    R1, @R4                 ; select window in RAM
                 MOVE    @R5++, R12              ; R12=next byte from disk img
 
-                MOVE    VD_IEC_B_ADDR, R8       ; write buffer: address
+                MOVE    VD_B_ADDR, R8           ; write buffer: address
                 MOVE    R6, R9
                 RSUB    VD_CAD_WRITE, 1
 
-                MOVE    VD_IEC_B_DOUT, R8      ; write buffer: data out
+                MOVE    VD_B_DOUT, R8           ; write buffer: data out
                 MOVE    R12, R9
                 RSUB    VD_CAD_WRITE, 1
 
-                MOVE    VD_IEC_B_WREN, R8      ; strobe write enable
+                MOVE    VD_B_WREN, R8       ; strobe write enable
                 MOVE    1, R9
                 RSUB    VD_CAD_WRITE, 1
                 XOR     0, R9
@@ -724,7 +676,7 @@ _HDR_SEND_LOOP  CMP     R6, R0                  ; transmission done?
 
                 ; unassert ACK
 _HDR_SEND_DONE  MOVE    R11, R8                 ; virtual drive ID
-                MOVE    VD_IEC_ACK, R9          ; unassert ACK
+                MOVE    VD_ACK, R9              ; unassert ACK
                 MOVE    0, R10
                 RSUB    VD_DRV_WRITE, 1
 
@@ -739,8 +691,8 @@ _HDR_SEND_DONE  MOVE    R11, R8                 ; virtual drive ID
                 ; Debug mode: Exits the main loop and starts the QNICE
                 ; Monitor which can be used to debug via UART and a
                 ; terminal program. You can return to the Shell by using
-                ; the Monitor C/R command while entering the start address
-                ; that is shown in the terminal (using the "puthex" below).
+                ; the Monitor C/R command while entering an address shown
+                ; in the terminal.
 CHECK_DEBUG     INCRB
                 MOVE    M2M$KEY_UP, R0
                 OR      M2M$KEY_RUNSTOP, R0
@@ -754,13 +706,37 @@ CHECK_DEBUG     INCRB
                 RBRA    START_MONITOR, Z        ; yes: enter debug mode
                 RET                             ; no: return to main loop
                 
-START_MONITOR   MOVE    DBG_START1, R8          ; print info message via UART
+                ; print info message via UART that shows how to return back
+                ; to the shell (either main loop or restart)
+                ; in RELEASE mode, you can also return to where you left off
+                ; else you can only restart the Shell
+START_MONITOR   MOVE    DBG_START1, R8
                 SYSCALL(puts, 1)
-                MOVE    START_SHELL, R8         ; show how to return to ..
-                SYSCALL(puthex, 1)              ; .. the shell
+
+#ifdef RELEASE
+                MOVE    _START_MON_GO, R8 
+                SYSCALL(puthex, 1)
                 MOVE    DBG_START2, R8
                 SYSCALL(puts, 1)
+                MOVE    START_SHELL, R8
+                SYSCALL(puthex, 1)
+                MOVE    DBG_START3, R8
+                SYSCALL(puts, 1)
+
+                ; enter the QNICE Monitor without allowing the QNICE Monitor
+                ; to tamper the stack or to reset the status register
+                INCRB
+                RBRA    QMON$SOFTMON, 1
+_START_MON_GO   DECRB
+                RET
+#else
+                MOVE    START_SHELL, R8
+                SYSCALL(puthex, 1)
+                MOVE    DBG_START2, R8
+                SYSCALL(puts, 1)
+
                 SYSCALL(exit, 1)                ; small/irrelevant stack leak
+#endif
 
 ; ----------------------------------------------------------------------------
 ; Fatal error:
@@ -836,10 +812,13 @@ FRAME_FULLSCR   SYSCALL(enter, 1)
 
 ; "Outsourced" code from shell.asm, i.e. this code directly accesses the
 ; shell.asm environment incl. all variables
+#include "filters.asm"
+#include "gencfg.asm"
 #include "options.asm"
 #include "selectfile.asm"
 #include "strings.asm"
 #include "vdrives.asm"
+#include "whs.asm"
 
 ; framework libraries
 #include "dirbrowse.asm"

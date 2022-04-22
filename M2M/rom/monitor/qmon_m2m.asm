@@ -1,8 +1,17 @@
 ; ****************************************************************************
 ; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
-; QNICE ROM: Modified monitor that jumps to INIT_FIRMWARE on cold start
-; instead of jumping to QMON$COLDSTART
+; QNICE ROM: Modified monitor:
+;
+; a) Jumps to INIT_FIRMWARE on cold start instead of jumping to QMON$COLDSTART
+;
+; b) Introduces "soft start" logic: The label QMON$SOFTSTART is called by
+;    the modified io_library_m2m.asm on CTRL+E and instead of resetting the
+;    status register (including the register bank counter) and the stack, the
+;    QMON$SOFTSTART uses variables in qmon_vars to restore these values
+;
+; c) To use the soft start, one can enter the monitor via QMON$SOFTMON.
+;    This is for example done by the Shell when entering the debug mode.
 ;
 ; This solution is not (Q)NICE - so with QNICE V1.7 we should find a more
 ; elegant solution that works without QNICE Monitor code hacking.
@@ -140,10 +149,23 @@ QMON$COLDSTART  AND     0x00FF, SR              ; Make sure we are in register b
 ;                SUB     0x0001, R9              ; We need one stack cell for the following call
 ;                XOR     R10, R10                ; Clear with zero words
 ;                RSUB    MEM$FILL, 1             ; Clear
-                RBRA    QMON$MAIN_LOOP, 1       ; skip redundant warmstart commands
+;                RBRA    QMON$MAIN_LOOP, 1       ; skip redundant warmstart commands
+                                                 ; due to Soft Start they are not redundant any more
 
 QMON$WARMSTART  AND     0x00FF, SR              ; Reset register bank to zero
                 MOVE    VAR$STACK_START, SP     ; Set up stack pointer to highest available address
+
+                ; QMON$SOFTMON and QMON$SOFTSTART are used for the soft start logic so even while
+                ; this code looks redundant, it is correct
+QMON$SOFTMON    MOVE    _QMON$SP, R8
+                MOVE    SP, @R8
+                MOVE    _QMON$SR, R8
+                MOVE    SR, @R8
+QMON$SOFTSTART  MOVE    _QMON$SR, R8
+                MOVE    @R8, SR
+                MOVE    _QMON$SP, R8
+                MOVE    @R8, SP
+
                 RSUB    IO$PUT_CRLF, 1
 QMON$MAIN_LOOP  MOVE    QMON$PROMPT, R8         ; Print monitor prompt
                 RSUB    IO$PUTS, 1

@@ -10,8 +10,96 @@
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
+; Initialize library
+; ----------------------------------------------------------------------------
+
+; use the sysinfo device to initialize the vdrives system:
+; get the amount of virtual drives, the device id of the vdrives.vhd device
+; and an array of RAM buffers for the disk images
+VD_INIT         SYSCALL(enter, 1)
+
+                MOVE    M2M$RAMROM_DEV, R8
+                MOVE    M2M$SYS_INFO, @R8
+                MOVE    M2M$RAMROM_4KWIN, R8
+                MOVE    M2M$SYS_VDRIVES, @R8
+                MOVE    VD_NUM, R8
+                MOVE    VDRIVES_NUM, R0         ; number of virtual drives
+                MOVE    @R8, @R0
+                MOVE    @R0, R0
+                MOVE    VDRIVES_MAX, R1
+                CMP     R0, @R1                 ; vdrives > maximum?
+                RBRA    _START_VD, !N           ; no: continue
+
+                MOVE    ERR_FATAL_VDMAX, R8     ; yes: stop core
+                MOVE    R0, R9
+                RBRA    FATAL, 1
+
+_START_VD       MOVE    VD_DEVICE, R1           ; device id of vdrives.vhd
+                MOVE    VDRIVES_DEVICE, R2
+                MOVE    @R1, @R2
+
+                XOR     R1, R1                  ; loop var for buffer array
+                MOVE    VD_RAM_BUFFERS, R2      ; Source data from config.vhd
+                MOVE    VDRIVES_BUFS, R3        ; Dest. buf. in shell_vars.asm
+
+_START_VD_CPY_1 MOVE    @R2++, @R3
+
+                RBRA    _START_VD_CPY_F, Z      ; illegal values for buffer..
+                CMP     0xEEEE, @R3++           ; ..ptrs indicate that there..
+                RBRA    _START_VD_CPY_2, !Z     ; ..are not enough of them:
+_START_VD_CPY_F MOVE    ERR_FATAL_VDBUF, R8     ; stop core
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+_START_VD_CPY_2 ADD     1, R1
+                CMP     R0, R1
+                RBRA    _START_VD_CPY_1, !Z
+
+                ; remember current mount status
+                RSUB    VD_MNT_ST_SET, 1
+
+                SYSCALL(leave, 1)
+                RET
+
+; ----------------------------------------------------------------------------
 ; Query & setter functions
 ; ----------------------------------------------------------------------------
+
+; Check if the current mount status is different from the one we remembered
+; Returns: Carry=1 if mount status is different (and in this case we remember
+; automatically the new status), else Carry=0
+; Additionally, returns the actual current mount status in R8
+VD_MNT_ST_GET   INCRB
+
+                ; retrieve current mount status
+                MOVE    OPTM_MNT_STATUS, R0
+                MOVE    VD_DRV_MOUNT, R8
+                RSUB    VD_CAD_READ, 1
+
+                ; did it change?
+                CMP     @R0, R8
+                RBRA    _VDD_C0, Z              ; no: leave with Carry=0
+
+                ; yes: it did change: remember the new status and
+                ; return with Carry=1
+                MOVE    R8, @R0
+                RBRA    _VDD_C1, 1
+
+                ; DECRB and 
+                ; RET done via _VDD_C0 and _VDD_C1 
+
+; Remember the current mount status
+VD_MNT_ST_SET   INCRB
+                MOVE    R8, R1
+
+                MOVE    OPTM_MNT_STATUS, R0
+                MOVE    VD_DRV_MOUNT, R8
+                RSUB    VD_CAD_READ, 1
+                MOVE    R8, @R0
+
+                MOVE    R1, R8
+                DECRB
+                RET
 
 ; Check if the virtual drive system is active by checking, if there is at
 ; least one virtual drive.
@@ -151,7 +239,7 @@ VD_MOUNTED      INCRB
                 MOVE    1, R0                   ; probe to check drive
                 AND     0xFFFD, SR              ; clear X
                 SHL     R8, R0                  ; drive 0 = LSB
-                MOVE    VD_IEC_DRV_MOUNT, R8    ; get bitpattern of mounted..
+                MOVE    VD_DRV_MOUNT, R8        ; get bitpattern of mounted..
                 RSUB    VD_CAD_READ, 1          ; ..drives
                 MOVE    R8, R2
                 MOVE    R1, R8                  ; restore R8 (original drv. #)
@@ -181,16 +269,16 @@ VD_STROBE_IM    INCRB
                 MOVE    R12, R4                 ; R4: disk image type
 
                 ; set file size, read-only and disk image type registers
-                MOVE    VD_IEC_SIZE_L, R8
+                MOVE    VD_SIZE_L, R8
                 MOVE    R1, R9
                 RSUB    VD_CAD_WRITE, 1
-                MOVE    VD_IEC_SIZE_H, R8
+                MOVE    VD_SIZE_H, R8
                 MOVE    R2, R9
                 RSUB    VD_CAD_WRITE, 1
-                MOVE    VD_IEC_RO, R8
+                MOVE    VD_RO, R8
                 MOVE    R3, R9
                 RSUB    VD_CAD_WRITE, 1
-                MOVE    VD_IEC_TYPE, R8
+                MOVE    VD_TYPE, R8
                 MOVE    R4, R9
                 RSUB    VD_CAD_WRITE, 1
 
@@ -201,11 +289,11 @@ VD_STROBE_IM    INCRB
                 NOT     R6, R7                  ; R7: used to clear flag
 
                 ; get current bitmask and then strobe the flag
-                MOVE    VD_IEC_IMG_MOUNT, R8
+                MOVE    VD_IMG_MOUNT, R8
                 RSUB    VD_CAD_READ, 1
                 OR      R6, R8                  ; set flag
                 MOVE    R8, R9
-                MOVE    VD_IEC_IMG_MOUNT, R8
+                MOVE    VD_IMG_MOUNT, R8
                 RSUB    VD_CAD_WRITE, 1         ; set flag in register
                 AND     R7, R9                  ; delete flag
                 RSUB    VD_CAD_WRITE, 1         ; delete flag in register
@@ -230,7 +318,7 @@ VD_CAD_READ     INCRB
                 MOVE    VDRIVES_DEVICE, R1
                 MOVE    @R1, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0
-                MOVE    VD_IEC_WIN_CAD, @R0
+                MOVE    VD_WIN_CAD, @R0
                 MOVE    @R8, R8
 
                 DECRB
@@ -247,7 +335,7 @@ VD_CAD_WRITE    INCRB
                 MOVE    VDRIVES_DEVICE, R1
                 MOVE    @R1, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0
-                MOVE    VD_IEC_WIN_CAD, @R0
+                MOVE    VD_WIN_CAD, @R0
                 MOVE    R9, @R8
 
                 DECRB
@@ -263,7 +351,7 @@ VD_DRV_READ     INCRB
                 MOVE    VDRIVES_DEVICE, R1
                 MOVE    @R1, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0
-                MOVE    VD_IEC_WIN_DRV, @R0
+                MOVE    VD_WIN_DRV, @R0
                 ADD     R8, @R0                 ; drive windows are ascending
                 MOVE    @R9, R8
 
@@ -281,7 +369,7 @@ VD_DRV_WRITE    INCRB
                 MOVE    VDRIVES_DEVICE, R1
                 MOVE    @R1, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0
-                MOVE    VD_IEC_WIN_DRV, @R0
+                MOVE    VD_WIN_DRV, @R0
                 ADD     R8, @R0                 ; drive windows are ascending
                 MOVE    R10, @R9
 

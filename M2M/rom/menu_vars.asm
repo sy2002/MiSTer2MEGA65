@@ -12,6 +12,9 @@ OPTM_Y          .BLOCK 1
 OPTM_DX         .BLOCK 1
 OPTM_DY         .BLOCK 1
 
+; currently selected menu item (real-time)
+OPTM_CUR_SEL    .BLOCK 1
+
 ; pointer to initialization record (see menu.asm for more details)
 OPTM_DATA       .BLOCK 1
 

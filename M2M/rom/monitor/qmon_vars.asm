@@ -1,8 +1,9 @@
 ; ****************************************************************************
 ; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
-; QNICE ROM: Modified monitor variable section that does not have a hardcoded
-; .ORG statement
+; a) QNICE ROM: Modified monitor variable section that does not have a
+;    hardcoded .ORG statement
+; b) Introduced two new variables: _QMON$SP and _QMON$SR
 ;
 ; This solution is not (Q)NICE - so with QNICE V1.7 we should find a more
 ; elegant solution that works without QNICE Monitor code hacking.
@@ -23,6 +24,13 @@
 ;
 
 VAR$STACK_START         .BLOCK  0x0001                  ; Here comes the stack...
+;
+;******************************************************************************************
+;* Soft Start: Remember original stack and status register
+;******************************************************************************************
+;
+_QMON$SP                .BLOCK  0x0001
+_QMON$SR                .BLOCK  0x0001
 ;
 ;******************************************************************************************
 ;* VGA control block

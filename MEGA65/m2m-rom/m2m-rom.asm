@@ -125,7 +125,7 @@ HEAP            .BLOCK 1
 HEAP_SIZE       .EQU 28672                      ; 29696 - 1024 = 28672
 HEAP            .BLOCK 1
 
-; The monitor variables use 20 words, round to 32 for being safe and subtract
+; The monitor variables use 22 words, round to 32 for being safe and subtract
 ; it from FF00 because this is at the moment the highest address that we
 ; can use as RAM: 0xFEE0
 ; The stack starts at 0xFEE0 (search var VAR$STACK_START in osm_rom.lis to

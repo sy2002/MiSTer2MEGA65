@@ -20,8 +20,9 @@ OPTM_SINGLESEL  .EQU 0x8000                     ; AND mask: single select item
 
 OPTM_KEY_UP     .EQU 1
 OPTM_KEY_DOWN   .EQU 2
-OPTM_KEY_SELECT .EQU 3
+OPTM_KEY_SELECT .EQU 3                          ; normally this is Return
 OPTM_KEY_CLOSE  .EQU 4
+OPTM_KEY_SELALT .EQU 5                          ; normally this is Space
 
 ; ----------------------------------------------------------------------------
 ; Action codes for the OPTM_FP_SELECT function
@@ -70,6 +71,8 @@ OPTM_FP_GETKEY  .EQU 6
 ; R8: selected menu group (as defined in OPTM_IR_GROUPS)
 ; R9: selected item within menu group
 ;     in case of single selected items: 0=not selected, 1=selected
+; R10: OPTM_KEY_SELECT=selection was done using standard key (normally Enter)
+;      OPTM_KEY_SELALT=selection was done using alternative key (norm. Space)
 OPTM_CLBK_SEL   .EQU 7
 
 ; Callback function: OPTM_SHOW will call it each time it finds a "%s" inside
@@ -138,6 +141,10 @@ OPTM_INIT       INCRB
                 MOVE    R11, @R0
                 MOVE    OPTM_DY, R0
                 MOVE    R12, @R0
+                MOVE    OPTM_CUR_SEL, R0
+                MOVE    0, @R0
+                MOVE    OPTM_SSMS, R0
+                MOVE    0, @R0
                 DECRB
                 RET
 
@@ -390,6 +397,8 @@ _OPTM_RUN_SEL   MOVE    OPTM_FP_SELECT, R7      ; select line
                 MOVE    R2, R8                  ; R8: selected item
                 MOVE    OPTM_SEL_SEL, R9
                 RSUB    _OPTM_CALL, 1
+                MOVE    OPTM_CUR_SEL, R8        ; remember for ext. routines..
+                MOVE    R2, @R8                 ; to be able to process it
 
                 MOVE    OPTM_FP_GETKEY, R7      ; get next keypress
                 RSUB    _OPTM_CALL, 1
@@ -432,11 +441,14 @@ _OPTM_KD_NWA    ADD     1, R2                   ; one element down
                 RBRA    _OPTM_RUN_4, 1          ; no: continue searching
 
 _OPTM_RUN_5     CMP     OPTM_KEY_CLOSE, R8      ; key: close?
-                RBRA    _OTM_RUN_6, !Z          ; no: check other key
+                RBRA    _OPTM_RUN_6A, !Z        ; no: check other key
                 MOVE    R2, R8                  ; return selected item
                 RBRA    _OPTM_RUN_RET, 1
 
-_OTM_RUN_6      CMP     OPTM_KEY_SELECT, R8     ; key: select?
+_OPTM_RUN_6A    CMP     OPTM_KEY_SELECT, R8     ; key: select?
+                RBRA    _OPTM_RUN_6B, !Z
+                RBRA    _OPTM_RUN_6C, 1
+_OPTM_RUN_6B    CMP     OPTM_KEY_SELALT, R8
                 RBRA    _OPTM_RUN_SEL, !Z       ; no: ignore key
 
                 ; avoid "double-firing" of already selected items by
@@ -449,6 +461,8 @@ _OTM_RUN_6      CMP     OPTM_KEY_SELECT, R8     ; key: select?
                 ; where OPTM_IR_STDSE resides in RAM; otherwise the menu
                 ; actually does "double-fire" and the application program
                 ; needs to be robust enough to not fail in this case
+_OPTM_RUN_6C    MOVE    R8, R11                 ; R11: remember selection key
+
                 MOVE    OPTM_DATA, R6           ; already selected?
                 MOVE    @R6, R6
                 ADD     OPTM_IR_STDSEL, R6
@@ -456,7 +470,7 @@ _OTM_RUN_6      CMP     OPTM_KEY_SELECT, R8     ; key: select?
                 ADD     R2, R6
                 MOVE    R6, R7                  ; remember R6 for later
                 CMP     0, @R6
-                RBRA    _OPTM_RUN_6A, Z         ; no: not selected
+                RBRA    _OPTM_RUN_6D, Z         ; no: not selected
 
                 ; yes: selected: is it a single-select item?
                 MOVE    OPTM_DATA, R6
@@ -492,14 +506,15 @@ _OTM_RUN_6      CMP     OPTM_KEY_SELECT, R8     ; key: select?
                 RSUB    _OPTM_CALL, 1           ; ..on screen
 
                 MOVE    @SP++, R8               ; group id
-                XOR     R9, R9                  
+                XOR     R9, R9
+                MOVE    R11, R10                ; selection key
                 MOVE    OPTM_CLBK_SEL, R7       ; call callback
                 RSUB    _OPTM_CALL, 1
                 
                 RBRA    _OPTM_RUN_SEL, 1        ; continue main loop of menu
 
                 ; proceed in case of multi-sel. with the not yet selected item
-_OPTM_RUN_6A    MOVE    OPTM_DATA, R6           ; R6: selected group
+_OPTM_RUN_6D    MOVE    OPTM_DATA, R6           ; R6: selected group
                 MOVE    @R6, R6
                 ADD     OPTM_IR_GROUPS, R6
                 MOVE    @R6, R6
@@ -589,6 +604,7 @@ _OPTM_RUN_13    ADD     1, R10                  ; increase absolute pos
 
 _OPTM_RUN_14    MOVE    R6, R8                  ; R8: return selected group
                                                 ; R9: return sel. item in grp
+                MOVE    R11, R10                ; R10: selection key
                 MOVE    OPTM_CLBK_SEL, R7       ; call callback
                 RSUB    _OPTM_CALL, 1
 

@@ -22,8 +22,8 @@
                 .ORG    0x0000                  ; start in ROM
 
 ; include QNICE Monitor for SYSCALL "operating system" functions
-#include "qmon_m2m.asm"
-#include "../../QNICE/monitor/io_library.asm"
+#include "monitor/qmon_m2m.asm"
+#include "monitor/io_library_m2m.asm"
 #include "../../QNICE/monitor/string_library.asm"
 #include "../../QNICE/monitor/mem_library.asm"
 #include "../../QNICE/monitor/debug_library.asm"
