@@ -74,45 +74,48 @@ type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE;
 
 constant SCR_WELCOME : string :=
 
-   "\n Demo Core for MEGA65 Version 1\n\n" &
-   
-   " MiSTer port 2022 by MJoergen & sy2002\n" &   
-   " Powered by MiSTer2MEGA65\n\n\n" &
-     
-   " While the Core is running: Press the HELP key\n" &
-   " to mount drives and to configure the core.\n\n" &
-   
-   " Both SD card slots are supported: The card\n" &
-   " in the back has higher precedence than the\n" &
-   " card at the bottom of the MEGA65.\n\n" &
-   
-   " While you are in the file browser:\n" &
-   "   F1: Switch to internal SD card\n" &
-   "   F3: Switch to external SD card\n" & 
-   
-   "\n\n Press Space to continue.";
+   "Name of the Demo Core Version 1.0\n" &
+   "MiSTer port done by Demo Author in 2022\n\n" &
+
+   -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving these lines in
+   "Powered by MiSTer2MEGA65 Version [WIP],\n" &
+   "done by sy2002 and MJoergen in 2022\n" &
+
+   "\n\nEdit config.vhd to modify welcome screen.\n\n" &
+   "You can for example show the keyboard map.\n" &
+   "Look at this example from Game Boy Color:\n\n\n" &
+
+   "    MEGA65               Game Boy\n" & 
+   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
+   "    Cursor keys          Joypad\n" &
+   "    Space                Start\n" &
+   "    Enter                Select\n" &
+   "    Left Shift           A\n" &
+   "    MEGA65 key           B\n" &
+   "    Help                 Options menu\n\n\n" &
+
+   "\n\n    Press Space to continue.\n\n\n";
    
 constant HELP_1 : string :=
 
    "\n Demo Core for MEGA65 Version 1\n\n" &
    
-   " MiSTer port 2022 by MJoergen & sy2002\n" &   
+   " MiSTer port 2022 by YOU\n" &   
    " Powered by MiSTer2MEGA65\n\n\n" &
    
    " When browsing disk images to mount a drive:\n\n" &
    
-   " Cursor up/down:     File up/down\n" &
-   " Cursor left/right:  Page up/down\n" &
-   " Run/Stop:           Cancel browsing\n" &
-   " F1:                 Internal SD card\n" &
-   " F3:                 External SD card\n" &
-   " Enter:              Mount drive\n" &
-   " Space:              Unmount drive\n" &
-   " Help:               Close menu\n\n" &
-
-   " If you create a ""/m2m"" folder on your\n" &
-   " SD card, then by default the file browser\n" &
-   " will start there.\n\n" &
+   " ============================================\n" &
+   " Lorem ipsum dolor sit amet, consetetur\n" &
+   " sadipscing elitr, sed diam nonumy eirmod te.\n" &
+   " Mpor invidunt ut labore et dolore magna\n" &
+   " aliquyam erat, sed diam voluptua. At vero\n" &
+   " eos et accusam et justo duo.\n\n" &
+   
+   " Dolores et ea rebum. Stet clita kasd guber,\n" &
+   " gren, no sea takimata sanctus est Lorem ip.\n" &
+   " Sed diam nonumy eirmod tempor invidunt ut.\n" &
+   " labore et dolore magna aliquyam erat.\n\n" &
    
    " Cursor right to learn more.       (1 of 3)\n" &
    " Press Space to close the help screen.";
@@ -231,11 +234,11 @@ constant RESET_COUNTER     : natural := 100;
 constant OPTM_PAUSE        : boolean := false;
 
 -- show the welcome screen in general
-constant WELCOME_ACTIVE    : boolean := false;
+constant WELCOME_ACTIVE    : boolean := true;
 
 -- shall the welcome screen also be shown after the core is reset?
 -- (only relevant if WELCOME_ACTIVE is true)
-constant WELCOME_AT_RESET  : boolean := false;
+constant WELCOME_AT_RESET  : boolean := true;
 
 -- keyboard and joystick connection during reset and OSD
 constant KEYBOARD_AT_RESET : boolean := false;
