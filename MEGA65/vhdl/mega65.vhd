@@ -129,9 +129,6 @@ constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 -- Democore & example stuff: Delete before starting to port your own core
 ---------------------------------------------------------------------------------------------
 
--- the example menu allows you to switch the HDMI output frequency between 50Hz and 60Hz
-constant C_MENU_60_HZ         : natural := 10;
-
 -- example virtual drive handler, which is connected to nothing and only here to demo
 -- the file- and directory browsing capabilities of the firmware
 constant C_DEV_DEMO_VD        : std_logic_vector(15 downto 0) := x"0101";
