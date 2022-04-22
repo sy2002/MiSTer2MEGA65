@@ -44,7 +44,8 @@ entity vga_controller is
       reset_n   : in  std_logic;  -- active low sycnchronous reset
       h_sync    : out std_logic;  -- horiztonal sync pulse
       v_sync    : out std_logic;  -- vertical sync pulse
-      disp_ena  : out std_logic;  -- display enable ('1' = display time, '0' = blanking time)
+      h_blank   : out std_logic;  -- horiztonal blanking
+      v_blank   : out std_logic;  -- vertical blanking
       column    : out integer;    -- horizontal pixel coordinate
       row       : out integer;    -- vertical pixel coordinate
       n_blank   : out std_logic;  -- direct blacking output to dac
@@ -112,11 +113,18 @@ begin
                row <= v_count;            -- set vertical pixel coordinate
             end if;
 
-            -- set display enable output
-            if h_count < h_pixels and v_count < v_pixels then     -- display time
-               disp_ena <= '1';                                   -- enable display
-            else                                                  -- blanking time
-               disp_ena <= '0';                                   -- disable display
+            -- set horizontal blanking
+            if h_count < h_pixels then    -- display time
+               h_blank <= '0';            -- enable display
+            else                          -- blanking time
+               h_blank <= '1';            -- disable display
+            end if;
+
+            -- set vertical blanking
+            if v_count < v_pixels then    -- display time
+               v_blank <= '0';            -- enable display
+            else                          -- blanking time
+               v_blank <= '1';            -- disable display
             end if;
          end if;
 
@@ -125,7 +133,8 @@ begin
             v_count := 0;           -- reset vertical counter
             h_sync   <= not h_pol;  -- deassert horizontal sync
             v_sync   <= not v_pol;  -- deassert vertical sync
-            disp_ena <= '0';        -- disable display
+            h_blank <= '1';         -- disable display
+            v_blank <= '1';         -- disable display
             column   <= 0;          -- reset column pixel coordinate
             row      <= 0;          -- reset row pixel coordinate
          end if;

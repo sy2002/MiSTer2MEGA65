@@ -34,7 +34,8 @@ entity main is
       video_blue_o           : out std_logic_vector(7 downto 0);
       video_vs_o             : out std_logic;
       video_hs_o             : out std_logic;
-      video_de_o             : out std_logic;
+      video_hblank_o         : out std_logic;
+      video_vblank_o         : out std_logic;
 
       -- Audio output (Signed PCM)
       audio_left_o           : out signed(15 downto 0);
@@ -77,7 +78,8 @@ begin
          vga_blue_o           => video_blue_o,
          vga_vs_o             => video_vs_o,
          vga_hs_o             => video_hs_o,
-         vga_de_o             => video_de_o,
+         vga_hblank_o         => video_hblank_o,
+         vga_vblank_o         => video_vblank_o,
          audio_left_o         => audio_left_o,
          audio_right_o        => audio_right_o
       ); -- i_democore

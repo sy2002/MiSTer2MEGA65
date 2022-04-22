@@ -7,6 +7,7 @@ entity video_overlay is
       G_SHIFT          : integer := 0;    -- Deprecated. Will be removed in future release
       G_VGA_DX         : natural;
       G_VGA_DY         : natural;
+      G_FONT_FILE      : string;
       G_FONT_DX        : natural;
       G_FONT_DY        : natural
    );
@@ -99,6 +100,7 @@ begin
       generic map (
          G_VGA_DX             => G_VGA_DX,
          G_VGA_DY             => G_VGA_DY,
+         G_FONT_FILE          => G_FONT_FILE,
          G_FONT_DX            => G_FONT_DX,
          G_FONT_DY            => G_FONT_DY
       )

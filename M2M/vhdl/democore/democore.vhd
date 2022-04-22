@@ -32,7 +32,8 @@ entity democore is
       vga_blue_o           : out std_logic_vector(7 downto 0);
       vga_vs_o             : out std_logic;
       vga_hs_o             : out std_logic;
-      vga_de_o             : out std_logic;
+      vga_hblank_o         : out std_logic;
+      vga_vblank_o         : out std_logic;
 
       -- Audio output (Signed PCM)
       audio_left_o         : out signed(15 downto 0);
@@ -48,13 +49,14 @@ architecture synthesis of democore is
    alias video_clk_i : std_logic is clk_main_i;
    alias audio_clk_i : std_logic is clk_main_i;
 
-   signal video_red   : std_logic_vector(7 downto 0);
-   signal video_green : std_logic_vector(7 downto 0);
-   signal video_blue  : std_logic_vector(7 downto 0);
-   signal video_vs    : std_logic;
-   signal video_hs    : std_logic;
-   signal video_de    : std_logic;
-   signal video_ce    : std_logic;
+   signal video_red    : std_logic_vector(7 downto 0);
+   signal video_green  : std_logic_vector(7 downto 0);
+   signal video_blue   : std_logic_vector(7 downto 0);
+   signal video_vs     : std_logic;
+   signal video_hs     : std_logic;
+   signal video_vblank : std_logic;
+   signal video_hblank : std_logic;
+   signal video_ce     : std_logic;
 
    signal video_pos_x : std_logic_vector(15 downto 0);
    signal video_pos_y : std_logic_vector(15 downto 0);
@@ -82,7 +84,8 @@ begin
          reset_n   => '1',
          h_sync    => video_hs,
          v_sync    => video_vs,
-         disp_ena  => video_de,
+         h_blank   => video_hblank,
+         v_blank   => video_vblank,
          column    => video_pixel_x,
          row       => video_pixel_y,
          n_blank   => open,
@@ -109,7 +112,7 @@ begin
    begin
       if rising_edge(video_clk_i) then
          video_ce <= not video_ce;
-         if video_de then
+         if not (video_hblank or video_vblank) then
             vga_red_o   <= video_red;
             vga_green_o <= video_green;
             vga_blue_o  <= video_blue;
@@ -120,7 +123,8 @@ begin
          end if;
          vga_hs_o <= video_hs;
          vga_vs_o <= video_vs;
-         vga_de_o <= video_de;
+         vga_hblank_o <= video_hblank;
+         vga_vblank_o <= video_vblank;
       end if;
    end process p_rgb;
 

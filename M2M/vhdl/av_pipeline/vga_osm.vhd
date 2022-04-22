@@ -23,6 +23,7 @@ entity vga_osm is
    generic  (
       G_VGA_DX             : natural;
       G_VGA_DY             : natural;
+      G_FONT_FILE          : string;
       G_FONT_DX            : natural;
       G_FONT_DY            : natural
    );
@@ -106,7 +107,7 @@ begin
          ADDR_WIDTH   => 12,
          DATA_WIDTH   => 16,
          ROM_PRELOAD  => true,
-         ROM_FILE     => "../font/Anikki-16x16.rom",
+         ROM_FILE     => G_FONT_FILE,
          FALLING_A    => true
       )
       port map

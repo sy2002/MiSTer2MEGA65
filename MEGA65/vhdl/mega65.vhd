@@ -110,12 +110,9 @@ constant HDMI_CLK_SPEED       : natural := 74_250_000;
 --    FONT_*  size of one OSM character
 constant VGA_DX               : natural := 720;
 constant VGA_DY               : natural := 576;
+constant FONT_FILE            : string  := "../font/Anikki-16x16.rom";
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
-
--- OSM size: Important: Make sure that the OSM's height (OSM_DY) equals config.vhd's OPTM_SIZE + 2
-constant OSM_DX               : natural := 22;
-constant OSM_DY               : natural := 25 + 2;
 
 -- Constants for the OSM screen memory
 constant CHARS_DX             : natural := VGA_DX / FONT_DX;
@@ -192,7 +189,8 @@ signal main_video_green       : std_logic_vector(7 downto 0);
 signal main_video_blue        : std_logic_vector(7 downto 0);
 signal main_video_vs          : std_logic;
 signal main_video_hs          : std_logic;
-signal main_video_de          : std_logic;
+signal main_video_hblank      : std_logic;
+signal main_video_vblank      : std_logic;
 
 -- On-Screen-Menu (OSM) for VGA
 signal main_osm_cfg_enable   : std_logic;
@@ -264,8 +262,8 @@ constant C_VD_BUFFER          : vd_buf_array := (  C_DEV_DEMO_NOBUFFER,
                                                    x"EEEE");                           -- Always finish the array using x"EEEE"
 
 -- Sysinfo device for the two graphics adaptors that the firmware uses for the on-screen-display 
-signal sys_info_vga  : std_logic_vector(79 downto 0);
-signal sys_info_hdmi : std_logic_vector(79 downto 0);
+signal sys_info_vga  : std_logic_vector(47 downto 0);
+signal sys_info_hdmi : std_logic_vector(47 downto 0);
 
 -- VRAM
 signal qnice_vram_data        : std_logic_vector(15 downto 0);
@@ -368,7 +366,8 @@ begin
          video_blue_o           => main_video_blue,
          video_vs_o             => main_video_vs,  -- positive polarity
          video_hs_o             => main_video_hs,  -- positive polarity
-         video_de_o             => main_video_de,
+         video_hblank_o         => main_video_hblank,
+         video_vblank_o         => main_video_vblank,
 
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_l,
@@ -527,8 +526,6 @@ begin
                      when X"000" => qnice_ramrom_data_i <= sys_info_vga(15 downto  0);
                      when X"001" => qnice_ramrom_data_i <= sys_info_vga(31 downto 16);
                      when X"002" => qnice_ramrom_data_i <= sys_info_vga(47 downto 32);
-                     when X"003" => qnice_ramrom_data_i <= sys_info_vga(63 downto 48);
-                     when X"004" => qnice_ramrom_data_i <= sys_info_vga(79 downto 64);
                      when others => null;
                   end case;
 
@@ -537,8 +534,6 @@ begin
                      when X"000" => qnice_ramrom_data_i <= sys_info_hdmi(15 downto  0);
                      when X"001" => qnice_ramrom_data_i <= sys_info_hdmi(31 downto 16);
                      when X"002" => qnice_ramrom_data_i <= sys_info_hdmi(47 downto 32);
-                     when X"003" => qnice_ramrom_data_i <= sys_info_hdmi(63 downto 48);
-                     when X"004" => qnice_ramrom_data_i <= sys_info_hdmi(79 downto 64);
                      when others => null;
                   end case;
 
@@ -712,25 +707,19 @@ begin
          b_q_o          => hdmi_osm_vram_data
       ); -- i_osm_vram_hdmi
 
-
    --------------------------------------------------------
    -- Audio and Video processing pipeline
    --------------------------------------------------------
 
    hdmi_video_mode <= 0 when hdmi_osm_control_m(C_MENU_60_HZ) else 1;
 
-   i_audio_video_pipeline : entity work.audio_video_pipeline
+   i_analog_pipeline : entity work.analog_pipeline
       generic map (
-         G_HDMI_CLK_SPEED    => HDMI_CLK_SPEED,
-         G_SHIFT_HDMI        => VIDEO_MODE_VECTOR(0).H_PIXELS - VGA_DX,    -- Deprecated. Will be removed in future release
-                                                                           -- The purpose is to right-shift the position of the OSM
-                                                                           -- on the HDMI output. This will be removed when the
-                                                                           -- M2M framework supports two different OSM VRAMs.
-         G_VIDEO_MODE_VECTOR => VIDEO_MODE_VECTOR,
          G_VGA_DX            => VGA_DX,
          G_VGA_DY            => VGA_DY,
-         G_OSM_DX            => OSM_DX,
-         G_OSM_DY            => OSM_DY         
+         G_FONT_FILE         => FONT_FILE,
+         G_FONT_DX           => FONT_DX,
+         G_FONT_DY           => FONT_DY
       )
       port map (
          -- Input from Core (video and audio)
@@ -742,8 +731,9 @@ begin
          video_blue_i             => main_video_blue,
          video_hs_i               => main_video_hs,
          video_vs_i               => main_video_vs,
-         video_de_i               => main_video_de,
-         audio_clk_i              => audio_clk,
+         video_hblank_i           => main_video_hblank,
+         video_vblank_i           => main_video_vblank,
+         audio_clk_i              => audio_clk, -- 60 MHz
          audio_rst_i              => audio_rst,
          audio_left_i             => main_audio_l,
          audio_right_i            => main_audio_r,
@@ -760,6 +750,49 @@ begin
          pwm_l_o                  => pwm_l,
          pwm_r_o                  => pwm_r,
 
+         -- Connect to QNICE and Video RAM
+         video_osm_cfg_enable_i   => main_osm_cfg_enable,
+         video_osm_cfg_xy_i       => main_osm_cfg_xy,
+         video_osm_cfg_dxdy_i     => main_osm_cfg_dxdy,
+         video_osm_vram_addr_o    => main_osm_vram_addr,
+         video_osm_vram_data_i    => main_osm_vram_data,
+         scandoubler_i            => '0',
+
+         -- System info device
+         sys_info_vga_o           => sys_info_vga
+      ); -- i_analog_pipeline
+
+   i_digital_pipeline : entity work.digital_pipeline
+      generic map (
+         G_HDMI_CLK_SPEED    => HDMI_CLK_SPEED,
+         G_SHIFT_HDMI        => VIDEO_MODE_VECTOR(0).H_PIXELS - VGA_DX,    -- Deprecated. Will be removed in future release
+                                                                           -- The purpose is to right-shift the position of the OSM
+                                                                           -- on the HDMI output. This will be removed when the
+                                                                           -- M2M framework supports two different OSM VRAMs.
+         G_VIDEO_MODE_VECTOR => VIDEO_MODE_VECTOR,
+         G_VGA_DX            => VGA_DX,
+         G_VGA_DY            => VGA_DY,
+         G_FONT_FILE         => FONT_FILE,
+         G_FONT_DX           => FONT_DX,
+         G_FONT_DY           => FONT_DY
+      )
+      port map (
+         -- Input from Core (video and audio)
+         video_clk_i              => main_clk,
+         video_rst_i              => main_rst,
+         video_ce_i               => main_video_ce,
+         video_red_i              => main_video_red,
+         video_green_i            => main_video_green,
+         video_blue_i             => main_video_blue,
+         video_hs_i               => main_video_hs,
+         video_vs_i               => main_video_vs,
+         video_hblank_i           => main_video_hblank,
+         video_vblank_i           => main_video_vblank,
+         audio_clk_i              => audio_clk, -- 60 MHz
+         audio_rst_i              => audio_rst,
+         audio_left_i             => main_audio_l,
+         audio_right_i            => main_audio_r,
+
          -- Digital output (HDMI)
          hdmi_clk_i               => hdmi_clk,
          hdmi_rst_i               => hdmi_rst,
@@ -770,12 +803,8 @@ begin
          tmds_clk_n_o             => tmds_clk_n,
 
          -- Connect to QNICE and Video RAM
-         video_osm_cfg_enable_i   => main_osm_cfg_enable,
-         video_osm_cfg_xy_i       => main_osm_cfg_xy,
-         video_osm_cfg_dxdy_i     => main_osm_cfg_dxdy,
-         video_osm_vram_addr_o    => main_osm_vram_addr,
-         video_osm_vram_data_i    => main_osm_vram_data,
-         hdmi_video_mode_i        => hdmi_video_mode,
+         hdmi_video_mode_i        => '0',
+         hdmi_crop_mode_i         => '0',
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
          hdmi_osm_cfg_xy_i        => hdmi_osm_cfg_xy,
          hdmi_osm_cfg_dxdy_i      => hdmi_osm_cfg_dxdy,
@@ -783,8 +812,16 @@ begin
          hdmi_osm_vram_data_i     => hdmi_osm_vram_data,
 
          -- System info device
-         sys_info_vga_o           => sys_info_vga,
          sys_info_hdmi_o          => sys_info_hdmi,
+
+         -- QNICE connection to ascal's mode register
+         qnice_ascal_mode_i       => "00000",
+
+         -- QNICE device for interacting with the Polyphase filter coefficients
+         qnice_poly_clk_i         => '0',
+         qnice_poly_dw_i          => (others => '0'),
+         qnice_poly_a_i           => (others => '0'),
+         qnice_poly_wr_i          => '0',
 
          -- Connect to HyperRAM controller
          hr_clk_i                 => hr_clk_x1,
@@ -798,8 +835,7 @@ begin
          hr_readdata_i            => hr_readdata,
          hr_readdatavalid_i       => hr_readdatavalid,
          hr_waitrequest_i         => hr_waitrequest
-      ); -- i_audio_video_pipeline
-
+      ); -- i_digital_pipeline
 
    --------------------------------------------------------
    -- Instantiate HyperRAM controller
