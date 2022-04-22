@@ -313,14 +313,10 @@ signal qnice_config_data      : std_logic_vector(15 downto 0);
 -- QNICE On Screen Menu selections
 signal qnice_osm_control_m    : std_logic_vector(255 downto 0);
 
-constant C_MENU_FLIP_JOYS     : natural := 4;
-constant C_MENU_8580          : natural := 9;
-constant C_MENU_CRT_EMULATION : natural := 13;
-constant C_MENU_HDMI_ZOOM     : natural := 14;
-constant C_MENU_IMPROVE_AUDIO : natural := 15;
-constant C_MENU_VGA_RETRO     : natural := 19;
-constant C_MENU_HDMI_60HZ     : natural := 20;
-constant C_MENU_HDMI_FF       : natural := 21;
+constant C_MENU_HDMI_60HZ     : natural := 10;
+constant C_MENU_CRT_EMULATION : natural := 20;
+constant C_MENU_HDMI_ZOOM     : natural := 21;
+constant C_MENU_IMPROVE_AUDIO : natural := 22;
 
 -- HyperRAM
 signal hr_write         : std_logic;
@@ -434,7 +430,7 @@ begin
          reset_soft_i         => core_only_rst,
          reset_hard_i         => main_rst or main_qnice_reset,
          pause_i              => main_qnice_pause,
-         flip_joys_i          => main_osm_control_m(C_MENU_FLIP_JOYS),
+         flip_joys_i          => '0',
 
          clk_main_speed_i     => CORE_CLK_SPEED,
 

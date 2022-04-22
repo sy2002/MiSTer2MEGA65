@@ -102,20 +102,17 @@ constant HELP_1 : string :=
    
    " MiSTer port 2022 by YOU\n" &   
    " Powered by MiSTer2MEGA65\n\n\n" &
-   
-   " When browsing disk images to mount a drive:\n\n" &
-   
-   " ============================================\n" &
+      
    " Lorem ipsum dolor sit amet, consetetur\n" &
-   " sadipscing elitr, sed diam nonumy eirmod te.\n" &
+   " sadipscing elitr, sed diam nonumy eirmod\n" &
    " Mpor invidunt ut labore et dolore magna\n" &
    " aliquyam erat, sed diam voluptua. At vero\n" &
    " eos et accusam et justo duo.\n\n" &
    
-   " Dolores et ea rebum. Stet clita kasd guber,\n" &
-   " gren, no sea takimata sanctus est Lorem ip.\n" &
-   " Sed diam nonumy eirmod tempor invidunt ut.\n" &
-   " labore et dolore magna aliquyam erat.\n\n" &
+   " Dolores et ea rebum. Stet clita kasd gube\n" &
+   " gren, no sea takimata sanctus est Lorem ip\n" &
+   " Sed diam nonumy eirmod tempor invidunt ut\n" &
+   " labore et dolore magna aliquyam era\n\n" &
    
    " Cursor right to learn more.       (1 of 3)\n" &
    " Press Space to close the help screen.";
@@ -124,57 +121,33 @@ constant HELP_2 : string :=
 
    "\n Demo Core for MEGA65 Version 1\n\n" &
    
-   " Post-processing:\n\n" &
+   " XYZ ABCDEFGH:\n\n" &
 
-   " Visual post-processing only works on the\n" &
-   " HDMI output. On the VGA output, the core\n" &
-   " outputs a pure 4:3 PAL signal.\n\n" &
+   " 1. ABCD EFGH\n" &
+   " 2. IJK LM NOPQ RSTUVWXYZ\n" &
+   " 3. 10 20 30 40 50\n\n" &
    
-   " We recommend to always use the\n" &
-   " CRT emulation. The way the upscaling is done\n" &
-   " there leads to a much better picture with\n" &
-   " little to no Moire effects. And it just\n" &
-   " looks awesome.\n\n" &
+   " a) Dolores et ea rebum\n" &
+   " b) Takimata sanctus est\n" &
+   " c) Tempor Invidunt ut\n" &
+   " d) Sed Diam Nonumy eirmod te\n" &
+   " e) Awesome\n\n" &
 
-   " The Audio improvements work on the analog\n" &
-   " 3.5mm audio out as well as via HDMI audio.\n" &
-   " They fix the DC offset of the SID and reduce\n" &
-   " treble for a more authentic listening\n" &
-   " experience. Recommended.\n\n" &
-   
-   " The Zoom-in feature is mainly meant for\n" &
-   " playing games that do not use the Core's\n" &
-   " border. It looks best on a 16:9 screen.\n\n" &
+   " Ut wisi enim ad minim veniam, quis nostru\n" &
+   " exerci tation ullamcorper suscipit lobor\n" &
+   " tis nisl ut aliquip ex ea commodo.\n\n" &
    
    " Crsr left: Prev  Crsr right: Next (2 of 3)\n" &
    " Press Space to close the help screen.";
 
 constant HELP_3 : string :=
 
-   "\n Demo Core for MEGA65 Version 1\n\n" &
+   "\n Help Screens\n\n" &
    
-   " Flicker-free experience on HDMI:\n\n" &
+   " You can have 255 per help topic.\n\n" &
      
-   " 1. Make sure your HDMI display supports:\n" &
-   "    1280x720 pixels 50Hz (16:9 aspect ratio)\n\n" &   
-   "    There are displays out there that display\n" &
-   "    50Hz as 60Hz. This leads to non-optimal\n" &
-   "    and jerky movements (e.g. scrolling).\n\n" &
-   
-   " 2. ""HDMI: Flicker-free"" needs to be active.\n\n" &
-
-   " The ""HDMI: Flicker-free"" option reduces the\n" &
-   " speed of the whole Demo Core by a\n" &
-   " tiny amount: 0.25%. You probably will never\n" &
-   " notice. In case you encounter extremely rare\n" &
-   " compatibility issues: Turn off the option\n" &
-   " and try again.\n\n" &
-   
-   " System reset:\n\n" &
-   
-   " Press the MEGA65's reset button shortly to\n" &         
-   " just reset the Demo core and press the button\n" &
-   " longer than 1.5s to reset the whole system.\n\n" &
+   " 15 topics overall.\n" &
+   " 1 menu item per topic.\n\n\n\n" &   
    
    " Cursor left to go back.           (3 of 3)\n" &
    " Press Space to close the help screen.";
@@ -296,14 +269,14 @@ constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
 -- START YOUR CONFIGURATION BELOW THIS LINE:
 
 -- String with which %s will be replaced in case the menu item is of type OPTM_G_MOUNT_DRV
-constant OPTM_S_MOUNT         : string :=  "<Mount Drive>";
+constant OPTM_S_MOUNT         : string :=  "<Mount>";
 
 -- Size of menu and menu items
 -- CAUTION: 1. End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 26;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 25;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEM and amount of items in OPTM_GROUPS
 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
@@ -313,72 +286,75 @@ constant OPTM_DY           : natural := OPTM_SIZE;
                                              
 constant OPTM_ITEMS        : string :=
 
-   " Demo Core for MEGA65\n"  &
-   "\n"                       &
-   " 8:%s\n"                  &  -- %s will be replaced by OPTM_S_MOUNT when not mounted and by the filename when mounted
-   "\n"                       &
-   " Flip joystick ports\n"   &
-   "\n"                       &
-   " SID\n"                   &
-   "\n"                       &
-   " 6581\n"                  &
-   " 8580\n"                  &
-   "\n"                       &
-   " Post-processing\n"       &
-   "\n"                       &
-   " HDMI: CRT emulation\n"   &
-   " HDMI: Zoom-in\n"         &
-   " Audio improvements\n"    &
-   "\n"                       &
-   " Advanced\n"              &
-   "\n"                       &
-   " VGA: Retro 15KHz RGB\n"  &
-   " HDMI: Force 60Hz\n"      &
-   " HDMI: Flicker-free\n"    &
-   "\n"                       &
-   " About & Help\n"          &
-   "\n"                       &      
+   " Demo Headline A\n"     &
+   "\n"                     & 
+   " Item A.1\n"            &
+   " Item A.2\n"            &
+   " Item A.3\n"            &
+   " Item A.4\n"            &
+   "\n"                     &
+   " HDMI Frequency\n"      &
+   "\n"                     &
+   " 50 Hz\n"               &
+   " 60 Hz\n"               &
+   "\n"                     &
+   " Drives\n"              &
+   "\n"                     &
+   " Drive X:%s\n"          &
+   " Drive Y:%s\n"          &
+   " Drive Z:%s\n"          &
+   "\n"                     &
+   " Another Headline\n"    &
+   "\n"                     &
+   " HDMI: CRT emulation\n" &
+   " HDMI: Zoom-in\n"       &
+   " Audio improvements\n"  &
+   "\n"                     &
    " Close Menu\n";
         
-constant OPTM_G_MOUNT_8       : integer := 1;
-constant OPTM_G_MOUNT_9       : integer := 2;   -- not used, yet; each drive needs a unique group ID
-constant OPTM_G_FLIP_JOYS     : integer := 3;
-constant OPTM_G_SID           : integer := 4;
-constant OPTM_G_CRT_EMULATION : integer := 5;
-constant OPTM_G_HDMI_ZOOM     : integer := 6;
-constant OPTM_G_IMPROVE_AUDIO : integer := 7;
-constant OPTM_G_VGA_RETRO     : integer := 8;
-constant OPTM_G_HDMI_60HZ     : integer := 9;
-constant OPTM_G_HDMI_FF       : integer := 10;
-constant OPTM_G_ABOUT_HELP    : integer := 11;
+-- define your own constants here and choose meaningful names
+-- make sure that your first group uses the value 1 (0 means "no menu item", such as text and line),
+-- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
+-- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
+-- single-select items and therefore also drive mount items need to have unique identifiers
+constant OPTM_G_Demo_A     : integer := 1;
+constant OPTM_G_HDMI       : integer := 2;
+constant OPTM_G_Drive_X    : integer := 3;
+constant OPTM_G_Drive_Y    : integer := 4;
+constant OPTM_G_Drive_Z    : integer := 5;
+constant OPTM_G_CRT        : integer := 6;
+constant OPTM_G_Zoom       : integer := 7;
+constant OPTM_G_Audio      : integer := 8;
 
+-- define your menu groups: which menu items are belonging together to form a group?
+-- where are separator lines? which items should be selected by default?
+-- make sure that you have exactly the same amount of entries here than in OPTM_ITEMS and defined by OPTM_SIZE
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 65535;
-constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_HEADLINE,
-                                             OPTM_G_LINE,
-                                             OPTM_G_MOUNT_8       + OPTM_G_MOUNT_DRV   + OPTM_G_START,
-                                             OPTM_G_LINE,
-                                             OPTM_G_FLIP_JOYS     + OPTM_G_SINGLESEL,
-                                             OPTM_G_LINE,
-                                             OPTM_G_HEADLINE,
-                                             OPTM_G_LINE,
-                                             OPTM_G_SID           + OPTM_G_STDSEL,
-                                             OPTM_G_SID,
-                                             OPTM_G_LINE,
-                                             OPTM_G_HEADLINE,
-                                             OPTM_G_LINE,
-                                             OPTM_G_CRT_EMULATION + OPTM_G_SINGLESEL + OPTM_G_STDSEL,
-                                             OPTM_G_HDMI_ZOOM     + OPTM_G_SINGLESEL,
-                                             OPTM_G_IMPROVE_AUDIO + OPTM_G_SINGLESEL + OPTM_G_STDSEL,
-                                             OPTM_G_LINE,
-                                             OPTM_G_HEADLINE,
-                                             OPTM_G_LINE,
-                                             OPTM_G_VGA_RETRO     + OPTM_G_SINGLESEL,
-                                             OPTM_G_HDMI_60HZ     + OPTM_G_SINGLESEL,
-                                             OPTM_G_HDMI_FF       + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                                            
-                                             OPTM_G_LINE,
-                                             OPTM_G_ABOUT_HELP    + OPTM_G_HELP,
-                                             OPTM_G_LINE,
-                                             OPTM_G_CLOSE
+constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Demo Headline"
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_Demo_A + OPTM_G_START,             -- Item A.1, cursor start position
+                                             OPTM_G_Demo_A + OPTM_G_STDSEL,            -- Item A.2, selected by default
+                                             OPTM_G_DEMO_A,                            -- Item A.3
+                                             OPTM_G_DEMO_A,                            -- Item A.4
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Headline "HDMI Frequency"
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_HDMI + OPTM_G_STDSEL,              -- 50 Hz, selected by default
+                                             OPTM_G_HDMI,                              -- 60 Hz
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Headline "Drives"
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_Drive_X + OPTM_G_MOUNT_DRV,        -- Drive X
+                                             OPTM_G_Drive_Y + OPTM_G_MOUNT_DRV,        -- Drive Y
+                                             OPTM_G_Drive_Z + OPTM_G_MOUNT_DRV,        -- Drive Z
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Headline "Another Headline"
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_CRT     + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
+                                             OPTM_G_Zoom    + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
+                                             OPTM_G_Audio   + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_CLOSE                              -- Close Menu
                                            );
 
 --------------------------------------------------------------------------------------------------------------------

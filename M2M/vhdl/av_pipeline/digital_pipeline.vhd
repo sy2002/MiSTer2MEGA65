@@ -14,6 +14,7 @@ use ieee.numeric_std.all;
 library work;
 use work.types_pkg.all;
 use work.video_modes_pkg.all;
+use work.qnice_tools.all;
 
 library xpm;
 use xpm.vcomponents.all;
@@ -290,7 +291,11 @@ begin
       generic map (
          MASK      => x"ff",
          RAMBASE   => (others => '0'),
-         RAMSIZE   => x"0008_0000", -- = 500 kB for input buffer : dx * dy * 3 byte (RGB) per pixel and then a power of two
+         
+         -- ascal needs an input buffer according to this formula: dx * dy * 3 bytes (RGB) per pixel and then rounded up
+         -- to the next power of two
+         RAMSIZE   => to_unsigned(2**f_log2(G_VGA_DX * G_VGA_DY * 3), 32),
+         
          INTER     => false,        -- Not needed: Progressive input only
          HEADER    => false,        -- Not needed: Used on MiSTer to read the sampled image back from the ARM side to do screenshots. The header provides informations such as image size.
          DOWNSCALE => false,        -- Not needed: We use ascal only to upscale
