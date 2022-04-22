@@ -457,14 +457,14 @@ begin
 
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
-         video_ce_o             => main_video_ce,
-         video_red_o            => main_video_red,
-         video_green_o          => main_video_green,
-         video_blue_o           => main_video_blue,
-         video_vs_o             => main_video_vs,  -- positive polarity
-         video_hs_o             => main_video_hs,  -- positive polarity
-         video_hblank_o         => main_video_hblank,
-         video_vblank_o         => main_video_vblank,
+         video_ce_o           => main_video_ce,
+         video_red_o          => main_video_red,
+         video_green_o        => main_video_green,
+         video_blue_o         => main_video_blue,
+         video_vs_o           => main_video_vs,  -- positive polarity
+         video_hs_o           => main_video_hs,  -- positive polarity
+         video_hblank_o       => main_video_hblank,
+         video_vblank_o       => main_video_vblank,
 
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_l,
