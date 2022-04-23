@@ -129,6 +129,12 @@ constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 -- Democore & example stuff: Delete before starting to port your own core
 ---------------------------------------------------------------------------------------------
 
+-- Democore menu items
+constant C_MENU_HDMI_60HZ     : natural := 10;
+constant C_MENU_CRT_EMULATION : natural := 20;
+constant C_MENU_HDMI_ZOOM     : natural := 21;
+constant C_MENU_IMPROVE_AUDIO : natural := 22;
+
 -- example virtual drive handler, which is connected to nothing and only here to demo
 -- the file- and directory browsing capabilities of the firmware
 constant C_DEV_DEMO_VD        : std_logic_vector(15 downto 0) := x"0101";
@@ -309,11 +315,6 @@ signal qnice_config_data      : std_logic_vector(15 downto 0);
 
 -- QNICE On Screen Menu selections
 signal qnice_osm_control_m    : std_logic_vector(255 downto 0);
-
-constant C_MENU_HDMI_60HZ     : natural := 10;
-constant C_MENU_CRT_EMULATION : natural := 20;
-constant C_MENU_HDMI_ZOOM     : natural := 21;
-constant C_MENU_IMPROVE_AUDIO : natural := 22;
 
 -- HyperRAM
 signal hr_write         : std_logic;
