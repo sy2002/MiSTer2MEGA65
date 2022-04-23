@@ -152,7 +152,7 @@ begin
       end if;
    end process;
 
-   MEGA65 : entity work.MEGA65_Core
+   M2M : entity work.m2m
       port map
       (
          CLK            => CLK,
