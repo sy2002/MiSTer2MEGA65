@@ -27,24 +27,10 @@ use IEEE.NUMERIC_STD.ALL;
 entity keyboard is
    port (
       clk_main_i           : in std_logic;               -- core clock
-      flip_joys_i          : in std_logic;               -- flip joystick port 1 and 2
          
       -- Interface to the MEGA65 keyboard
       key_num_i            : in integer range 0 to 79;   -- cycles through all MEGA65 keys
       key_pressed_n_i      : in std_logic;               -- low active: debounced feedback: is kb_key_num_i pressed right now?
-
-      -- Interface to the MEGA65 joysticks
-      joy_1_up_n             : in std_logic;
-      joy_1_down_n           : in std_logic;
-      joy_1_left_n           : in std_logic;
-      joy_1_right_n          : in std_logic;
-      joy_1_fire_n           : in std_logic;
-
-      joy_2_up_n             : in std_logic;
-      joy_2_down_n           : in std_logic;
-      joy_2_left_n           : in std_logic;
-      joy_2_right_n          : in std_logic;
-      joy_2_fire_n           : in std_logic;            
                
       -- @TODO: Create the kind of keyboard output that your core needs
       -- "example_n_o" is a low active register and used by the demo core:
@@ -153,18 +139,6 @@ signal j2_fire_n           : std_logic;
 begin
 
    example_n_o <= key_pressed_n;
-
-   j1_up_n     <= joy_2_up_n    when flip_joys_i else joy_1_up_n; 
-   j1_down_n   <= joy_2_down_n  when flip_joys_i else joy_1_down_n;
-   j1_left_n   <= joy_2_left_n  when flip_joys_i else joy_1_left_n;
-   j1_right_n  <= joy_2_right_n when flip_joys_i else joy_1_right_n;
-   j1_fire_n   <= joy_2_fire_n  when flip_joys_i else joy_1_fire_n;
-   
-   j2_up_n     <= joy_1_up_n    when flip_joys_i else joy_2_up_n; 
-   j2_down_n   <= joy_1_down_n  when flip_joys_i else joy_2_down_n;
-   j2_left_n   <= joy_1_left_n  when flip_joys_i else joy_2_left_n;
-   j2_right_n  <= joy_1_right_n when flip_joys_i else joy_2_right_n;
-   j2_fire_n   <= joy_1_fire_n  when flip_joys_i else joy_2_fire_n;
    
    keyboard_state : process(clk_main_i)
    begin

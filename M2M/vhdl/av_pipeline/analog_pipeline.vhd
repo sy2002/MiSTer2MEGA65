@@ -56,8 +56,7 @@ entity analog_pipeline is
       video_osm_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
       video_osm_vram_addr_o  : out std_logic_vector(15 downto 0);
       video_osm_vram_data_i  : in  std_logic_vector(15 downto 0);
-      scandoubler_i          : in std_logic;
-      sys_info_vga_o         : out std_logic_vector(47 downto 0)
+      scandoubler_i          : in std_logic
    );
 end entity analog_pipeline;
 
@@ -110,18 +109,6 @@ architecture synthesis of analog_pipeline is
    end component video_mixer;
 
 begin
-
-   -- SYS_DXDY
-   sys_info_vga_o(15 downto 0) <=
-      std_logic_vector(to_unsigned((G_VGA_DX/G_FONT_DX) * 256 + (G_VGA_DY/G_FONT_DY), 16));
-
-   -- SHELL_M_XY
-   sys_info_vga_o(31 downto  16) <=
-      X"0000";
-
-   -- SHELL_M_DXDY
-   sys_info_vga_o(47 downto 32) <=
-      std_logic_vector(to_unsigned((G_VGA_DX/G_FONT_DX) * 256 + (G_VGA_DY/G_FONT_DY), 16));
 
    ---------------------------------------------------------------------------------------------
    -- Audio output (3.5 mm jack)

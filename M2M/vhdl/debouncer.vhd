@@ -19,6 +19,8 @@ port (
    
    reset_n            : in std_logic;
    dbnce_reset_n      : out std_logic;
+   
+   flip_joys_i        : in std_logic;
  
    joy_1_up_n         : in std_logic;
    joy_1_down_n       : in std_logic;

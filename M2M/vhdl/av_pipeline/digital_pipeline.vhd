@@ -21,7 +21,6 @@ use xpm.vcomponents.all;
 
 entity digital_pipeline is
    generic (
-      G_HDMI_CLK_SPEED       : natural;              -- HDMI clock speed in Hz
       G_SHIFT_HDMI           : integer;              -- Deprecated. Will be removed in future release
       G_VIDEO_MODE_VECTOR    : video_modes_vector;   -- Desired video format of HDMI output.
       G_VGA_DX               : natural;              -- Actual format of video from Core (in pixels).
@@ -91,9 +90,6 @@ entity digital_pipeline is
 end entity digital_pipeline;
 
 architecture synthesis of digital_pipeline is
-
-   constant C_FONT_DX            : natural := 16;
-   constant C_FONT_DY            : natural := 16;
 
    ---------------------------------------------------------------------------------------------
    -- pcm_clk
@@ -180,19 +176,7 @@ architecture synthesis of digital_pipeline is
 
 begin
 
-   -- SYS_DXDY
-   sys_info_hdmi_o(15 downto 0) <=
-      std_logic_vector(to_unsigned((G_VGA_DX/G_FONT_DX) * 256 + (G_VGA_DY/G_FONT_DY), 16));
-
-   -- SHELL_M_XY
-   sys_info_hdmi_o(31 downto  16) <=
-      X"0000";
-
-   -- SHELL_M_DXDY
-   sys_info_hdmi_o(47 downto 32) <=
-      std_logic_vector(to_unsigned((G_VGA_DX/G_FONT_DX) * 256 + (G_VGA_DY/G_FONT_DY), 16));
-
-   hdmi_video_mode <= G_VIDEO_MODE_VECTOR(0) when hdmi_video_mode_i = '1' else G_VIDEO_MODE_VECTOR(1);
+   hdmi_video_mode <= G_VIDEO_MODE_VECTOR(0) when hdmi_video_mode_i = '0' else G_VIDEO_MODE_VECTOR(1);
    hdmi_htotal     <= hdmi_video_mode.H_PIXELS + hdmi_video_mode.H_FP + hdmi_video_mode.H_PULSE + hdmi_video_mode.H_BP;
    hdmi_hsstart    <= hdmi_video_mode.H_PIXELS + hdmi_video_mode.H_FP;
    hdmi_hsend      <= hdmi_video_mode.H_PIXELS + hdmi_video_mode.H_FP + hdmi_video_mode.H_PULSE;
@@ -205,7 +189,6 @@ begin
    hdmi_hmax       <= (hdmi_video_mode.H_PIXELS+hdmi_video_mode.V_PIXELS*4/3)/2-1 when hdmi_crop_mode_i = '0' else hdmi_video_mode.H_PIXELS-1;
    hdmi_vmin       <= 0;
    hdmi_vmax       <= hdmi_video_mode.V_PIXELS-1;
-
 
    ---------------------------------------------------------------------------------------------
    -- Digital output (HDMI) - Audio part
@@ -245,7 +228,7 @@ begin
    -- N and CTS values for HDMI Audio Clock Regeneration.
    -- depends on pixel clock and audio sample rate
    pcm_n   <= std_logic_vector(to_unsigned((HDMI_PCM_SAMPLING * 128) / 1000, pcm_n'length)); -- 6144 is correct according to HDMI spec.
-   pcm_cts <= std_logic_vector(to_unsigned(G_HDMI_CLK_SPEED / 1000, pcm_cts'length));
+   pcm_cts <= std_logic_vector(to_unsigned(hdmi_video_mode.CLK_KHZ, pcm_cts'length));
 
    -- ACR packet rate should be 128fs/N = 1kHz
    -- pcm_clk is at 12.288 MHz
@@ -453,8 +436,8 @@ begin
    i_video_overlay : entity work.video_overlay
       generic  map (
          G_SHIFT          => G_SHIFT_HDMI,   -- Deprecated. Will be removed in future release
-         G_VGA_DX         => G_VGA_DX,  -- TBD
-         G_VGA_DY         => G_VGA_DY,  -- TBD
+         G_VGA_DX         => G_VGA_DX,       -- @TODO, as soon as we have different screen sizes for VGA and HDMI
+         G_VGA_DY         => G_VGA_DY,       -- ditto
          G_FONT_FILE      => G_FONT_FILE,
          G_FONT_DX        => G_FONT_DX,
          G_FONT_DY        => G_FONT_DY

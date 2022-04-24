@@ -22,15 +22,10 @@ entity main is
       reset_soft_i            : in  std_logic;
       reset_hard_i            : in  std_logic;
       pause_i                 : in  std_logic;
-      flip_joys_i             : in  std_logic;
 
       -- MiSTer core main clock speed:
       -- Make sure you pass very exact numbers here, because they are used for avoiding clock drift at derived clocks
       clk_main_speed_i        : in natural;
-
-      -- M2M Keyboard interface
-      kb_key_num_i            : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
-      kb_key_pressed_n_i      : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
 
       -- Video output
       video_ce_o              : out std_logic;
@@ -45,7 +40,11 @@ entity main is
       -- Audio output (Signed PCM)
       audio_left_o            : out signed(15 downto 0);
       audio_right_o           : out signed(15 downto 0);
-
+      
+      -- M2M Keyboard interface
+      kb_key_num_i            : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
+      kb_key_pressed_n_i      : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
+      
       -- MEGA65 joysticks
       joy_1_up_n_i            : in  std_logic;
       joy_1_down_n_i          : in  std_logic;
@@ -57,10 +56,7 @@ entity main is
       joy_2_down_n_i          : in  std_logic;
       joy_2_left_n_i          : in  std_logic;
       joy_2_right_n_i         : in  std_logic;
-      joy_2_fire_n_i          : in  std_logic;
-
-      -- Drive led
-      drive_led_o             : out std_logic
+      joy_2_fire_n_i          : in  std_logic
    );
 end entity main;
 
@@ -100,24 +96,10 @@ begin
    i_keyboard : entity work.keyboard
       port map (
          clk_main_i           => clk_main_i,
-         flip_joys_i          => flip_joys_i,
 
          -- Interface to the MEGA65 keyboard
          key_num_i            => kb_key_num_i,
          key_pressed_n_i      => kb_key_pressed_n_i,
-
-         -- Interface to the MEGA65 joysticks
-         joy_1_up_n           => joy_1_up_n_i,
-         joy_1_down_n         => joy_1_down_n_i,
-         joy_1_left_n         => joy_1_left_n_i,
-         joy_1_right_n        => joy_1_right_n_i,
-         joy_1_fire_n         => joy_1_fire_n_i,
-
-         joy_2_up_n           => joy_2_up_n_i,
-         joy_2_down_n         => joy_2_down_n_i,
-         joy_2_left_n         => joy_2_left_n_i,
-         joy_2_right_n        => joy_2_right_n_i,
-         joy_2_fire_n         => joy_2_fire_n_i,
 
          -- @TODO: Create the kind of keyboard output that your core needs
          -- "example_n_o" is a low active register and used by the demo core:
