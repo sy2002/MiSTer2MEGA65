@@ -63,7 +63,6 @@ entity digital_pipeline is
       hdmi_osm_cfg_dxdy_i      : in  std_logic_vector(15 downto 0);
       hdmi_osm_vram_addr_o     : out std_logic_vector(15 downto 0);
       hdmi_osm_vram_data_i     : in  std_logic_vector(15 downto 0);
-      sys_info_hdmi_o          : out std_logic_vector(47 downto 0);
     
       -- QNICE connection to ascal's mode register
       qnice_ascal_mode_i       : in unsigned(4 downto 0);

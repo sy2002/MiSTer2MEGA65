@@ -150,6 +150,8 @@ signal reset_pressed          : std_logic := '0';
 signal button_duration        : natural;
 signal reset_duration         : natural;
 
+signal dbnce_reset_n          : std_logic;
+
 --------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
@@ -160,6 +162,9 @@ signal main_qnice_pause       : std_logic;
 signal main_csr_keyboard_on   : std_logic;
 signal main_csr_joy1_on       : std_logic;
 signal main_csr_joy2_on       : std_logic;
+
+signal main_reset_m2m         : std_logic;
+signal main_reset_core        : std_logic;
 
 -- keyboard handling
 signal main_key_num           : integer range 0 to 79;
@@ -217,6 +222,8 @@ signal main_joy2_down_n       : std_logic;
 signal main_joy2_left_n       : std_logic;
 signal main_joy2_right_n      : std_logic;
 signal main_joy2_fire_n       : std_logic;
+
+signal main_flip_joyports     : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- qnice_clk
@@ -285,6 +292,9 @@ signal hdmi_osm_cfg_xy        : std_logic_vector(15 downto 0);
 signal hdmi_osm_cfg_dxdy      : std_logic_vector(15 downto 0);
 signal hdmi_osm_vram_addr     : std_logic_vector(15 downto 0);
 signal hdmi_osm_vram_data     : std_logic_vector(15 downto 0);
+
+signal hdmi_video_mode        : std_logic;
+signal hdmi_zoom_crop         : std_logic;
 
 -- QNICE On Screen Menu selections
 signal hdmi_osm_control_m     : std_logic_vector(255 downto 0);
@@ -356,6 +366,12 @@ begin
    -- Board Clock Domain: CLK
    ---------------------------------------------------------------------------------------------------------------
 
+   -- 20 ms for the reset button
+   i_dbnce_reset : entity work.debounce
+      generic map(clk_freq => BOARD_CLK_SPEED, stable_time => 20)
+      port map(clk => clk, reset_n => '1', button => RESET_N, result => dbnce_reset_n);
+
+
    reset_manager : process(CLK)
    begin
       if rising_edge(CLK) then
@@ -399,7 +415,10 @@ begin
       port map (
          clk                  => main_clk,
          reset_n              => not main_rst,
-         dbnce_reset_n        => open,
+
+         flip_joys_i          => main_flip_joyports,
+         joy_1_on             => main_csr_joy1_on,
+         joy_2_on             => main_csr_joy2_on,
  
          joy_1_up_n           => joy_1_up_n,
          joy_1_down_n         => joy_1_down_n,
@@ -541,9 +560,9 @@ begin
    -- (refer to M2M/rom/sysdef.asm for a memory map and more details)   
    qnice_ramrom_devices : process(all)
    begin
+      qnice_ramrom_data_i     <= x"EEEE";
       qnice_vram_we           <= '0';
       qnice_vram_attr_we      <= '0';
-      qnice_ramrom_data_i     <= x"EEEE";
       qnice_poly_wr           <= '0';
 
       -----------------------------------
@@ -635,7 +654,7 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 261
+         WIDTH => 262
       )
       port map (
          src_clk                => qnice_clk,
@@ -644,14 +663,16 @@ begin
          src_in(2)              => qnice_csr_keyboard_on,
          src_in(3)              => qnice_csr_joy1_on,
          src_in(4)              => qnice_csr_joy2_on,
-         src_in(260 downto 5)   => qnice_osm_control_m,
+         src_in(5)              => qnice_flip_joyports,
+         src_in(261 downto 6)   => qnice_osm_control_m,
          dest_clk               => main_clk,
          dest_out(0)            => main_qnice_reset,
          dest_out(1)            => main_qnice_pause,
          dest_out(2)            => main_csr_keyboard_on,
          dest_out(3)            => main_csr_joy1_on,
          dest_out(4)            => main_csr_joy2_on,
-         dest_out(260 downto 5) => main_osm_control_m
+         dest_out(5)            => main_flip_joyports,
+         dest_out(261 downto 6) => main_osm_control_m
       ); -- i_qnice2main
 
    -- Clock domain crossing: core to QNICE
@@ -685,20 +706,38 @@ begin
    -- Clock domain crossing: QNICE to HDMI QNICE-On-Screen-Display
    i_qnice2hdmi: xpm_cdc_array_single
       generic map (
-         WIDTH => 289
+         WIDTH => 291
       )
       port map (
          src_clk                 => qnice_clk,
          src_in(15 downto 0)     => qnice_osm_cfg_xy,
          src_in(31 downto 16)    => qnice_osm_cfg_dxdy,
          src_in(32)              => qnice_osm_cfg_enable,
-         src_in(288 downto 33)   => qnice_osm_control_m,
+         src_in(33)              => qnice_video_mode,
+         src_in(34)              => qnice_zoom_crop,
+         src_in(290 downto 35)   => qnice_osm_control_m,
          dest_clk                => hdmi_clk,
          dest_out(15 downto 0)   => hdmi_osm_cfg_xy,
          dest_out(31 downto 16)  => hdmi_osm_cfg_dxdy,
          dest_out(32)            => hdmi_osm_cfg_enable,
-         dest_out(288 downto 33) => hdmi_osm_control_m
+         dest_out(33)            => hdmi_video_mode,
+         dest_out(34)            => hdmi_zoom_crop,         
+         dest_out(290 downto 35) => hdmi_osm_control_m
       ); -- i_qnice2hdmi
+      
+   -- Clock domain crossing: Board clock domain (CLK) to core (main_clk)
+   i_board2main: xpm_cdc_array_single
+      generic map (
+         WIDTH => 2
+      )
+      port map (
+         src_clk                 => CLK,
+         src_in(0)               => not reset_m2m_n,
+         src_in(1)               => not reset_core_n,
+         dest_clk                => main_clk,
+         dest_out(0)             => main_reset_m2m,
+         dest_out(1)             => main_reset_core
+      ); 
 
    ---------------------------------------------------------------------------------------------------------------
    -- On-Screen-Menu video and attribute RAM: Dual-clock qnice_clk and main_clk
@@ -893,8 +932,8 @@ begin
          tmds_clk_n_o             => tmds_clk_n,
 
          -- Connect to QNICE and Video RAM
-         hdmi_video_mode_i        => hdmi_osm_control_m(C_MENU_HDMI_60HZ),
-         hdmi_crop_mode_i         => main_osm_control_m(C_MENU_HDMI_ZOOM),
+         hdmi_video_mode_i        => hdmi_video_mode,
+         hdmi_crop_mode_i         => hdmi_zoom_crop,
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
          hdmi_osm_cfg_xy_i        => hdmi_osm_cfg_xy,
          hdmi_osm_cfg_dxdy_i      => hdmi_osm_cfg_dxdy,
@@ -966,11 +1005,7 @@ begin
    
    MEGA65 : entity work.MEGA65_Core
       port map (
-         CLK                     => CLK,
-         
-         -- M2M's reset manager provides 2 signals:
-         --    RESET_M2M_N:   Reset the whole machine: Core and Framework
-         --    RESET_CORE_N:  Only reset the core
+         CLK                     => CLK,        
          RESET_M2M_N             => reset_m2m_n,
           
          -- Share clocks and resets with the framework
@@ -1003,7 +1038,7 @@ begin
          -- Flip joystick ports
          qnice_flip_joyports_o   => qnice_flip_joyports,
          
-         -- On-Screen-Menu selections
+         -- On-Screen-Menu selections (in QNICE clock domain)
          qnice_osm_control_i     => qnice_osm_control_m,
          
          -- Core-specific devices
@@ -1014,10 +1049,20 @@ begin
          qnice_dev_ce_i          => qnice_ramrom_ce,
          qnice_dev_we_i          => qnice_ramrom_we,
          
-            --------------------------------------------------------------------------------------------------------
+         --------------------------------------------------------------------------------------------------------
          -- Core Clock Domain
          --------------------------------------------------------------------------------------------------------
       
+         -- M2M's reset manager provides 2 signals:
+         --    m2m:   Reset the whole machine: Core and Framework
+         --    core:  Only reset the core
+         main_reset_m2m_i        => main_reset_m2m  or main_qnice_reset or main_rst,
+         main_reset_core_i       => main_reset_core or main_qnice_reset,
+         main_pause_core_i       => main_qnice_pause,
+         
+         -- On-Screen-Menu selections (in main clock domain)
+         main_osm_control_i      => main_osm_control_m,
+         
          -- Video output
          main_video_ce_o         => main_video_ce,
          main_video_red_o        => main_video_red,

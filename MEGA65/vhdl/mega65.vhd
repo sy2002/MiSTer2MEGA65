@@ -21,7 +21,7 @@ use xpm.vcomponents.all;
 entity MEGA65_Core is
 port (
    CLK                     : in std_logic;         -- 100 MHz clock
-   RESET_M2M_N             : in std_logic;         -- System reset in system clock domain
+   RESET_M2M_N             : in std_logic;         -- Debounced system reset in system clock domain
       
    -- Share clocks and resets with the framework
    qnice_clk_o             : out std_logic;        -- QNICE's 50 MHz main clock
@@ -261,16 +261,16 @@ begin
    
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
-   qnice_video_mode_o         <= qnice_osm_control_i(C_MENU_HDMI_60HZ);
-   qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);
-   qnice_zoom_crop_o          <= '0';     -- no zoom/crop
+   qnice_video_mode_o         <= qnice_osm_control_i(C_MENU_HDMI_60HZ);       -- 720p always; 0 = 50Hz, 1 = 60 Hz
+   qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
+   qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
 
    -- ascal filters that are applied while zooming the input to 720p   
    -- 00 : Nearest Neighbour
    -- 01 : Bilinear
    -- 10 : Sharp Bilinear
    -- 11 : Bicubic   
-   qnice_ascal_mode_o         <= x"00";
+   qnice_ascal_mode_o         <= "00";
     
    -- If polyphase is '1' then the ascal filter mode is ignored and polyphase filters are used instead
    -- @TODO: Right now, the filters are hardcoded in the M2M framework, we need to make them changeable inside m2m-rom.asm
@@ -289,8 +289,8 @@ begin
   
    core_specific_devices : process(all)
    begin
-      -- make sure that this is always zero by default and avoid a register here by having this default value
-      qnice_dev_data_o     <= (others => '0');
+      -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
+      qnice_dev_data_o     <= x"EEEE";
    
       -- Demo core specific: Delete before starting to port your core
       qnice_demo_vd_ce     <= '0';
@@ -310,6 +310,16 @@ begin
          when others => null;
       end case;
    end process core_specific_devices;
+
+   ---------------------------------------------------------------------------------------------
+   -- Dual Clocks
+   ---------------------------------------------------------------------------------------------
+
+   -- Put your dual-clock devices such as RAMs and ROMs here
+   --
+   -- Use the M2M framework's official RAM/ROM: dualport_2clk_ram
+   -- and make sure that the you configure the port that works with QNICE as a falling edge
+   -- by setting G_FALLING_A or G_FALLING_B (depending on which port you use) to true.
    
    ---------------------------------------------------------------------------------------
    -- Virtual drive handler
