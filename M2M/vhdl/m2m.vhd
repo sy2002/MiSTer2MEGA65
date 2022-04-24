@@ -166,6 +166,8 @@ signal main_csr_joy2_on       : std_logic;
 signal main_reset_m2m         : std_logic;
 signal main_reset_core        : std_logic;
 
+signal main_zoom_crop         : std_logic;
+
 -- keyboard handling
 signal main_key_num           : integer range 0 to 79;
 signal main_key_pressed_n     : std_logic;
@@ -654,7 +656,7 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 262
+         WIDTH => 263
       )
       port map (
          src_clk                => qnice_clk,
@@ -664,7 +666,8 @@ begin
          src_in(3)              => qnice_csr_joy1_on,
          src_in(4)              => qnice_csr_joy2_on,
          src_in(5)              => qnice_flip_joyports,
-         src_in(261 downto 6)   => qnice_osm_control_m,
+         src_in(6)              => qnice_zoom_crop,
+         src_in(262 downto 7)   => qnice_osm_control_m,
          dest_clk               => main_clk,
          dest_out(0)            => main_qnice_reset,
          dest_out(1)            => main_qnice_pause,
@@ -672,7 +675,8 @@ begin
          dest_out(3)            => main_csr_joy1_on,
          dest_out(4)            => main_csr_joy2_on,
          dest_out(5)            => main_flip_joyports,
-         dest_out(261 downto 6) => main_osm_control_m
+         dest_out(6)            => main_zoom_crop,
+         dest_out(262 downto 7) => main_osm_control_m
       ); -- i_qnice2main
 
    -- Clock domain crossing: core to QNICE
@@ -871,7 +875,7 @@ begin
 
    i_crop : entity work.crop
       port map (
-         video_crop_mode_i => qnice_zoom_crop,
+         video_crop_mode_i => main_zoom_crop,
          video_clk_i       => main_clk,
          video_rst_i       => main_rst,
          video_ce_i        => main_video_ce,
