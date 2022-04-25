@@ -124,18 +124,6 @@ constant m65_restore       : integer := 75;
 
 signal key_pressed_n : std_logic_vector(79 downto 0);
 
-signal j1_up_n             : std_logic;
-signal j1_down_n           : std_logic;
-signal j1_left_n           : std_logic;
-signal j1_right_n          : std_logic;
-signal j1_fire_n           : std_logic;
-
-signal j2_up_n             : std_logic;
-signal j2_down_n           : std_logic;
-signal j2_left_n           : std_logic;
-signal j2_right_n          : std_logic;
-signal j2_fire_n           : std_logic;
-
 begin
 
    example_n_o <= key_pressed_n;
