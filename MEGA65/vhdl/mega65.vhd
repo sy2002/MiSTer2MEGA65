@@ -22,22 +22,11 @@ entity MEGA65_Core is
 port (
    CLK                     : in std_logic;         -- 100 MHz clock
    RESET_M2M_N             : in std_logic;         -- Debounced system reset in system clock domain
-      
-   -- Share clocks and resets with the framework
-   qnice_clk_o             : out std_logic;        -- QNICE's 50 MHz main clock
-   qnice_rst_o             : out std_logic;        -- QNICE's reset, synchronized
-   hr_clk_x1_o             : out std_logic;        -- HyperRAM's 100 MHz
-   hr_clk_x2_o             : out std_logic;        -- HyperRAM's 200 MHz
-   hr_clk_x2_del_o         : out std_logic;        -- HyperRAM's 200 MHz phase delayed
-   hr_rst_o                : out std_logic;        -- HyperRAM's reset, synchronized
-   audio_clk_o             : out std_logic;        -- Audio's 30 MHz
-   audio_rst_o             : out std_logic;        -- Audio's reset, synchronized
-   tmds_clk_o              : out std_logic;        -- HDMI's 371.25 MHz pixelclock (74.25 MHz x 5) for TMDS
-   hdmi_clk_o              : out std_logic;        -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
-   hdmi_rst_o              : out std_logic;        -- HDMI's reset, synchronized
+
+   -- Share clock and reset with the framework
    main_clk_o              : out std_logic;        -- CORE's 54 MHz clock
    main_rst_o              : out std_logic;        -- CORE's reset, synchronized
-   
+
    --------------------------------------------------------------------------------------------------------
    -- QNICE Clock Domain
    --------------------------------------------------------------------------------------------------------
@@ -49,13 +38,13 @@ port (
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
-   
+
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
-   
+
    -- On-Screen-Menu selections
    qnice_osm_control_i     : in std_logic_vector(255 downto 0);
-   
+
    -- Core-specific devices
    qnice_dev_id_i          : in std_logic_vector(15 downto 0);
    qnice_dev_addr_i        : in std_logic_vector(27 downto 0);
@@ -73,7 +62,7 @@ port (
    --    core:  Only reset the core
    main_reset_m2m_i        : in std_logic;
    main_reset_core_i       : in std_logic;
-   
+
    main_pause_core_i       : in std_logic;
 
    -- Video output
@@ -106,13 +95,13 @@ port (
    main_joy_2_left_n_i     : in std_logic;
    main_joy_2_right_n_i    : in std_logic;
    main_joy_2_fire_n_i     : in std_logic;
-   
+
    -- On-Screen-Menu selections
-   main_osm_control_i     : in std_logic_vector(255 downto 0)   
+   main_osm_control_i     : in std_logic_vector(255 downto 0)
 );
 end entity MEGA65_Core;
 
-architecture beh of MEGA65_Core is
+architecture synthesis of MEGA65_Core is
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -163,47 +152,17 @@ signal qnice_demo_vd_we       : std_logic;
 begin
 
    -- MMCME2_ADV clock generators:
-   --   QNICE:                50 MHz
-   --   HyperRAM:             100 MHz and 200 MHz
-   --   HDMI 720p 50 Hz:      74.25 MHz (HDMI) and 371.25 MHz (TMDS)
    --   @TODO YOURCORE:       54 MHz
    clk_gen : entity work.clk
       port map (
          sys_clk_i         => CLK,             -- expects 100 MHz
          sys_rstn_i        => RESET_M2M_N,     -- Asynchronous, asserted low
-
-         qnice_clk_o       => qnice_clk,       -- QNICE's 50 MHz main clock
-         qnice_rst_o       => qnice_rst,       -- QNICE's reset, synchronized
-
-         hr_clk_x1_o       => hr_clk_x1,       -- HyperRAM's 100 MHz
-         hr_clk_x2_o       => hr_clk_x2,       -- HyperRAM's 200 MHz
-         hr_clk_x2_del_o   => hr_clk_x2_del,   -- HyperRAM's 200 MHz phase delayed
-         hr_rst_o          => hr_rst,          -- HyperRAM's reset, synchronized
-
-         audio_clk_o       => audio_clk,       -- Audio's 30 MHz
-         audio_rst_o       => audio_rst,       -- Audio's reset, synchronized
-
-         tmds_clk_o        => tmds_clk,        -- HDMI's 371.25 MHz pixelclock (74.25 MHz x 5) for TMDS
-         hdmi_clk_o        => hdmi_clk,        -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
-         hdmi_rst_o        => hdmi_rst,        -- HDMI's reset, synchronized
-
          main_clk_o        => main_clk,        -- CORE's 54 MHz clock
          main_rst_o        => main_rst         -- CORE's reset, synchronized
       ); -- clk_gen
-      
-   qnice_clk_o       <= qnice_clk;
-   qnice_rst_o       <= qnice_rst;
-   hr_clk_x1_o       <= hr_clk_x1;
-   hr_clk_x2_o       <= hr_clk_x2;
-   hr_clk_x2_del_o   <= hr_clk_x2_del;
-   hr_rst_o          <= hr_rst;
-   audio_clk_o       <= audio_clk;
-   audio_rst_o       <= audio_rst;
-   tmds_clk_o        <= tmds_clk;
-   hdmi_clk_o        <= hdmi_clk;
-   hdmi_rst_o        <= hdmi_rst;
-   main_clk_o        <= main_clk;
-   main_rst_o        <= main_rst;
+
+   main_clk_o <= main_clk;
+   main_rst_o <= main_rst;
 
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
@@ -236,7 +195,7 @@ begin
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_left_o,
          audio_right_o        => main_audio_right_o,
-         
+
          -- M2M Keyboard interface
          kb_key_num_i         => main_kb_key_num_i,
          kb_key_pressed_n_i   => main_kb_key_pressed_n_i,
@@ -258,52 +217,52 @@ begin
    ---------------------------------------------------------------------------------------------
    -- Audio and video settings (QNICE clock domain)
    ---------------------------------------------------------------------------------------------
-   
+
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
    qnice_video_mode_o         <= qnice_osm_control_i(C_MENU_HDMI_60HZ);       -- 720p always; 0 = 50Hz, 1 = 60 Hz
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
 
-   -- ascal filters that are applied while zooming the input to 720p   
+   -- ascal filters that are applied while zooming the input to 720p
    -- 00 : Nearest Neighbour
    -- 01 : Bilinear
    -- 10 : Sharp Bilinear
-   -- 11 : Bicubic   
+   -- 11 : Bicubic
    qnice_ascal_mode_o         <= "00";
-    
+
    -- If polyphase is '1' then the ascal filter mode is ignored and polyphase filters are used instead
    -- @TODO: Right now, the filters are hardcoded in the M2M framework, we need to make them changeable inside m2m-rom.asm
    qnice_ascal_polyphase_o    <= qnice_osm_control_i(C_MENU_CRT_EMULATION);
-   
+
    -- ascal triple-buffering
    -- @TODO: Right now, the M2M framework only supports OFF, so do not touch until the framework is upgraded
    qnice_ascal_triplebuf_o    <= '0';
-   
+
    -- Flip joystick ports (i.e. the joystick in port 2 is used as joystick 1 and vice versa)
-   qnice_flip_joyports_o      <= '0'; 
+   qnice_flip_joyports_o      <= '0';
 
    ---------------------------------------------------------------------------------------------
    -- Core specific device handling (QNICE clock domain)
    ---------------------------------------------------------------------------------------------
-  
+
    core_specific_devices : process(all)
    begin
       -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
       qnice_dev_data_o     <= x"EEEE";
-   
+
       -- Demo core specific: Delete before starting to port your core
       qnice_demo_vd_ce     <= '0';
-      qnice_demo_vd_we     <= '0';       
+      qnice_demo_vd_we     <= '0';
 
       case qnice_dev_id_i is
-        
+
          -- Demo core specific stuff: delete before porting your own core
          when C_DEV_DEMO_VD =>
             qnice_demo_vd_ce     <= qnice_dev_ce_i;
             qnice_demo_vd_we     <= qnice_dev_we_i;
-            qnice_dev_data_o     <= qnice_demo_vd_data_o; 
-         
+            qnice_dev_data_o     <= qnice_demo_vd_data_o;
+
          -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) or other devices here
          -- Device numbers need to be >= 0x0100
 
@@ -320,7 +279,7 @@ begin
    -- Use the M2M framework's official RAM/ROM: dualport_2clk_ram
    -- and make sure that the you configure the port that works with QNICE as a falling edge
    -- by setting G_FALLING_A or G_FALLING_B (depending on which port you use) to true.
-   
+
    ---------------------------------------------------------------------------------------
    -- Virtual drive handler
    --
@@ -340,34 +299,34 @@ begin
          clk_qnice_i       => qnice_clk,
          clk_core_i        => main_clk,
          reset_core_i      => main_reset_core_i,
-      
+
          -- Core clock domain
          img_mounted_o     => open,
          img_readonly_o    => open,
          img_size_o        => open,
          img_type_o        => open,
          drive_mounted_o   => open,
-         
+
          -- QNICE clock domain
-               
+
          sd_lba_i          => (others => (others => '0')),
          sd_blk_cnt_i      => (others => (others => '0')),
          sd_rd_i           => (others => '0'),
          sd_wr_i           => (others => '0'),
-         sd_ack_o          => open, 
-      
+         sd_ack_o          => open,
+
          sd_buff_addr_o    => open,
          sd_buff_dout_o    => open,
          sd_buff_din_i     => (others => (others => '0')),
          sd_buff_wr_o      => open,
-         
+
          -- QNICE interface (MMIO, 4k-segmented)
          -- qnice_addr is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
          qnice_addr_i      => qnice_dev_addr_i,
          qnice_data_i      => qnice_dev_data_i,
          qnice_data_o      => qnice_demo_vd_data_o,
          qnice_ce_i        => qnice_demo_vd_ce,
-         qnice_we_i        => qnice_demo_vd_we  
+         qnice_we_i        => qnice_demo_vd_we
       );
 
-end architecture beh;
+end architecture synthesis;

@@ -14,20 +14,20 @@ create_clock -period 10.000 -name CLK [get_ports CLK]
 ## Important: Using them in subsequent statements, e.g. clock dividers requries that they
 ## have been named/defined here before
 ## otherwise Vivado does not find the pins)
-create_generated_clock -name qnice_clk     [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT0]
-create_generated_clock -name hr_clk_x1     [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT1]
-create_generated_clock -name hr_clk_x2     [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT2]
-create_generated_clock -name hr_clk_x2_del [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT3]
-create_generated_clock -name audio_clk     [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT4]
-create_generated_clock -name tmds_clk      [get_pins M2M/MEGA65/clk_gen/i_clk_hdmi/CLKOUT0]
-create_generated_clock -name hdmi_clk      [get_pins M2M/MEGA65/clk_gen/i_clk_hdmi/CLKOUT1]
+create_generated_clock -name qnice_clk     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT0]
+create_generated_clock -name hr_clk_x1     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT1]
+create_generated_clock -name hr_clk_x2     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT2]
+create_generated_clock -name hr_clk_x2_del [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT3]
+create_generated_clock -name audio_clk     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT4]
+create_generated_clock -name tmds_clk      [get_pins M2M/i_clk_m2m/i_clk_hdmi/CLKOUT0]
+create_generated_clock -name hdmi_clk      [get_pins M2M/i_clk_m2m/i_clk_hdmi/CLKOUT1]
 create_generated_clock -name main_clk      [get_pins M2M/MEGA65/clk_gen/i_clk_main/CLKOUT0]
 
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
-create_generated_clock -name sdcard_clk -source [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins M2M/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
+create_generated_clock -name sdcard_clk -source [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins M2M/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
 ## Clock divider pcm_clk (@ 12.288 MHz) is generated from audio_clk (@ 60 MHz). The ratio is 4.88, but rounded down to 4.
-create_generated_clock -name pcm_clk -source [get_pins M2M/MEGA65/clk_gen/i_clk_qnice/CLKOUT4] -divide_by 4 [get_pins M2M/i_digital_pipeline/i_clk_synthetic/dest_clk_reg/Q]
+create_generated_clock -name pcm_clk -source [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT4] -divide_by 4 [get_pins M2M/i_digital_pipeline/i_clk_synthetic/dest_clk_reg/Q]
 
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path

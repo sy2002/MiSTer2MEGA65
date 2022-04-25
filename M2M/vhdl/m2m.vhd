@@ -23,7 +23,7 @@ entity m2m is
 port (
    CLK            : in std_logic;                  -- 100 MHz clock
    RESET_N        : in std_logic;
-      
+
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
    UART_RXD       : in std_logic;                  -- receive data
@@ -90,9 +90,9 @@ port (
    hr_clk_p       : out std_logic;
    hr_cs0         : out std_logic
 );
-end m2m;
+end entity m2m;
 
-architecture beh of m2m is
+architecture synthesis of m2m is
 
 ---------------------------------------------------------------------------------------------
 -- Constants
@@ -112,7 +112,7 @@ constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
 constant C_DEV_ASCAL_PPHASE   : std_logic_vector(15 downto 0) := x"0003";
 constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 
--- 
+--
 constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
 
@@ -218,7 +218,7 @@ signal main_joy1_down_n       : std_logic;
 signal main_joy1_left_n       : std_logic;
 signal main_joy1_right_n      : std_logic;
 signal main_joy1_fire_n       : std_logic;
-     
+
 signal main_joy2_up_n         : std_logic;
 signal main_joy2_down_n       : std_logic;
 signal main_joy2_left_n       : std_logic;
@@ -364,6 +364,23 @@ end component audio_out;
 
 begin
 
+   i_clk_m2m : entity work.clk_m2m
+      port map (
+         sys_clk_i       => CLK,
+         sys_rstn_i      => RESET_N,
+         qnice_clk_o     => qnice_clk,
+         qnice_rst_o     => qnice_rst,
+         hr_clk_x1_o     => hr_clk_x1,
+         hr_clk_x2_o     => hr_clk_x2,
+         hr_clk_x2_del_o => hr_clk_x2_del,
+         hr_rst_o        => hr_rst,
+         tmds_clk_o      => tmds_clk,
+         hdmi_clk_o      => hdmi_clk,
+         hdmi_rst_o      => hdmi_rst,
+         audio_clk_o     => audio_clk,
+         audio_rst_o     => audio_rst
+      ); -- i_clk_m2m
+
    ---------------------------------------------------------------------------------------------------------------
    -- Board Clock Domain: CLK
    ---------------------------------------------------------------------------------------------------------------
@@ -377,7 +394,7 @@ begin
    reset_manager : process(CLK)
    begin
       if rising_edge(CLK) then
-      
+
          -- button pressed
          if dbnce_reset_n = '0' then
             reset_pressed        <= '1';
@@ -386,32 +403,32 @@ begin
             if button_duration = 0 then
                reset_m2m_n       <= '0';  -- the framework only resets if the trigger time is reached
             else
-               button_duration   <= button_duration - 1;            
+               button_duration   <= button_duration - 1;
             end if;
-            
+
          -- button released
          else
             if reset_pressed then
                if reset_duration = 0 then
                   reset_pressed  <= '0';
-               else               
+               else
                   reset_duration <= reset_duration - 1;
                end if;
             else
                reset_m2m_n       <= '1';
-               reset_core_n      <= '1';            
-               button_duration   <= (BOARD_CLK_SPEED / 1000) * M2M_RST_TRIGGER;               
+               reset_core_n      <= '1';
+               button_duration   <= (BOARD_CLK_SPEED / 1000) * M2M_RST_TRIGGER;
             end if;
          end if;
       end if;
    end process;
- 
+
    ---------------------------------------------------------------------------------------------------------------
    -- Core Clock Domain: main_clk
    ---------------------------------------------------------------------------------------------------------------
-      
+
    i_debouncer : entity work.debouncer
-      generic map ( 
+      generic map (
          CLK_FREQ             => CORE_CLK_SPEED
       )
       port map (
@@ -421,32 +438,32 @@ begin
          flip_joys_i          => main_flip_joyports,
          joy_1_on             => main_csr_joy1_on,
          joy_2_on             => main_csr_joy2_on,
- 
+
          joy_1_up_n           => joy_1_up_n,
          joy_1_down_n         => joy_1_down_n,
          joy_1_left_n         => joy_1_left_n,
          joy_1_right_n        => joy_1_right_n,
          joy_1_fire_n         => joy_1_fire_n,
- 
+
          dbnce_joy1_up_n      => main_joy1_up_n,
          dbnce_joy1_down_n    => main_joy1_down_n,
          dbnce_joy1_left_n    => main_joy1_left_n,
          dbnce_joy1_right_n   => main_joy1_right_n,
          dbnce_joy1_fire_n    => main_joy1_fire_n,
- 
+
          joy_2_up_n           => joy_2_up_n,
          joy_2_down_n         => joy_2_down_n,
          joy_2_left_n         => joy_2_left_n,
          joy_2_right_n        => joy_2_right_n,
          joy_2_fire_n         => joy_2_fire_n,
- 
+
          dbnce_joy2_up_n      => main_joy2_up_n,
          dbnce_joy2_down_n    => main_joy2_down_n,
          dbnce_joy2_left_n    => main_joy2_left_n,
          dbnce_joy2_right_n   => main_joy2_right_n,
          dbnce_joy2_fire_n    => main_joy2_fire_n
       );
-      
+
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    i_m2m_keyb : entity work.m2m_keyb
       port map (
@@ -469,7 +486,7 @@ begin
          -- interface to QNICE: used by the firmware and the Shell
          qnice_keys_n_o       => main_qnice_keys_n
       ); -- i_m2m_keyb
-            
+
    ---------------------------------------------------------------------------------------------------------------
    -- QNICE Clock Domain: qnice_clk
    ---------------------------------------------------------------------------------------------------------------
@@ -527,12 +544,12 @@ begin
          -- "m" = indirectly controled by the menu system
          control_d_o             => open,
          control_m_o             => qnice_osm_control_m,
-         
-         -- 16-bit special-purpose and 16-bit general-purpose input flags 
+
+         -- 16-bit special-purpose and 16-bit general-purpose input flags
          -- Special-purpose flags are having a given semantic when the "Shell" firmware is running,
          -- but right now they are reserved and not used, yet.
          special_i               => (others => '0'),
-         general_i               => (others => '0'),            
+         general_i               => (others => '0'),
 
          -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
          -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
@@ -555,11 +572,11 @@ begin
          -- config data
          data_o                  => qnice_config_data
       ); -- shell_cfg
-         
+
    -- QNICE devices selected via qnice_ramrom_dev
    --    Devices with IDs < x"0100" are framework devices
    --    All others are user specific / core specific devices
-   -- (refer to M2M/rom/sysdef.asm for a memory map and more details)   
+   -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
    qnice_ramrom_devices : process(all)
    begin
       qnice_ramrom_data_i     <= x"EEEE";
@@ -572,87 +589,87 @@ begin
       -----------------------------------
       if qnice_ramrom_dev < x"0100" then
          case qnice_ramrom_dev is
-                  
-            -- On-Screen-Menu (OSM) video ram data and attributes 
+
+            -- On-Screen-Menu (OSM) video ram data and attributes
             when C_DEV_VRAM_DATA =>
                qnice_vram_we              <= qnice_ramrom_we;
                qnice_ramrom_data_i        <= x"00" & qnice_vram_data(7 downto 0);
             when C_DEV_VRAM_ATTR =>
                qnice_vram_attr_we         <= qnice_ramrom_we;
                qnice_ramrom_data_i        <= x"00" & qnice_vram_data(15 downto 8);
-   
+
             -- Shell configuration data (config.vhd)
             when C_DEV_OSM_CONFIG =>
                qnice_ramrom_data_i        <= qnice_config_data;
-           
+
             -- ascal.vhd's polyphase handling
             when C_DEV_ASCAL_PPHASE =>
                qnice_ramrom_data_i        <= x"EEEE"; -- write-only
                qnice_poly_wr              <= qnice_ramrom_we;
-   
+
             -- Read-only System Info (constants are defined in sysdef.asm)
             when C_DEV_SYS_INFO =>
                case qnice_ramrom_addr(27 downto 12) is
-               
+
                   -- Virtual drives
                   when x"0000" =>
                      case qnice_ramrom_addr(11 downto 0) is
                         when x"000" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned(C_VDNUM, 16));
                         when x"001" => qnice_ramrom_data_i <= C_VD_DEVICE;
-   
+
                         when others =>
                            if qnice_ramrom_addr(11 downto 4) = x"10" then
                               qnice_ramrom_data_i <= C_VD_BUFFER(to_integer(unsigned(qnice_ramrom_addr(3 downto 0))));
                            end if;
                      end case;
-      
+
                   -- Graphics card VGA
                   when X"0010" =>
                      case qnice_ramrom_addr(11 downto 0) is
                         -- SYS_DXDY
                         when X"000" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-                        
+
                         -- SHELL_M_XY: Always start at the top/left corner
                         when X"001" => qnice_ramrom_data_i <= x"0000";
-                        
+
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-                        
+
                         when others => null;
                      end case;
-   
+
                   -- Graphics card HDMI
                   when X"0011" =>
                      case qnice_ramrom_addr(11 downto 0) is
-                        -- SYS_DXDY                    
+                        -- SYS_DXDY
                         when X"000" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-                        
+
                         -- SHELL_M_XY: Always start at the top/left corner
                         when X"001" => qnice_ramrom_data_i <= x"0000";
-                        
+
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-                        
+
                         when others => null;
                      end case;
-   
+
                   when others => null;
-               end case;               
+               end case;
             when others => null;
          end case;
-         
+
       -----------------------------------
       -- User/core specific devices
       -----------------------------------
       else
          qnice_ramrom_data_i <= qnice_custom_dev_data;
-      end if;   
+      end if;
    end process qnice_ramrom_devices;
 
    ---------------------------------------------------------------------------------------------------------------
    -- Clock Domain Crossing
    ---------------------------------------------------------------------------------------------------------------
-   
+
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
@@ -725,10 +742,10 @@ begin
          dest_out(31 downto 16)  => hdmi_osm_cfg_dxdy,
          dest_out(32)            => hdmi_osm_cfg_enable,
          dest_out(33)            => hdmi_video_mode,
-         dest_out(34)            => hdmi_zoom_crop,         
+         dest_out(34)            => hdmi_zoom_crop,
          dest_out(290 downto 35) => hdmi_osm_control_m
       ); -- i_qnice2hdmi
-      
+
    -- Clock domain crossing: Board clock domain (CLK) to core (main_clk)
    i_board2main: xpm_cdc_array_single
       generic map (
@@ -741,7 +758,7 @@ begin
          dest_clk                => main_clk,
          dest_out(0)             => main_reset_m2m,
          dest_out(1)             => main_reset_core
-      ); 
+      );
 
    ---------------------------------------------------------------------------------------------------------------
    -- On-Screen-Menu video and attribute RAM: Dual-clock qnice_clk and main_clk
@@ -1002,49 +1019,38 @@ begin
    hr_d       <= hr_dq_out   when hr_dq_oe   = '1' else (others => 'Z');
    hr_rwds_in <= hr_rwds;
    hr_dq_in   <= hr_d;
-   
+
    ---------------------------------------------------------------------------------------------------------------
    -- MEGA65 Core including the MiSTer core: Multiple clock domains
    ---------------------------------------------------------------------------------------------------------------
-   
+
    MEGA65 : entity work.MEGA65_Core
       port map (
-         CLK                     => CLK,        
+         CLK                     => CLK,
          RESET_M2M_N             => reset_m2m_n,
-          
-         -- Share clocks and resets with the framework
-         qnice_clk_o             => qnice_clk,           -- QNICE's 50 MHz main clock
-         qnice_rst_o             => qnice_rst,           -- QNICE's reset, synchronized
-         hr_clk_x1_o             => hr_clk_x1,           -- HyperRAM's 100 MHz
-         hr_clk_x2_o             => hr_clk_x2,           -- HyperRAM's 200 MHz
-         hr_clk_x2_del_o         => hr_clk_x2_del,       -- HyperRAM's 200 MHz phase delayed
-         hr_rst_o                => hr_rst,              -- HyperRAM's reset, synchronized
-         audio_clk_o             => audio_clk,           -- Audio's 30 MHz
-         audio_rst_o             => audio_rst,           -- Audio's reset, synchronized
-         tmds_clk_o              => tmds_clk,            -- HDMI's 371.25 MHz pixelclock (74.25 MHz x 5) for TMDS
-         hdmi_clk_o              => hdmi_clk,            -- HDMI's 74.25 MHz pixelclock for 720p @ 50 Hz
-         hdmi_rst_o              => hdmi_rst,            -- HDMI's reset, synchronized
+
+         -- Share clock and reset with the framework
          main_clk_o              => main_clk,            -- CORE's 54 MHz clock
          main_rst_o              => main_rst,            -- CORE's reset, synchronized
-         
+
          --------------------------------------------------------------------------------------------------------
          -- QNICE Clock Domain
          --------------------------------------------------------------------------------------------------------
-      
+
          -- Video and audio mode control
-         qnice_video_mode_o      => qnice_video_mode,    -- 720p always; 0 = 50Hz, 1 = 60 Hz   
+         qnice_video_mode_o      => qnice_video_mode,    -- 720p always; 0 = 50Hz, 1 = 60 Hz
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,
          qnice_ascal_mode_o      => qnice_ascal_mode,
          qnice_ascal_polyphase_o => qnice_ascal_polyphase,
-         qnice_ascal_triplebuf_o => qnice_ascal_triplebuf,   
-         
+         qnice_ascal_triplebuf_o => qnice_ascal_triplebuf,
+
          -- Flip joystick ports
          qnice_flip_joyports_o   => qnice_flip_joyports,
-         
+
          -- On-Screen-Menu selections (in QNICE clock domain)
          qnice_osm_control_i     => qnice_osm_control_m,
-         
+
          -- Core-specific devices
          qnice_dev_id_i          => qnice_ramrom_dev,
          qnice_dev_addr_i        => qnice_ramrom_addr,
@@ -1052,21 +1058,21 @@ begin
          qnice_dev_data_o        => qnice_custom_dev_data,
          qnice_dev_ce_i          => qnice_ramrom_ce,
          qnice_dev_we_i          => qnice_ramrom_we,
-         
+
          --------------------------------------------------------------------------------------------------------
          -- Core Clock Domain
          --------------------------------------------------------------------------------------------------------
-      
+
          -- M2M's reset manager provides 2 signals:
          --    m2m:   Reset the whole machine: Core and Framework
          --    core:  Only reset the core
          main_reset_m2m_i        => main_reset_m2m  or main_qnice_reset or main_rst,
          main_reset_core_i       => main_reset_core or main_qnice_reset,
          main_pause_core_i       => main_qnice_pause,
-         
+
          -- On-Screen-Menu selections (in main clock domain)
          main_osm_control_i      => main_osm_control_m,
-         
+
          -- Video output
          main_video_ce_o         => main_video_ce,
          main_video_red_o        => main_video_red,
@@ -1076,27 +1082,28 @@ begin
          main_video_hs_o         => main_video_hs,
          main_video_hblank_o     => main_video_hblank,
          main_video_vblank_o     => main_video_vblank,
-      
+
          -- Audio output (Signed PCM)
          main_audio_left_o       => main_audio_l,
          main_audio_right_o      => main_audio_r,
-      
+
          -- M2M Keyboard interface
          main_kb_key_num_i       => main_key_num,
          main_kb_key_pressed_n_i => main_key_pressed_n,
-      
+
          -- Joysticks input
          main_joy_1_up_n_i       => main_joy1_up_n,
          main_joy_1_down_n_i     => main_joy1_down_n,
          main_joy_1_left_n_i     => main_joy1_left_n,
          main_joy_1_right_n_i    => main_joy1_right_n,
          main_joy_1_fire_n_i     => main_joy1_fire_n,
-      
-         main_joy_2_up_n_i       => main_joy2_up_n, 
+
+         main_joy_2_up_n_i       => main_joy2_up_n,
          main_joy_2_down_n_i     => main_joy2_down_n,
          main_joy_2_left_n_i     => main_joy2_left_n,
          main_joy_2_right_n_i    => main_joy2_right_n,
          main_joy_2_fire_n_i     => main_joy2_right_n
       );
 
-end beh;
+end architecture synthesis;
+
