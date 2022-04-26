@@ -24,6 +24,11 @@ entity democore is
       reset_i              : in  std_logic;
       pause_i              : in  std_logic;
       keyboard_n_i         : in  std_logic_vector(79 downto 0);
+      joy_up_n_i           : in  std_logic;
+      joy_down_n_i         : in  std_logic;
+      joy_left_n_i         : in  std_logic;
+      joy_right_n_i        : in  std_logic;
+      joy_fire_n_i         : in  std_logic;
 
       -- Video output
       vga_ce_o             : out std_logic;
@@ -43,11 +48,17 @@ end entity democore;
 
 architecture synthesis of democore is
 
+   constant m65_space     : integer := 60;
+   constant m65_horz_crsr : integer := 2;   -- means cursor right in C64 terminology
+   constant m65_left_crsr : integer := 74;  -- cursor left
+
    signal ball_pos_x   : std_logic_vector(15 downto 0);
    signal ball_pos_y   : std_logic_vector(15 downto 0);
    signal paddle_pos_x : std_logic_vector(15 downto 0);
    signal paddle_pos_y : std_logic_vector(15 downto 0);
    signal update       : std_logic;
+   signal score        : std_logic_vector(15 downto 0);
+   signal lives        : std_logic_vector( 3 downto 0);
 
    signal audio_freq      : std_logic_vector(15 downto 0);
    signal audio_vol_left  : std_logic_vector(15 downto 0);
@@ -64,11 +75,15 @@ begin
          clk_i          => clk_main_i,
          rst_i          => reset_i,
          update_i       => update,
-         keyboard_n_i   => keyboard_n_i,
+         player_start_i => not (keyboard_n_i(m65_space)     and joy_fire_n_i),
+         player_left_i  => not (keyboard_n_i(m65_left_crsr) and joy_left_n_i),
+         player_right_i => not (keyboard_n_i(m65_horz_crsr) and joy_right_n_i),
          ball_pos_x_o   => ball_pos_x,
          ball_pos_y_o   => ball_pos_y,
          paddle_pos_x_o => paddle_pos_x,
-         paddle_pos_y_o => paddle_pos_y
+         paddle_pos_y_o => paddle_pos_y,
+         score_o        => score,
+         lives_o        => lives
       ); -- i_democore_game
 
    i_democore_video : entity work.democore_video
@@ -82,6 +97,8 @@ begin
          ball_pos_y_i   => ball_pos_y,
          paddle_pos_x_i => paddle_pos_x,
          paddle_pos_y_i => paddle_pos_y,
+         score_i        => score,
+         lives_i        => lives,
          update_o       => update,
          vga_ce_o       => vga_ce_o,
          vga_red_o      => vga_red_o,
