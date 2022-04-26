@@ -21,13 +21,13 @@ use xpm.vcomponents.all;
 
 entity m2m is
 port (
-   CLK            : in std_logic;                  -- 100 MHz clock
-   RESET_N        : in std_logic;
+   CLK            : in  std_logic;                  -- 100 MHz clock
+   RESET_N        : in  std_logic;                  -- CPU reset button, active low
 
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
-   UART_RXD       : in std_logic;                  -- receive data
-   UART_TXD       : out std_logic;                 -- send data
+   UART_RXD       : in  std_logic;                  -- receive data
+   UART_TXD       : out std_logic;                  -- send data
 
    -- VGA
    VGA_RED        : out std_logic_vector(7 downto 0);
@@ -50,38 +50,38 @@ port (
    -- MEGA65 smart keyboard controller
    kb_io0         : out std_logic;                 -- clock to keyboard
    kb_io1         : out std_logic;                 -- data output to keyboard
-   kb_io2         : in std_logic;                  -- data input from keyboard
+   kb_io2         : in  std_logic;                 -- data input from keyboard
 
    -- SD Card (internal on bottom)
    SD_RESET       : out std_logic;
    SD_CLK         : out std_logic;
    SD_MOSI        : out std_logic;
-   SD_MISO        : in std_logic;
-   SD_CD          : in std_logic;
+   SD_MISO        : in  std_logic;
+   SD_CD          : in  std_logic;
 
    -- SD Card (external on back)
    SD2_RESET      : out std_logic;
    SD2_CLK        : out std_logic;
    SD2_MOSI       : out std_logic;
-   SD2_MISO       : in std_logic;
-   SD2_CD         : in std_logic;
+   SD2_MISO       : in  std_logic;
+   SD2_CD         : in  std_logic;
 
    -- 3.5mm analog audio jack
    pwm_l          : out std_logic;
    pwm_r          : out std_logic;
 
    -- Joysticks
-   joy_1_up_n     : in std_logic;
-   joy_1_down_n   : in std_logic;
-   joy_1_left_n   : in std_logic;
-   joy_1_right_n  : in std_logic;
-   joy_1_fire_n   : in std_logic;
+   joy_1_up_n     : in  std_logic;
+   joy_1_down_n   : in  std_logic;
+   joy_1_left_n   : in  std_logic;
+   joy_1_right_n  : in  std_logic;
+   joy_1_fire_n   : in  std_logic;
 
-   joy_2_up_n     : in std_logic;
-   joy_2_down_n   : in std_logic;
-   joy_2_left_n   : in std_logic;
-   joy_2_right_n  : in std_logic;
-   joy_2_fire_n   : in std_logic;
+   joy_2_up_n     : in  std_logic;
+   joy_2_down_n   : in  std_logic;
+   joy_2_left_n   : in  std_logic;
+   joy_2_right_n  : in  std_logic;
+   joy_2_fire_n   : in  std_logic;
 
    -- Built-in HyperRAM
    hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
@@ -112,7 +112,8 @@ constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
 constant C_DEV_ASCAL_PPHASE   : std_logic_vector(15 downto 0) := x"0003";
 constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 
---
+-- SysInfo record numbers
+constant C_SYS_DRIVES         : std_logic_vector(15 downto 0) := x"0000";
 constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
 
@@ -128,29 +129,19 @@ signal audio_clk              : std_logic;               -- Audio clock @ 60 MHz
 signal tmds_clk               : std_logic;               -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
 signal hdmi_clk               : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
 signal main_clk               : std_logic;               -- Core main clock
-signal video_clk              : std_logic;               -- Core pixel clock
 
 signal qnice_rst              : std_logic;
 signal hr_rst                 : std_logic;
 signal audio_rst              : std_logic;
 signal hdmi_rst               : std_logic;
 signal main_rst               : std_logic;
-signal video_rst              : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- Reset Control
 ---------------------------------------------------------------------------------------------
 
--- Press the MEGA65's reset button long to activate the M2M reset, press it short for a core-only reset
-constant M2M_RST_TRIGGER      : natural := 1500;   -- milliseconds => 1.5 sec
-constant RST_DURATION         : natural := 50;     -- milliseconds
 signal reset_m2m_n            : std_logic;
 signal reset_core_n           : std_logic;
-signal reset_pressed          : std_logic := '0';
-signal button_duration        : natural;
-signal reset_duration         : natural;
-
-signal dbnce_reset_n          : std_logic;
 
 --------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -385,43 +376,16 @@ begin
    -- Board Clock Domain: CLK
    ---------------------------------------------------------------------------------------------------------------
 
-   -- 20 ms for the reset button
-   i_dbnce_reset : entity work.debounce
-      generic map(clk_freq => BOARD_CLK_SPEED, stable_time => 20)
-      port map(clk => clk, reset_n => '1', button => RESET_N, result => dbnce_reset_n);
-
-
-   reset_manager : process(CLK)
-   begin
-      if rising_edge(CLK) then
-
-         -- button pressed
-         if dbnce_reset_n = '0' then
-            reset_pressed        <= '1';
-            reset_core_n         <= '0';  -- the core resets immediately on pressing the button
-            reset_duration       <= (BOARD_CLK_SPEED / 1000) * RST_DURATION;
-            if button_duration = 0 then
-               reset_m2m_n       <= '0';  -- the framework only resets if the trigger time is reached
-            else
-               button_duration   <= button_duration - 1;
-            end if;
-
-         -- button released
-         else
-            if reset_pressed then
-               if reset_duration = 0 then
-                  reset_pressed  <= '0';
-               else
-                  reset_duration <= reset_duration - 1;
-               end if;
-            else
-               reset_m2m_n       <= '1';
-               reset_core_n      <= '1';
-               button_duration   <= (BOARD_CLK_SPEED / 1000) * M2M_RST_TRIGGER;
-            end if;
-         end if;
-      end if;
-   end process;
+   i_reset_manager : entity work.reset_manager
+      generic map (
+         BOARD_CLK_SPEED => BOARD_CLK_SPEED
+      )
+      port map (
+         CLK            => CLK,
+         RESET_N        => RESET_N,
+         reset_m2m_n_o  => reset_m2m_n,
+         reset_core_n_o => reset_core_n
+      ); -- i_reset_manager
 
    ---------------------------------------------------------------------------------------------------------------
    -- Core Clock Domain: main_clk
@@ -612,7 +576,7 @@ begin
                case qnice_ramrom_addr(27 downto 12) is
 
                   -- Virtual drives
-                  when x"0000" =>
+                  when C_SYS_DRIVES =>
                      case qnice_ramrom_addr(11 downto 0) is
                         when x"000" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned(C_VDNUM, 16));
                         when x"001" => qnice_ramrom_data_i <= C_VD_DEVICE;
@@ -624,7 +588,7 @@ begin
                      end case;
 
                   -- Graphics card VGA
-                  when X"0010" =>
+                  when C_SYS_VGA =>
                      case qnice_ramrom_addr(11 downto 0) is
                         -- SYS_DXDY
                         when X"000" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
@@ -639,7 +603,7 @@ begin
                      end case;
 
                   -- Graphics card HDMI
-                  when X"0011" =>
+                  when C_SYS_HDMI =>
                      case qnice_ramrom_addr(11 downto 0) is
                         -- SYS_DXDY
                         when X"000" => qnice_ramrom_data_i <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));

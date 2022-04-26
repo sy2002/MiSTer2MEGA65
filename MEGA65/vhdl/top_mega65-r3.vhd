@@ -1,10 +1,9 @@
 ----------------------------------------------------------------------------------
--- Commodore 64 for MEGA65  
+-- YOUR-PROJECT-NAME (GITHUB-REPO-SHORTNAME) QNICE ROM
 --
 -- MEGA65 R3 main file that contains the whole machine
 --
--- based on C64_MiSTer by the MiSTer development team
--- port done by MJoergen and sy2002 in 2022 and licensed under GPL v3
+-- done by YOURNAME in YEAR and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -14,7 +13,7 @@ use ieee.numeric_std.all;
 entity mega65_r3 is
 port (
    CLK            : in  std_logic;                  -- 100 MHz clock
-   RESET_N        : in  std_logic;                  -- CPU reset button
+   RESET_N        : in  std_logic;                  -- CPU reset button, active low
 
    -- serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
@@ -164,7 +163,7 @@ begin
          hr_reset       => hr_reset,
          hr_clk_p       => hr_clk_p,
          hr_cs0         => hr_cs0
-      );
+      ); -- i_m2m
 
 end architecture synthesis;
 
