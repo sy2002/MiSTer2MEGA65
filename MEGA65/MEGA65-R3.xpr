@@ -59,91 +59,91 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../QNICE/vhdl/alu_shifter.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/alu_shifter.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/block_ram.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/block_ram.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/sd_spi.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/sd_spi.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/tools.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/tools.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/register_file.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/register_file.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/byte_bram.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/byte_bram.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/EAE.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/EAE.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/cpu_constants.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/cpu_constants.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/qnice_cpu.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/qnice_cpu.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/alu.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/alu.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/sdcard.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/sdcard.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/kbd_constants.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/kbd_constants.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/bus_uart.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/bus_uart.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/fifo.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/fifo.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/basic_uart.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/basic_uart.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -209,7 +209,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/block_rom.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/block_rom.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -383,7 +383,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../QNICE/vhdl/cycle_counter.vhd">
+      <File Path="$PPRDIR/../M2M/QNICE/vhdl/cycle_counter.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>

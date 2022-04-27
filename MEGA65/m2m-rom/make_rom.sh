@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ ! -f ../../QNICE/assembler/qasm ]; then
+if [ ! -f ../../M2M/QNICE/assembler/qasm ]; then
     echo ""
     echo "ERROR: QNICE assembler ../../QNICE/assembler/qasm not found."
     echo ""
@@ -16,4 +16,4 @@ if [ ! -f ../../QNICE/assembler/qasm ]; then
     exit
 fi;
 
-../../QNICE/assembler/asm m2m-rom.asm
+../../M2M/QNICE/assembler/asm m2m-rom.asm
