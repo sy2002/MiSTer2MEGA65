@@ -13,7 +13,7 @@ TL;DR
 
 1. Copy your your "raw" MiSTer core from MiSTer's RTL folder
    into `/rtl` and wire it inside `MEGA65/vhdl/main.vhd` while
-   adjusting the clocks in `MEGA65/vhdk/clk.vhd`.
+   adjusting the clocks in `MEGA65/vhdl/clk.vhd`.
 
 2. Provide RAMs, ROMs and other devices in `MEGA65/vhdl/mega65.vhd`
    and wire everything correctly.
@@ -30,18 +30,11 @@ MiSTer2MEGA65, but you get the gist of it.*
 Progress
 --------
 
-CAUTION: RIGHT NOW THIS IS A HEAVILY WORK-IN-PROGRESS PRE-ALPHA VERSION.
-WE WILL RELEASE THIS AS A V1.0 AS SOON AS THE FOLLOWING FIRST MILESTONE HAS
-BEEN REACHED: MJoergen and sy2002 PORTED THE C64 CORE.
+CAUTION: RIGHT NOW THIS STILL IS A WORK-IN-PROGRESS VERSION.
 
-Progress of the Commodore 64 Core (which uses this framework):
-
-Have a look at [this YouTube Video](https://youtu.be/wsS1iiozeXA) to learn
-about the progress as of end of February 2022. Here is the GitHub repo
-of the Commodore 64 Core: https://github.com/MJoergen/C64MEGA65
-
-The [Game Boy for MEGA65 repository](https://github.com/sy2002/gbc4mega65/)
-shows you what we are planning to do here.
+Yet, there is already one successful project live and up and
+running that is based on this version of the M2M framework:
+The [C64 for MEGA65](https://github.com/MJoergen/C64MEGA65).
 
 Details
 -------
