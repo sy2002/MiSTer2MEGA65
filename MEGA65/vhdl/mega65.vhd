@@ -31,6 +31,9 @@ port (
    -- QNICE Clock Domain
    --------------------------------------------------------------------------------------------------------
 
+   -- Get QNICE clock from the framework: for the vdrives as well as for RAMs and ROMs
+   qnice_clk_i             : in std_logic;
+
    -- Video and audio mode control
    qnice_video_mode_o      : out std_logic;        -- 720p always; 0 = 50Hz, 1 = 60 Hz
    qnice_audio_filter_o    : out std_logic;
@@ -107,24 +110,8 @@ architecture synthesis of MEGA65_Core is
 -- Clocks and active high reset signals for each clock domain
 ---------------------------------------------------------------------------------------------
 
-signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
-signal hr_clk_x1              : std_logic;               -- HyperRAM @ 100 MHz
-signal hr_clk_x2              : std_logic;               -- HyperRAM @ 200 MHz
-signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz phase delayed
-signal audio_clk              : std_logic;               -- Audio clock @ 60 MHz
-signal tmds_clk               : std_logic;               -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
-signal hdmi_clk               : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
 signal main_clk               : std_logic;               -- Core main clock
-signal video_clk              : std_logic;               -- Core pixel clock
-
-signal qnice_rst              : std_logic;
-signal hr_rst                 : std_logic;
-signal audio_rst              : std_logic;
-signal hdmi_rst               : std_logic;
 signal main_rst               : std_logic;
-signal video_rst              : std_logic;
-
-signal core_only_rst          : std_logic;               -- reset only the core, not the framework
 
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -296,7 +283,7 @@ begin
       )
       port map
       (
-         clk_qnice_i       => qnice_clk,
+         clk_qnice_i       => qnice_clk_i,
          clk_core_i        => main_clk,
          reset_core_i      => main_reset_core_i,
 

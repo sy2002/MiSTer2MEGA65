@@ -1001,6 +1001,10 @@ begin
          -- QNICE Clock Domain
          --------------------------------------------------------------------------------------------------------
 
+   
+         -- Provide QNICE clock to the core: for the vdrives as well as for RAMs and ROMs
+         qnice_clk_i             => qnice_clk,
+
          -- Video and audio mode control
          qnice_video_mode_o      => qnice_video_mode,    -- 720p always; 0 = 50Hz, 1 = 60 Hz
          qnice_audio_filter_o    => qnice_audio_filter,
