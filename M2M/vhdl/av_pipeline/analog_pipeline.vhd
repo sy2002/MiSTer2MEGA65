@@ -67,12 +67,10 @@ architecture synthesis of analog_pipeline is
    signal vs_vsync           : std_logic;
    signal vs_hblank          : std_logic;
    signal vs_vblank          : std_logic;
-   signal div                : integer range 0 to 7;
    signal mix_r              : std_logic_vector(7 downto 0);
    signal mix_g              : std_logic_vector(7 downto 0);
    signal mix_b              : std_logic_vector(7 downto 0);
    signal mix_vga_de         : std_logic;
-   signal ce_pix             : std_logic;
 
    signal vga_red            : std_logic_vector(7 downto 0);
    signal vga_green          : std_logic_vector(7 downto 0);
@@ -138,14 +136,6 @@ begin
    -- we could do here, including to make sure that we output an old composite signal instead of VGA
    --------------------------------------------------------------------------------------------------
 
-   p_div : process (video_clk_i)
-   begin
-      if rising_edge(video_clk_i) then
-         div <= div + 1;
-      end if;
-   end process p_div;
-   ce_pix <= '1' when div = 0 else '0';
-
    -- This halves the hsync pulse width to 2.41 us, and the period to 31.97 us (= 2016 clock cycles @ clk_video_i).
    -- According to the document CEA-861-D, PAL 720x576 @ 50 Hz runs with a pixel
    -- clock frequency of 27.00 MHz and with 864 pixels per scan line, therefore
@@ -156,7 +146,7 @@ begin
       port map (
          CLK_VIDEO   => video_clk_i,      -- 63.056 MHz
          CE_PIXEL    => open,
-         ce_pix      => ce_pix,
+         ce_pix      => video_ce_i,
          scandoubler => scandoubler_i,
          hq2x        => '0',
          gamma_bus   => open,
