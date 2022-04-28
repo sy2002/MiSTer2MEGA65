@@ -40,7 +40,8 @@ architecture synthesis of democore_video is
    constant C_BORDER         : integer :=   4; -- Number of pixels
    constant C_SIZE_BALL      : integer :=  20; -- Number of pixels
    constant C_SIZE_PADDLE    : integer := 100; -- Number of pixels
-   constant C_COL_BACKGROUND : std_logic_vector(23 downto 0) := X"88CCAA";
+   constant C_COL_LIGHT      : std_logic_vector(23 downto 0) := X"88CCAA";
+   constant C_COL_DARK       : std_logic_vector(23 downto 0) := X"557766";
    constant C_COL_BORDER     : std_logic_vector(23 downto 0) := X"FFFFFF";
    constant C_COL_BALL       : std_logic_vector(23 downto 0) := X"EE4020";
    constant C_COL_PADDLE     : std_logic_vector(23 downto 0) := X"40EE20";
@@ -92,6 +93,8 @@ architecture synthesis of democore_video is
       "11111100" &
       "00000000");
 
+   signal offset         : integer range 0 to 63;  -- Checkerboard horizontal offset
+
    signal lives_offset_x : integer range 0 to G_VIDEO_MODE.H_PIXELS - 1;
    signal lives_offset_y : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
    signal lives_bitmap   : std_logic_vector(63 downto 0);
@@ -108,6 +111,13 @@ architecture synthesis of democore_video is
    signal video_rgb      : std_logic_vector(23 downto 0);
 
 begin
+
+   p_ce : process (clk_main_i)
+   begin
+      if rising_edge(clk_main_i) then
+         video_ce <= not video_ce;
+      end if;
+   end process p_ce;
 
    i_vga_controller : entity work.vga_controller
       port map (
@@ -143,8 +153,16 @@ begin
    p_rgb : process (clk_main_i)
    begin
       if rising_edge(clk_main_i) then
-         -- Render background
-         video_rgb <= C_COL_BACKGROUND;
+         if update_o = '1' then
+            offset <= offset - 1;
+         end if;
+
+         -- Render moving checkerboard background
+         if (((video_pixel_x+offset)/32) mod 2) = ((video_pixel_y/32) mod 2) then
+            video_rgb <= C_COL_LIGHT;
+         else
+            video_rgb <= C_COL_DARK;
+         end if;
 
          -- Render white border
          if video_pixel_x < C_BORDER or video_pixel_x + C_BORDER >= G_VIDEO_MODE.H_PIXELS or
@@ -155,28 +173,26 @@ begin
          -- Render red-ish square
          if video_pixel_x >= to_integer(unsigned(ball_pos_x_i)) and video_pixel_x < to_integer(unsigned(ball_pos_x_i)) + C_SIZE_BALL and
             video_pixel_y >= to_integer(unsigned(ball_pos_y_i)) and video_pixel_y < to_integer(unsigned(ball_pos_y_i)) + C_SIZE_BALL then
-            video_rgb <= C_COL_BALL;
+               video_rgb <= C_COL_BALL;
          end if;
 
          -- Render green-ish paddle
          if video_pixel_x >= to_integer(unsigned(paddle_pos_x_i)) and video_pixel_x < to_integer(unsigned(paddle_pos_x_i)) + C_SIZE_PADDLE and
             video_pixel_y >= to_integer(unsigned(paddle_pos_y_i)) and video_pixel_y < to_integer(unsigned(paddle_pos_y_i)) + C_SIZE_BALL then
-            video_rgb <= C_COL_PADDLE;
+               video_rgb <= C_COL_PADDLE;
          end if;
 
          -- Render lives purple-ish
-         if video_pixel_x >= C_POS_LIVES_X and video_pixel_x < C_POS_LIVES_X+4*16
-            and video_pixel_y >= C_POS_LIVES_Y and video_pixel_y < C_POS_LIVES_Y+16
-            and lives_pix = '1' then
-            video_rgb <= C_COL_LIVES;
+         if video_pixel_x >= C_POS_LIVES_X and video_pixel_x < C_POS_LIVES_X+4*16 and
+            video_pixel_y >= C_POS_LIVES_Y and video_pixel_y < C_POS_LIVES_Y+16 and
+            lives_pix = '1' then
+               video_rgb <= C_COL_LIVES;
          end if;
 
          -- Screen blanking outside visible area
          if video_hblank = '1' or video_vblank = '1' then
             video_rgb <= C_COL_BLANK;
          end if;
-
-         video_ce <= not video_ce;
 
          vga_hs_o <= video_hs;
          vga_vs_o <= video_vs;
@@ -190,7 +206,7 @@ begin
    vga_green_o <= video_rgb(15 downto  8);
    vga_blue_o  <= video_rgb( 7 downto  0);
 
-   update_o <= '1' when video_pixel_x = 0 and video_pixel_y = 0 else '0';
+   update_o <= video_ce when video_pixel_x = 0 and video_pixel_y = 0 else '0';
 
 end architecture synthesis;
 

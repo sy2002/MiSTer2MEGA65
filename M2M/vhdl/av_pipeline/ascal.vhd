@@ -187,6 +187,7 @@ ENTITY ascal IS
     ------------------------------------
     -- Low lag PLL tuning
     o_lltune : OUT unsigned(15 DOWNTO 0);
+    avl_diff : OUT unsigned(31 DOWNTO 0);
     
     ------------------------------------
     -- Input video parameters
@@ -2911,5 +2912,7 @@ BEGIN
              7 => o_clk,
              OTHERS =>'0');
   
+  avl_diff <= avl_wadrs - avl_radrs;
+
   ----------------------------------------------------------------------------  
 END ARCHITECTURE rtl;

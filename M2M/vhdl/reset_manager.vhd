@@ -9,15 +9,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
---use work.qnice_tools.all;
---
---library work;
---use work.globals.all;
---use work.types_pkg.all;
---use work.video_modes_pkg.all;
---
---library xpm;
---use xpm.vcomponents.all;
 
 entity reset_manager is
    generic (
