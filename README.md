@@ -50,7 +50,8 @@ Yet, there is already one successful project live and up and
 running that is based on this version of the M2M framework:
 The [C64 for MEGA65](https://github.com/MJoergen/C64MEGA65).
 
-We try to keep the M2M architecture as stable as possible from now on so that
-you can rely on it and start porting MiSTer cores. Yet, M2M is not officially
-released, yet. It is somewhere between an Alpha and a Beta version.
+M2M is not officially released at this moment:
 
+It is somewhere between an Alpha and a Beta version. We try
+to keep the M2M architecture as stable as possible from now
+on so that you can rely on it and start porting MiSTer cores.
