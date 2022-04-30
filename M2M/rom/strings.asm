@@ -68,8 +68,6 @@ WRN_MAXFILES    .ASCII_P "Warning: This directory contains more files\n"
                 .ASCII_W "Press SPACE to continue.\n"
 
 WRN_ERROR_CODE  .ASCII_W "Error code: "
-WRN_WRONG_D64   .ASCII_P "\n\nD64 file size must be exactly 174848 bytes."
-                .ASCII_W "\n\nPress SPACE to continue.\n"
 
 ; ----------------------------------------------------------------------------
 ; Error Messages
