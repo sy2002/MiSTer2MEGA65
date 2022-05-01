@@ -33,10 +33,7 @@ entity keyboard is
       key_pressed_n_i      : in std_logic;               -- low active: debounced feedback: is kb_key_num_i pressed right now?
                
       -- @TODO: Create the kind of keyboard output that your core needs
-      -- "example_n_o" is a low active register and used by the demo core:
-      --    bit 0: Space
-      --    bit 1: Return
-      --    bit 2: Run/Stop
+      -- "example_n_o" is a low active register and used by the demo core
       example_n_o          : out std_logic_vector(79 downto 0)
    );
 end keyboard;
