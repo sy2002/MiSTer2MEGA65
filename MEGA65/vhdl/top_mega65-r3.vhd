@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------
--- YOUR-PROJECT-NAME (GITHUB-REPO-SHORTNAME) QNICE ROM
+-- YOUR-PROJECT-NAME (GITHUB-REPO-SHORTNAME)
 --
 -- MEGA65 R3 main file that contains the whole machine
 --
