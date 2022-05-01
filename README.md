@@ -13,8 +13,9 @@ and get started by reading the
 TL;DR
 -----
 
-1. Fork MiSTer2MEGA65, rename it to the name of your port, fork the MiSTer
-   core you want to port and make it a Git submodule of your M2M fork.
+1. Scroll up and press the "Use this template" button to start a new
+   MiSTer2MEGA65 project. Then fork the MiSTer core you want to port
+   and make it a Git submodule of your newly created project.
 
 2. Wrap the MiSTer core inside `MEGA65/vhdl/main.vhd` while
    adjusting the clocks in `MEGA65/vhdl/clk.vhd`. Provide RAMs, ROMs and other
