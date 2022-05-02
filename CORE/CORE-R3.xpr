@@ -227,25 +227,25 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/HDMI/types_pkg.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/HDMI/types_pkg.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/HDMI/serialiser_10to1_selectio.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/HDMI/serialiser_10to1_selectio.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/HDMI/vga_to_hdmi.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/HDMI/vga_to_hdmi.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/HDMI/hdmi_tx_encoder.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/HDMI/hdmi_tx_encoder.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -263,19 +263,19 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/M65/mega65kbd_to_matrix.vhdl">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/M65/mega65kbd_to_matrix.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/M65/kb_matrix_ram.vhdl">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/M65/kb_matrix_ram.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/M65/matrix_to_keynum.vhdl">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/M65/matrix_to_keynum.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -287,7 +287,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/M65/pcm_to_pdm.vhdl">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/M65/pcm_to_pdm.vhdl">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -299,25 +299,25 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/hyperram/hyperram.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/hyperram/hyperram.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/hyperram/hyperram_ctrl.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/hyperram/hyperram_ctrl.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/hyperram/hyperram_config.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/hyperram/hyperram_config.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/hyperram/hyperram_io.vhd">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/hyperram/hyperram_io.vhd">
         <FileInfo SFType="VHDL2008">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -395,28 +395,28 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/MiSTer/video_mixer.sv">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/MiSTer/video_mixer.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/MiSTer/video_freezer.sv">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/MiSTer/video_freezer.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/MiSTer/scandoubler.v">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/MiSTer/scandoubler.v">
         <FileInfo SFType="SVerilog">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/MiSTer/hq2x.sv">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/MiSTer/hq2x.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -436,7 +436,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../M2M/vhdl/drivers/MiSTer/iir_filter.v">
+      <File Path="$PPRDIR/../M2M/vhdl/controllers/MiSTer/iir_filter.v">
         <FileInfo SFType="SVerilog">
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

@@ -62,10 +62,10 @@ VHDL=\
 	$(PPRDIR)/vhdl/block_rom.vhd \
 	$(PPRDIR)/vhdl/clk.vhd \
 	$(PPRDIR)/vhdl/debounce.vhd \
-	$(PPRDIR)/vhdl/drivers/kb_matrix_ram.vhdl \
-	$(PPRDIR)/vhdl/drivers/matrix_to_keynum.vhdl \
-	$(PPRDIR)/vhdl/drivers/mega65kbd_to_matrix.vhdl \
-	$(PPRDIR)/vhdl/drivers/pcm_to_pdm.vhdl \
+	$(PPRDIR)/vhdl/controllers/kb_matrix_ram.vhdl \
+	$(PPRDIR)/vhdl/controllers/matrix_to_keynum.vhdl \
+	$(PPRDIR)/vhdl/controllers/mega65kbd_to_matrix.vhdl \
+	$(PPRDIR)/vhdl/controllers/pcm_to_pdm.vhdl \
 	$(PPRDIR)/vhdl/keyboard.vhd \
 	$(PPRDIR)/vhdl/m65_const.vhd \
 	$(PPRDIR)/vhdl/qnice_globals.vhd \
