@@ -988,7 +988,7 @@ begin
    -- MEGA65 Core including the MiSTer core: Multiple clock domains
    ---------------------------------------------------------------------------------------------------------------
 
-   MEGA65 : entity work.MEGA65_Core
+   CORE : entity work.MEGA65_Core
       port map (
          CLK                     => CLK,
          RESET_M2M_N             => reset_m2m_n,

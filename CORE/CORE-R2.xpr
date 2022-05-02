@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="44" Path="/media/psf/Home/Documents/Privat/GNR/dev/MEGA65/MiSTer2MEGA65/MEGA65/MEGA65-R2.xpr">
+<Project Version="7" Minor="44" Path="/media/psf/Home/Documents/Privat/GNR/dev/MEGA65/MiSTer2MEGA65/CORE/CORE-R2.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="926450cd97ce43fe9c0a128c0d719455"/>
@@ -240,12 +240,12 @@
       </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="MEGA65_R2"/>
+        <Option Name="TopModule" Val="CORE_R2"/>
       </Config>
     </FileSet>
     <FileSet Name="constrs_1" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1">
       <Filter Type="Constrs"/>
-      <File Path="$PPRDIR/MEGA65-R2.xdc">
+      <File Path="$PPRDIR/CORE-R2.xdc">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

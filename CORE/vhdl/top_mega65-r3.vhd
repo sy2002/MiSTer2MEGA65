@@ -10,7 +10,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity mega65_r3 is
+entity CORE_R3 is
 port (
    CLK            : in  std_logic;                  -- 100 MHz clock
    RESET_N        : in  std_logic;                  -- CPU reset button, active low
@@ -87,9 +87,9 @@ port (
 --   hr2_clk_p      : out std_logic;
 --   hr_cs1         : out std_logic
 );
-end entity mega65_r3;
+end entity CORE_R3;
 
-architecture synthesis of mega65_r3 is
+architecture synthesis of CORE_R3 is
 
 begin
 

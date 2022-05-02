@@ -11,10 +11,10 @@ XILINX_DIR = /opt/Xilinx/Vivado/2019.2
 ROM=QNICE/osm_rom.rom
 
 # Specify the board revision - used as project name
-BOARD=MEGA65-R3
+BOARD=CORE-R3
 
 # Specfy the top-level entity name
-TOP=MEGA65_R3
+TOP=CORE_R3
 
 # Specify source files
 PPRDIR=.
@@ -143,14 +143,14 @@ clean:
 	rm -f usage_statistics_webtalk.*
 	rm -f vivado*
 	rm -f webtalk*
-	rm -rf MEGA65-R2.cache/
-	rm -rf MEGA65-R2.hw/
-	rm -rf MEGA65-R2.ip_user_files/
-	rm -rf MEGA65-R2.runs/
-	rm -rf MEGA65-R2.sim/
-	rm -rf MEGA65-R3.cache/
-	rm -rf MEGA65-R3.hw/
-	rm -rf MEGA65-R3.ip_user_files/
-	rm -rf MEGA65-R3.runs/
-	rm -rf MEGA65-R3.sim/
+	rm -rf CORE-R2.cache/
+	rm -rf CORE-R2.hw/
+	rm -rf CORE-R2.ip_user_files/
+	rm -rf CORE-R2.runs/
+	rm -rf CORE-R2.sim/
+	rm -rf CORE-R3.cache/
+	rm -rf CORE-R3.hw/
+	rm -rf CORE-R3.ip_user_files/
+	rm -rf CORE-R3.runs/
+	rm -rf CORE-R3.sim/
 

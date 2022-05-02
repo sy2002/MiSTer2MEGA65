@@ -1,6 +1,6 @@
 ## NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
 ##
-## Signal mapping for MEGA65-R3
+## Signal mapping for CORE-R2
 ##
 ## This machine is based on EXACT GITHUB REPO NAME OF THE MiSTer REPO
 ## Powered by MiSTer2MEGA65
@@ -14,47 +14,22 @@ create_clock -period 10.000 -name CLK [get_ports CLK]
 ## Important: Using them in subsequent statements, e.g. clock dividers requries that they
 ## have been named/defined here before
 ## otherwise Vivado does not find the pins)
-create_generated_clock -name qnice_clk     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT0]
-create_generated_clock -name hr_clk_x1     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT1]
-create_generated_clock -name hr_clk_x2     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT2]
-create_generated_clock -name hr_clk_x2_del [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT3]
-create_generated_clock -name audio_clk     [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT4]
-create_generated_clock -name tmds_clk      [get_pins M2M/i_clk_m2m/i_clk_hdmi/CLKOUT0]
-create_generated_clock -name hdmi_clk      [get_pins M2M/i_clk_m2m/i_clk_hdmi/CLKOUT1]
-create_generated_clock -name main_clk      [get_pins M2M/MEGA65/clk_gen/i_clk_main/CLKOUT0]
+create_generated_clock -name mainclk   [get_pins */clk_gen/i_clk_main_qnice/CLKOUT0]
+create_generated_clock -name qniceclk  [get_pins */clk_gen/i_clk_main_qnice/CLKOUT1]
+create_generated_clock -name pixelclk  [get_pins */clk_gen/i_clk_720p_hdmi/CLKOUT1]
+create_generated_clock -name pixelclk5 [get_pins */clk_gen/i_clk_720p_hdmi/CLKOUT0]
 
-## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
-create_generated_clock -name sdcard_clk -source [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins M2M/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
-
-## Clock divider pcm_clk (@ 12.288 MHz) is generated from audio_clk (@ 60 MHz). The ratio is 4.88, but rounded down to 4.
-create_generated_clock -name pcm_clk -source [get_pins M2M/i_clk_m2m/i_clk_qnice/CLKOUT4] -divide_by 4 [get_pins M2M/i_digital_pipeline/i_clk_synthetic/dest_clk_reg/Q]
+## Clock divider sdcardclk that creates the 25 MHz used by sd_spi.vhd
+create_generated_clock -name sdcardclk -source [get_pins */clk_gen/i_clk_main_qnice/CLKOUT1] -divide_by 2 [get_pins CORE/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells -include_replicated {{M2M/QNICE_SOC/eae_inst/op0_reg[*]} {M2M/QNICE_SOC/eae_inst/op1_reg[*]}}] \
-   -to [get_cells -include_replicated {M2M/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
-set_multicycle_path -from [get_cells -include_replicated {{M2M/QNICE_SOC/eae_inst/op0_reg[*]} {M2M/QNICE_SOC/eae_inst/op1_reg[*]}}] \
-   -to [get_cells -include_replicated {M2M/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
-
-# Place HyperRAM close to I/O pins
-startgroup
-create_pblock pblock_i_hyperram
-resize_pblock pblock_i_hyperram -add {SLICE_X0Y200:SLICE_X7Y224}
-add_cells_to_pblock pblock_i_hyperram [get_cells [list M2M/i_hyperram]]
-endgroup
-
-# Timing between ascal.vhd and HyperRAM is asynchronous.
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks hdmi_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks hdmi_clk]
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks main_clk]
-set_false_path -from [get_clocks hdmi_clk]     -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hdmi_clk]   -from [get_clocks main_clk]
-set_false_path -from [get_clocks qnice_clk]    -to [get_clocks hdmi_clk]
-
-set_false_path -from [get_clocks main_clk]     -to [get_clocks audio_clk]
-
+set_multicycle_path -from [get_cells -include_replicated {{CORE/QNICE_SOC/eae_inst/op0_reg[*]*} {CORE/QNICE_SOC/eae_inst/op1_reg[*]*}}] \
+   -to [get_cells -include_replicated {CORE/QNICE_SOC/eae_inst/res_reg[*]*}] -setup 3
+set_multicycle_path -from [get_cells -include_replicated {{CORE/QNICE_SOC/eae_inst/op0_reg[*]*} {CORE/QNICE_SOC/eae_inst/op1_reg[*]*}}] \
+   -to [get_cells -include_replicated {CORE/QNICE_SOC/eae_inst/res_reg[*]*}] -hold 2
+     
 ## Reset button
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports RESET_N]
 
@@ -68,18 +43,10 @@ set_property -dict {PACKAGE_PIN A13 IOSTANDARD LVCMOS33} [get_ports kb_io1]
 set_property -dict {PACKAGE_PIN C13 IOSTANDARD LVCMOS33} [get_ports kb_io2]
 
 ## Micro SD Connector (this is the slot at the bottom side of the case under the cover)
-set_property -dict {PACKAGE_PIN B15 IOSTANDARD LVCMOS33} [get_ports SD_RESET]
-set_property -dict {PACKAGE_PIN B17 IOSTANDARD LVCMOS33} [get_ports SD_CLK]
-set_property -dict {PACKAGE_PIN B16 IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
-set_property -dict {PACKAGE_PIN B18 IOSTANDARD LVCMOS33} [get_ports SD_MISO]
-set_property -dict {PACKAGE_PIN D17 IOSTANDARD LVCMOS33} [get_ports SD_CD]
-
-## Micro SD Connector (external slot at back of the cover)
-set_property -dict {PACKAGE_PIN K2  IOSTANDARD LVCMOS33} [get_ports SD2_RESET]
-set_property -dict {PACKAGE_PIN G2  IOSTANDARD LVCMOS33} [get_ports SD2_CLK]
-set_property -dict {PACKAGE_PIN J2  IOSTANDARD LVCMOS33} [get_ports SD2_MOSI]
-set_property -dict {PACKAGE_PIN H2  IOSTANDARD LVCMOS33} [get_ports SD2_MISO]
-set_property -dict {PACKAGE_PIN K1  IOSTANDARD LVCMOS33} [get_ports SD2_CD]
+set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports SD_RESET]
+set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports SD_CLK]
+set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
+set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports SD_MISO]
 
 ## Joystick port A
 set_property -dict {PACKAGE_PIN C14 IOSTANDARD LVCMOS33} [get_ports joy_1_up_n]
@@ -96,8 +63,8 @@ set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports joy_2_right_
 set_property -dict {PACKAGE_PIN F15 IOSTANDARD LVCMOS33} [get_ports joy_2_fire_n]
 
 ## PWM Audio
-set_property -dict {PACKAGE_PIN L6  IOSTANDARD LVCMOS33} [get_ports pwm_l]
-set_property -dict {PACKAGE_PIN F4  IOSTANDARD LVCMOS33} [get_ports pwm_r]
+#set_property -dict {PACKAGE_PIN L6 IOSTANDARD LVCMOS33} [get_ports pwm_l]
+#set_property -dict {PACKAGE_PIN F4 IOSTANDARD LVCMOS33} [get_ports pwm_r]
 
 ## VGA via VDAC
 set_property -dict {PACKAGE_PIN U15  IOSTANDARD LVCMOS33} [get_ports {VGA_RED[0]}]
@@ -134,29 +101,65 @@ set_property -dict {PACKAGE_PIN AA9  IOSTANDARD LVCMOS33} [get_ports vdac_clk]
 set_property -dict {PACKAGE_PIN V10  IOSTANDARD LVCMOS33} [get_ports vdac_sync_n]
 set_property -dict {PACKAGE_PIN W11  IOSTANDARD LVCMOS33} [get_ports vdac_blank_n]
 
-# HDMI output
-set_property -dict {PACKAGE_PIN Y1   IOSTANDARD TMDS_33}  [get_ports tmds_clk_n]
-set_property -dict {PACKAGE_PIN W1   IOSTANDARD TMDS_33}  [get_ports tmds_clk_p]
-set_property -dict {PACKAGE_PIN AB1  IOSTANDARD TMDS_33}  [get_ports {tmds_data_n[0]}]
-set_property -dict {PACKAGE_PIN AA1  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p[0]}]
-set_property -dict {PACKAGE_PIN AB2  IOSTANDARD TMDS_33}  [get_ports {tmds_data_n[1]}]
-set_property -dict {PACKAGE_PIN AB3  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p[1]}]
-set_property -dict {PACKAGE_PIN AB5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_n[2]}]
-set_property -dict {PACKAGE_PIN AA5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p[2]}]
+## HDMI via ADV7511
+#set_property -dict {PACKAGE_PIN AB3  IOSTANDARD LVCMOS33} [get_ports {hdmired[0]}]
+#set_property -dict {PACKAGE_PIN Y4   IOSTANDARD LVCMOS33} [get_ports {hdmired[1]}]
+#set_property -dict {PACKAGE_PIN AA4  IOSTANDARD LVCMOS33} [get_ports {hdmired[2]}]
+#set_property -dict {PACKAGE_PIN AA5  IOSTANDARD LVCMOS33} [get_ports {hdmired[3]}]
+#set_property -dict {PACKAGE_PIN AB5  IOSTANDARD LVCMOS33} [get_ports {hdmired[4]}]
+#set_property -dict {PACKAGE_PIN Y6   IOSTANDARD LVCMOS33} [get_ports {hdmired[5]}]
+#set_property -dict {PACKAGE_PIN AA6  IOSTANDARD LVCMOS33} [get_ports {hdmired[6]}]
+#set_property -dict {PACKAGE_PIN AB6  IOSTANDARD LVCMOS33} [get_ports {hdmired[7]}]
+#
+#set_property -dict {PACKAGE_PIN Y1   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[0]}]
+#set_property -dict {PACKAGE_PIN Y3   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[1]}]
+#set_property -dict {PACKAGE_PIN W4   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[2]}]
+#set_property -dict {PACKAGE_PIN W5   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[3]}]
+#set_property -dict {PACKAGE_PIN V7   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[4]}]
+#set_property -dict {PACKAGE_PIN V8   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[5]}]
+#set_property -dict {PACKAGE_PIN AB1  IOSTANDARD LVCMOS33} [get_ports {hdmigreen[6]}]
+#set_property -dict {PACKAGE_PIN W6   IOSTANDARD LVCMOS33} [get_ports {hdmigreen[7]}]
+#
+#set_property -dict {PACKAGE_PIN T6   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[0]}]
+#set_property -dict {PACKAGE_PIN U1   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[1]}]
+#set_property -dict {PACKAGE_PIN U5   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[2]}]
+#set_property -dict {PACKAGE_PIN U6   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[3]}]
+#set_property -dict {PACKAGE_PIN U2   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[4]}]
+#set_property -dict {PACKAGE_PIN U3   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[5]}]
+#set_property -dict {PACKAGE_PIN V4   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[6]}]
+#set_property -dict {PACKAGE_PIN V2   IOSTANDARD LVCMOS33} [get_ports {hdmiblue[7]}]
+#
+#set_property -dict {PACKAGE_PIN R4   IOSTANDARD LVCMOS33} [get_ports hdmi_hsync]
+#set_property -dict {PACKAGE_PIN R6   IOSTANDARD LVCMOS33} [get_ports hdmi_vsync]
+#set_property -dict {PACKAGE_PIN R2   IOSTANDARD LVCMOS33} [get_ports hdmi_de]
+#set_property -dict {PACKAGE_PIN Y2   IOSTANDARD LVCMOS33} [get_ports hdmi_clk]
+#
+#set_property -dict {PACKAGE_PIN T3   IOSTANDARD LVCMOS33} [get_ports hdmi_scl]
+#set_property -dict {PACKAGE_PIN U7   IOSTANDARD LVCMOS33} [get_ports hdmi_sda]
+#set_property -dict {PACKAGE_PIN Y9   IOSTANDARD LVCMOS33} [get_ports hdmi_int]
+#set_property -dict {PACKAGE_PIN AA1  IOSTANDARD LVCMOS33} [get_ports hdmi_spdif]
+
+#set_property -dict {PACKAGE_PIN AA8  IOSTANDARD LVCMOS33} [get_ports hdmi_spdif_out]
+
+## TPD12S016 companion chip for ADV7511
+#set_property -dict {PACKAGE_PIN Y8   IOSTANDARD LVCMOS33} [get_ports hpd_a]
+
+#set_property -dict {PACKAGE_PIN M15  IOSTANDARD LVCMOS33} [get_ports ct_hpd]
+#set_property -dict {PACKAGE_PIN AB8  IOSTANDARD LVCMOS33} [get_ports ls_oe]
 
 ## HyperRAM (standard)
-set_property -dict {PACKAGE_PIN D22 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports hr_clk_p]
-set_property -dict {PACKAGE_PIN A21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[0]}]
-set_property -dict {PACKAGE_PIN D21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[1]}]
-set_property -dict {PACKAGE_PIN C20 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[2]}]
-set_property -dict {PACKAGE_PIN A20 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[3]}]
-set_property -dict {PACKAGE_PIN B20 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[4]}]
-set_property -dict {PACKAGE_PIN A19 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[5]}]
-set_property -dict {PACKAGE_PIN E21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[6]}]
-set_property -dict {PACKAGE_PIN E22 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[7]}]
-set_property -dict {PACKAGE_PIN B21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports hr_rwds]
-set_property -dict {PACKAGE_PIN B22 IOSTANDARD LVCMOS33 PULLUP FALSE} [get_ports hr_reset]
-set_property -dict {PACKAGE_PIN C22 IOSTANDARD LVCMOS33 PULLUP FALSE} [get_ports hr_cs0]
+#set_property -dict {PACKAGE_PIN D22 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports hr_clk_p]
+#set_property -dict {PACKAGE_PIN A21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[0]}]
+#set_property -dict {PACKAGE_PIN D21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[1]}]
+#set_property -dict {PACKAGE_PIN C20 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[2]}]
+#set_property -dict {PACKAGE_PIN A20 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[3]}]
+#set_property -dict {PACKAGE_PIN B20 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[4]}]
+#set_property -dict {PACKAGE_PIN A19 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[5]}]
+#set_property -dict {PACKAGE_PIN E21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[6]}]
+#set_property -dict {PACKAGE_PIN E22 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[7]}]
+#set_property -dict {PACKAGE_PIN B21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports hr_rwds]
+#set_property -dict {PACKAGE_PIN B22 IOSTANDARD LVCMOS33 PULLUP FALSE} [get_ports hr_reset]
+#set_property -dict {PACKAGE_PIN C22 IOSTANDARD LVCMOS33 PULLUP FALSE} [get_ports hr_cs0]
 
 ## Additional HyperRAM on trap-door PMOD
 ## Pinout is for one of these: https://github.com/blackmesalabs/hyperram

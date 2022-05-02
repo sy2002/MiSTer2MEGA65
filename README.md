@@ -17,14 +17,14 @@ TL;DR
    MiSTer2MEGA65 project. Then fork the MiSTer core you want to port
    and make it a Git submodule of your newly created project.
 
-2. Wrap the MiSTer core inside `MEGA65/vhdl/main.vhd` while
-   adjusting the clocks in `MEGA65/vhdl/clk.vhd`. Provide RAMs, ROMs and other
-   devices in `MEGA65/vhdl/mega65.vhd` and wire everything correctly.
+2. Wrap the MiSTer core inside `CORE/vhdl/main.vhd` while
+   adjusting the clocks in `CORE/vhdl/clk.vhd`. Provide RAMs, ROMs and other
+   devices in `CORE/vhdl/mega65.vhd` and wire everything correctly.
 
 3. Configure your core's behavior, including how the start screen looks like,
    what ROMs should be loaded (and where to), the abilities of the
-   <kbd>Help</kbd> menu and more in `MEGA65/vhdl/config.vhd` and in
-   `MEGA65/vhdl/globals.vhd`.
+   <kbd>Help</kbd> menu and more in `CORE/vhdl/config.vhd` and in
+   `CORE/vhdl/globals.vhd`.
 
 **DONE** your core is ported to MEGA65! :-)
 
