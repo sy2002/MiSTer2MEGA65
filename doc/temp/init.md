@@ -1,6 +1,6 @@
 git clone https://github.com/MJoergen/C64MEGA65.git
 
-cd C64MEGA 65
+cd C64MEGA65
 
 (checkout develop)
 
@@ -15,7 +15,7 @@ cd QNICE/tools/
 ./make_toolchain.sh
 (answer all questions with ENTER)
 
-cd ../../MEGA65/m2m-rom/
+cd ../../CORE/m2m-rom/
 
 ./make_rom.sh 
 

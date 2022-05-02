@@ -1,10 +1,9 @@
 ----------------------------------------------------------------------------------
--- Commodore 64 for MEGA65
+-- MiSTer2MEGA65 Framework
 --
 -- Optional crop/zoom feature used by the digital pipeline.
 --
--- based on C64_MiSTer by the MiSTer development team
--- port done by MJoergen and sy2002 in 2022 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
