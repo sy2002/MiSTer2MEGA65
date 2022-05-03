@@ -13,6 +13,7 @@ CORE/m2m-rom/*.lis
 CORE/m2m-rom/*.out
 CORE/m2m-rom/*.rom
 CORE/load_bitstream.sh
+CORE/make_qasm.sh
 M2M/rom/*.lis
 M2M/rom/*.out
 M2M/rom/*.rom
