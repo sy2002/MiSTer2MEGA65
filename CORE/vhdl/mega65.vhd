@@ -36,6 +36,7 @@ port (
 
    -- Video and audio mode control
    qnice_video_mode_o      : out std_logic;        -- 720p always; 0 = 50Hz, 1 = 60 Hz
+   qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
@@ -208,6 +209,7 @@ begin
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
    qnice_video_mode_o         <= qnice_osm_control_i(C_MENU_HDMI_60HZ);       -- 720p always; 0 = 50Hz, 1 = 60 Hz
+   qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
 

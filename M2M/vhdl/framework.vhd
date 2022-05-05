@@ -122,15 +122,20 @@ port (
    main_joy2_left_n_o      : out std_logic;
    main_joy2_right_n_o     : out std_logic;
    main_joy2_fire_n_o      : out std_logic;
+   
+   -- QNICE control signals
    qnice_video_mode_i      : in  std_logic;
+   qnice_audio_mute_i      : in  std_logic;
    qnice_audio_filter_i    : in  std_logic;
    qnice_zoom_crop_i       : in  std_logic;
    qnice_ascal_mode_i      : in  std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_i : in  std_logic;
    qnice_ascal_triplebuf_i : in  std_logic;
    qnice_flip_joyports_i   : in  std_logic;
-   qnice_custom_dev_data_i : in  std_logic_vector(15 downto 0);
    qnice_osm_control_m_o   : out std_logic_vector(255 downto 0);
+   
+   -- QNICE device management
+   qnice_custom_dev_data_i : in  std_logic_vector(15 downto 0);
    qnice_ramrom_dev_o      : out std_logic_vector(15 downto 0);
    qnice_ramrom_addr_o     : out std_logic_vector(27 downto 0);
    qnice_ramrom_data_out_o : out std_logic_vector(15 downto 0);
@@ -209,8 +214,8 @@ signal main_drive_led         : std_logic;
 -- if the core outputs unsigned audio, make sure you convert properly to prevent a loss in audio quality
 signal filt_audio_l           : std_logic_vector(15 downto 0);
 signal filt_audio_r           : std_logic_vector(15 downto 0);
-signal audio_l                : std_logic_vector(15 downto 0);
-signal audio_r                : std_logic_vector(15 downto 0);
+signal audio_l                : signed(15 downto 0);
+signal audio_r                : signed(15 downto 0);
 
 signal main_crop_ce           : std_logic;
 signal main_crop_red          : std_logic_vector(7 downto 0);
@@ -228,6 +233,9 @@ signal main_osm_cfg_dxdy      : std_logic_vector(15 downto 0);
 signal main_osm_vram_addr     : std_logic_vector(15 downto 0);
 signal main_osm_vram_data     : std_logic_vector(15 downto 0);
 
+--- control signals from QNICE in main's clock domain
+signal main_audio_filter      : std_logic;      
+signal main_audio_mute        : std_logic;
 signal main_flip_joyports     : std_logic;
 
 ---------------------------------------------------------------------------------------------
@@ -631,7 +639,7 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 263
+         WIDTH => 265
       )
       port map (
          src_clk                => qnice_clk,
@@ -642,7 +650,9 @@ begin
          src_in(4)              => qnice_csr_joy2_on,
          src_in(5)              => qnice_flip_joyports_i,
          src_in(6)              => qnice_zoom_crop_i,
-         src_in(262 downto 7)   => qnice_osm_control_m,
+         src_in(7)              => qnice_audio_mute_i,
+         src_in(8)              => qnice_audio_filter_i,
+         src_in(264 downto 9)   => qnice_osm_control_m,
          dest_clk               => main_clk_i,
          dest_out(0)            => main_qnice_reset_o,
          dest_out(1)            => main_qnice_pause_o,
@@ -651,7 +661,9 @@ begin
          dest_out(4)            => main_csr_joy2_on,
          dest_out(5)            => main_flip_joyports,
          dest_out(6)            => main_zoom_crop,
-         dest_out(262 downto 7) => main_osm_control_m_o
+         dest_out(7)            => main_audio_mute,
+         dest_out(8)            => main_audio_filter,
+         dest_out(264 downto 9) => main_osm_control_m_o
       ); -- i_qnice2main
 
    -- Clock domain crossing: core to QNICE
@@ -799,8 +811,21 @@ begin
          ar          => filt_audio_r
       ); -- i_audio_out
 
-   audio_l <= filt_audio_l when qnice_audio_filter_i else std_logic_vector(main_audio_l_i);
-   audio_r <= filt_audio_r when qnice_audio_filter_i else std_logic_vector(main_audio_r_i);
+   select_or_mute_audio : process(all)
+   begin
+      if main_audio_mute = '1' then
+         audio_l <= (others => '0');
+         audio_r <= (others => '0');
+      else
+         if main_audio_filter = '0' then
+            audio_l <= main_audio_l_i;
+            audio_r <= main_audio_r_i;
+         else
+            audio_l <= signed(filt_audio_l);
+            audio_r <= signed(filt_audio_r);
+         end if;
+      end if;
+   end process;
 
    i_analog_pipeline : entity work.analog_pipeline
       generic map (
@@ -824,8 +849,8 @@ begin
          video_vblank_i           => main_video_vblank_i,
          audio_clk_i              => audio_clk, -- 30 MHz
          audio_rst_i              => audio_rst,
-         audio_left_i             => main_audio_l_i,
-         audio_right_i            => main_audio_r_i,
+         audio_left_i             => audio_l,
+         audio_right_i            => audio_r,
 
          -- Analog output (VGA and audio jack)
          vga_red_o                => vga_red,
@@ -898,8 +923,8 @@ begin
          video_vblank_i           => main_crop_vblank,
          audio_clk_i              => audio_clk, -- 30 MHz
          audio_rst_i              => audio_rst,
-         audio_left_i             => main_audio_l_i,
-         audio_right_i            => main_audio_r_i,
+         audio_left_i             => audio_l,
+         audio_right_i            => audio_r,
 
          -- Digital output (HDMI)
          hdmi_clk_i               => hdmi_clk,

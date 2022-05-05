@@ -142,6 +142,7 @@ signal main_joy2_fire_n       : std_logic;
 
 -- Video and audio mode control
 signal qnice_video_mode       : std_logic;
+signal qnice_audio_mute       : std_logic;
 signal qnice_audio_filter     : std_logic;
 signal qnice_zoom_crop        : std_logic;
 signal qnice_ascal_mode       : std_logic_vector(1 downto 0);
@@ -218,7 +219,7 @@ begin
       hr_clk_p                => hr_clk_p,
       hr_cs0                  => hr_cs0,
 
-      -- Connect to CORE
+      -- Connect to CORE and QNICE
       qnice_clk_o             => qnice_clk,
       reset_m2m_n_o           => reset_m2m_n,
       main_clk_i              => main_clk,
@@ -251,6 +252,7 @@ begin
       main_joy2_right_n_o     => main_joy2_right_n,
       main_joy2_fire_n_o      => main_joy2_fire_n,
       qnice_video_mode_i      => qnice_video_mode,
+      qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
       qnice_ascal_mode_i      => qnice_ascal_mode,
@@ -291,6 +293,7 @@ begin
 
          -- Video and audio mode control
          qnice_video_mode_o      => qnice_video_mode,    -- 720p always; 0 = 50Hz, 1 = 60 Hz
+         qnice_audio_mute_o      => qnice_audio_mute,
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,
          qnice_ascal_mode_o      => qnice_ascal_mode,
