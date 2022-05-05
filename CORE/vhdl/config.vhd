@@ -334,8 +334,8 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_Demo_A + OPTM_G_START,             -- Item A.1, cursor start position
                                              OPTM_G_Demo_A + OPTM_G_STDSEL,            -- Item A.2, selected by default
-                                             OPTM_G_DEMO_A,                            -- Item A.3
-                                             OPTM_G_DEMO_A,                            -- Item A.4
+                                             OPTM_G_Demo_A,                            -- Item A.3
+                                             OPTM_G_Demo_A,                            -- Item A.4
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "HDMI Frequency"
                                              OPTM_G_LINE,                              -- Line
