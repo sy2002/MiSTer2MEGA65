@@ -18,7 +18,7 @@
 --    0x0001   img_readonly_o
 --    0x0002   img_size_o: low word
 --    0x0003   img_size_o: high word
---    0x0004   img_type_o: 0 = 1541 emulated GCR (D64), 1 = 1541 real GCR mode (G64, D64), 2 = 1581 (D81)
+--    0x0004   img_type_o: type of disk image (if the core supports multiple disk image types), 0 = default
 --    0x0005   sd_buff_addr_o
 --    0x0006   sd_buff_dout_o
 --    0x0007   sd_buff_wr_o
