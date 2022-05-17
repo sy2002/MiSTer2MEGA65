@@ -28,6 +28,7 @@ USE ieee.std_logic_1164.all;
 
 ENTITY debounce IS
   GENERIC(
+    initial     : STD_LOGIC := '0';
     clk_freq    : INTEGER := 50_000_000;  --system clock frequency in Hz
     stable_time : INTEGER := 10);         --time button must remain stable in ms
   PORT(
@@ -48,8 +49,8 @@ BEGIN
     VARIABLE count :  INTEGER RANGE 0 TO clk_freq*stable_time/1000;  --counter for timing
   BEGIN
     IF(reset_n = '0') THEN                        --reset
-      flipflops(1 DOWNTO 0) <= "00";                 --clear input flipflops
-      result <= '0';                                 --clear result register
+      flipflops(1 DOWNTO 0) <= initial & initial;    --clear input flipflops
+      result <= initial;                             --clear result register
     ELSIF(clk'EVENT and clk = '1') THEN           --rising clock edge
       flipflops(0) <= button;                        --store button value in 1st flipflop
       flipflops(1) <= flipflops(0);                  --store 1st flipflop value in 2nd flipflop
