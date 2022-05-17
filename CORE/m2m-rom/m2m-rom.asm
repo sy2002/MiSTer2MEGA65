@@ -54,6 +54,7 @@ START_FIRMWARE  RBRA    START_SHELL, 1
 ; Input:
 ;   R8: Name of the file in capital letters
 ;   R9: 0=file, 1=directory
+;  R10: @TODO: Future release: Context (see CTX_* in sysdef.asm)
 ; Output:
 ;   R8: 0=do not filter file, i.e. show file
 FILTER_FILES    XOR     R8, R8                  ; R8 = 0 = do not filter file
@@ -70,12 +71,31 @@ FILTER_FILES    XOR     R8, R8                  ; R8 = 0 = do not filter file
 ;
 ; Input:
 ;   R8: File handle: You are allowed to modify the read pointer of the handle
+;   R9: @TODO: Future release: Context (see CTX_* in sysdef.asm)
 ; Output:
 ;   R8: 0=OK, error code otherwise
 ;   R9: image type if R8=0, otherwise 0 or optional ptr to  error msg string
 PREP_LOAD_IMAGE XOR     R8, R8                  ; no errors
                 XOR     R9, R9                  ; image type hardcoded to 0
                 RET
+
+; ----------------------------------------------------------------------------
+; Core specific callback functions: Custom messages
+; ----------------------------------------------------------------------------
+
+; CUSTOM_MSG callback function:
+;
+; Called in various situations where the Shell needs to output a message
+; to the end user. The situations and contexts are described in sysdef.asm
+;
+; Input:
+;   R8: Situation (CMSG_* constants in sysdef.asm)
+;   R9: Context   (CTX_* constants in sysdef.asm)
+; Output:
+;   R8: 0=no custom message available, otherwise pointer to string
+
+CUSTOM_MSG      XOR     R8, R8
+                RET              
 
 ; ----------------------------------------------------------------------------
 ; Core specific constants and strings
