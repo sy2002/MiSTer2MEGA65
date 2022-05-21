@@ -1,5 +1,5 @@
-MiSTer2MEGA65 (HEAVILY WORK-IN-PROGRESS)
-========================================
+MiSTer2MEGA65
+=============
 
 MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
 
