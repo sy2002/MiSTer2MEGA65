@@ -8,7 +8,7 @@
 ; the user of the M2M framework to decide. If the Shell is not used, then the
 ; respective overhead is being avoided.
 ;
-; done by sy2002 in 2021 and licensed under GPL v3
+; done by sy2002 in 2022 and licensed under GPL v3
 ; ****************************************************************************
 
 #include "../../M2M/QNICE/dist_kit/sysdef.asm"
