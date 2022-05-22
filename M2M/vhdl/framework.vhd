@@ -135,7 +135,6 @@ port (
    qnice_osm_control_m_o   : out std_logic_vector(255 downto 0);
    
    -- QNICE device management
-   qnice_custom_dev_data_i : in  std_logic_vector(15 downto 0);
    qnice_ramrom_dev_o      : out std_logic_vector(15 downto 0);
    qnice_ramrom_addr_o     : out std_logic_vector(27 downto 0);
    qnice_ramrom_data_out_o : out std_logic_vector(15 downto 0);
@@ -242,9 +241,6 @@ signal main_flip_joyports     : std_logic;
 -- qnice_clk
 ---------------------------------------------------------------------------------------------
 
--- MiSTer core custom devices/user specific devices
-signal qnice_custom_dev_data  : std_logic_vector(15 downto 0);
-
 -- Control and status register that QNICE uses to control the Core
 signal qnice_csr_reset        : std_logic;
 signal qnice_csr_pause        : std_logic;
@@ -265,9 +261,6 @@ signal qnice_vram_attr_we     : std_logic;   -- Writing to bits 15-8
 signal qnice_osm_cfg_enable   : std_logic;
 signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
 signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
-
--- QNICE On Screen Menu selections
-signal qnice_osm_control_m    : std_logic_vector(255 downto 0);
 
 -- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
 signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
@@ -509,7 +502,7 @@ begin
          -- "d" = directly controled by the firmware
          -- "m" = indirectly controled by the menu system
          control_d_o             => open,
-         control_m_o             => qnice_osm_control_m,
+         control_m_o             => qnice_osm_control_m_o,
 
          -- 16-bit special-purpose and 16-bit general-purpose input flags
          -- Special-purpose flags are having a given semantic when the "Shell" firmware is running,
@@ -652,7 +645,7 @@ begin
          src_in(6)              => qnice_zoom_crop_i,
          src_in(7)              => qnice_audio_mute_i,
          src_in(8)              => qnice_audio_filter_i,
-         src_in(264 downto 9)   => qnice_osm_control_m,
+         src_in(264 downto 9)   => qnice_osm_control_m_o,
          dest_clk               => main_clk_i,
          dest_out(0)            => main_qnice_reset_o,
          dest_out(1)            => main_qnice_pause_o,
@@ -706,7 +699,7 @@ begin
          src_in(32)              => qnice_osm_cfg_enable,
          src_in(33)              => qnice_video_mode_i,
          src_in(34)              => qnice_zoom_crop_i,
-         src_in(290 downto 35)   => qnice_osm_control_m,
+         src_in(290 downto 35)   => qnice_osm_control_m_o,
          dest_clk                => hdmi_clk,
          dest_out(15 downto 0)   => hdmi_osm_cfg_xy,
          dest_out(31 downto 16)  => hdmi_osm_cfg_dxdy,

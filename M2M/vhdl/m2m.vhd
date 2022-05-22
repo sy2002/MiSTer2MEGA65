@@ -152,9 +152,6 @@ signal qnice_ascal_triplebuf  : std_logic;
 -- flip joystick ports
 signal qnice_flip_joyports    : std_logic;
 
--- MiSTer core custom devices/user specific devices
-signal qnice_custom_dev_data  : std_logic_vector(15 downto 0);
-
 -- QNICE On Screen Menu selections
 signal qnice_osm_control_m    : std_logic_vector(255 downto 0);
 
@@ -259,7 +256,6 @@ begin
       qnice_ascal_polyphase_i => qnice_ascal_polyphase,
       qnice_ascal_triplebuf_i => qnice_ascal_triplebuf,
       qnice_flip_joyports_i   => qnice_flip_joyports,
-      qnice_custom_dev_data_i => qnice_custom_dev_data,
       qnice_osm_control_m_o   => qnice_osm_control_m,
       qnice_ramrom_dev_o      => qnice_ramrom_dev,
       qnice_ramrom_addr_o     => qnice_ramrom_addr,
@@ -310,7 +306,7 @@ begin
          qnice_dev_id_i          => qnice_ramrom_dev,
          qnice_dev_addr_i        => qnice_ramrom_addr,
          qnice_dev_data_i        => qnice_ramrom_data_o,
-         qnice_dev_data_o        => qnice_custom_dev_data,
+         qnice_dev_data_o        => qnice_ramrom_data_i,
          qnice_dev_ce_i          => qnice_ramrom_ce,
          qnice_dev_we_i          => qnice_ramrom_we,
 
