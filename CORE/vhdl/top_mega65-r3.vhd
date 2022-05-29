@@ -13,7 +13,11 @@ use ieee.numeric_std.all;
 entity CORE_R3 is
 port (
    CLK            : in  std_logic;                  -- 100 MHz clock
-   RESET_N        : in  std_logic;                  -- CPU reset button, active low
+
+   -- MAX10 FPGA (delivers reset)
+   max10_tx          : in std_logic;
+   max10_rx          : out std_logic;
+   max10_clkandsync  : inout std_logic;
 
    -- serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
@@ -96,8 +100,10 @@ begin
    M2M : entity work.m2m
       port map
       (
-         CLK            => CLK,
-         RESET_N        => RESET_N,
+         CLK               => CLK,
+         max10_tx          => max10_tx,
+         max10_rx          => max10_rx,
+         max10_clkandsync  => max10_clkandsync,
          
          -- serial communication (rxd, txd only; rts/cts are not available)
          -- 115.200 baud, 8-N-1

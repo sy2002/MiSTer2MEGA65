@@ -22,7 +22,10 @@ use xpm.vcomponents.all;
 entity framework is
 port (
    CLK            : in  std_logic;                  -- 100 MHz clock
-   RESET_N        : in  std_logic;                  -- CPU reset button, active low
+   -- MAX10 FPGA (delivers reset)
+   max10_tx          : in std_logic;
+   max10_rx          : out std_logic;
+   max10_clkandsync  : inout std_logic;
 
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
@@ -145,6 +148,8 @@ port (
 end entity framework;
 
 architecture synthesis of framework is
+
+signal RESET_N : std_logic;
 
 signal qnice_ramrom_data_in : std_logic_vector(15 downto 0);
 
@@ -349,6 +354,29 @@ end component audio_out;
 begin
 
    qnice_clk_o <= qnice_clk;
+
+   -----------------------------------------------------------------------------------------
+   -- MAX10 FPGA handling: extract reset signal
+   -----------------------------------------------------------------------------------------
+
+   MAX10 : entity work.max10
+      port map (
+         pixelclock        => CLK,
+         cpuclock          => CLK,
+         led               => open,
+
+         max10_rx          => max10_rx,
+         max10_tx          => max10_tx,
+         max10_clkandsync  => max10_clkandsync,
+
+         max10_fpga_commit => open,
+         max10_fpga_date   => open,
+         reset_button      => RESET_N,
+         dipsw             => open,
+         j21in             => open,
+         j21ddr            => (others => '0'),
+         j21out            => (others => '0')
+      );
 
    i_clk_m2m : entity work.clk_m2m
       port map (
