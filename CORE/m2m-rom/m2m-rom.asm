@@ -138,7 +138,7 @@ MENU_HEAP_SIZE  .EQU 1024
 HEAP_SIZE       .EQU 6144                       ; 7168 - 1024 = 6144
 HEAP            .BLOCK 1
 
-; in RELEASE mode: 16k of heap which leads to a better user experience when
+; in RELEASE mode: 28k of heap which leads to a better user experience when
 ; it comes to folders with a lot of files
 #else
 

@@ -55,6 +55,7 @@ entity digital_pipeline is
       tmds_clk_n_o             : out std_logic;
 
       -- Connect to QNICE and Video RAM
+      hdmi_dvi_i               : in  std_logic;
       hdmi_video_mode_i        : in  std_logic;
       hdmi_crop_mode_i         : in  std_logic;
       hdmi_osm_cfg_enable_i    : in  std_logic;
@@ -466,7 +467,7 @@ begin
    i_vga_to_hdmi : entity work.vga_to_hdmi
       port map (
          select_44100 => '0',
-         dvi          => '0',
+         dvi          => hdmi_dvi_i,
          vic          => std_logic_vector(to_unsigned(hdmi_video_mode.CEA_CTA_VIC, 8)),
          aspect       => hdmi_video_mode.ASPECT,
          pix_rep      => hdmi_video_mode.PIXEL_REP,

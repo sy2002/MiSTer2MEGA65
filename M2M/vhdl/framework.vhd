@@ -127,6 +127,7 @@ port (
    main_joy2_fire_n_o      : out std_logic;
    
    -- QNICE control signals
+   qnice_dvi_i             : in  std_logic;
    qnice_video_mode_i      : in  std_logic;
    qnice_audio_mute_i      : in  std_logic;
    qnice_audio_filter_i    : in  std_logic;
@@ -149,15 +150,11 @@ end entity framework;
 
 architecture synthesis of framework is
 
-signal RESET_N : std_logic;
-
-signal qnice_ramrom_data_in : std_logic_vector(15 downto 0);
-
 ---------------------------------------------------------------------------------------------
 -- Constants
 ---------------------------------------------------------------------------------------------
 
-constant BOARD_CLK_SPEED   : natural := 100_000_000;
+constant BOARD_CLK_SPEED      : natural := 100_000_000;
 
 -- M2M's strategy on video modes:
 -- VGA port: Retro experience, very often a 4:3 aspect ratio and retro-ish resolutions
@@ -197,11 +194,16 @@ signal hdmi_rst               : std_logic;
 -- Reset Control
 ---------------------------------------------------------------------------------------------
 
+signal reset_n                : std_logic;
+signal reset_n_dbnce          : std_logic;
 signal reset_core_n           : std_logic;
 
 --------------------------------------------------------------------------------------------
 -- main_clk_i (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
+
+-- Device management
+signal qnice_ramrom_data_in   : std_logic_vector(15 downto 0);
 
 -- QNICE control and status register
 signal main_csr_keyboard_on   : std_logic;
@@ -371,17 +373,26 @@ begin
 
          max10_fpga_commit => open,
          max10_fpga_date   => open,
-         reset_button      => RESET_N,
+         reset_button      => reset_n,
          dipsw             => open,
          j21in             => open,
          j21ddr            => (others => '0'),
          j21out            => (others => '0')
       );
+      
+   -- 20 ms stable time for the reset button
+   i_reset_debouncer : entity work.debounce
+      generic map(initial => '1', clk_freq => BOARD_CLK_SPEED, stable_time => 20)
+      port map (clk => CLK, reset_n => '1', button => reset_n, result => reset_n_dbnce);
+
+   ---------------------------------------------------------------------------------------------------------------
+   -- Generate clocks and reset signals
+   ---------------------------------------------------------------------------------------------------------------
 
    i_clk_m2m : entity work.clk_m2m
       port map (
          sys_clk_i       => CLK,
-         sys_rstn_i      => RESET_N,
+         sys_rstn_i      => reset_n_dbnce,
          qnice_clk_o     => qnice_clk,
          qnice_rst_o     => qnice_rst,
          hr_clk_x1_o     => hr_clk_x1,
@@ -405,7 +416,7 @@ begin
       )
       port map (
          CLK            => CLK,
-         RESET_N        => RESET_N,
+         RESET_N        => reset_n_dbnce,
          reset_m2m_n_o  => reset_m2m_n_o,
          reset_core_n_o => reset_core_n
       ); -- i_reset_manager
@@ -414,7 +425,7 @@ begin
    -- Core Clock Domain: main_clk_i
    ---------------------------------------------------------------------------------------------------------------
 
-   i_debouncer : entity work.debouncer
+   i_joy_debouncer : entity work.debouncer
       generic map (
          CLK_FREQ             => CORE_CLK_SPEED
       )
@@ -957,6 +968,7 @@ begin
          tmds_clk_n_o             => tmds_clk_n,
 
          -- Connect to QNICE and Video RAM
+         hdmi_dvi_i               => qnice_dvi_i, -- proper clock domain crossing for this very signal happens inside vga_to_hdmi.vhd
          hdmi_video_mode_i        => hdmi_video_mode,
          hdmi_crop_mode_i         => hdmi_zoom_crop,
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
