@@ -50,6 +50,9 @@ FB_HEAD         .BLOCK 1                        ; lnkd list: curr. disp. head
 FB_ITEMS_COUNT  .BLOCK 1                        ; overall amount of items
 FB_ITEMS_SHOWN  .BLOCK 1                        ; # of dir. items shown so far
 
+; context variables (see CTX_* constants in sysdef.asm)
+SF_CONTEXT      .BLOCK 1                        ; context for SELECT_FILE
+
 ; VDRIVES_NUM:      Amount of virtual, mountable drives; needs to correlate
 ;                   with the actual hardware in vdrives.vhd and the menu items
 ;                   tagged with OPTM_G_MOUNT_DRV in config.vhd

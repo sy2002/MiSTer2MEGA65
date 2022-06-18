@@ -319,3 +319,22 @@ VD_RD               .EQU 0x7008     ; SD read request
 VD_WR               .EQU 0x7009     ; SD write request
 VD_ACK              .EQU 0x700A     ; SD acknowledge
 VD_B_DIN            .EQU 0x700B     ; drive buffer: data in (from drive)
+
+; ----------------------------------------------------------------------------
+; Situation and context identifiers for custom messages
+; ----------------------------------------------------------------------------
+
+CTX_MASK_CTX        .EQU 0xFF00     ; used to mask out the lower byte
+CTX_MASK_PARAM      .EQU 0x00FF     ; used to mask out the higher byte
+
+; Trying to mount a disk or a rom image. The lower byte contains the
+; core-specific disk or rom image type and core specific code can use this
+; to filter for the right types and to output context-sensitive messages
+CTX_MOUNT_DISKIMG   .EQU 0x0100     ; trying to mount a disk image
+CTX_LOAD_ROM        .EQU 0x0200     ; trying to mount a rom image
+
+
+; The filter function returned an empty linked list. This happens when there
+; is no file that fits the criteria in the root folder and additionally the
+; root folder has no sub-directory
+CMSG_BROWSENOTHING  .EQU 0x0001

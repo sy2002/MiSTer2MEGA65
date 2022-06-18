@@ -67,6 +67,15 @@ WRN_MAXFILES    .ASCII_P "Warning: This directory contains more files\n"
                 .ASCII_P "be aware that random files will be missing.\n\n"
                 .ASCII_W "Press SPACE to continue.\n"
 
+WRN_EMPTY_BRW   .ASCII_P "The root directory of the SD card contains\n"
+                .ASCII_P "no sub-directories that might contain any\n"
+                .ASCII_P "files that match the criteria of this core.\n\n"
+                .ASCII_P "And the root directory itself also does not\n"
+                .ASCII_P "contain any files that match the criteria\n"
+                .ASCII_P "of this core.\n\n"
+                .ASCII_P "Nothing to browse.\n\n"
+                .ASCII_W "Press Space to continue."
+
 WRN_ERROR_CODE  .ASCII_W "Error code: "
 
 ; ----------------------------------------------------------------------------

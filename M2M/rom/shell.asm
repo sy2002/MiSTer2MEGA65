@@ -249,7 +249,13 @@ _HM_SDMOUNTED1  MOVE    SD_ACTIVE, R0
                 ; The status of the device handle HANDLE_DEV will be at the
                 ; subdirectory that has been selected so that a subsequent
                 ; file open can be directly done.
-_HM_SDMOUNTED2  RSUB    SELECT_FILE, 1
+                ;
+                ; We are hard-coding the context "disk image mounting" as we
+                ; currently are not supporting yet any other type of mounting
+                ; such as modules, ROM images, etc.
+_HM_SDMOUNTED2  MOVE    SF_CONTEXT, R8
+                MOVE    CTX_MOUNT_DISKIMG, @R8
+                RSUB    SELECT_FILE, 1
 
                 ; No error and no special status
                 CMP     0, R9
@@ -276,7 +282,7 @@ _HM_SDCHANGED   MOVE    LOG_STR_SD, R8
                 ; Cancelled via Run/Stop
 _HM_SDMOUNTED2A CMP     2, R9                   ; Run/Stop?
                 RBRA    _HM_SDMOUNTED2C, !Z     ; no            
-                RSUB    SCR$OSM_OFF, 1          ; hide the big window
+_HM_SDMOUNTED2E RSUB    SCR$OSM_OFF, 1          ; hide the big window
 
                 MOVE    R7, R8                  ; R7: virtual drive number
                 RSUB    VD_MENGRP, 1            ; get index of menu item
@@ -298,8 +304,16 @@ _HM_SDMOUNTED2B MOVE    R9, R10                 ; menu index
                 RSUB    _HM_SETMENU, 1          ; see comment at _HM_MOUNTED
                 RBRA    _HM_SDMOUNTED7, 1       ; return to OSM
 
+                ; Everything filtered, see CMSG_BROWSENOTHING in sysdef.asm
+_HM_SDMOUNTED2C CMP     3, R9                   ; CMSG_BROWSENOTHING situation
+                RBRA    _HM_SDMOUNTED2D, !Z     ; no
+                RSUB    FB_RE_INIT, 1           ; reset file browser
+                MOVE    M2M$CSR, R8             ; set SD card..
+                AND     M2M$CSR_UN_SD_MODE, @R8 ; ..back to auto-detect
+                RBRA    _HM_SDMOUNTED2E, 1      ; continue like Run/Stop
+
                 ; Unknown error / fatal
-_HM_SDMOUNTED2C MOVE    ERR_BROWSE_UNKN, R8     ; and R9 contains error code
+_HM_SDMOUNTED2D MOVE    ERR_BROWSE_UNKN, R8     ; and R9 contains error code
                 RBRA    FATAL, 1                
 
                 ; Step #4: Copy the disk image into the mount buffer
