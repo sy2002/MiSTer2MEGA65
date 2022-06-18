@@ -67,6 +67,8 @@ Framework level:
   HANDLE_MOUNTING (shell.asm, this function is all about mounting VIRTUAL
   DRIVES) to a generic function, so that whomever tries to access the SD
   card for the first time is actually mounting it.
+* Make sure that you set the right context CTX_LOAD_ROM in SF_CONTEXT before
+  calling SELECT_FILE.
 * We might also consider factor-out the code that loads the disk image into
   a buffer because this code can be used 1-to-1 also for loading a rom
   image into a rom.
