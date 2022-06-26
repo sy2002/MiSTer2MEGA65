@@ -48,8 +48,6 @@ signal clkfb1             : std_logic;
 signal clkfb1_mmcm        : std_logic;
 signal clkfb2             : std_logic;
 signal clkfb2_mmcm        : std_logic;
-signal clkfb3             : std_logic;
-signal clkfb3_mmcm        : std_logic;
 signal qnice_clk_mmcm     : std_logic;
 signal hr_clk_x1_mmcm     : std_logic;
 signal hr_clk_x2_mmcm     : std_logic;
@@ -209,12 +207,6 @@ begin
       port map (
          I => clkfb2_mmcm,
          O => clkfb2
-      );
-
-   clkfb3_bufg : BUFG
-      port map (
-         I => clkfb3_mmcm,
-         O => clkfb3
       );
 
    qnice_clk_bufg : BUFG
