@@ -87,6 +87,7 @@ port (
    -- M2M Keyboard interface
    main_kb_key_num_i       : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
    main_kb_key_pressed_n_i : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
+   main_drive_led_o        : out std_logic;
 
    -- Joysticks input
    main_joy_1_up_n_i       : in std_logic;
@@ -320,4 +321,7 @@ begin
          qnice_we_i        => qnice_demo_vd_we
       );
 
+   main_drive_led_o <= '0';
+
 end architecture synthesis;
+

@@ -104,6 +104,7 @@ port (
    main_reset_core_o       : out std_logic;
    main_key_num_o          : out integer range 0 to 79;
    main_key_pressed_n_o    : out std_logic;
+   main_drive_led_i        : in  std_logic;
    main_osm_control_m_o    : out std_logic_vector(255 downto 0);
    main_audio_l_i          : in  signed(15 downto 0);
    main_audio_r_i          : in  signed(15 downto 0);
@@ -199,6 +200,17 @@ signal reset_n_dbnce          : std_logic;
 signal reset_core_n           : std_logic;
 
 --------------------------------------------------------------------------------------------
+-- CLK (Input clock)
+---------------------------------------------------------------------------------------------
+
+-- keyboard handling
+signal sys_qnice_keys_n       : std_logic_vector(15 downto 0);
+signal sys_csr_keyboard_on    : std_logic;
+signal sys_key_num            : integer range 0 to 79;
+signal sys_key_pressed_n      : std_logic;
+signal sys_drive_led          : std_logic;
+
+--------------------------------------------------------------------------------------------
 -- main_clk_i (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
 
@@ -206,15 +218,11 @@ signal reset_core_n           : std_logic;
 signal qnice_ramrom_data_in   : std_logic_vector(15 downto 0);
 
 -- QNICE control and status register
-signal main_csr_keyboard_on   : std_logic;
 signal main_csr_joy1_on       : std_logic;
 signal main_csr_joy2_on       : std_logic;
+signal main_key_num           : std_logic_vector(7 downto 0);
 
 signal main_zoom_crop         : std_logic;
-
--- keyboard handling
-signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
-signal main_drive_led         : std_logic;
 
 -- signed audio from the core
 -- if the core outputs unsigned audio, make sure you convert properly to prevent a loss in audio quality
@@ -465,8 +473,8 @@ begin
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    i_m2m_keyb : entity work.m2m_keyb
       port map (
-         clk_main_i           => main_clk_i,
-         clk_main_speed_i     => CORE_CLK_SPEED,
+         clk_main_i           => CLK,
+         clk_main_speed_i     => 100_000_000,
 
          -- interface to the MEGA65 keyboard controller
          kio8_o               => kb_io0,
@@ -474,15 +482,15 @@ begin
          kio10_i              => kb_io2,
 
          -- interface to the core
-         enable_core_i        => main_csr_keyboard_on,
-         key_num_o            => main_key_num_o,
-         key_pressed_n_o      => main_key_pressed_n_o,
+         enable_core_i        => sys_csr_keyboard_on,
+         key_num_o            => sys_key_num,
+         key_pressed_n_o      => sys_key_pressed_n,
 
          -- control the drive led on the MEGA65 keyboard
-         drive_led_i          => main_drive_led,
+         drive_led_i          => sys_drive_led,
 
          -- interface to QNICE: used by the firmware and the Shell
-         qnice_keys_n_o       => main_qnice_keys_n
+         qnice_keys_n_o       => sys_qnice_keys_n
       ); -- i_m2m_keyb
 
    ---------------------------------------------------------------------------------------------------------------
@@ -677,7 +685,7 @@ begin
          src_clk                => qnice_clk,
          src_in(0)              => qnice_csr_reset,
          src_in(1)              => qnice_csr_pause,
-         src_in(2)              => qnice_csr_keyboard_on,
+         src_in(2)              => '0',
          src_in(3)              => qnice_csr_joy1_on,
          src_in(4)              => qnice_csr_joy2_on,
          src_in(5)              => qnice_flip_joyports_i,
@@ -688,7 +696,7 @@ begin
          dest_clk               => main_clk_i,
          dest_out(0)            => main_qnice_reset_o,
          dest_out(1)            => main_qnice_pause_o,
-         dest_out(2)            => main_csr_keyboard_on,
+         dest_out(2)            => open,
          dest_out(3)            => main_csr_joy1_on,
          dest_out(4)            => main_csr_joy2_on,
          dest_out(5)            => main_flip_joyports,
@@ -698,17 +706,56 @@ begin
          dest_out(264 downto 9) => main_osm_control_m_o
       ); -- i_qnice2main
 
-   -- Clock domain crossing: core to QNICE
-   i_main2qnice: xpm_cdc_array_single
+   -- Clock domain crossing: QNICE to SYS
+   i_qnice2sys: xpm_cdc_array_single
+      generic map (
+         WIDTH => 1
+      )
+      port map (
+         src_clk                => qnice_clk,
+         src_in(0)              => qnice_csr_keyboard_on,
+         dest_clk               => CLK,
+         dest_out(0)            => sys_csr_keyboard_on
+      ); -- i_qnice2sys
+
+   -- Clock domain crossing: main to SYS
+   i_main2sys: xpm_cdc_array_single
+      generic map (
+         WIDTH => 1
+      )
+      port map (
+         src_clk                => main_clk_i,
+         src_in(0)              => main_drive_led_i,
+         dest_clk               => CLK,
+         dest_out(0)            => sys_drive_led
+      ); -- i_main2sys
+
+   -- Clock domain crossing: SYS to QNICE
+   i_sys2qnice: xpm_cdc_array_single
       generic map (
          WIDTH => 16
       )
       port map (
-         src_clk                => main_clk_i,
-         src_in(15 downto 0)    => main_qnice_keys_n,
+         src_clk                => CLK,
+         src_in(15 downto 0)    => sys_qnice_keys_n,
          dest_clk               => qnice_clk,
          dest_out(15 downto 0)  => qnice_qnice_keys_n
-      ); -- i_main2qnice
+      ); -- i_sys2qnice
+
+   -- Clock domain crossing: SYS to QNICE
+   i_sys2main: xpm_cdc_array_single
+      generic map (
+         WIDTH => 9
+      )
+      port map (
+         src_clk              => CLK,
+         src_in(7 downto 0)   => std_logic_vector(to_unsigned(sys_key_num, 8)),
+         src_in(8)            => sys_key_pressed_n,
+         dest_clk             => main_clk_i,
+         dest_out(7 downto 0) => main_key_num,
+         dest_out(8)          => main_key_pressed_n_o
+      ); -- i_sys2main
+   main_key_num_o <= to_integer(unsigned(main_key_num));
 
    -- Clock domain crossing: QNICE to VGA QNICE-On-Screen-Display
    i_qnice2video: xpm_cdc_array_single
