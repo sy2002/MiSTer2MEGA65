@@ -13,6 +13,9 @@ entity democore_video is
       clk_main_i     : in  std_logic;
       reset_i        : in  std_logic;
 
+      -- Ball's RGB color value
+      ball_col_rgb_i : in  std_logic_vector(23 downto 0);
+
       -- Game input
       ball_pos_x_i   : in  std_logic_vector(15 downto 0);
       ball_pos_y_i   : in  std_logic_vector(15 downto 0);
@@ -43,7 +46,6 @@ architecture synthesis of democore_video is
    constant C_COL_LIGHT      : std_logic_vector(23 downto 0) := X"88CCAA";
    constant C_COL_DARK       : std_logic_vector(23 downto 0) := X"557766";
    constant C_COL_BORDER     : std_logic_vector(23 downto 0) := X"FFFFFF";
-   constant C_COL_BALL       : std_logic_vector(23 downto 0) := X"EE4020";
    constant C_COL_PADDLE     : std_logic_vector(23 downto 0) := X"40EE20";
    constant C_COL_LIVES      : std_logic_vector(23 downto 0) := X"EE40C0";
    constant C_COL_BLANK      : std_logic_vector(23 downto 0) := X"000000";
@@ -173,7 +175,7 @@ begin
          -- Render red-ish square
          if video_pixel_x >= to_integer(unsigned(ball_pos_x_i)) and video_pixel_x < to_integer(unsigned(ball_pos_x_i)) + C_SIZE_BALL and
             video_pixel_y >= to_integer(unsigned(ball_pos_y_i)) and video_pixel_y < to_integer(unsigned(ball_pos_y_i)) + C_SIZE_BALL then
-               video_rgb <= C_COL_BALL;
+               video_rgb <= ball_col_rgb_i;
          end if;
 
          -- Render green-ish paddle
