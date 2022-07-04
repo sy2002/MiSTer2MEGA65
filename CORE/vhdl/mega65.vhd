@@ -103,7 +103,7 @@ port (
    main_joy_2_fire_n_i     : in std_logic;
 
    -- On-Screen-Menu selections
-   main_osm_control_i     : in std_logic_vector(255 downto 0)
+   main_osm_control_i      : in std_logic_vector(255 downto 0)
 );
 end entity MEGA65_Core;
 
