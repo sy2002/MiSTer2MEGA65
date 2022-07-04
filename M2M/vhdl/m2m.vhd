@@ -112,6 +112,9 @@ signal main_drive_led         : std_logic;
 -- QNICE On Screen Menu selections
 signal main_osm_control_m     : std_logic_vector(255 downto 0);
 
+-- QNICE general purpose register
+signal main_qnice_gp_reg      : std_logic_vector(255 downto 0);
+
 -- signed audio from the core
 -- if the core outputs unsigned audio, make sure you convert properly to prevent a loss in audio quality
 signal main_audio_l           : signed(15 downto 0);
@@ -159,6 +162,9 @@ signal qnice_flip_joyports    : std_logic;
 
 -- QNICE On Screen Menu selections
 signal qnice_osm_control_m    : std_logic_vector(255 downto 0);
+
+-- QNICE general purpose register
+signal qnice_gp_reg           : std_logic_vector(255 downto 0);
 
 -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
 -- ramrom_addr is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
@@ -236,6 +242,7 @@ begin
       main_key_pressed_n_o    => main_key_pressed_n,
       main_drive_led_i        => main_drive_led,
       main_osm_control_m_o    => main_osm_control_m,
+      main_qnice_gp_reg_o     => main_qnice_gp_reg,
       main_audio_l_i          => main_audio_l,
       main_audio_r_i          => main_audio_r,
       main_video_ce_i         => main_video_ce,
@@ -268,6 +275,7 @@ begin
       qnice_ascal_triplebuf_i => qnice_ascal_triplebuf,
       qnice_flip_joyports_i   => qnice_flip_joyports,
       qnice_osm_control_m_o   => qnice_osm_control_m,
+      qnice_gp_reg_o          => qnice_gp_reg,
       qnice_ramrom_dev_o      => qnice_ramrom_dev,
       qnice_ramrom_addr_o     => qnice_ramrom_addr,
       qnice_ramrom_data_out_o => qnice_ramrom_data_o,
@@ -314,6 +322,9 @@ begin
          -- On-Screen-Menu selections (in QNICE clock domain)
          qnice_osm_control_i     => qnice_osm_control_m,
 
+         -- QNICE general purpose register
+         qnice_gp_reg_i          => qnice_gp_reg,         
+
          -- Core-specific devices
          qnice_dev_id_i          => qnice_ramrom_dev,
          qnice_dev_addr_i        => qnice_ramrom_addr,
@@ -335,6 +346,9 @@ begin
 
          -- On-Screen-Menu selections (in main clock domain)
          main_osm_control_i      => main_osm_control_m,
+
+         -- QNICE general purpose register (in main clock domain)
+         main_qnice_gp_reg_i          => main_qnice_gp_reg,         
 
          -- Video output
          main_video_ce_o         => main_video_ce,

@@ -77,7 +77,8 @@ begin
          reset_i              => reset_soft_i or reset_hard_i,       -- long and short press of reset button mean the same
          pause_i              => pause_i,
          
-         ball_col_rgb_i       => x"EE4020",                          -- ball color (RGB): orange         
+         ball_col_rgb_i       => x"EE4020",                          -- ball color (RGB): orange
+         paddle_speed_i       => x"1",                               -- paddle speed is about 50 pixels / sec (due to 50 Hz)          
          
          keyboard_n_i         => keyboard_n,                         -- move the paddle with the cursor left/right keys...
          joy_up_n_i           => joy_1_up_n_i,                       -- ... or move the paddle with a joystick in port #1

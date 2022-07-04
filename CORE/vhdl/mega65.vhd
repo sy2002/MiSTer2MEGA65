@@ -50,6 +50,9 @@ port (
    -- On-Screen-Menu selections
    qnice_osm_control_i     : in std_logic_vector(255 downto 0);
 
+   -- QNICE general purpose register
+   qnice_gp_reg_i          : in std_logic_vector(255 downto 0);
+
    -- Core-specific devices
    qnice_dev_id_i          : in std_logic_vector(15 downto 0);
    qnice_dev_addr_i        : in std_logic_vector(27 downto 0);
@@ -103,7 +106,10 @@ port (
    main_joy_2_fire_n_i     : in std_logic;
 
    -- On-Screen-Menu selections
-   main_osm_control_i      : in std_logic_vector(255 downto 0)
+   main_osm_control_i     : in std_logic_vector(255 downto 0);
+   
+   -- QNICE general purpose register converted to main clock domain
+   main_qnice_gp_reg_i    : in std_logic_vector(255 downto 0)
 );
 end entity MEGA65_Core;
 

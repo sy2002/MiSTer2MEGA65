@@ -106,6 +106,7 @@ port (
    main_key_pressed_n_o    : out std_logic;
    main_drive_led_i        : in  std_logic;
    main_osm_control_m_o    : out std_logic_vector(255 downto 0);
+   main_qnice_gp_reg_o     : out std_logic_vector(255 downto 0);
    main_audio_l_i          : in  signed(15 downto 0);
    main_audio_r_i          : in  signed(15 downto 0);
    main_video_ce_i         : in  std_logic;
@@ -138,6 +139,7 @@ port (
    qnice_ascal_triplebuf_i : in  std_logic;
    qnice_flip_joyports_i   : in  std_logic;
    qnice_osm_control_m_o   : out std_logic_vector(255 downto 0);
+   qnice_gp_reg_o          : out std_logic_vector(255 downto 0);
    
    -- QNICE device management
    qnice_ramrom_dev_o      : out std_logic_vector(15 downto 0);
@@ -548,7 +550,7 @@ begin
          -- 256-bit General purpose control flags
          -- "d" = directly controled by the firmware
          -- "m" = indirectly controled by the menu system
-         control_d_o             => open,
+         control_d_o             => qnice_gp_reg_o,
          control_m_o             => qnice_osm_control_m_o,
 
          -- 16-bit special-purpose and 16-bit general-purpose input flags
@@ -679,31 +681,31 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 265
+         WIDTH => 520
       )
       port map (
          src_clk                => qnice_clk,
          src_in(0)              => qnice_csr_reset,
          src_in(1)              => qnice_csr_pause,
-         src_in(2)              => '0',
-         src_in(3)              => qnice_csr_joy1_on,
-         src_in(4)              => qnice_csr_joy2_on,
-         src_in(5)              => qnice_flip_joyports_i,
-         src_in(6)              => qnice_zoom_crop_i,
-         src_in(7)              => qnice_audio_mute_i,
-         src_in(8)              => qnice_audio_filter_i,
-         src_in(264 downto 9)   => qnice_osm_control_m_o,
+         src_in(2)                  => qnice_csr_joy1_on,
+         src_in(3)                  => qnice_csr_joy2_on,
+         src_in(4)                  => qnice_flip_joyports_i,
+         src_in(5)                  => qnice_zoom_crop_i,
+         src_in(6)                  => qnice_audio_mute_i,
+         src_in(7)                  => qnice_audio_filter_i,
+         src_in(263 downto 8)       => qnice_osm_control_m_o,
+         src_in(519 downto 264)     => qnice_gp_reg_o,
          dest_clk               => main_clk_i,
          dest_out(0)            => main_qnice_reset_o,
          dest_out(1)            => main_qnice_pause_o,
-         dest_out(2)            => open,
-         dest_out(3)            => main_csr_joy1_on,
-         dest_out(4)            => main_csr_joy2_on,
-         dest_out(5)            => main_flip_joyports,
-         dest_out(6)            => main_zoom_crop,
-         dest_out(7)            => main_audio_mute,
-         dest_out(8)            => main_audio_filter,
-         dest_out(264 downto 9) => main_osm_control_m_o
+         dest_out(2)                => main_csr_joy1_on,
+         dest_out(3)                => main_csr_joy2_on,
+         dest_out(4)                => main_flip_joyports,
+         dest_out(5)                => main_zoom_crop,
+         dest_out(6)                => main_audio_mute,
+         dest_out(7)                => main_audio_filter,
+         dest_out(263 downto 8)     => main_osm_control_m_o,
+         dest_out(519 downto 264)   => main_qnice_gp_reg_o
       ); -- i_qnice2main
 
    -- Clock domain crossing: QNICE to SYS

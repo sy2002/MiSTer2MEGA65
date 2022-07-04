@@ -31,6 +31,7 @@ entity democore is
       joy_fire_n_i         : in  std_logic;
 
       ball_col_rgb_i       : in  std_logic_vector(23 downto 0);
+      paddle_speed_i       : in  std_logic_vector(3 downto 0);
 
       -- Video output
       vga_ce_o             : out std_logic;
@@ -76,6 +77,7 @@ begin
       port map (
          clk_i          => clk_main_i,
          rst_i          => reset_i,
+         paddle_speed_i => paddle_speed_i, 
          update_i       => update,
          player_start_i => not (keyboard_n_i(m65_space)     and joy_fire_n_i),
          player_left_i  => not (keyboard_n_i(m65_left_crsr) and joy_left_n_i),
