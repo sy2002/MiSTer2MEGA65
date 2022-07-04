@@ -144,7 +144,7 @@ constant HELP_3 : string :=
 
    "\n Help Screens\n\n" &
    
-   " You can have 255 per help topic.\n\n" &
+   " You can have 255 screens per help topic.\n\n" &
      
    " 15 topics overall.\n" &
    " 1 menu item per topic.\n\n\n\n" &   
