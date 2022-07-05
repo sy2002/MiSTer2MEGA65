@@ -25,7 +25,7 @@ M2M$CSR                 .EQU 0xFFE0
     ; Bit       9: SD Card: Internal SD card detected
     ; Bit      10: SD Card: External SD card detected
     ; Bit      11: Ascal autoset: If set to 1: M2M$ASCAL_MODE (which is
-    ;              controlling QNICE ouput port ascal_mode_o) is automatically
+    ;              controlling QNICE output port ascal_mode_o) is automatically
     ;              kept in sync with ascal_mode_i
     ; Bits 12..15: RESERVED
     ;
@@ -170,14 +170,14 @@ M2M$KEY_F3          .EQU 0x0200
 ; 256-bit General purpose control flags
 ; ----------------------------------------------------------------------------
 
-; 256 bits directly controled by the programmer (not used by the Shell)
+; 256 bits directly controlled by the programmer (not used by the Shell)
 ; Select a window between 0 and 15 in M2M$CFD_ADDR and access the control
 ; flags sliced into 16-bit chunks via M2M$CFD_DATA
 ; exposed by QNICE via control_d_o
 M2M$CFD_ADDR        .EQU 0xFFF0
 M2M$CFD_DATA        .EQU 0xFFF1
 
-; 256 bits controled by the Shell via the options menu, i.e. the menu that
+; 256 bits controlled by the Shell via the options menu, i.e. the menu that
 ; opens when the core is running and the user presses "Help" on the keyboard:
 ; the bit order is: bit 0 = topmost menu entry, the mapping is 1-to-1 to
 ; OPTM_ITEMS / OPTM_GROUPS in config.vhd
@@ -186,7 +186,7 @@ M2M$CFM_ADDR        .EQU 0xFFF2
 M2M$CFM_DATA        .EQU 0xFFF3
 
 ; ----------------------------------------------------------------------------
-; MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
+; MMIO 4k-segmented access to RAMs, ROMs and similarly behaving devices
 ; ----------------------------------------------------------------------------
 
 M2M$RAMROM_DEV      .EQU 0xFFF4
