@@ -14,6 +14,11 @@ OpenSource version is being used. It makes sense to notify the user in the
 start-up splash screen so that he knows what happened. Of course configurable
 using (new) settings in config.vhd
 
+Actually there are three types of ROMs: Type 3 are the ROMs that are not
+loaded dynamically at all but that are part of the synthesized bitstream.
+But Type 3 is note relevant for these thoughts about how the M2M
+firmware implements loading.
+
 How to implement:
 =================
 
