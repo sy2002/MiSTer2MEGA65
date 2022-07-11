@@ -166,6 +166,8 @@ begin
          VGA_DE      => mix_vga_de
       ); -- i_video_mixer
 
+   -- The MEGA65 VDAC (ADV7125BCPZ170) does not like non-zero color values outside the visible window.
+   -- This is why we explicitly set R, G, B to zero outside of "data enable".
    vga_data_enable : process(mix_r, mix_g, mix_b, mix_vga_de)
    begin
       if mix_vga_de = '1' then
@@ -218,7 +220,16 @@ begin
          vga_de_o         => open
       ); -- i_video_overlay_video
 
-   -- Make the VDAC output the image
+   -- Make the MEGA65 VDAC (ADV7125BCPZ170) output the image:
+   --
+   -- Excerpts taken from the data sheet Rev D, page 8, table 6:
+   --    "sync":  If sync information is not required on the green channel, the SYNC input should be tied to Logic 0.
+   --    "blank": A Logic 0 on this control input drives the analog outputs [...] to the blanking level.
+   -- So as we do not do any "sync on green", we set sync to 0 and since we do not want to use the VDAC to
+   -- blank the screen (i.e. set the analog R, G and B to 0), we hard-wire blank to 1.
+   --
+   -- The fact that we phase-shift the VDAC's clock by 90 degrees is the outcome of experiements, i.e.
+   -- empiric knowledge: We get a much sharper / crisper image. The true root cause is unknown, but it works reliably.
    vdac_syncn_o  <= '0';
    vdac_blankn_o <= '1';
    vdac_clk_o    <= not video_clk_i;
