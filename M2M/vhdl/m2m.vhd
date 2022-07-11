@@ -150,6 +150,7 @@ signal main_joy2_fire_n       : std_logic;
 -- Video and audio mode control
 signal qnice_dvi              : std_logic;
 signal qnice_video_mode       : std_logic;
+signal qnice_scandoubler      : std_logic;
 signal qnice_audio_mute       : std_logic;
 signal qnice_audio_filter     : std_logic;
 signal qnice_zoom_crop        : std_logic;
@@ -267,6 +268,7 @@ begin
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi,
       qnice_video_mode_i      => qnice_video_mode,
+      qnice_scandoubler_i     => qnice_scandoubler,
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
@@ -309,6 +311,7 @@ begin
          -- Video and audio mode control
          qnice_dvi_o             => qnice_dvi,
          qnice_video_mode_o      => qnice_video_mode,    -- 720p always; 0 = 50Hz, 1 = 60 Hz
+         qnice_scandoubler_o     => qnice_scandoubler,   -- 0 = no scandoubler, 1 = scandoubler         
          qnice_audio_mute_o      => qnice_audio_mute,
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,

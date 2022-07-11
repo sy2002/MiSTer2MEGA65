@@ -131,6 +131,7 @@ port (
    -- QNICE control signals
    qnice_dvi_i             : in  std_logic;
    qnice_video_mode_i      : in  std_logic;
+   qnice_scandoubler_i     : in  std_logic;
    qnice_audio_mute_i      : in  std_logic;
    qnice_audio_filter_i    : in  std_logic;
    qnice_zoom_crop_i       : in  std_logic;
@@ -225,6 +226,7 @@ signal main_csr_joy2_on       : std_logic;
 signal main_key_num           : std_logic_vector(7 downto 0);
 
 signal main_zoom_crop         : std_logic;
+signal main_scandoubler       : std_logic;
 
 -- signed audio from the core
 -- if the core outputs unsigned audio, make sure you convert properly to prevent a loss in audio quality
@@ -681,12 +683,12 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 520
+         WIDTH => 521
       )
       port map (
-         src_clk                => qnice_clk,
-         src_in(0)              => qnice_csr_reset,
-         src_in(1)              => qnice_csr_pause,
+         src_clk                    => qnice_clk,
+         src_in(0)                  => qnice_csr_reset,
+         src_in(1)                  => qnice_csr_pause,
          src_in(2)                  => qnice_csr_joy1_on,
          src_in(3)                  => qnice_csr_joy2_on,
          src_in(4)                  => qnice_flip_joyports_i,
@@ -695,9 +697,10 @@ begin
          src_in(7)                  => qnice_audio_filter_i,
          src_in(263 downto 8)       => qnice_osm_control_m_o,
          src_in(519 downto 264)     => qnice_gp_reg_o,
-         dest_clk               => main_clk_i,
-         dest_out(0)            => main_qnice_reset_o,
-         dest_out(1)            => main_qnice_pause_o,
+         src_in(520)                => qnice_scandoubler_i,
+         dest_clk                   => main_clk_i,
+         dest_out(0)                => main_qnice_reset_o,
+         dest_out(1)                => main_qnice_pause_o,
          dest_out(2)                => main_csr_joy1_on,
          dest_out(3)                => main_csr_joy2_on,
          dest_out(4)                => main_flip_joyports,
@@ -705,7 +708,8 @@ begin
          dest_out(6)                => main_audio_mute,
          dest_out(7)                => main_audio_filter,
          dest_out(263 downto 8)     => main_osm_control_m_o,
-         dest_out(519 downto 264)   => main_qnice_gp_reg_o
+         dest_out(519 downto 264)   => main_qnice_gp_reg_o,
+         dest_out(520)              => main_scandoubler
       ); -- i_qnice2main
 
    -- Clock domain crossing: QNICE to SYS
@@ -932,6 +936,10 @@ begin
          audio_rst_i              => audio_rst,
          audio_left_i             => audio_l,
          audio_right_i            => audio_r,
+         
+         -- Configure the scandoubler: 0=off/1=on
+         -- Make sure the signal is in the video_clk clock domain
+         video_scandoubler_i      => main_scandoubler,
 
          -- Analog output (VGA and audio jack)
          vga_red_o                => vga_red,
@@ -950,8 +958,7 @@ begin
          video_osm_cfg_xy_i       => main_osm_cfg_xy,
          video_osm_cfg_dxdy_i     => main_osm_cfg_dxdy,
          video_osm_vram_addr_o    => main_osm_vram_addr,
-         video_osm_vram_data_i    => main_osm_vram_data,
-         scandoubler_i            => '0'
+         video_osm_vram_data_i    => main_osm_vram_data
       ); -- i_analog_pipeline
 
    i_crop : entity work.crop

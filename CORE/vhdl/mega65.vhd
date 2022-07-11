@@ -37,6 +37,7 @@ port (
    -- Video and audio mode control
    qnice_dvi_o             : out std_logic;        -- 0=HDMI (with sound), 1=DVI (no sound)
    qnice_video_mode_o      : out std_logic;        -- 720p always; 0 = 50Hz, 1 = 60 Hz
+   qnice_scandoubler_o     : out std_logic;        -- 0 = no scandoubler, 1 = scandoubler
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
@@ -218,6 +219,7 @@ begin
    -- Video and audio mode control
    qnice_dvi_o                <= '0';                                         -- 0=HDMI (with sound), 1=DVI (no sound)
    qnice_video_mode_o         <= qnice_osm_control_i(C_MENU_HDMI_60HZ);       -- 720p always; 0 = 50Hz, 1 = 60 Hz
+   qnice_scandoubler_o        <= '0';                                         -- no scandoubler
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop

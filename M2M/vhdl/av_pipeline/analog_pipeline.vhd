@@ -34,6 +34,10 @@ entity analog_pipeline is
       audio_rst_i            : in  std_logic;
       audio_left_i           : in  signed(15 downto 0); -- Signed PCM format
       audio_right_i          : in  signed(15 downto 0); -- Signed PCM format
+      
+      -- Configure the scandoubler: 0=off/1=on
+      -- Make sure the signal is in the video_clk clock domain
+      video_scandoubler_i    : in  std_logic;      
 
       -- Video output (VGA)
       vga_red_o              : out std_logic_vector(7 downto 0);
@@ -54,8 +58,7 @@ entity analog_pipeline is
       video_osm_cfg_xy_i     : in  std_logic_vector(15 downto 0);
       video_osm_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
       video_osm_vram_addr_o  : out std_logic_vector(15 downto 0);
-      video_osm_vram_data_i  : in  std_logic_vector(15 downto 0);
-      scandoubler_i          : in std_logic
+      video_osm_vram_data_i  : in  std_logic_vector(15 downto 0)
    );
 end entity analog_pipeline;
 
@@ -146,7 +149,7 @@ begin
          CLK_VIDEO   => video_clk_i,      -- 63.056 MHz
          CE_PIXEL    => open,
          ce_pix      => video_ce_i,
-         scandoubler => scandoubler_i,
+         scandoubler => video_scandoubler_i,
          hq2x        => '0',
          gamma_bus   => open,
          R           => unsigned(video_red_i),
