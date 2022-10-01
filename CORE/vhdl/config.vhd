@@ -189,7 +189,7 @@ constant SEL_DIR_START     : std_logic_vector(15 downto 0) := x"0100";  -- !!! D
 constant DIR_START         : string := "/m2m";
 
 --------------------------------------------------------------------------------------------------------------------
--- General configuration settings: Reset, Pause, OSD behavior, Ascal
+-- General configuration settings: Reset, Pause, OSD behavior, Ascal, etc. (Selector 0x0110)
 --------------------------------------------------------------------------------------------------------------------
 
 constant SEL_GENERAL       : std_logic_vector(15 downto 0) := x"0110";  -- !!! DO NOT TOUCH !!!
@@ -232,6 +232,12 @@ constant JOY_2_AT_OSD      : boolean := false;
 constant ASCAL_USAGE       : natural := 2;
 constant ASCAL_MODE        : natural := 0;   -- see ascal.vhd for the meaning of this value
 
+-- Delay in ms between the last write request to a virtual drive from the core and the start of the
+-- cache flushing (i.e. writing to the SD card). Since every new write from the core invalidates the cache,
+-- and therefore leads to a completely new writing of the cache (flushing), this constant prevents thrashing.
+-- The default is 2 seconds (2000 ms). Should be reasonable for many systems, but if you have a very fast
+-- or very slow system, you might need to change this constant.
+constant VD_ANTI_THRASHING_DELAY : natural := 2000;
 --------------------------------------------------------------------------------------------------------------------
 -- Load one or more mandatory or optional BIOS/ROMs  (Selectors 0x0200 .. 0x02FF) 
 --------------------------------------------------------------------------------------------------------------------
@@ -421,6 +427,7 @@ addr_decode : process(all)
          when 10     => return bool2slv(JOY_2_AT_OSD);
          when 11     => return std_logic_vector(to_unsigned(ASCAL_USAGE, 16));
          when 12     => return std_logic_vector(to_unsigned(ASCAL_MODE, 16));
+         when 13     => return std_logic_vector(to_unsigned(VD_ANTI_THRASHING_DELAY, 16));
          when others => return x"0000";
       end case;
    end;
