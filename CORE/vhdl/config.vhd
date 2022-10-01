@@ -237,7 +237,20 @@ constant ASCAL_MODE        : natural := 0;   -- see ascal.vhd for the meaning of
 -- and therefore leads to a completely new writing of the cache (flushing), this constant prevents thrashing.
 -- The default is 2 seconds (2000 ms). Should be reasonable for many systems, but if you have a very fast
 -- or very slow system, you might need to change this constant.
+--
+-- Constraint (@TODO): Currently we have only one constant for all virtual drives, i.e. the delay is
+-- the same for all virtual drives. This might be absolutely OK; future will tell. If we need to have
+-- more flexibility: vdrives.vhd already supports one delay per virtual drive. All what would need
+-- to be done in such a case is: Enhance config.vhd to have more constants plus enhance the initialization
+-- routine VD_INIT in vdrives.asm (tagged by @TODO) to store different values in the appropriate registers.
 constant VD_ANTI_THRASHING_DELAY : natural := 2000;
+
+-- Amount of bytes saved in one iteration background saving (buffer flushing) process
+-- Constraint (@TODO): Similar constraint as in VD_ANTI_THRASHING_DELAY: Only one value for all drives.
+-- shell.asm and shell_vars.asm already supports distinct values per drive; config.vhd and VD_INIT would
+-- needs to be updated in case we would need this feature in future
+constant VD_ITERATION_SIZE       : natural := 100;
+
 --------------------------------------------------------------------------------------------------------------------
 -- Load one or more mandatory or optional BIOS/ROMs  (Selectors 0x0200 .. 0x02FF) 
 --------------------------------------------------------------------------------------------------------------------
@@ -428,6 +441,7 @@ addr_decode : process(all)
          when 11     => return std_logic_vector(to_unsigned(ASCAL_USAGE, 16));
          when 12     => return std_logic_vector(to_unsigned(ASCAL_MODE, 16));
          when 13     => return std_logic_vector(to_unsigned(VD_ANTI_THRASHING_DELAY, 16));
+         when 14     => return std_logic_vector(to_unsigned(VD_ITERATION_SIZE, 16))
          when others => return x"0000";
       end case;
    end;
