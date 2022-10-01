@@ -441,7 +441,7 @@ addr_decode : process(all)
          when 11     => return std_logic_vector(to_unsigned(ASCAL_USAGE, 16));
          when 12     => return std_logic_vector(to_unsigned(ASCAL_MODE, 16));
          when 13     => return std_logic_vector(to_unsigned(VD_ANTI_THRASHING_DELAY, 16));
-         when 14     => return std_logic_vector(to_unsigned(VD_ITERATION_SIZE, 16))
+         when 14     => return std_logic_vector(to_unsigned(VD_ITERATION_SIZE, 16));
          when others => return x"0000";
       end case;
    end;
