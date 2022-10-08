@@ -245,7 +245,7 @@ constant ASCAL_MODE        : natural := 0;   -- see ascal.vhd for the meaning of
 -- routine VD_INIT in vdrives.asm (tagged by @TODO) to store different values in the appropriate registers.
 constant VD_ANTI_THRASHING_DELAY : natural := 2000;
 
--- Amount of bytes saved in one iteration background saving (buffer flushing) process
+-- Amount of bytes saved in one iteration of the background saving (buffer flushing) process
 -- Constraint (@TODO): Similar constraint as in VD_ANTI_THRASHING_DELAY: Only one value for all drives.
 -- shell.asm and shell_vars.asm already supports distinct values per drive; config.vhd and VD_INIT would
 -- needs to be updated in case we would need this feature in future
