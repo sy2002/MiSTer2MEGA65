@@ -1,0 +1,13 @@
+Migrating the C64 core to the new version/architecture of M2M will be challenging
+
+Here is a probably incomplete list of things/features that we need to migrate to M2M from the C64MEGA65 codebase first
+before we can even attempt to bring the C64 to the new M2M version:
+
+* Floppy led color control: m2m_keyb.vhd, mega65kbd_to_matrix.vhdl
+* Write support for virtual drives: vdrives.vhd, new ROM version
+
+What we need to improve in M2M before migrating the C64 core:
+
+* Adjust hardcoded keyboard control timings (see also keyboard.md)
+* Clean-up video pipeline
+* Solve instability issues around the MAX10 (reset issue, ambulance light issues, ...)
