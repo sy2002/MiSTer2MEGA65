@@ -9,6 +9,7 @@ before we can even attempt to bring the C64 to the new M2M version:
 * Reset control: preventing a reset while the write cache is dirty: should this be framework logic - or - do we leave more freedom to the user? Current thought: should be framework logic
 * Updated config.vhd to have a clock signal
 * Updated config.vhd to support a configuration file
+* Config file creation tool in M2M/tools
 
 What we need to improve in M2M before migrating the C64 core:
 
