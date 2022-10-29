@@ -8,6 +8,7 @@ before we can even attempt to bring the C64 to the new M2M version:
 * Write support for virtual drives: vdrives.vhd, new ROM version, to-be-decided: the led logic (green: core's operation, yellow: Shell is currently saving to the SD card): is this something that the framework will do automatically in future, so this is framework logic - or - do we leave a more freedom to the user? Current thought is: should be framework logic
 * Reset control: preventing a reset while the write cache is dirty: should this be framework logic - or - do we leave more freedom to the user? Current thought: should be framework logic
 * Updated config.vhd to have a clock signal
+* Updated config.vhd to support a configuration file
 
 What we need to improve in M2M before migrating the C64 core:
 
