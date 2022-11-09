@@ -10,6 +10,7 @@ before we can even attempt to bring the C64 to the new M2M version:
 * Updated config.vhd to have a clock signal
 * Updated config.vhd to support a configuration file
 * Config file creation tool in M2M/tools
+* 4:3 and 5:4 output resolution (clocking, handling in digital pipeline, etc.)
 
 What we need to improve in M2M before migrating the C64 core:
 
