@@ -13,10 +13,11 @@ use ieee.numeric_std.all;
 entity m2m is
 port (
    CLK            : in  std_logic;                  -- 100 MHz clock
+
    -- MAX10 FPGA (delivers reset)
    max10_tx          : in std_logic;
    max10_rx          : out std_logic;
-   max10_clkandsync  : inout std_logic;
+   max10_clkandsync  : out std_logic;
 
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
