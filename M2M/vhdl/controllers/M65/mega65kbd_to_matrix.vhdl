@@ -100,10 +100,9 @@ begin  -- behavioural
       keyram_write_enable := x"00";
       keyram_offset := 0;
 
-      -- modified by MJoergen in June 2022:
+      -- modified by sy2002 in December 2020:
       -- original value for the MEGA65 @ 40 MHz was 64
-      -- Target frequency is 590 kHz
-      if clock_divider /= 85 then
+      if clock_divider /= 45 then
         clock_divider <= clock_divider + 1;
       else
         clock_divider <= 0;
