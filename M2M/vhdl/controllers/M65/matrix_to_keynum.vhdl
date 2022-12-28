@@ -179,6 +179,9 @@ begin
   -- The clock_frequency of the system is not changing very often. At some cores that switch between
   -- PAL and NTSC, it is for example changing. Therefore we can do the following math combinatorially
   -- as long as we constrain it correctly in the XDC file (for example using False Paths)
+  -- As long as the core only uses one clock frequency, then Vivado will be able to treat everything
+  -- here as constants and optimize away any logic, so that there is nothing to constrain in the XDC file.
+  -- @TODO We need to find a more elegant solution in future
   keyscan_delay      <= clock_frequency / (72 * scan_frequency);
   --repeat_start_timer <= clock_frequency / scan_frequency / 2;  -- 0.5 sec
   repeat_again_timer <= clock_frequency / scan_frequency / 10; -- 0.1 sec

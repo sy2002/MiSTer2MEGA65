@@ -67,6 +67,7 @@ begin
    port map
    (
        ioclock          => clk_main_i,
+       clock_frequency  => clk_main_speed_i,
       
        flopmotor        => '0',
        flopled          => drive_led_i,

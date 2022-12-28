@@ -3,6 +3,7 @@
 --
 -- Modified for gbc4mega65 by sy2002 in January 2021
 -- Added to MiSTer2MEGA65 based on the modified gbc4mega65 form by sy2002 in July 2021
+-- Added a "for now good enough" solution for arbitrary ioclock frequencies (sy2002, December 2022)
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -13,6 +14,7 @@ use Std.TextIO.all;
 entity mega65kbd_to_matrix is
   port (
     ioclock : in std_logic;
+    clock_frequency : in natural;
 
     flopmotor : in std_logic;
     flopled : in std_logic;
@@ -50,7 +52,9 @@ architecture behavioural of mega65kbd_to_matrix is
   
   signal enabled : std_logic := '0';
 
-  signal clock_divider : integer range 0 to 255 := 0;
+  signal clock_divider : integer range 0 to 65535 := 0;
+  signal clock_divider_target : integer range 0 to 65535;
+  
   signal kbd_clock : std_logic := '0';
   signal phase : integer range 0 to 255 := 0;
   signal sync_pulse : std_logic := '0';
@@ -64,6 +68,13 @@ architecture behavioural of mega65kbd_to_matrix is
   signal fastkey : std_logic := '1';
   
 begin  -- behavioural
+
+  -- @TODO as of December 2022 (by sy2002): We need to find a smarter solution. This only works well
+  -- as long as we only have one constant core frequency; otherwise a large combinatorial net will be
+  -- created and we would need to add false-paths to the XDC (see also lines 179+ in matrix_to_keynum.vhdl)
+  -- In the original MEGA65 code, the value is 64 for a 40 MHz clock, i.e. (40000000/64/2) 312.500 Hz.
+  -- Let's make sure approximate this value well enough.
+  clock_divider_target <= clock_frequency / 2 / 312500;
 
   widget_kmm: entity work.kb_matrix_ram
     port map (
@@ -100,9 +111,8 @@ begin  -- behavioural
       keyram_write_enable := x"00";
       keyram_offset := 0;
 
-      -- modified by sy2002 in December 2020:
-      -- original value for the MEGA65 @ 40 MHz was 64
-      if clock_divider /= 45 then
+      -- modified by sy2002 in December 2022
+      if clock_divider /= clock_divider_target then
         clock_divider <= clock_divider + 1;
       else
         clock_divider <= 0;

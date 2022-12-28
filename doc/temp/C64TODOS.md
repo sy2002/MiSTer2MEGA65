@@ -15,6 +15,6 @@ before we can even attempt to bring the C64 to the new M2M version:
 
 What we need to improve in M2M before migrating the C64 core:
 
-- [ ] Adjust hardcoded keyboard control timings (see also keyboard.md)
+- [x] Adjust hardcoded keyboard control timings (see also keyboard.md)
 - [ ] Clean-up video pipeline
 - [x] Solve instability issues around the MAX10 (reset issue, ambulance light issues, ...)
