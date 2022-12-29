@@ -83,16 +83,14 @@ constant SCR_WELCOME : string :=
 
    "\n\nEdit config.vhd to modify welcome screen.\n\n" &
    "You can for example show the keyboard map.\n" &
-   "Look at this example from Game Boy Color:\n\n\n" &
+   "Look at this example for the Demo core:\n\n\n" &
 
-   "    MEGA65               Game Boy\n" & 
+   "    Key                Demo core\n" & 
    "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
-   "    Cursor keys          Joypad\n" &
-   "    Space                Start\n" &
-   "    Enter                Select\n" &
-   "    Left Shift           A\n" &
-   "    MEGA65 key           B\n" &
-   "    Help                 Options menu\n\n\n" &
+   "    Left Cursor        Paddle left\n" &
+   "    Right Cursor       Paddle right\n" &
+   "    Space              Start game\n" &
+   "    Help               Options menu\n\n\n" &
 
    "\n\n    Press Space to continue.\n\n\n";
    

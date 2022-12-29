@@ -76,6 +76,7 @@ port (
 
    -- Video output
    main_video_ce_o         : out std_logic;
+   main_video_ce_2x_o      : out std_logic;
    main_video_red_o        : out std_logic_vector(7 downto 0);
    main_video_green_o      : out std_logic_vector(7 downto 0);
    main_video_blue_o       : out std_logic_vector(7 downto 0);
@@ -180,6 +181,7 @@ begin
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
          video_ce_o           => main_video_ce_o,
+         video_ce_2x_o        => main_video_ce_2x_o,
          video_red_o          => main_video_red_o,
          video_green_o        => main_video_green_o,
          video_blue_o         => main_video_blue_o,

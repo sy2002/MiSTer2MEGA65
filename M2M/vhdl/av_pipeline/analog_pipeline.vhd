@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 
 entity analog_pipeline is
    generic (
-      G_VGA_DX               : natural;              -- Actual format of video from Core (in pixels).
+      G_VGA_DX               : natural;                 -- Actual format of video from Core (in pixels).
       G_VGA_DY               : natural;
       G_FONT_FILE            : string;
       G_FONT_DX              : natural;
@@ -23,6 +23,7 @@ entity analog_pipeline is
       video_clk_i            : in  std_logic;
       video_rst_i            : in  std_logic;
       video_ce_i             : in  std_logic;
+      video_ce_2x_i          : in  std_logic;           -- 2x the speed of video_ce_i
       video_red_i            : in  std_logic_vector(7 downto 0);
       video_green_i          : in  std_logic_vector(7 downto 0);
       video_blue_i           : in  std_logic_vector(7 downto 0);
@@ -79,8 +80,16 @@ architecture synthesis of analog_pipeline is
    signal vga_blue           : std_logic_vector(7 downto 0);
    signal vga_hs             : std_logic;
    signal vga_vs             : std_logic;
+   
+   -- registers used to implement the phase-shifting of the VGA output signals
+   signal vga_red_ps         : std_logic_vector(7 downto 0);
+   signal vga_green_ps       : std_logic_vector(7 downto 0);
+   signal vga_blue_ps        : std_logic_vector(7 downto 0);
+   signal vga_hs_ps          : std_logic;
+   signal vga_vs_ps          : std_logic;
 
-   signal video_ce_overlay   : std_logic_vector(1 downto 0) := "10"; -- Clock divider 1/2
+   -- depends on scandoubler: needs to be 2x faster, if scandoubler is active
+   signal video_ce_overlay   : std_logic;
 
    component video_mixer is
       port (
@@ -134,19 +143,12 @@ begin
    --------------------------------------------------------------------------------------------------
    -- MiSTer video signal processing pipeline
    --
-   -- We configured it (hardcoded) to perform a scan-doubling, but there are many more things
-   -- we could do here, including to make sure that we output an old composite signal instead of VGA
+   -- @TODO: Evaluate the capabilities, including outputting an old composite signal instead of VGA
    --------------------------------------------------------------------------------------------------
-
-   -- This halves the hsync pulse width to 2.41 us, and the period to 31.97 us (= 2016 clock cycles @ clk_video_i).
-   -- According to the document CEA-861-D, PAL 720x576 @ 50 Hz runs with a pixel
-   -- clock frequency of 27.00 MHz and with 864 pixels per scan line, therefore
-   -- a horizontal period of 32.00 us. The difference here is 0.1 %.
-   -- The ratio between clk_video_i and the pixel frequency is 7/3.
 
    i_video_mixer : video_mixer
       port map (
-         CLK_VIDEO   => video_clk_i,      -- 63.056 MHz
+         CLK_VIDEO   => video_clk_i,
          CE_PIXEL    => open,
          ce_pix      => video_ce_i,
          scandoubler => video_scandoubler_i,
@@ -184,14 +186,8 @@ begin
       end if;
    end process vga_data_enable;
 
-   -- Clock enable for Overlay video streams
-   p_video_ce : process (video_clk_i)
-   begin
-      if rising_edge(video_clk_i) then
-         video_ce_overlay <= video_ce_overlay(0) & video_ce_overlay(video_ce_overlay'left downto 1);
-      end if;
-   end process p_video_ce;
-
+   video_ce_overlay <= video_ce_2x_i when video_scandoubler_i = '1' else video_ce_i;
+   
    i_video_overlay : entity work.video_overlay
       generic  map (
          G_VGA_DX         => G_VGA_DX,
@@ -202,7 +198,7 @@ begin
       )
       port map (
          vga_clk_i        => video_clk_i,
-         vga_ce_i         => video_ce_overlay(0),
+         vga_ce_i         => video_ce_overlay,
          vga_red_i        => mix_r,
          vga_green_i      => mix_g,
          vga_blue_i       => mix_b,
@@ -215,13 +211,33 @@ begin
          vga_vram_addr_o  => video_osm_vram_addr_o,
          vga_vram_data_i  => video_osm_vram_data_i,
          vga_ce_o         => open,
-         vga_red_o        => vga_red_o,
-         vga_green_o      => vga_green_o,
-         vga_blue_o       => vga_blue_o,
-         vga_hs_o         => vga_hs_o,
-         vga_vs_o         => vga_vs_o,
+         vga_red_o        => vga_red_ps,
+         vga_green_o      => vga_green_ps,
+         vga_blue_o       => vga_blue_ps,
+         vga_hs_o         => vga_hs_ps,
+         vga_vs_o         => vga_vs_ps,
          vga_de_o         => open
       ); -- i_video_overlay_video
+
+   -- We need to phase-shift the output signal so that the VDAC can sample a nice and steady signal.
+   -- We also need to make sure that not only the RGB signals are phase-shifted, but also the
+   -- HS and VS signals, otherwise on real analog VGA screens there might be undesired effects.
+   -- Last but not least for guaranteeing a minimum of routing delays, we are putting these registers
+   -- in a VHDL block so that we can use a PBLOCK in the XDC file to tack the registers near to the
+   -- FPGAs VGA output pins.
+   VGA_OUT_PHASE_SHIFTED : block
+   begin  
+      phase_shift_vga_signals : process(video_clk_i)
+      begin
+         if falling_edge(video_clk_i) then -- phase shifting by using the negative edge of the video clock
+            vga_red_o   <= vga_red_ps;
+            vga_green_o <= vga_green_ps;
+            vga_blue_o  <= vga_blue_ps;
+            vga_hs_o    <= vga_hs_ps;
+            vga_vs_o    <= vga_vs_ps;            
+         end if;
+      end process;
+   end block VGA_OUT_PHASE_SHIFTED;
 
    -- Make the MEGA65 VDAC (ADV7125BCPZ170) output the image:
    --
@@ -230,12 +246,9 @@ begin
    --    "blank": A Logic 0 on this control input drives the analog outputs [...] to the blanking level.
    -- So as we do not do any "sync on green", we set sync to 0 and since we do not want to use the VDAC to
    -- blank the screen (i.e. set the analog R, G and B to 0), we hard-wire blank to 1.
-   --
-   -- The fact that we phase-shift the VDAC's clock by 90 degrees is the outcome of experiements, i.e.
-   -- empiric knowledge: We get a much sharper / crisper image. The true root cause is unknown, but it works reliably.
    vdac_syncn_o  <= '0';
    vdac_blankn_o <= '1';
-   vdac_clk_o    <= not video_clk_i;
+   vdac_clk_o    <= video_clk_i;
 
 end architecture synthesis;
 

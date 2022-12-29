@@ -6,6 +6,10 @@
 ## Powered by MiSTer2MEGA65
 ## MEGA65 port done by YOURNAME in YEAR and licensed under GPL v3
 
+################################
+## TIMING CONSTRAINTS
+################################
+
 ## External clock signal (100 MHz)
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS33} [get_ports CLK]
 create_clock -period 10.000 -name CLK [get_ports CLK]
@@ -37,6 +41,25 @@ set_multicycle_path -from [get_cells -include_replicated {{M2M/i_framework/QNICE
 set_multicycle_path -from [get_cells -include_replicated {{M2M/i_framework/QNICE_SOC/eae_inst/op0_reg[*]} {M2M/i_framework/QNICE_SOC/eae_inst/op1_reg[*]}}] \
    -to [get_cells -include_replicated {M2M/i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
 
+# Timing between ascal.vhd and HyperRAM is asynchronous.
+set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks hdmi_clk]
+set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks hdmi_clk]
+set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks main_clk]
+set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks main_clk]
+set_false_path -from [get_clocks hdmi_clk]     -to [get_clocks main_clk]
+set_false_path   -to [get_clocks hdmi_clk]   -from [get_clocks main_clk]
+set_false_path -from [get_clocks qnice_clk]    -to [get_clocks hdmi_clk]
+
+set_false_path -from [get_clocks main_clk]     -to [get_clocks audio_clk]
+
+## The high level reset signals are slow enough so that we can afford a false path
+set_false_path -from [get_pins M2M/i_framework/i_reset_manager/reset_m2m_n_o_reg/C]
+set_false_path -from [get_pins M2M/i_framework/i_reset_manager/reset_core_n_o_reg/C]
+
+################################
+## PLACEMENT CONSTRAINTS
+################################
+
 # Place HyperRAM close to I/O pins
 create_pblock pblock_i_hyperram
 add_cells_to_pblock pblock_i_hyperram [get_cells [list M2M/i_framework/i_hyperram]]
@@ -52,16 +75,20 @@ create_pblock pblock_m65driver
 add_cells_to_pblock pblock_m65driver [get_cells [list M2M/i_framework/i_m2m_keyb/m65driver]]
 resize_pblock pblock_m65driver -add {SLICE_X0Y225:SLICE_X7Y243}
 
-# Timing between ascal.vhd and HyperRAM is asynchronous.
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks hdmi_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks hdmi_clk]
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks main_clk]
-set_false_path -from [get_clocks hdmi_clk]     -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hdmi_clk]   -from [get_clocks main_clk]
-set_false_path -from [get_clocks qnice_clk]    -to [get_clocks hdmi_clk]
+# Place SD card controller in the middle between the left and right FPGA boundary because the output ports are at the opposide edges
+create_pblock pblock_sdcard
+add_cells_to_pblock pblock_sdcard [get_cells [list M2M/i_framework/QNICE_SOC/sd_card]]
+resize_pblock pblock_sdcard -add {SLICE_X67Y178:SLICE_X98Y193}
 
-set_false_path -from [get_clocks main_clk]     -to [get_clocks audio_clk]
+# Place phase-shifted VGA output registers near the actual output buffers
+create_pblock pblock_vga
+add_cells_to_pblock pblock_vga [get_cells [list M2M/i_framework/i_analog_pipeline/VGA_OUT_PHASE_SHIFTED.*]]
+resize_pblock pblock_vga -add SLICE_X0Y75:SLICE_X5Y99
+
+
+################################
+## Pin to signal mapping
+################################
 
 ## Interface to MAX10
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports max10_tx]

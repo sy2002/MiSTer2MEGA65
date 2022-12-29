@@ -29,6 +29,7 @@ entity main is
 
       -- Video output
       video_ce_o              : out std_logic;
+      video_ce_2x_o           : out std_logic;
       video_red_o             : out std_logic_vector(7 downto 0);
       video_green_o           : out std_logic_vector(7 downto 0);
       video_blue_o            : out std_logic_vector(7 downto 0);
@@ -99,6 +100,10 @@ begin
          audio_left_o         => audio_left_o,
          audio_right_o        => audio_right_o
       ); -- i_democore
+      
+   -- @TODO: video_ce_2x_o needs to be twice as fast as video_ce_o; the demo core's vga_ce_o halfs
+   -- the speed of clk_main_i, so to achieve factor 2x we just need to set video_ce_2x_o to '1'.
+   video_ce_2x_o <= '1';
 
    -- @TODO: Keyboard mapping and keyboard behavior
    -- Each core is treating the keyboard in a different way: Some need low-active "matrices", some
