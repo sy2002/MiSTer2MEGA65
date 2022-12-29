@@ -45,7 +45,7 @@ begin
     U_SER_M: oserdese2
         generic map (
             data_rate_oq => "DDR",      -- DDR, SDR
-            data_rate_tq => "DDR",      -- DDR, BUF, SDR
+            data_rate_tq => "SDR",      -- DDR, BUF, SDR
             data_width => 10,           -- Parallel data width (2-8,10,14)
             init_oq => '0',             -- Initial value of OQ output (1'b0,1'b1)
             init_tq => '0',             -- Initial value of TQ output (1'b0,1'b1)
@@ -90,7 +90,7 @@ begin
     U_SER_S: oserdese2
         generic map (
             data_rate_oq => "DDR",      -- DDR, SDR
-            data_rate_tq => "DDR",      -- DDR, BUF, SDR
+            data_rate_tq => "SDR",      -- DDR, BUF, SDR
             data_width => 10,           -- Parallel data width (2-8,10,14)
             init_oq => '0',             -- Initial value of OQ output (1'b0,1'b1)
             init_tq => '0',             -- Initial value of TQ output (1'b0,1'b1)
