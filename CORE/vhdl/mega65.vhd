@@ -89,9 +89,11 @@ port (
    main_audio_left_o       : out signed(15 downto 0);
    main_audio_right_o      : out signed(15 downto 0);
 
-   -- M2M Keyboard interface
+   -- M2M Keyboard interface (incl. drive led)
    main_kb_key_num_i       : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
    main_kb_key_pressed_n_i : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
+   main_drive_led_o        : out std_logic;
+   main_drive_led_col_o    : out std_logic_vector(23 downto 0);
 
    -- Joysticks input
    main_joy_1_up_n_i       : in std_logic;
@@ -305,6 +307,13 @@ begin
    -- it later (and at the right place), if and when needed.
    ---------------------------------------------------------------------------------------
 
+   -- @TODO:
+   -- a) In case that this is handled in main.vhd, you need to add the appropriate ports to i_main
+   -- b) You might want to change the drive led's color (just like the C64 core does) as long as
+   --    the cache is dirty (i.e. as long as the write process is not finished, yet)  
+   main_drive_led_o     <= '0';
+   main_drive_led_col_o <= x"00FF00";
+
    i_vdrives : entity work.vdrives
       generic map (
          VDNUM       => C_VDNUM
@@ -321,9 +330,16 @@ begin
          img_size_o        => open,
          img_type_o        => open,
          drive_mounted_o   => open,
+         
+         -- Cache output signals: The dirty flags can be used to enforce data consistency
+         -- (for example by ignoring/delaying a reset or delaying a drive unmount/mount, etc.)
+         -- The flushing flags can be used to signal the fact that the caches are currently
+         -- flushing to the user, for example using a special color/signal for example
+         -- at the drive led
+         cache_dirty_o     => open,
+         cache_flushing_o  => open,
 
          -- QNICE clock domain
-
          sd_lba_i          => (others => (others => '0')),
          sd_blk_cnt_i      => (others => (others => '0')),
          sd_rd_i           => (others => '0'),

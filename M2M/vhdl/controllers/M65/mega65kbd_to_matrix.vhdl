@@ -3,6 +3,7 @@
 --
 -- Modified for gbc4mega65 by sy2002 in January 2021
 -- Added to MiSTer2MEGA65 based on the modified gbc4mega65 form by sy2002 in July 2021
+-- Renamed signals, added documentation and made led color configurable by sy2002 in October 2022
 -- Added a "for now good enough" solution for arbitrary ioclock frequencies (sy2002, December 2022)
 
 library IEEE;
@@ -16,13 +17,14 @@ entity mega65kbd_to_matrix is
     ioclock : in std_logic;
     clock_frequency : in natural;
 
-    flopmotor : in std_logic;
-    flopled : in std_logic;
-    powerled : in std_logic;    
-    
-    kio8 : out std_logic; -- clock to keyboard
-    kio9 : out std_logic; -- data output to keyboard
-    kio10 : in std_logic; -- data input from keyboard
+    -- _steady means that the led stays on steadily
+    -- _blinking means that the led is blinking
+    -- The colors are specified as BGR (reverse RGB)
+    powerled_steady        : in std_logic;
+    powerled_col           : in std_logic_vector(23 downto 0);
+    driveled_steady        : in std_logic;
+    driveled_blinking      : in std_logic;   
+    driveled_col           : in std_logic_vector(23 downto 0);
 
     matrix_col : out std_logic_vector(7 downto 0) := (others => '1');
     matrix_col_idx : in integer range 0 to 9;
@@ -37,8 +39,12 @@ entity mega65kbd_to_matrix is
 
     -- LEFT and UP cursor keys are active HIGH
     leftkey : out std_logic := '0';
-    upkey : out std_logic := '0'
+    upkey : out std_logic := '0';
     
+    -- interface to Lattice FPGA
+    kio8 : out std_logic; -- clock to keyboard
+    kio9 : out std_logic; -- data output to keyboard
+    kio10 : in std_logic  -- data input from keyboard    
     );
 
 end entity mega65kbd_to_matrix;
@@ -185,13 +191,13 @@ begin  -- behavioural
             -- Reset to start
             sync_pulse <= '1';
             output_vector <= (others => '0');
-            if flopmotor='1' or (flopled='1' and counter(24)='1') then
-              output_vector(23 downto 0) <= x"00FF00";
-              output_vector(47 downto 24) <= x"00FF00";
+            if driveled_steady='1' or (driveled_blinking='1' and counter(24)='1') then
+              output_vector(23 downto 0)  <= driveled_col;
+              output_vector(47 downto 24) <= driveled_col;
             end if;
-            if powerled='1' then
-              output_vector(71 downto 48) <= x"00FF00";
-              output_vector(95 downto 72) <= x"00FF00";
+            if powerled_steady='1' then
+              output_vector(71 downto 48) <= powerled_col;
+              output_vector(95 downto 72) <= powerled_col;
             end if;
           elsif phase = 140 then
             sync_pulse <= '0';
@@ -200,7 +206,6 @@ begin  -- behavioural
             kio9 <= output_vector(127);
             output_vector(127 downto 1) <= output_vector(126 downto 0);
             output_vector(0) <= '0';
-
           end if;
         end if;
       end if;

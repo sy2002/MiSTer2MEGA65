@@ -5,7 +5,7 @@
 --
 -- Runs in the clock domain of the core.
 --
--- There are two purposes of this controller:
+-- There are three purposes of this controller:
 --
 -- 1) Serve key_num and key_status to the core's keyboard.vhd, so that there the
 --    core specific keyboard mapping can take place.
@@ -13,6 +13,8 @@
 -- 2) Serve qnice_keys to QNICE and the firmware, so that the Shell can rely
 --    on certain mappings (and behaviors) to be always available, independent
 --    of the core specific way to handle the keyboard.
+--
+-- 3) Control the drive led
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
@@ -41,6 +43,7 @@ entity m2m_keyb is
 
       -- control the drive led on the MEGA65 keyboard      
       drive_led_i          : in std_logic;
+      drive_led_col_i      : in std_logic_vector(23 downto 0); -- RGB color of drive led
             
       -- interface to QNICE: used by the firmware and the Shell (see sysdef.asm for details)
       qnice_keys_n_o       : out std_logic_vector(15 downto 0)
@@ -69,9 +72,14 @@ begin
        ioclock          => clk_main_i,
        clock_frequency  => clk_main_speed_i,
       
-       flopmotor        => '0',
-       flopled          => drive_led_i,
-       powerled         => '1',    
+       -- _steady means that the led stays on steadily
+       -- _blinking means that the led is blinking
+       -- The colors are specified as BGR (reverse RGB)
+       powerled_steady     => '1',           -- power led is always on
+       powerled_col        => x"00FF00",     -- power led is green
+       driveled_steady     => drive_led_i,
+       driveled_blinking   => '0',   
+       driveled_col        => drive_led_col_i(7 downto 0) & drive_led_col_i(15 downto 8) & drive_led_col_i(23 downto 16), -- RGB to BGR    
        
        kio8             => kio8_o,
        kio9             => kio9_o,

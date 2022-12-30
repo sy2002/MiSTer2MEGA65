@@ -40,11 +40,13 @@ constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_M2M;
 -- then add all the clocks speeds here by adding more constants.
 ----------------------------------------------------------------------------------------------------------
 
--- System clock speed (crystal that is driving the FPGA)
-constant BOARD_CLK_SPEED      : natural := 100_000_000;
-
--- CORE clock speed
+-- @TODO: Your core's clock speed
 constant CORE_CLK_SPEED       : natural := 54_000_000;   -- @TODO YOURCORE expects 54 MHz
+
+-- System clock speed (crystal that is driving the FPGA) and QNICE clock speed
+-- !!! Do not touch !!!
+constant BOARD_CLK_SPEED      : natural := 100_000_000;
+constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- a change here has dependencies in qnice_globals.vhd
 
 ----------------------------------------------------------------------------------------------------------
 -- Video Mode
