@@ -7,9 +7,9 @@ before we can even attempt to bring the C64 to the new M2M version:
 - [ ] Floppy led color control: m2m_keyb.vhd, mega65kbd_to_matrix.vhdl
 - [ ] Write support for virtual drives: vdrives.vhd, new ROM version, to-be-decided: the led logic (green: core's operation, yellow: Shell is currently saving to the SD card): is this something that the framework will do automatically in future, so this is framework logic - or - do we leave a more freedom to the user? Current thought is: should be framework logic
 - [ ] Reset control: preventing a reset while the write cache is dirty: should this be framework logic - or - do we leave more freedom to the user? Current thought: should be framework logic
-- [ ] Updated config.vhd to have a clock signal
-- [ ] Updated config.vhd to support a configuration file
-- [ ] Config file creation tool in M2M/tools
+- [x] Updated config.vhd to have a clock signal
+- [x] Updated config.vhd to support a configuration file
+- [x] Config file creation tool in M2M/tools
 - [x] 4:3 and 5:4 output resolution (clocking, handling in digital pipeline, etc.)
 - [x] Fixed font file ("+")
 

@@ -564,6 +564,7 @@ begin
    -- Shell configuration file config.vhd
    shell_cfg : entity work.config
       port map (
+         clk_i                   => qnice_clk,
          -- bits 27 .. 12:    select configuration data block; called "Selector" hereafter
          -- bits 11 downto 0: address the up to 4k the configuration data
          address_i               => qnice_ramrom_addr_o,
