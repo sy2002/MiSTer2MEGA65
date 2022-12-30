@@ -23,15 +23,17 @@ create_generated_clock -name hr_clk_x1     [get_pins M2M/i_framework/i_clk_m2m/i
 create_generated_clock -name hr_clk_x2     [get_pins M2M/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT2]
 create_generated_clock -name hr_clk_x2_del [get_pins M2M/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT3]
 create_generated_clock -name audio_clk     [get_pins M2M/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT4]
-create_generated_clock -name tmds_clk      [get_pins M2M/i_framework/i_clk_m2m/i_clk_hdmi/CLKOUT0]
-create_generated_clock -name hdmi_clk      [get_pins M2M/i_framework/i_clk_m2m/i_clk_hdmi/CLKOUT1]
+create_generated_clock -name tmds_720p_clk [get_pins M2M/i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT0]
+create_generated_clock -name hdmi_720p_clk [get_pins M2M/i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT1]
+create_generated_clock -name tmds_576p_clk [get_pins M2M/i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT0]
+create_generated_clock -name hdmi_576p_clk [get_pins M2M/i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT1]
 create_generated_clock -name main_clk      [get_pins M2M/CORE/clk_gen/i_clk_main/CLKOUT0]
 
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins M2M/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins M2M/i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
-## Clock divider pcm_clk (@ 12.288 MHz) is generated from audio_clk (@ 60 MHz). The ratio is 4.88, but rounded down to 4.
-create_generated_clock -name pcm_clk -source [get_pins M2M/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT4] -divide_by 4 [get_pins M2M/i_framework/i_digital_pipeline/i_clk_synthetic/dest_clk_reg/Q]
+## Handle CDC of audio data
+set_max_delay 8 -datapath_only -from [get_clocks] -to [get_pins -hierarchical "*audio_cdc_gen.dst_*_d_reg[*]/D"]
 
 ## QNICE's EAE combinatorial division networks take longer than
 ## the regular clock period, so we specify a multicycle path
@@ -42,15 +44,29 @@ set_multicycle_path -from [get_cells -include_replicated {{M2M/i_framework/QNICE
    -to [get_cells -include_replicated {M2M/i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
 
 # Timing between ascal.vhd and HyperRAM is asynchronous.
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks hdmi_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks hdmi_clk]
-set_false_path -from [get_clocks hr_clk_x1]    -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hr_clk_x1]  -from [get_clocks main_clk]
-set_false_path -from [get_clocks hdmi_clk]     -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hdmi_clk]   -from [get_clocks main_clk]
-set_false_path -from [get_clocks qnice_clk]    -to [get_clocks hdmi_clk]
+set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks hdmi_720p_clk]
+set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks hdmi_720p_clk]
+set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks hdmi_576p_clk]
+set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks hdmi_576p_clk]
+set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks main_clk]
+set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks main_clk]
+set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks main_clk]
+set_false_path   -to [get_clocks hdmi_720p_clk] -from [get_clocks main_clk]
+set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks main_clk]
+set_false_path   -to [get_clocks hdmi_576p_clk] -from [get_clocks main_clk]
+set_false_path -from [get_clocks qnice_clk]       -to [get_clocks main_clk]
+set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_720p_clk]
+set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_576p_clk]
 
-set_false_path -from [get_clocks main_clk]     -to [get_clocks audio_clk]
+set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks hdmi_576p_clk]
+set_false_path   -to [get_clocks hdmi_720p_clk] -from [get_clocks hdmi_576p_clk]
+set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks tmds_720p_clk]
+set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks tmds_576p_clk]
+set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks tmds_720p_clk]
+set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks tmds_576p_clk]
+
+set_false_path -from [get_clocks main_clk]        -to [get_clocks audio_clk]
+set_false_path -to   [get_clocks main_clk]      -from [get_clocks audio_clk] 
 
 ## The high level reset signals are slow enough so that we can afford a false path
 set_false_path -from [get_pins M2M/i_framework/i_reset_manager/reset_m2m_n_o_reg/C]

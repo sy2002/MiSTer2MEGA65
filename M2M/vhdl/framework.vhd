@@ -130,7 +130,7 @@ port (
    
    -- QNICE control signals
    qnice_dvi_i             : in  std_logic;
-   qnice_video_mode_i      : in  std_logic;
+   qnice_video_mode_i      : in  natural range 0 to 3;
    qnice_scandoubler_i     : in  std_logic;
    qnice_audio_mute_i      : in  std_logic;
    qnice_audio_filter_i    : in  std_logic;
@@ -158,12 +158,8 @@ architecture synthesis of framework is
 -- Constants
 ---------------------------------------------------------------------------------------------
 
-constant BOARD_CLK_SPEED      : natural := 100_000_000;
-
--- M2M's strategy on video modes:
--- VGA port: Retro experience, very often a 4:3 aspect ratio and retro-ish resolutions
--- HDMI port: Either 50Hz or 60Hz but always 720p
-constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 1) := (C_HDMI_720p_50, C_HDMI_720p_60);
+-- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
+constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 3) := (C_HDMI_720p_50, C_HDMI_720p_60, C_HDMI_576p_50, C_HDMI_576p_50);
 
 -- Devices: MiSTer2MEGA framework
 constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
@@ -290,7 +286,7 @@ signal hdmi_osm_cfg_dxdy      : std_logic_vector(15 downto 0);
 signal hdmi_osm_vram_addr     : std_logic_vector(15 downto 0);
 signal hdmi_osm_vram_data     : std_logic_vector(15 downto 0);
 
-signal hdmi_video_mode        : std_logic;
+signal hdmi_video_mode        : std_logic_vector(1 downto 0);
 signal hdmi_zoom_crop         : std_logic;
 
 -- QNICE On Screen Menu selections
@@ -403,6 +399,7 @@ begin
          hr_clk_x2_o     => hr_clk_x2,
          hr_clk_x2_del_o => hr_clk_x2_del,
          hr_rst_o        => hr_rst,
+         hdmi_clk_sel_i  => hdmi_video_mode(1), -- video modes 0 and 1 needs hdmi_clk_sel_i to be '0', 2 and 3 to be '1'
          tmds_clk_o      => tmds_clk,
          hdmi_clk_o      => hdmi_clk,
          hdmi_rst_o      => hdmi_rst,
@@ -737,23 +734,23 @@ begin
    -- Clock domain crossing: QNICE to HDMI QNICE-On-Screen-Display
    i_qnice2hdmi: xpm_cdc_array_single
       generic map (
-         WIDTH => 291
+         WIDTH => 292
       )
       port map (
          src_clk                 => qnice_clk,
          src_in(15 downto 0)     => qnice_osm_cfg_xy,
          src_in(31 downto 16)    => qnice_osm_cfg_dxdy,
          src_in(32)              => qnice_osm_cfg_enable,
-         src_in(33)              => qnice_video_mode_i,
-         src_in(34)              => qnice_zoom_crop_i,
-         src_in(290 downto 35)   => qnice_osm_control_m_o,
+         src_in(34 downto 33)    => std_logic_vector(to_unsigned(qnice_video_mode_i, 2)),
+         src_in(35)              => qnice_zoom_crop_i,
+         src_in(291 downto 36)   => qnice_osm_control_m_o,
          dest_clk                => hdmi_clk,
          dest_out(15 downto 0)   => hdmi_osm_cfg_xy,
          dest_out(31 downto 16)  => hdmi_osm_cfg_dxdy,
          dest_out(32)            => hdmi_osm_cfg_enable,
-         dest_out(33)            => hdmi_video_mode,
-         dest_out(34)            => hdmi_zoom_crop,
-         dest_out(290 downto 35) => hdmi_osm_control_m
+         dest_out(34 downto 33)  => hdmi_video_mode,
+         dest_out(35)            => hdmi_zoom_crop,
+         dest_out(291 downto 36) => hdmi_osm_control_m
       ); -- i_qnice2hdmi
 
    -- Clock domain crossing: Board clock domain (CLK) to core (main_clk_i)
@@ -942,10 +939,6 @@ begin
 
    i_digital_pipeline : entity work.digital_pipeline
       generic map (
-         G_SHIFT_HDMI        => VIDEO_MODE_VECTOR(0).H_PIXELS - VGA_DX,    -- Deprecated. Will be removed in future release
-                                                                           -- The purpose is to right-shift the position of the OSM
-                                                                           -- on the HDMI output. This will be removed when the
-                                                                           -- M2M framework supports two different OSM VRAMs.
          G_VIDEO_MODE_VECTOR => VIDEO_MODE_VECTOR,
          G_VGA_DX            => VGA_DX,
          G_VGA_DY            => VGA_DY,
@@ -981,7 +974,7 @@ begin
 
          -- Connect to QNICE and Video RAM
          hdmi_dvi_i               => qnice_dvi_i, -- proper clock domain crossing for this very signal happens inside vga_to_hdmi.vhd
-         hdmi_video_mode_i        => hdmi_video_mode,
+         hdmi_video_mode_i        => to_integer(unsigned(hdmi_video_mode)),
          hdmi_crop_mode_i         => hdmi_zoom_crop,
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
          hdmi_osm_cfg_xy_i        => hdmi_osm_cfg_xy,

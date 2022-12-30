@@ -33,12 +33,15 @@ constant QNICE_FIRMWARE_M2M       : string  := "../../../CORE/m2m-rom/m2m-rom.ro
 constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_M2M;
 
 ----------------------------------------------------------------------------------------------------------
--- Core Clock Speed(s)
+-- Clock Speed(s)
 --
 -- Important: Make sure that you use very exact numbers - down to the actual Hertz - because some cores
 -- rely on these exact numbers. By default M2M supports one core clock speed. In case you need more,
 -- then add all the clocks speeds here by adding more constants.
 ----------------------------------------------------------------------------------------------------------
+
+-- System clock speed (crystal that is driving the FPGA)
+constant BOARD_CLK_SPEED      : natural := 100_000_000;
 
 -- CORE clock speed
 constant CORE_CLK_SPEED       : natural := 54_000_000;   -- @TODO YOURCORE expects 54 MHz

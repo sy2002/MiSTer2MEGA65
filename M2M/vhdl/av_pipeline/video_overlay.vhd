@@ -4,7 +4,6 @@ use ieee.numeric_std.all;
 
 entity video_overlay is
    generic  (
-      G_SHIFT          : integer := 0;    -- Deprecated. Will be removed in future release
       G_VGA_DX         : natural;
       G_VGA_DY         : natural;
       G_FONT_FILE      : string;
@@ -24,7 +23,9 @@ entity video_overlay is
       vga_de_i         : in  std_logic;
 
       -- QNICE
+      vga_cfg_shift_i  : in  natural;
       vga_cfg_enable_i : in  std_logic;
+      vga_cfg_double_i : in  std_logic;
       vga_cfg_xy_i     : in  std_logic_vector(15 downto 0);
       vga_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
       vga_vram_addr_o  : out std_logic_vector(15 downto 0);
@@ -53,6 +54,9 @@ architecture synthesis of video_overlay is
    signal vga_hs_d       : std_logic;
    signal vga_vs_d       : std_logic;
    signal vga_de_d       : std_logic;
+
+   signal vga_col_d      : integer range 0 to 2047;
+   signal vga_row_d      : integer range 0 to 2047;
 
    signal vga_osm_on_dd  : std_logic;
    signal vga_osm_rgb_dd : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
@@ -91,6 +95,8 @@ begin
          vga_de_o    => vga_de_d
       ); -- i_vga_recover_counters
 
+   vga_col_d <= to_integer(unsigned(vga_pix_x_d)) - vga_cfg_shift_i;
+   vga_row_d <= to_integer(unsigned(vga_pix_y_d)) when vga_cfg_double_i = '1' else to_integer(unsigned(vga_pix_y_d))*2;
 
    -----------------------------------------------
    -- Instantiate On-Screen-Menu generator
@@ -106,8 +112,8 @@ begin
       )
       port map (
          clk_i                => vga_clk_i,
-         vga_col_i            => to_integer(unsigned(vga_pix_x_d)) - G_SHIFT,
-         vga_row_i            => to_integer(unsigned(vga_pix_y_d)),
+         vga_col_i            => vga_col_d,
+         vga_row_i            => vga_row_d,
          vga_osm_cfg_xy_i     => vga_cfg_xy_i,
          vga_osm_cfg_dxdy_i   => vga_cfg_dxdy_i,
          vga_osm_cfg_enable_i => vga_cfg_enable_i,
