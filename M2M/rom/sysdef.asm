@@ -25,7 +25,7 @@ M2M$CSR                 .EQU 0xFFE0
     ; Bit       9: SD Card: Internal SD card detected
     ; Bit      10: SD Card: External SD card detected
     ; Bit      11: Ascal autoset: If set to 1: M2M$ASCAL_MODE (which is
-    ;              controlling QNICE output port ascal_mode_o) is automatically
+    ;              controlling QNICE ouput port ascal_mode_o) is automatically
     ;              kept in sync with ascal_mode_i
     ; Bits 12..15: RESERVED
     ;
@@ -129,7 +129,8 @@ M2M$ASCAL_TRIPLEBUF .EQU 0x0008 ; Activate triple-buffering
 M2M$ASCAL_RESERVED  .EQU 0x0010 ; reserved (see ascal.vhd)
 
 ; ----------------------------------------------------------------------------
-; Special-purpose and general-purpose 16-bit input registers
+; Special-purpose and general-purpose 16-bit input flags
+; Read-only; direct pass through from SOC inputs, not buffered in a register.
 ; (Currently reserved and not used, yet)
 ; ----------------------------------------------------------------------------
 
@@ -170,23 +171,23 @@ M2M$KEY_F3          .EQU 0x0200
 ; 256-bit General purpose control flags
 ; ----------------------------------------------------------------------------
 
-; 256 bits directly controlled by the programmer (not used by the Shell)
+; 256-bit directly controled by the programmer (not used by the Shell)
 ; Select a window between 0 and 15 in M2M$CFD_ADDR and access the control
 ; flags sliced into 16-bit chunks via M2M$CFD_DATA
 ; exposed by QNICE via control_d_o
 M2M$CFD_ADDR        .EQU 0xFFF0
 M2M$CFD_DATA        .EQU 0xFFF1
 
-; 256 bits controlled by the Shell via the options menu, i.e. the menu that
+; 256-bit controled by the Shell via the options menu, i.e. the menu that
 ; opens when the core is running and the user presses "Help" on the keyboard:
 ; the bit order is: bit 0 = topmost menu entry, the mapping is 1-to-1 to
 ; OPTM_ITEMS / OPTM_GROUPS in config.vhd
-; exposed by QNICE via control_m_o
+; exposed by QNICE via control_m_o; M2M$CFM_ADDR runs from 0 to 15
 M2M$CFM_ADDR        .EQU 0xFFF2
 M2M$CFM_DATA        .EQU 0xFFF3
 
 ; ----------------------------------------------------------------------------
-; MMIO 4k-segmented access to RAMs, ROMs and similarly behaving devices
+; MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
 ; ----------------------------------------------------------------------------
 
 M2M$RAMROM_DEV      .EQU 0xFFF4
@@ -230,6 +231,7 @@ M2M$SHELL_M_DXDY    .EQU 0x7002     ; main screen: dx|dy width and height
 
 M2M$CFG_WHS         .EQU 0x1000     ; Welcome & Help screens
 M2M$CFG_DIR_START   .EQU 0x0100     ; Start folder for file browser
+M2M$CFG_CFG_FILE    .EQU 0x0101     ; Config file for OSM persistence
 M2M$CFG_GENERAL     .EQU 0x0110     ; General configuration settings
 M2M$CFG_ROMS        .EQU 0x0200     ; Mandatory and optional ROMs
 
@@ -243,6 +245,7 @@ M2M$CFG_OPTM_MOUNT  .EQU 0x0306     ; Menu item = mount a drive
 M2M$CFG_OPTM_SINGLE .EQU 0x0307     ; Single-select menu item
 M2M$CFG_OPTM_MSTR   .EQU 0x0308     ; Mount string to display instead of %s
 M2M$CFG_OPTM_DIM    .EQU 0x0309     ; DX and DY of Options/Help menu
+M2M$CFG_OPTM_SSTR   .EQU 0x030A     ; Saving string to display instead of %s
 M2M$CFG_OPTM_HELP   .EQU 0x0310     ; Menu item = show a help menu
 
 ; M2M$CFG_WHS
@@ -274,6 +277,11 @@ M2M$CFG_RP_J2_OSD   .EQU 0x700A     ; connect the joystick 2 at OSD
 
 M2M$CFG_ASCAL_USAGE .EQU 0x700B     ; firmware treatment of ascal mode
 M2M$CFG_ASCAL_MODE  .EQU 0x700C     ; hardcoded ascal mode, if applicable
+
+M2M$CFG_VD_AT_DELAY .EQU 0x700D     ; Anti-Thrashing delay (virtual drives)
+M2M$CFG_VD_ITERSIZE .EQU 0x700E     ; Bytes that are saving per flushing-iter.
+
+M2M$CFG_SAVEOSDCFG  .EQU 0x700F     ; Remember on-screen-menu settings
 
 ; M2M$CFG_ASCAL_USAGE modes
 M2M$CFG_AUSE_CFG    .EQU 0x0000     ; use ASCAL_MODE from config.vhd
@@ -319,6 +327,10 @@ VD_RD               .EQU 0x7008     ; SD read request
 VD_WR               .EQU 0x7009     ; SD write request
 VD_ACK              .EQU 0x700A     ; SD acknowledge
 VD_B_DIN            .EQU 0x700B     ; drive buffer: data in (from drive)
+VD_CACHE_DIRTY      .EQU 0x700C     ; cache dirty flag
+VD_CACHE_FLUSHING   .EQU 0x700D     ; cache flushing flag
+VD_CACHE_FLUSH_ST   .EQU 0x700E     ; cache flushing can start now
+VD_CACHE_FLUSH_DE   .EQU 0x700F     ; delay in ms between VD_WR and FLUSH_ST
 
 ; ----------------------------------------------------------------------------
 ; Situation and context identifiers for custom messages

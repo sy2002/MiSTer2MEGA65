@@ -5,9 +5,9 @@ MiSTer2MEGA (M2M) needs QNICE V1.61 or newer. Currently, this is not yet an
 official QNICE release, so for being on the safe side, here is the exact
 QNICE commit that M2M needs for operating properly:
 
-de7898d1491ce81795971e92c3b0f7edd1f6d2c4
+@TODO
 
-Additionally to that, M2M needs modified version of three QNICE Monitor files
+Additionally to that, M2M needs modified versions of three QNICE Monitor files
 that need to be located in this folder, i.e. in `M2M/rom/monitor`:
 
 * `qmon_m2m.asm`: modified version of `qmon.asm`

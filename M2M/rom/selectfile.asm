@@ -78,11 +78,9 @@ _S_SD_WAITDONE  MOVE    SD_WAIT_DONE, R8        ; remember that we waited
 
                 ; if we already have run the browser before, then let us
                 ; continue where we left off
-_S_CONT_CHECK   MOVE    FB_HEAD, R8
-                CMP     0, @R8
-                RBRA    _S_START, Z
-                MOVE    FB_HEAP, R10
-                RBRA    _S_BROWSE_START, 1
+_S_CONT_CHECK   MOVE    FB_HEAD, R10
+                MOVE    @R10, R10
+                RBRA    _S_BROWSE_START, !Z
 
                 ; retrieve default file browsing start path from config.vhd
                 ; DIRBROWSE_READ expects the start path in R9
@@ -101,7 +99,7 @@ _S_CD_AND_READ  MOVE    FB_HEAP, R10            ; start address of heap
                 MOVE    FILTER_FILES, R12       ; filter unwanted files
                 RSUB    DIRBROWSE_READ, 1       ; read directory content
                 CMP     0, R11                  ; errors?
-                RBRA    _S_BROWSE_START, Z      ; no
+                RBRA    _S_SAVE_FB_HEAD, Z      ; no
                 CMP     1, R11                  ; error: path not found?
                 RBRA    _S_ERR_PNF, Z
                 CMP     2, R11                  ; max files? (only warn)
@@ -116,7 +114,7 @@ _S_ERR_PNF      ADD     1, SP                   ; see comment in shell.asm
                 MOVE    HEAP_SIZE, R11
                 RSUB    DIRBROWSE_READ, 1
                 CMP     0, R11
-                RBRA    _S_BROWSE_START, Z
+                RBRA    _S_SAVE_FB_HEAD, Z
                 CMP     2, R11
                 RBRA    _S_WRN_MAX, Z
 
@@ -134,48 +132,109 @@ _S_WRN_WAIT     RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
                 RBRA    _S_WRN_WAIT, !Z         ; wait for space; low-active
                 RSUB    SCR$CLRINNER, 1         ; clear inner part of window
 
+                ; remember the head of the linked-list of the current dir.
+_S_SAVE_FB_HEAD MOVE    FB_HEAD, R8
+                MOVE    R10, @R8
+
                 ; ------------------------------------------------------------
                 ; DIRECTORY BROWSER
                 ; ------------------------------------------------------------
 
-_S_BROWSE_START MOVE    R10, R0                 ; R0: dir. linked list head
-
-                MOVE    FB_HEAD, R8
-                MOVE    @R8, R8                 ; persistent existing head?
-                RBRA    _S_BROWSE_SETUP, Z      ; no: continue
-                MOVE    R8, R0                  ; yes: use it
+_S_BROWSE_START MOVE    R10, R3                 ; R3: currently visible head
 
                 ; how much items are there in the current directory?
-_S_BROWSE_SETUP MOVE    R0, R8
+                MOVE    R3, R8
                 RSUB    SLL$LASTNCOUNT, 1
                 MOVE    R10, R1                 ; R1: amount of items in dir.
                 RBRA    _S_NOTHING, Z           ; no items in directory
                 MOVE    SCR$OSM_M_DY, R2        ; R2: max rows on screen
                 MOVE    @R2, R2
                 SUB     2, R2                   ; (frame is 2 rows high)
-                MOVE    R0, R3                  ; R3: currently visible head
 
                 MOVE    @SP++, R4               ; R4: currently selected ..
-                                                ; .. line inside window
+                                                ; ..line relative to window ..
+                                                ; ..but on the stack is the..
+                                                ; ..absolute value
 
                 XOR     R5, R5                  ; R5: counts the amount of ..
                                                 ; ..files that have been shown
 
-                MOVE    LOG_STR_ITM_AMT, R8     ; log amount of items in ..
+                XOR     R6, R6                  ; R6: absolute index of curr..
+                                                ; selected file/dir
+
+
+                ; Determine the current window and convert the absolute value
+                ; in R4 into a relative value: R4 is the relative cursor
+                ; position in the current window. Store the absolute value in
+                ; R6 and make sure that we iterate the linked-list to the
+                ; right point so that the user can continue where he left off.
+                ;
+                ; Case 1: If the max rows on screen (R2) are larger than the
+                ; absolute index of the last selected cursor pos (which starts
+                ; at 0 and is stored in R4) then we know that we are in window
+                ; zero and the absolute index equals the relative index,
+                ; i.e. R6 = R4.
+                ;
+                ; Case 2: Otherwise, we will need to iterate through the
+                ; linked list. For avoiding other complexities, we want to
+                ; show the selected item at the position denoted by an
+                ; integer division (aka window/screen) and modulo (aka
+                ; position within the screen):
+                ; R4 (abs. index) div R2 (window size) = number of window
+                ; R4 mod R2 = position within the window
+                ; R5 (amt. of shown files) = (R4 div R2) + R2
+
+                ; Case 1
+                CMP     R2, R4                  ; R2 > R4
+                RBRA    _S_BROWSE_C2, !N        ; no: we are in case 2
+                MOVE    R4, R6                  ; absolute idx = rel. idx
+                MOVE    1, R7                   ; R7: we are in case 1
+                RBRA    _S_BROWSE_LOG, 1
+
+                ; Case 2
+_S_BROWSE_C2    MOVE    2, R7                   ; R7: we are in case 2
+                MOVE    R4, R8                  ; R4: absolute index
+                MOVE    R2, R9                  ; R2: max rows on screen
+                SYSCALL(divu, 1)                ; R10=R4 div R2
+                MOVE    R11, R4                 ; R4 =R4 mod R2: cursor pos
+
+                MOVE    R10, R8                 ; R8: window to be shown
+                                                ; R9: max rows on screen
+                SYSCALL(mulu, 1)                ; R10=R8*R9: items to iterate
+
+                MOVE    R10, R6
+                ADD     R4, R6                  ; R6: updated absolute index
+
+                MOVE    R10, R5
+                ADD     R2, R5                  ; R5 =(R4 div R2) + R2
+                CMP     R5, R1                  ; is R5 larger than total num?
+                RBRA    _S_BROWSE_S1, !N        ; no: proceed
+
+                ; correct R10 so that the last page does not underflow, R5
+                ; so that is has the correct amount of displayed items and
+                ; R4 so that the correct line is selected
+                SUB     R1, R5                  ; R5 is now the underflow amt
+                SUB     R5, R10                 ; reduce linked-list start
+                ADD     R5, R4                  ; correct cursor position
+                MOVE    R1, R5                  ; tuck R5 to total # of items
+
+_S_BROWSE_S1    MOVE    R3, R8                  ; R8: linked-list head
+                MOVE    1, R9                   ; R9=1 means iterate forward
+                                                ; R10: items to iterate
+                RSUB    SLL$ITERATE, 1          ; iterate to element
+                CMP     0, R11                  ; error?
+                RBRA    _S_BROWSE_S2, !Z        ; no: proceed            
+                MOVE    ERR_FATAL_ITER, R8      ; yes: fatal error and halt
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+_S_BROWSE_S2    MOVE    R11, R3                 ; R3: use new head
+
+_S_BROWSE_LOG   MOVE    LOG_STR_ITM_AMT, R8     ; log amount of items in ..
                 SYSCALL(puts, 1)                ; .. current directory to UART
                 MOVE    R1, R8
                 SYSCALL(puthex, 1)
                 SYSCALL(crlf, 1)
-
-                MOVE    FB_ITEMS_COUNT, R8      ; existing persistent # items?
-                CMP     0, @R8
-                RBRA    _S_BROWSE_STP2, Z       ; no
-                MOVE    @R8, R1                 ; yes: store ..
-                MOVE    0, @R8                  ; .. and clear value / flag
-_S_BROWSE_STP2  MOVE    FB_ITEMS_SHOWN, R8      ; exist. pers. # shown items?
-                CMP     0, @R8
-                RBRA    _S_DRAW_DIRLIST, Z      ; no
-                MOVE    @R8, R5                 ; yes: store
 
                 ; list (maximum one screen of) directory entries
 _S_DRAW_DIRLIST RSUB    SCR$CLRINNER, 1
@@ -183,13 +242,10 @@ _S_DRAW_DIRLIST RSUB    SCR$CLRINNER, 1
                 MOVE    R2, R9                  ; R9: amount if lines to show
                 RSUB    SHOW_DIR, 1             ; print directory listing         
 
-                MOVE    FB_ITEMS_SHOWN, R8      ; do not add SHOW_DIR result..
-                CMP     0, @R8                  ; ..if R5 was restored using..
-                RBRA    _S_ADDSHOWN_ITM, Z      ; FB_ITEMS_SHOWN and..
-                MOVE    0, @R8                  ; ..clear FB_ITEMS_SHOWN
-                RBRA    _S_SELECT_LOOP, 1
-
-_S_ADDSHOWN_ITM ADD     R10, R5                 ; R5: overall # of files shown
+                CMP     1, R7                   ; are we in case 1?
+                RBRA    _S_SELECT_LOOP, !Z      ; no: proceed
+                ADD     R10, R5                 ; R5: overall # of files shown
+                XOR     R7, R7                  ; "no case" from here on
 
 _S_SELECT_LOOP  MOVE    R4, R8                  ; invert currently sel. line
                 MOVE    M2M$SA_COL_STD_INV, R9
@@ -203,16 +259,12 @@ _S_INPUT_LOOP   RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
                 RBRA    _IL_KEYPRESSED, !Z      ; yes: handle key press
 
                 ; check, if the SD card changed in the meantime
-                MOVE    M2M$CSR, R8
-                MOVE    @R8, R8
-                AND     M2M$CSR_SD_ACTIVE, R8
-                MOVE    SD_ACTIVE, R9
-                CMP     R8, @R9
-                RBRA    _S_INPUT_LOOP, Z        ; SD card did not change
+                MOVE    SD_CHANGED, R8
+                CMP     1, @R8
+                RBRA    _S_INPUT_LOOP, !Z       ; SD card did not change
+                MOVE    0, @R8                  ; reset change-flag            
 
                 ; SD card changed
-                MOVE    R8, @R9                 ; remember new active card
-
 _S_SD_CHANGED   RSUB    WAIT1SEC, 1             ; debounce SD insert process
                 XOR     R8, R8                  ; do not return any filename
                 MOVE    1, R9                   ; R9=1: SD card changed
@@ -244,6 +296,7 @@ _IL_CUR_UP      CMP     R4, 0                   ; > 0?
                 MOVE    M2M$SA_COL_STD, R9
                 RSUB    SELECT_LINE, 1
                 SUB     1, R4                   ; one line up
+                SUB     1, R6
                 RBRA    _S_SELECT_LOOP, 1       ; select new line and continue
 _IL_CUR_UP_CHK  CMP     R5, R2                  ; # shown > max rows on scr.?
                 RBRA    _S_INPUT_LOOP, !N       ; no: do not scroll; ign. key
@@ -264,6 +317,7 @@ _IL_CUR_DOWN    MOVE    R1, R8                  ; R1: amount of items in dir..
                 MOVE    M2M$SA_COL_STD, R9
                 RSUB    SELECT_LINE, 1
                 ADD     1, R4                   ; one line down
+                ADD     1, R6
                 RBRA    _S_SELECT_LOOP, 1       ; select new line and continue
 
                 ; scroll down by iterating the currently visible head of the
@@ -328,25 +382,19 @@ _SCROLL         MOVE    R3, R8                  ; R8: currently visible head
                 MOVE    ERR_FATAL_ITER, R8      ; no: fatal error and halt
                 XOR     R9, R9
                 RBRA    FATAL, 1
-_SCROLL_DO      CMP     -1, R9                  ; negative iteration dir.?
+_SCROLL_DO      ADD     R12, R6                 ; R6: abs. index; R12 signed
+                CMP     -1, R9                  ; negative iteration dir.?
                 RBRA    _SCROLL_DO2, !Z         ; no: continue
                 XOR     R3, R3                  ; yes: inverse sign of R10
                 SUB     R10, R3
                 MOVE    R3, R10
 _SCROLL_DO2     MOVE    R11, R3                 ; new visible head
                 ADD     R10, R5                 ; R10 more/less visible files
-                SUB     R2, R5                  ; compensate for SHOW_DIR
-                RBRA    _S_DRAW_DIRLIST, 1         ; redraw directory list
+                RBRA    _S_DRAW_DIRLIST, 1      ; redraw directory list
 
                 ; browsing interrupted by Run/Stop:
                 ; remember where we are and exit
-_IL_KEY_RUNSTOP MOVE    R4, @--SP               ; remember cursor position
-                MOVE    FB_HEAD, R8             ; remember currently vis. head
-                MOVE    R3, @R8
-                MOVE    FB_ITEMS_COUNT, R8      ; remember # of items in dir.
-                MOVE    R1, @R8
-                MOVE    FB_ITEMS_SHOWN, R8      ; remember # of items shown
-                MOVE    R5, @R8
+_IL_KEY_RUNSTOP MOVE    R6, @--SP               ; rem. abs itm idx for cursor
 
                 XOR     R8, R8                  ; do not return any filename
                 MOVE    2, R9                   ; R9=2: Run/Stop
@@ -361,6 +409,9 @@ _IL_SD_INT      MOVE    SD_ACTIVE, R10          ; curr. active equ. keypress?
                 CMP     @R10, R9
                 RBRA    _S_INPUT_LOOP, Z        ; yes: ignore keypress
 
+                MOVE    SD_CHANGED, R11         ; SD card change flag
+                MOVE    0, @R11                 ; reset SD card changed flag
+
                 MOVE    M2M$CSR, R9             ; switch sd mode to manual
                 OR      M2M$CSR_SD_MODE, @R9
                 CMP     M2M$KEY_F3, R8          ; F3: switch to external
@@ -370,7 +421,7 @@ _IL_SD_INT      MOVE    SD_ACTIVE, R10          ; curr. active equ. keypress?
                 RBRA    _S_SD_CHANGED, 1
 
 _IL_SD_INT2     AND     M2M$CSR_UN_SD_FORCE, @R9 ; F1: switch to internal
-                MOVE    0, @R10                 ; remember new active: int.
+                MOVE    0, @R10                 ; remember new active: int
                 RBRA    _S_SD_CHANGED, 1
 
                 ; "Return" has been pressed: change directory or return
@@ -387,7 +438,7 @@ _IL_KEY_RETURN  MOVE    R3, R8                  ; R8: currently visible head
                 RBRA    FATAL, 1
 
                 ; depending on if a directory of a file was selected:
-                ; change directory or load cartridge; we therefore need to
+                ; change directory or load data; we therefore need to
                 ; find the flag that contains the info "directory" or "file"
 _ELEMENT_FOUND  MOVE    R11, R8                 ; R11: selected SLL element
                 ADD     SLL$DATA_SIZE, R8
@@ -416,28 +467,19 @@ _ELEMENT_FOUND  MOVE    R11, R8                 ; R11: selected SLL element
                 SYSCALL(puts, 1)                ; log it to UART
                 SYSCALL(crlf, 1)
 
-                MOVE    FB_HEAD, R9             ; reset head for browsing
-                MOVE    0, @R9
-
                 MOVE    FN_UPDIR, R9            ; are we going one dir. up?
                 SYSCALL(strcmp, 1)
                 CMP     0, R10
                 RBRA    _CHANGEDIR, Z           ; yes: get crsr pos from stack
 
-                MOVE    R4, @--SP               ; no: remember cursor pos..
+                MOVE    R6, @--SP               ; rem. abs itm idx for cursor
                 MOVE    0, @--SP                ; ..and new dir. starts at 0
 
 _CHANGEDIR      MOVE    R8, R9                  ; use this directory
                 MOVE    HANDLE_DEV, R8
                 RBRA    _S_CD_AND_READ, 1       ; create new linked-list
 
-_RETNAME        MOVE    R4, @--SP               ; remember cursor position
-                MOVE    FB_HEAD, R8             ; remember currently vis. head
-                MOVE    R3, @R8
-                MOVE    FB_ITEMS_COUNT, R8      ; remember # of items in dir.
-                MOVE    R1, @R8
-                MOVE    FB_ITEMS_SHOWN, R8      ; remember # of items shown
-                MOVE    R5, @R8
+_RETNAME        MOVE    R6, @--SP               ; rem. abs itm idx for cursor
 
                 ADD     SLL$DATA, R11
                 MOVE    R11, R8                 ; R8: file name
@@ -509,10 +551,6 @@ _S_NOTHING_3    RSUB    HANDLE_IO, 1
 FB_INIT         INCRB
 
                 MOVE    FB_HEAD, R0             ; no active head of file brws.
-                MOVE    0, @R0
-                MOVE    FB_ITEMS_COUNT, R0      ; no directory browsed so far
-                MOVE    0, @R0
-                MOVE    FB_ITEMS_SHOWN, R0      ; no dir. items shown so far
                 MOVE    0, @R0
 
                 MOVE    SF_CONTEXT, R0          ; no context

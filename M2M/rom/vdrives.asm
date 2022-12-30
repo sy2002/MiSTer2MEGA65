@@ -26,8 +26,9 @@ VD_INIT         SYSCALL(enter, 1)
                 MOVE    VDRIVES_NUM, R0         ; number of virtual drives
                 MOVE    @R8, @R0
                 MOVE    @R0, R0
+                MOVE    R0, R7                  ; R7: remember # of vdrives
                 MOVE    VDRIVES_MAX, R1
-                CMP     R0, @R1                 ; vdrives > maximum?
+                CMP     R0, R1                  ; vdrives > maximum?
                 RBRA    _START_VD, !N           ; no: continue
 
                 MOVE    ERR_FATAL_VDMAX, R8     ; yes: stop core
@@ -58,6 +59,40 @@ _START_VD_CPY_2 ADD     1, R1
                 ; remember current mount status
                 RSUB    VD_MNT_ST_SET, 1
 
+                ; retrieve anti-trashing-delay from config.vhd and store
+                ; it to the appropriate vdrives register for each drive
+                ; @TODO: potential for more flexibility see config.vhd
+                MOVE    R7, R6                  ; R6: remember drive count
+                MOVE    M2M$RAMROM_DEV, R8
+                MOVE    M2M$CONFIG, @R8
+                MOVE    M2M$RAMROM_4KWIN, R8
+                MOVE    M2M$CFG_GENERAL, @R8
+                MOVE    M2M$CFG_VD_AT_DELAY, R8
+                MOVE    @R8, R0                 ; R0: anti-trashing-delay
+_START_VD_LP1   SUB     1, R7                   ; walk backwards through drvs
+                MOVE    R7, R8
+                MOVE    VD_CACHE_FLUSH_DE, R9
+                MOVE    R0, R10
+                RSUB    VD_DRV_WRITE, 1
+                CMP     0, R7
+                RBRA    _START_VD_LP1, !Z
+
+                ; retrieve amount of bytes saved in one iteration of the 
+                ; background saving (buffer flushing) process
+                ; @TODO: similar as above; see config.vhd
+                MOVE    M2M$RAMROM_DEV, R8
+                MOVE    M2M$CONFIG, @R8
+                MOVE    M2M$RAMROM_4KWIN, R8
+                MOVE    M2M$CFG_GENERAL, @R8
+                MOVE    M2M$CFG_VD_ITERSIZE, R8
+                MOVE    @R8, R0                 ; R0: iteration size in bytes
+                MOVE    VDRIVES_ITERSIZ, R1
+                XOR     R7, R7
+_START_VD_LP2   MOVE    R0, @R1++
+                ADD     1, R7
+                CMP     R6, R7
+                RBRA    _START_VD_LP2, !Z
+
                 SYSCALL(leave, 1)
                 RET
 
@@ -69,6 +104,7 @@ _START_VD_CPY_2 ADD     1, R1
 ; Returns: Carry=1 if mount status is different (and in this case we remember
 ; automatically the new status), else Carry=0
 ; Additionally, returns the actual current mount status in R8
+; Important: The mount status is for all drives, LSB=drive 0
 VD_MNT_ST_GET   INCRB
 
                 ; retrieve current mount status
@@ -98,6 +134,87 @@ VD_MNT_ST_SET   INCRB
                 MOVE    R8, @R0
 
                 MOVE    R1, R8
+                DECRB
+                RET
+
+; Check if the write cache of any virtual drive is different from the one
+; we remembered (and in this case we remember automatically the new status).
+;
+; Return Carry=1 if this is the case, else Carry=0. Also returns the actual
+; status for each virtual drive as a bit-pattern in R8: LSB=drive 0, bit=0
+; means write cache is clearn and bit=1 means write cache is dirty
+VD_DTY_ST_GET   INCRB
+                MOVE    R8, R0
+                MOVE    R9, R1
+
+                RSUB    VD_ACTIVE, 1            ; abort in case of no vdrives
+                RBRA    _VDDTYGET_RET, !C
+
+                ; get current status in @R5
+                INCRB                           ; DECRB done in _VDDTY_GETINFO
+                MOVE    R8, R2                  ; R2: amount of vdrives
+                MOVE    SCRATCH_HEX, R5         ; R5: current status
+                RSUB    _VDDTY_GETINFO, 1
+                MOVE    SCRATCH_HEX, R5         ; due to DECRB in subroutine
+
+                MOVE    OPTM_DTY_STATUS, R6
+                CMP     @R5, @R6
+                RBRA    _VDDTYGET_C0, Z         ; status did not change
+
+                MOVE    @R5, @R6                ; remember new value (if any)
+                MOVE    @R5, R8                 ; return status in R8
+                MOVE    R1, R9                  ; restore R9
+                RBRA    _VDD_C1, 1              ; return with Carry=1
+
+_VDDTYGET_C0    MOVE    @R5, R8                 ; return status in R8
+                MOVE    R1, R9                  ; restore R9
+                RBRA    _VDD_C0, 1              ; return with Carry=0
+
+_VDDTYGET_RET   MOVE    R0, R8
+                MOVE    R1, R9
+                RBRA    _VDD_C0, 1
+
+                ; DECRB and 
+                ; RET done via _VDD_C0 and _VDD_C1 
+
+; Remember the write cache status of all virtual drives.
+; See explanation of VD_DTY_ST_GET for details
+VD_DTY_ST_SET   INCRB
+                MOVE    R8, R0
+                MOVE    R9, R1
+
+                RSUB    VD_ACTIVE, 1            ; abort in case of no vdrives
+                RBRA    _VDDTY_RET, !C
+                MOVE    R8, R2                  ; R2: amount of vdrives
+                MOVE    OPTM_DTY_STATUS, R5     ; R5: variable: remember stat.
+                MOVE    0, @R5
+
+                ; _VDDTY_GETINFO will be called from VD_DTY_ST_GET to
+                ; retrieve the actual bitpattern and store it to where
+                ; R5 points to
+_VDDTY_GETINFO  XOR     R3, R3                  ; R3: current vdrive
+                MOVE    1, R4                   ; R4: for set/clr bits
+
+_VDDTY_1        MOVE    R3, R8                  ; read status for drv in R3
+                MOVE    VD_CACHE_DIRTY, R9
+                RSUB    VD_DRV_READ, 1
+                CMP     1, R8                   ; cache dirty?
+                RBRA    _VDDTY_2, !Z            ; no
+                OR      R4, @R5                 ; set bit at current pos
+                RBRA    _VDDTY_3, 1
+
+_VDDTY_2        MOVE    R4, R6                  ; cache clean: clear bit
+                NOT     R6, R6
+                AND     R6, @R5
+
+_VDDTY_3        AND     0xFFFD, SR              ; delete X as SHL fills with X
+                SHL     1, R4                   ; next bit
+                ADD     1, R3
+                CMP     R2, R3                  ; all drives handled?
+                RBRA    _VDDTY_1, !Z            ; no: continue with next vdrv
+
+_VDDTY_RET      MOVE    R0, R8
+                MOVE    R1, R9
                 DECRB
                 RET
 

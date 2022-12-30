@@ -18,7 +18,7 @@ SPACE           .ASCII_W " "
 
 FN_ROOT_DIR     .ASCII_W "/"
 FN_UPDIR        .ASCII_W ".."
-FN_ELLIPSIS     .ASCII_W "..." ; hardcoded to a len. of 3, see comment below
+FN_ELLIPSIS     .ASCII_W "..." ; caution: hardcoded to a len. of 3
 
 ; ----------------------------------------------------------------------------
 ; Debug Mode and log messages for the serial terminal
@@ -49,6 +49,20 @@ LOG_STR_ITM_AMT .ASCII_W "Items in current directory (in hex): "
 LOG_STR_FILE    .ASCII_W "Selected file: "
 LOG_STR_LOADOK  .ASCII_W "Successfully loaded disk image to buffer RAM.\n"
 LOG_STR_MOUNT   .ASCII_W "Mounted disk image for drive #"
+LOG_STR_CONFIG  .ASCII_W "Configuration: Remember settings: "
+LOG_STR_CFG_ON  .ASCII_W "ON  "
+LOG_STR_CFG_OFF .ASCII_W "OFF  " 
+LOG_STR_CFG_E1  .ASCII_W "Unable to mount SD card.  "
+LOG_STR_CFG_E2  .ASCII_W "Config file not found: "
+LOG_STR_CFG_E3  .ASCII_W "New config file found: "
+LOG_STR_CFG_E4  .ASCII_W "Corrupt config file: "
+LOG_STR_CFG_SP  .ASCII_W "  "
+LOG_STR_CFG_FOK .ASCII_W "Using config file: "
+LOG_STR_CFG_STD .ASCII_W "Using factory defaults.\n"
+LOG_STR_CFG_SDC .ASCII_P "Configuration: Remember settings: OFF  "
+                .ASCII_W "Reason: SD card changed.\n"
+LOG_STR_CFG_REM .ASCII_P "Configuration: New settings successfully stored to "
+                .ASCII_W "SD card.\n"
 
 ; ----------------------------------------------------------------------------
 ; Infos
@@ -62,8 +76,8 @@ STR_INITWAIT    .ASCII_W "Initializing. Please wait..."
 
 WRN_MAXFILES    .ASCII_P "Warning: This directory contains more files\n"
                 .ASCII_P "than this core is able to load into memory.\n\n"
-                .ASCII_P "Please split the files into multiple folders.\n\n"
-                .ASCII_P "If you choose to continue by pressing SPACE,\n"
+                .ASCII_P "Split the files into multiple folders.\n\n"
+                .ASCII_P "If you continue by pressing SPACE,\n"
                 .ASCII_P "be aware that random files will be missing.\n\n"
                 .ASCII_W "Press SPACE to continue.\n"
 
@@ -93,15 +107,25 @@ ERR_F_MENUSTART .ASCII_P "config.vhd: No start menu item tag\n"
 
 ERR_MOUNT       .ASCII_W "Error: Cannot mount SD card!\nError code: "
 ERR_MOUNT_RET   .ASCII_W "\n\nPress Return to retry"
-ERR_BROWSE_UNKN .ASCII_W "SD Card: Unknown error while trying to browse.\n"
-ERR_FATAL_ITER  .ASCII_W "Corrupt memory structure: Linked-list boundary\n"
+ERR_BROWSE_UNKN .ASCII_W "SD Card:\nUnknown error while trying to browse.\n"
+ERR_FATAL_ITER  .ASCII_W "Corrupt memory structure:\nLinked-list boundary\n"
 ERR_FATAL_FNF   .ASCII_W "File selected in the browser not found.\n"
-ERR_FATAL_LOAD  .ASCII_W "SD Card: Unkown error while loading disk image\n"
+ERR_FATAL_LOAD  .ASCII_W "SD Card:\nUnkown error while loading disk image\n"
 ERR_FATAL_HEAP1 .ASCII_W "Heap corruption: Hint: MENU_HEAP_SIZE\n"
 ERR_FATAL_HEAP2 .ASCII_W "Heap corruption: Hint: OPTM_HEAP_SIZE\n"
 ERR_FATAL_BSTCK .ASCII_W "Stack overflow: Hint: B_STACK_SIZE\n"
 ERR_FATAL_VDMAX .ASCII_W "Too many virtual drives: Hint: VDRIVES_MAX\n"
 ERR_FATAL_VDBUF .ASCII_W "Not enough buffers for virtual drives.\n"
+ERR_FATAL_FZERO .ASCII_W "Write disk: File handle is zero.\n"
+ERR_FATAL_SEEK  .ASCII_W "Write disk: Seek failed.\n"
+ERR_FATAL_WRITE .ASCII_W "Write disk: Writing failed.\n"
+ERR_FATAL_FLUSH .ASCII_W "Write disk:\nFlushing of SD card buffer failed.\n"
+ERR_FATAL_ROSMS .ASCII_W "Settings file: Seek failed.\n"
+ERR_FATAL_ROSMR .ASCII_W "Settings file: Reading failed.\n"
+ERR_FATAL_ROSMW .ASCII_W "Settings file: Writing failed.\n"
+ERR_FATAL_ROSMF .ASCII_P "Settings file:\n"
+                .ASCII_W "Flushing of SD card buffer failed.\n"
+ERR_FATAL_ROSMC .ASCII_W "Settings file:\nCorrupt: Illegal config value.\n"
 
 ERR_FATAL_INST  .ASCII_W "Instable system state.\n"
 

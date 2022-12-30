@@ -239,21 +239,6 @@ _DIRBR_COMPARE  INCRB
                 ADD     SLL$DATA, R0            ; R0: pointer to first string
                 ADD     SLL$DATA, R1            ; R1: pointer to second string
 
-                ; directories written like <this> shall always be sorted
-                ; above everything else
-                MOVE    @R0, R8
-                MOVE    @R1, R9
-                CMP     R8, R9
-                RBRA    _DIRBR_CMP, Z
-                CMP     _DIRBR_DS, R8           ; < is less than everything
-                RBRA    _DIRBR_CHK, !Z
-                MOVE    -1, R10
-                RBRA    _DIRBR_CMP_RET, 1
-_DIRBR_CHK      CMP     _DIRBR_DS, R9           ; everything is greater than <
-                RBRA    _DIRBR_CMP, !Z
-                MOVE    1, R10
-                RBRA    _DIRBR_CMP_RET, 1                
-
                 ; copy R0 to the stack and make it upper case
 _DIRBR_CMP      MOVE    R0, R8                  ; copy string to stack
                 SYSCALL(strlen, 1)
@@ -278,17 +263,96 @@ _DIRBR_CMP      MOVE    R0, R8                  ; copy string to stack
                 SYSCALL(str2upper, 1)
                 MOVE    R8, R1
 
-                ; case-insensitive comparison
+                ; replace the brackets in directory names like <this> by
+                ; low ASCII characters to ensure they have sorting priority
+                CMP     _DIRBR_DS, @R0          ; performance optimization
+                RBRA    _DIRBR_NXTDS, !Z
+                MOVE    _DIRBR_DS, R8           ; replace < by 1 in R0
+                MOVE    1, R9
+                MOVE    R0, R10
+                SYSCALL(strrplchr, 1)
+                MOVE    _DIRBR_DE, R8           ; replace > by 2 in R0
+                MOVE    2, R9
+                SYSCALL(strrplchr, 1)
+
+_DIRBR_NXTDS    CMP     _DIRBR_DS, @R1
+                RBRA    _DIRBR_DOISANUM, !Z
+                MOVE    _DIRBR_DS, R8
+                MOVE    1, R9                   ; replace < by 1 in R1
+                MOVE    R1, R10
+                SYSCALL(strrplchr, 1)
+                MOVE    _DIRBR_DE, R8           ; replace > by 2 in R1
+                MOVE    2, R9
+                SYSCALL(strrplchr, 1)
+
+                ; special treatment for names that are numbers so that files
+                ; and folders like 1, 2, 3, ..., 10, 11, ..., 100, 101, ...
+                ; are sorted in ascending order: If a string that represents
+                ; a number is shorter than another string that represents a
+                ; number then the first string is "smaller" than the second
+                ; in the context of being a number
+_DIRBR_DOISANUM MOVE    R0, R8                  ; if R0 is NaN: norm. strcmp
+                RSUB    _DIRBR_ISANUM, 1
+                RBRA    _DIRBR_DOCMP, !C
+                MOVE    R1, R8                  ; if R1 is NaN: norm. strcmp
+                RSUB    _DIRBR_ISANUM, 1
+                RBRA    _DIRBR_DOCMP, !C
+
                 MOVE    R0, R8
-                MOVE    R1, R9                
+                SYSCALL(strlen, 1)
+                MOVE    R9, R7                  ; R7: strlen of R0
+                MOVE    R1, R8
+                SYSCALL(strlen, 1)              ; R9: strlen of R1
+                CMP     R7, R9
+                RBRA    _DIRBR_DOCMP, Z         ; R5=R6: normal strcmp works
+                RBRA    _DIRBR_R1, N            ; strlen(R0)>strlen(R1)
+                MOVE    -1, R10                 ; R0 < R1
+                RBRA    _DIRBR_RET, 1
+_DIRBR_R1       MOVE    1, R10                  ; R0 > R1
+                RBRA    _DIRBR_RET, 1
+
+                ; case-insensitive comparison (because we are comparing
+                ; upper case versions of the names)
+_DIRBR_DOCMP    MOVE    R0, R8
+                MOVE    R1, R9
                 SYSCALL(strcmp, 1)
 
-                ADD     R4, SP                  ; restore stack pointer
+_DIRBR_RET      ADD     R4, SP                  ; restore stack pointer
 
-_DIRBR_CMP_RET  DECRB                
+                DECRB                
                 MOVE    R0, R8
                 MOVE    R1, R9   
                 DECRB
+                RET
+
+; helper function to check if a string is actually a number
+; directory brackets like <this> are ignored, i.e. <123> is a number
+; R8: string
+; Carry flag C=1 if it is a number, C=0 otherwise
+_DIRBR_ISANUM   INCRB
+
+                MOVE    R8, R0                  ; zero-string is not a number
+                CMP     0, @R0
+                RBRA    _DIRBR_IAN_C0, Z
+
+_DIRBR_IAN_LP   MOVE    @R0++, R1               ; checked until the end..
+                RBRA    _DIRBR_IAN_C1, Z        ; ..so it is a number
+                CMP     1, R1                   ; ignore if <
+                RBRA    _DIRBR_IAN_LP, Z
+                CMP     2, R1                   ; ignore if >
+                RBRA    _DIRBR_IAN_LP, Z
+                CMP     R1, 47                  ; > ASCII 47 means 0...
+                RBRA    _DIRBR_IAN_C0, !N       ; no: not a number
+                CMP     R1, 57                  ; <= ASCII 57 means ...9
+                RBRA    _DIRBR_IAN_C0, N        ; no: not a number
+                RBRA    _DIRBR_IAN_LP, 1
+
+_DIRBR_IAN_C1   OR      0x0004, SR              ; is a num: set Carry
+                RBRA    _DIRBR_IAN_RET, 1
+
+_DIRBR_IAN_C0   AND     0xFFFB, SR              ; not a num: clear Carry
+
+_DIRBR_IAN_RET  DECRB
                 RET
 
 ; SLL$S_INSERT filter function which is a wrapper for the user-defined

@@ -8,7 +8,7 @@
 ; the user of the M2M framework to decide. If the Shell is not used, then the
 ; respective overhead is being avoided.
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2021 and licensed under GPL v3
 ; ****************************************************************************
 
 #include "../../M2M/QNICE/dist_kit/sysdef.asm"
@@ -51,7 +51,7 @@ INIT_FIRMWARE   AND     0x00FF, SR              ; activate register bank 0
 
 #else
 
-#include "../../QNICE/dist_kit/monitor.def"
+#include "../../M2M/QNICE/dist_kit/monitor.def"
 
                 .ORG    0x8000                  ; start in RAM
                 RBRA    START_FIRMWARE, 1

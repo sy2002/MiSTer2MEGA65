@@ -28,9 +28,13 @@ SLL$OVRHD_SIZE  .EQU    0x0003                  ; size of the structural
 ;  R10: Amount of elements to iterate
 ; Output:
 ;  R11: Target element (result of iteration) or 0, if we iterated too far
+;  R12: Signed amount of iterated elements
 ; ----------------------------------------------------------------------------
 
 SLL$ITERATE     INCRB
+                
+                XOR     R12, R12
+
                 ; if either the pointer is zero or the iteration mode is
                 ; invalid or the iteration amount is zero, return
                 CMP     0, R8                   ; input ptr zero?
@@ -57,7 +61,8 @@ _SLLIT_NEXT     MOVE    SLL$NEXT, R7            ; +1: iterate forward
 _SLLIT_START    MOVE    R8, R0                  ; R0: iteration pointer
                 MOVE    R10, R1                 ; R1: amount of iterations
 
-_SLLIT_ITERATE  ADD     R7, R0                  ; ptr. to next/prev element
+_SLLIT_ITERATE  ADD     R9, R12                 ; count one more iteration
+                ADD     R7, R0                  ; ptr. to next/prev element
                 MOVE    @R0, R0                 ; try to go to next element                
                 RBRA    _SLLIT_RET0, Z          ; no next element? return 0!
                 SUB     1, R1                   ; one less iteration

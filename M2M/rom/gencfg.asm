@@ -23,11 +23,19 @@ RP_SYSTEM_START INCRB
                 MOVE    M2M$RAMROM_4KWIN, R0    ; choose Reset/Pause handling
                 MOVE    M2M$CFG_GENERAL, @R0
 
+                ; If SAVE_SETTINGS (config.vhd) is true, then we are already
+                ; in a reset state at this moment while keyboard and joystick
+                ; are switched off.
+                MOVE    M2M$CFG_SAVEOSDCFG, R1
+                CMP     1, @R1
+                RBRA    _RP_SS_0, Z             ; skip reset
+
+                ; reset/keyb/joy OFF by default
                 MOVE    M2M$CSR, R7
-                MOVE    0, @R7                  ; reset/keyb/joy OFF by default
+                MOVE    0, @R7
 
                 ; handle keyboard and joystick settings
-                MOVE    M2M$CFG_RP_KB_RST, R1
+_RP_SS_0        MOVE    M2M$CFG_RP_KB_RST, R1
                 CMP     0, @R1
                 RBRA    _RP_JK_1, Z
                 OR      M2M$CSR_KBD, @R7        ; keyoard on

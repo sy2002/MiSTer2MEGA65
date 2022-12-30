@@ -6,8 +6,8 @@
 ; done by sy2002 in 2021 and licensed under GPL v3
 ; ****************************************************************************
 
-#include "../../QNICE/dist_kit/sysdef.asm"
-#include "../../QNICE/dist_kit/monitor.def"
+#include "../../M2M/QNICE/dist_kit/sysdef.asm"
+#include "../../M2M/QNICE/dist_kit/monitor.def"
 
                 .ORG    0x8000                  ; start at 0x8000
 
