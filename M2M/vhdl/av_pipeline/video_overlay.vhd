@@ -96,7 +96,7 @@ begin
       ); -- i_vga_recover_counters
 
    vga_col_d <= to_integer(unsigned(vga_pix_x_d)) - vga_cfg_shift_i;
-   vga_row_d <= to_integer(unsigned(vga_pix_y_d)) when vga_cfg_double_i = '1' else to_integer(unsigned(vga_pix_y_d))*2;
+   vga_row_d <= to_integer(unsigned(vga_pix_y_d))*2 when vga_cfg_double_i = '1' else to_integer(unsigned(vga_pix_y_d));
 
    -----------------------------------------------
    -- Instantiate On-Screen-Menu generator
