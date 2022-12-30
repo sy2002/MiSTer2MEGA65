@@ -55,7 +55,7 @@ constant CORE_CLK_SPEED       : natural := 54_000_000;   -- @TODO YOURCORE expec
 --    FONT_*  size of one OSM character
 constant VGA_DX               : natural := 720;
 constant VGA_DY               : natural := 576;
-constant FONT_FILE            : string  := "../font/Anikki-16x16.rom";
+constant FONT_FILE            : string  := "../font/Anikki-16x16-m2m.rom";
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
 
