@@ -9,11 +9,11 @@
 */
 
 #include <stdio.h>
-#include "Anikki-16x16.h"
+#include "Anikki-16x16-m2m.h"
 
 int main()
 {
-    FILE*  f = fopen("Anikki-16x16.rom", "w");
+    FILE*  f = fopen("Anikki-16x16-m2m.rom", "w");
 
     unsigned char bin[17];
     bin[16] = 0;
