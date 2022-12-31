@@ -394,7 +394,8 @@ begin
    i_clk_m2m : entity work.clk_m2m
       port map (
          sys_clk_i       => CLK,
-         sys_rstn_i      => reset_n_dbnce,
+         sys_rstn_i      => reset_m2m_n_o,      -- reset everything
+         core_rstn_i     => reset_core_n,       -- reset only the core (means the HyperRAM needs to be reset, too)
          qnice_clk_o     => qnice_clk,
          qnice_rst_o     => qnice_rst,
          hr_clk_x1_o     => hr_clk_x1,

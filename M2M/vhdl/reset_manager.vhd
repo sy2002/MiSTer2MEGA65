@@ -1,10 +1,13 @@
-----------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework
 --
--- Abstraction layer to simplify mega65.vhd
+-- Reset Manager:
+-- Distinguish between the reset of the core (only) and the reset of the whole system:
+-- a) Core only: Immediately after the debounced reset signal arrives
+-- b) Whole system: Duration defined by M2M_RST_TRIGGER (see below)
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
-----------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;

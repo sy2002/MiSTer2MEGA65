@@ -25,6 +25,7 @@ entity clk_m2m is
    port (
       sys_clk_i       : in  std_logic;   -- expects 100 MHz
       sys_rstn_i      : in  std_logic;   -- Asynchronous, asserted low
+      core_rstn_i     : in  std_logic;   -- Reset only the core, asserted low
 
       qnice_clk_o     : out std_logic;   -- QNICE's 50 MHz main clock
       qnice_rst_o     : out std_logic;   -- QNICE's reset, synchronized
@@ -331,7 +332,7 @@ begin
          -- Important: The HyperRAM needs to be reset when ascal is being reset! The Avalon memory interface
          -- assumes that both ends maintain state information and agree on this state information. Therefore,
          -- one side can not be reset in the middle of e.g. a burst transaction, without the other end becoming confused.         
-         src_arst  => not (qnice_locked and sys_rstn_i) or hdmi_rst_o,
+         src_arst  => not (qnice_locked and sys_rstn_i and core_rstn_i) or hdmi_rst_o,
          dest_clk  => hr_clk_x1_o,      -- 1-bit input: Destination clock.
          dest_arst => hr_rst_o          -- 1-bit output: src_rst synchronized to the destination clock domain.
                                         -- This output is registered.
