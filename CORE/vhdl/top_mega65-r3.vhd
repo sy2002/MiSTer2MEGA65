@@ -64,7 +64,7 @@ port (
    pwm_l          : out std_logic;
    pwm_r          : out std_logic;
 
-   -- Joysticks
+   -- Joysticks and Paddles
    joy_1_up_n     : in  std_logic;
    joy_1_down_n   : in  std_logic;
    joy_1_left_n   : in  std_logic;
@@ -76,6 +76,9 @@ port (
    joy_2_left_n   : in  std_logic;
    joy_2_right_n  : in  std_logic;
    joy_2_fire_n   : in  std_logic;
+   
+   paddle         : in std_logic_vector(3 downto 0);
+   paddle_drain   : out std_logic;
 
    -- Built-in HyperRAM
    hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
@@ -149,19 +152,22 @@ begin
          -- 3.5mm analog audio jack
          pwm_l          => pwm_l,
          pwm_r          => pwm_r,
-
-         -- Joysticks
+       
+         -- Joysticks and Paddles
          joy_1_up_n     => joy_1_up_n,
          joy_1_down_n   => joy_1_down_n,
          joy_1_left_n   => joy_1_left_n,
          joy_1_right_n  => joy_1_right_n,
-         joy_1_fire_n   => joy_2_fire_n,
-
+         joy_1_fire_n   => joy_1_fire_n,
+      
          joy_2_up_n     => joy_2_up_n,
          joy_2_down_n   => joy_2_down_n,
          joy_2_left_n   => joy_2_left_n,
          joy_2_right_n  => joy_2_right_n,
          joy_2_fire_n   => joy_2_fire_n,
+         
+         paddle         => paddle,
+         paddle_drain   => paddle_drain,
 
          -- Built-in HyperRAM
          hr_d           => hr_d,

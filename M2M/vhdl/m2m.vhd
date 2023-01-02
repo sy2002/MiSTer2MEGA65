@@ -65,7 +65,7 @@ port (
    pwm_l          : out std_logic;
    pwm_r          : out std_logic;
 
-   -- Joysticks
+   -- Joysticks and Paddles
    joy_1_up_n     : in  std_logic;
    joy_1_down_n   : in  std_logic;
    joy_1_left_n   : in  std_logic;
@@ -77,6 +77,9 @@ port (
    joy_2_left_n   : in  std_logic;
    joy_2_right_n  : in  std_logic;
    joy_2_fire_n   : in  std_logic;
+   
+   paddle         : in std_logic_vector(3 downto 0);
+   paddle_drain   : out std_logic;
 
    -- Built-in HyperRAM
    hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
@@ -133,7 +136,7 @@ signal main_video_hs          : std_logic;
 signal main_video_hblank      : std_logic;
 signal main_video_vblank      : std_logic;
 
--- Joysticks
+-- Joysticks and Paddles
 signal main_joy1_up_n         : std_logic;
 signal main_joy1_down_n       : std_logic;
 signal main_joy1_left_n       : std_logic;
@@ -145,6 +148,11 @@ signal main_joy2_down_n       : std_logic;
 signal main_joy2_left_n       : std_logic;
 signal main_joy2_right_n      : std_logic;
 signal main_joy2_fire_n       : std_logic;
+
+signal main_pot1_x            : std_logic_vector(7 downto 0);
+signal main_pot1_y            : std_logic_vector(7 downto 0);
+signal main_pot2_x            : std_logic_vector(7 downto 0);
+signal main_pot2_y            : std_logic_vector(7 downto 0);
 
 ---------------------------------------------------------------------------------------------
 -- qnice_clk
@@ -227,6 +235,8 @@ begin
       joy_2_left_n            => joy_2_left_n,
       joy_2_right_n           => joy_2_right_n,
       joy_2_fire_n            => joy_2_fire_n,
+      paddle                  => paddle,
+      paddle_drain            => paddle_drain,
       hr_d                    => hr_d,
       hr_rwds                 => hr_rwds,
       hr_reset                => hr_reset,
@@ -269,6 +279,10 @@ begin
       main_joy2_left_n_o      => main_joy2_left_n,
       main_joy2_right_n_o     => main_joy2_right_n,
       main_joy2_fire_n_o      => main_joy2_fire_n,
+      main_pot1_x_o           => main_pot1_x,
+      main_pot1_y_o           => main_pot1_y,
+      main_pot2_x_o           => main_pot2_x,
+      main_pot2_y_o           => main_pot2_y,
       
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi,
@@ -389,7 +403,12 @@ begin
          main_joy_2_down_n_i     => main_joy2_down_n,
          main_joy_2_left_n_i     => main_joy2_left_n,
          main_joy_2_right_n_i    => main_joy2_right_n,
-         main_joy_2_fire_n_i     => main_joy2_right_n
+         main_joy_2_fire_n_i     => main_joy2_right_n,
+         
+         main_pot1_x_i           => main_pot1_x,
+         main_pot1_y_i           => main_pot1_y,
+         main_pot2_x_i           => main_pot2_x,
+         main_pot2_y_i           => main_pot2_y
       ); -- CORE
 
 end architecture synthesis;

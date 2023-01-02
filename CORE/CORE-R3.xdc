@@ -148,6 +148,13 @@ set_property -dict {PACKAGE_PIN F21 IOSTANDARD LVCMOS33} [get_ports joy_2_left_n
 set_property -dict {PACKAGE_PIN C15 IOSTANDARD LVCMOS33} [get_ports joy_2_right_n]
 set_property -dict {PACKAGE_PIN F15 IOSTANDARD LVCMOS33} [get_ports joy_2_fire_n]
 
+# Paddles
+set_property -dict {PACKAGE_PIN H13 IOSTANDARD LVCMOS33} [get_ports paddle[0]]
+set_property -dict {PACKAGE_PIN G15 IOSTANDARD LVCMOS33} [get_ports paddle[1]]
+set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports paddle[2]]
+set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVCMOS33} [get_ports paddle[3]]
+set_property -dict {PACKAGE_PIN H22 IOSTANDARD LVCMOS33} [get_ports paddle_drain]
+
 ## PWM Audio
 set_property -dict {PACKAGE_PIN L6  IOSTANDARD LVCMOS33} [get_ports pwm_l]
 set_property -dict {PACKAGE_PIN F4  IOSTANDARD LVCMOS33} [get_ports pwm_r]

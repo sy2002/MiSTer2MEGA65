@@ -73,7 +73,7 @@ port (
    pwm_l          : out std_logic;
    pwm_r          : out std_logic;
 
-   -- Joysticks
+   -- Joysticks and Paddles
    joy_1_up_n     : in  std_logic;
    joy_1_down_n   : in  std_logic;
    joy_1_left_n   : in  std_logic;
@@ -85,6 +85,9 @@ port (
    joy_2_left_n   : in  std_logic;
    joy_2_right_n  : in  std_logic;
    joy_2_fire_n   : in  std_logic;
+   
+   paddle         : in std_logic_vector(3 downto 0);
+   paddle_drain   : out std_logic;   
 
    -- Built-in HyperRAM
    hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
@@ -129,7 +132,11 @@ port (
    main_joy2_left_n_o      : out std_logic;
    main_joy2_right_n_o     : out std_logic;
    main_joy2_fire_n_o      : out std_logic;
-   
+   main_pot1_x_o           : out std_logic_vector(7 downto 0);
+   main_pot1_y_o           : out std_logic_vector(7 downto 0);
+   main_pot2_x_o           : out std_logic_vector(7 downto 0);
+   main_pot2_y_o           : out std_logic_vector(7 downto 0);  
+
    -- QNICE control signals
    qnice_dvi_i             : in  std_logic;
    qnice_video_mode_i      : in  natural range 0 to 3;
@@ -276,6 +283,17 @@ signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
 
 -- Shell configuration (config.vhd)
 signal qnice_config_data      : std_logic_vector(15 downto 0);
+
+-- Paddles in 50 MHz clock domain which happens to be QNICE's
+signal qnice_pot1_x           : unsigned(7 downto 0);
+signal qnice_pot1_y           : unsigned(7 downto 0);
+signal qnice_pot2_x           : unsigned(7 downto 0);
+signal qnice_pot2_y           : unsigned(7 downto 0);
+
+signal qnice_pot1_x_n         : unsigned(7 downto 0);
+signal qnice_pot1_y_n         : unsigned(7 downto 0);
+signal qnice_pot2_x_n         : unsigned(7 downto 0);
+signal qnice_pot2_y_n         : unsigned(7 downto 0);
 
 ---------------------------------------------------------------------------------------------
 -- hdmi_clk
@@ -494,7 +512,7 @@ begin
    -- QNICE Clock Domain: qnice_clk
    ---------------------------------------------------------------------------------------------------------------
 
-   -- QNICE Co-Processor (System-on-a-Chip) for ROM loading and On-Screen-Menu
+   -- QNICE Co-Processor (System-on-a-Chip) for On-Screen-Menu, Disk mounting/virtual drives, ROM loading, etc.
    QNICE_SOC : entity work.QNICE
       generic map (
          G_FIRMWARE              => QNICE_FIRMWARE,
@@ -661,7 +679,7 @@ begin
                end case;
             when others => null;
          end case;
-
+         
       -----------------------------------
       -- User/core specific devices
       -----------------------------------
@@ -670,6 +688,71 @@ begin
       end if;
    end process qnice_ramrom_devices;
 
+   -- Generate the paddle readings (mouse not supported, yet)
+   -- Works with 50 MHz, which happens to be the QNICE clock domain
+   i_mouse_paddles: entity work.mouse_input
+      port map (
+         clk                     => qnice_clk,
+
+         mouse_debug             => open,
+         amiga_mouse_enable_a    => '0',
+         amiga_mouse_enable_b    => '0',
+         amiga_mouse_assume_a    => '0',
+         amiga_mouse_assume_b    => '0',
+
+         -- These are the 1351 mouse / C64 paddle inputs and drain control
+         fa_potx                 => paddle(0),
+         fa_poty                 => paddle(1),
+         fb_potx                 => paddle(2),
+         fb_poty                 => paddle(3),
+         pot_drain               => paddle_drain,
+
+         -- To allow auto-detection of Amiga mouses, we need to know what the
+         -- rest of the joystick pins are doing
+         fa_fire                 => '1',
+         fa_left                 => '1',
+         fa_right                => '1',
+         fa_up                   => '1',
+         fa_down                 => '1',
+         fb_fire                 => '1',
+         fb_left                 => '1',
+         fb_right                => '1',
+         fb_up                   => '1',
+         fb_down                 => '1',
+
+         fa_up_out               => open,
+         fa_down_out             => open,
+         fa_left_out             => open,
+         fa_right_out            => open,
+
+         fb_up_out               => open,
+         fb_down_out             => open,
+         fb_left_out             => open,
+         fb_right_out            => open,
+
+         -- We output the four sampled pot values
+         pota_x                  => qnice_pot1_x,
+         pota_y                  => qnice_pot1_y,
+         potb_x                  => qnice_pot2_x,
+         potb_y                  => qnice_pot2_y
+      );
+      
+    -- We need to invert the values that we get from i_mouse_paddles
+   correct_and_flip_paddles : process(all)
+   begin
+      if qnice_flip_joyports_i = '0' then
+         qnice_pot1_x_n <= x"FF" - qnice_pot1_x;
+         qnice_pot1_y_n <= x"FF" - qnice_pot1_y;
+         qnice_pot2_x_n <= x"FF" - qnice_pot2_x;
+         qnice_pot2_y_n <= x"FF" - qnice_pot2_y;
+      else
+         qnice_pot2_x_n <= x"FF" - qnice_pot1_x;
+         qnice_pot2_y_n <= x"FF" - qnice_pot1_y;
+         qnice_pot1_x_n <= x"FF" - qnice_pot2_x;
+         qnice_pot1_y_n <= x"FF" - qnice_pot2_y;      
+      end if;
+   end process correct_and_flip_paddles;
+
    ---------------------------------------------------------------------------------------------------------------
    -- Clock Domain Crossing
    ---------------------------------------------------------------------------------------------------------------
@@ -677,7 +760,7 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 522
+         WIDTH => 554
       )
       port map (
          src_clk                    => qnice_clk,
@@ -693,6 +776,10 @@ begin
          src_in(264 downto 9)       => qnice_osm_control_m_o,
          src_in(520 downto 265)     => qnice_gp_reg_o,
          src_in(521)                => qnice_scandoubler_i,
+         src_in(529 downto 522)     => std_logic_vector(qnice_pot1_x_n),
+         src_in(537 downto 530)     => std_logic_vector(qnice_pot1_y_n),
+         src_in(545 downto 538)     => std_logic_vector(qnice_pot2_x_n),
+         src_in(553 downto 546)     => std_logic_vector(qnice_pot2_y_n),
          dest_clk                   => main_clk_i,
          dest_out(0)                => main_qnice_reset_o,
          dest_out(1)                => main_qnice_pause_o,
@@ -705,7 +792,11 @@ begin
          dest_out(8)                => main_audio_filter,
          dest_out(264 downto 9)     => main_osm_control_m_o,
          dest_out(520 downto 265)   => main_qnice_gp_reg_o,
-         dest_out(521)              => main_scandoubler
+         dest_out(521)              => main_scandoubler,
+         dest_out(529 downto 522)   => main_pot1_x_o,
+         dest_out(537 downto 530)   => main_pot1_y_o,
+         dest_out(545 downto 538)   => main_pot2_x_o,
+         dest_out(553 downto 546)   => main_pot2_y_o         
       ); -- i_qnice2main
 
    -- Clock domain crossing: core to QNICE
@@ -1047,4 +1138,3 @@ begin
    hr_dq_in   <= hr_d;
 
 end architecture synthesis;
-

@@ -107,6 +107,11 @@ port (
    main_joy_2_left_n_i     : in std_logic;
    main_joy_2_right_n_i    : in std_logic;
    main_joy_2_fire_n_i     : in std_logic;
+   
+   main_pot1_x_i           : in std_logic_vector(7 downto 0);
+   main_pot1_y_i           : in std_logic_vector(7 downto 0);
+   main_pot2_x_i           : in std_logic_vector(7 downto 0);
+   main_pot2_y_i           : in std_logic_vector(7 downto 0);   
 
    -- On-Screen-Menu selections
    main_osm_control_i     : in std_logic_vector(255 downto 0);
@@ -203,7 +208,7 @@ begin
          kb_key_num_i         => main_kb_key_num_i,
          kb_key_pressed_n_i   => main_kb_key_pressed_n_i,
 
-         -- MEGA65 joysticks
+         -- MEGA65 joysticks and paddles/mouse/potentiometers
          joy_1_up_n_i         => main_joy_1_up_n_i ,
          joy_1_down_n_i       => main_joy_1_down_n_i,
          joy_1_left_n_i       => main_joy_1_left_n_i,
@@ -214,7 +219,12 @@ begin
          joy_2_down_n_i       => main_joy_2_down_n_i,
          joy_2_left_n_i       => main_joy_2_left_n_i,
          joy_2_right_n_i      => main_joy_2_right_n_i,
-         joy_2_fire_n_i       => main_joy_2_fire_n_i
+         joy_2_fire_n_i       => main_joy_2_fire_n_i,
+         
+         pot1_x_i             => main_pot1_x_i,
+         pot1_y_i             => main_pot1_y_i,
+         pot2_x_i             => main_pot2_x_i,
+         pot2_y_i             => main_pot2_y_i     
       ); -- i_main
 
    ---------------------------------------------------------------------------------------------
@@ -241,7 +251,7 @@ begin
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
 
-   -- ascal filters that are applied while zooming the input to 720p
+   -- ascal filters that are applied while processing the input
    -- 00 : Nearest Neighbour
    -- 01 : Bilinear
    -- 10 : Sharp Bilinear
