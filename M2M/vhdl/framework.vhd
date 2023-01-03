@@ -22,6 +22,7 @@ use xpm.vcomponents.all;
 entity framework is
 port (
    CLK            : in  std_logic;                  -- 100 MHz clock
+   
    -- MAX10 FPGA (delivers reset)
    max10_tx          : in std_logic;
    max10_rx          : out std_logic;
@@ -135,7 +136,20 @@ port (
    main_pot1_x_o           : out std_logic_vector(7 downto 0);
    main_pot1_y_o           : out std_logic_vector(7 downto 0);
    main_pot2_x_o           : out std_logic_vector(7 downto 0);
-   main_pot2_y_o           : out std_logic_vector(7 downto 0);  
+   main_pot2_y_o           : out std_logic_vector(7 downto 0);
+   
+   -- Provide HyperRAM to core (in HyperRAM clock domain)
+   hr_clk_o                : out std_logic;
+   hr_rst_o                : out std_logic;
+   hr_write_i              : in  std_logic; 
+   hr_read_i               : in  std_logic;
+   hr_address_i            : in  std_logic_vector(31 downto 0);
+   hr_writedata_i          : in  std_logic_vector(15 downto 0);
+   hr_byteenable_i         : in  std_logic_vector(1 downto 0);
+   hr_burstcount_i         : in  std_logic_vector(7 downto 0);
+   hr_readdata_o           : out std_logic_vector(15 downto 0);
+   hr_readdatavalid_o      : out std_logic;
+   hr_waitrequest_o        : out std_logic;
 
    -- QNICE control signals
    qnice_dvi_i             : in  std_logic;
@@ -316,6 +330,18 @@ signal hdmi_osm_control_m     : std_logic_vector(255 downto 0);
 -- HyperRAM
 ---------------------------------------------------------------------------------------------
 
+-- Digital pipeline's signals to the HyperRAM arbiter
+signal hr_dig_write         : std_logic;
+signal hr_dig_read          : std_logic;
+signal hr_dig_address       : std_logic_vector(31 downto 0) := (others => '0');
+signal hr_dig_writedata     : std_logic_vector(15 downto 0);
+signal hr_dig_byteenable    : std_logic_vector(1 downto 0);
+signal hr_dig_burstcount    : std_logic_vector(7 downto 0);
+signal hr_dig_readdata      : std_logic_vector(15 downto 0);
+signal hr_dig_readdatavalid : std_logic;
+signal hr_dig_waitrequest   : std_logic;
+
+-- HyperRAM controller
 signal hr_write               : std_logic;
 signal hr_read                : std_logic;
 signal hr_address             : std_logic_vector(31 downto 0) := (others => '0');
@@ -326,6 +352,7 @@ signal hr_readdata            : std_logic_vector(15 downto 0);
 signal hr_readdatavalid       : std_logic;
 signal hr_waitrequest         : std_logic;
 
+-- Physical layer
 signal hr_rwds_in             : std_logic;
 signal hr_rwds_out            : std_logic;
 signal hr_rwds_oe             : std_logic;   -- Output enable for RWDS
@@ -376,6 +403,8 @@ end component audio_out;
 begin
 
    qnice_clk_o <= qnice_clk;
+   hr_clk_o    <= hr_clk_x1;
+   hr_rst_o    <= hr_rst;   
 
    -----------------------------------------------------------------------------------------
    -- MAX10 FPGA handling: extract reset signal
@@ -1090,16 +1119,58 @@ begin
          -- Connect to HyperRAM controller
          hr_clk_i                 => hr_clk_x1,
          hr_rst_i                 => hr_rst,
-         hr_write_o               => hr_write,
-         hr_read_o                => hr_read,
-         hr_address_o             => hr_address,
-         hr_writedata_o           => hr_writedata,
-         hr_byteenable_o          => hr_byteenable,
-         hr_burstcount_o          => hr_burstcount,
-         hr_readdata_i            => hr_readdata,
-         hr_readdatavalid_i       => hr_readdatavalid,
-         hr_waitrequest_i         => hr_waitrequest
+         hr_write_o               => hr_dig_write,
+         hr_read_o                => hr_dig_read,
+         hr_address_o             => hr_dig_address,
+         hr_writedata_o           => hr_dig_writedata,
+         hr_byteenable_o          => hr_dig_byteenable,
+         hr_burstcount_o          => hr_dig_burstcount,
+         hr_readdata_i            => hr_dig_readdata,
+         hr_readdatavalid_i       => hr_dig_readdatavalid,
+         hr_waitrequest_i         => hr_dig_waitrequest
       ); -- i_digital_pipeline
+
+   --------------------------------------------------------
+   -- Instantiate HyperRAM arbiter
+   --------------------------------------------------------
+
+   i_avm_arbit : entity work.avm_arbit
+      generic map (
+         G_FREQ_HZ      => BOARD_CLK_SPEED,
+         G_ADDRESS_SIZE => 32,
+         G_DATA_SIZE    => 16
+      )
+      port map (
+         clk_i                  => hr_clk_x1,
+         rst_i                  => hr_rst,
+         s0_avm_write_i         => hr_dig_write,
+         s0_avm_read_i          => hr_dig_read,
+         s0_avm_address_i       => hr_dig_address,
+         s0_avm_writedata_i     => hr_dig_writedata,
+         s0_avm_byteenable_i    => hr_dig_byteenable,
+         s0_avm_burstcount_i    => hr_dig_burstcount,
+         s0_avm_readdata_o      => hr_dig_readdata,
+         s0_avm_readdatavalid_o => hr_dig_readdatavalid,
+         s0_avm_waitrequest_o   => hr_dig_waitrequest,
+         s1_avm_write_i         => hr_write_i,
+         s1_avm_read_i          => hr_read_i,
+         s1_avm_address_i       => hr_address_i,
+         s1_avm_writedata_i     => hr_writedata_i,
+         s1_avm_byteenable_i    => hr_byteenable_i,
+         s1_avm_burstcount_i    => hr_burstcount_i,
+         s1_avm_readdata_o      => hr_readdata_o,
+         s1_avm_readdatavalid_o => hr_readdatavalid_o,
+         s1_avm_waitrequest_o   => hr_waitrequest_o,
+         m_avm_write_o          => hr_write,
+         m_avm_read_o           => hr_read,
+         m_avm_address_o        => hr_address,
+         m_avm_writedata_o      => hr_writedata,
+         m_avm_byteenable_o     => hr_byteenable,
+         m_avm_burstcount_o     => hr_burstcount,
+         m_avm_readdata_i       => hr_readdata,
+         m_avm_readdatavalid_i  => hr_readdatavalid,
+         m_avm_waitrequest_i    => hr_waitrequest
+      ); -- i_avm_arbit
 
    ---------------------------------------------------------------------------------------------------------------
    -- HyperRAM controller

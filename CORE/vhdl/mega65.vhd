@@ -117,7 +117,23 @@ port (
    main_osm_control_i     : in std_logic_vector(255 downto 0);
    
    -- QNICE general purpose register converted to main clock domain
-   main_qnice_gp_reg_i    : in std_logic_vector(255 downto 0)
+   main_qnice_gp_reg_i    : in std_logic_vector(255 downto 0);
+   
+   --------------------------------------------------------------------------------------------------------
+   -- Provide HyperRAM to core (in HyperRAM clock domain)
+   --------------------------------------------------------------------------------------------------------   
+   
+   hr_clk_i                : in  std_logic;
+   hr_rst_i                : in  std_logic;
+   hr_write_o              : out std_logic := '0'; 
+   hr_read_o               : out std_logic := '0';
+   hr_address_o            : out std_logic_vector(31 downto 0) := (others => '0');
+   hr_writedata_o          : out std_logic_vector(15 downto 0) := (others => '0');
+   hr_byteenable_o         : out std_logic_vector(1 downto 0)  := (others => '0');
+   hr_burstcount_o         : out std_logic_vector(7 downto 0)  := (others => '0');
+   hr_readdata_i           : in  std_logic_vector(15 downto 0) := (others => '0');
+   hr_readdatavalid_i      : in  std_logic;
+   hr_waitrequest_i        : in  std_logic
 );
 end entity MEGA65_Core;
 
