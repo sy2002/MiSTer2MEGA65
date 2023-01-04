@@ -29,7 +29,8 @@ entity main is
 
       -- Video output
       video_ce_o              : out std_logic;
-      video_ce_2x_o           : out std_logic;
+      video_ce_ovl_o          : out std_logic;
+      video_retro15kHz_o      : out std_logic;
       video_red_o             : out std_logic_vector(7 downto 0);
       video_green_o           : out std_logic_vector(7 downto 0);
       video_blue_o            : out std_logic_vector(7 downto 0);
@@ -106,9 +107,17 @@ begin
          audio_right_o        => audio_right_o
       ); -- i_democore
       
-   -- @TODO: video_ce_2x_o needs to be twice as fast as video_ce_o; the demo core's vga_ce_o halfs
-   -- the speed of clk_main_i, so to achieve factor 2x we just need to set video_ce_2x_o to '1'.
-   video_ce_2x_o <= '1';
+   -- On video_ce_o and video_ce_ovl_o: You have an important @TODO when porting a core:
+   -- video_ce_o: You need to make sure that video_ce_o divides clk_main_i such that it transforms clk_main_i
+   --             into the pixelclock of the core (means: the core's native output resolution pre-scandoubler)
+   -- video_ce_ovl_o: Clock enable for the OSM overlay and for sampling the core's (retro) output in a way that
+   --             it is displayed correctly on a "modern" analog input device: Make sure that video_ce_ovl_o
+   --             transforms clk_main_o into the post-scandoubler pixelclock that is valid for the target
+   --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
+   -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
+   --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
+   video_ce_ovl_o <= video_ce_o;
+   video_retro15kHz_o <= '0';
 
    -- @TODO: Keyboard mapping and keyboard behavior
    -- Each core is treating the keyboard in a different way: Some need low-active "matrices", some

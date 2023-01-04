@@ -127,7 +127,8 @@ signal main_audio_r           : signed(15 downto 0);
 
 -- Video output from Core
 signal main_video_ce          : std_logic;
-signal main_video_ce_2x       : std_logic;
+signal main_video_ce_ovl      : std_logic;
+signal main_retro15kHz        : std_logic;
 signal main_video_red         : std_logic_vector(7 downto 0);
 signal main_video_green       : std_logic_vector(7 downto 0);
 signal main_video_blue        : std_logic_vector(7 downto 0);
@@ -277,7 +278,8 @@ begin
       main_audio_l_i          => main_audio_l,
       main_audio_r_i          => main_audio_r,
       main_video_ce_i         => main_video_ce,
-      main_video_ce_2x_i      => main_video_ce_2x,
+      main_video_ce_ovl_i     => main_video_ce_ovl,
+      main_retro15kHz_i       => main_retro15kHz,
       main_video_red_i        => main_video_red,
       main_video_green_i      => main_video_green,
       main_video_blue_i       => main_video_blue,
@@ -402,7 +404,8 @@ begin
 
          -- Video output
          main_video_ce_o         => main_video_ce,
-         main_video_ce_2x_o      => main_video_ce_2x,
+         main_video_ce_ovl_o     => main_video_ce_ovl,
+         main_retro15kHz_o       => main_retro15kHz,
          main_video_red_o        => main_video_red,
          main_video_green_o      => main_video_green,
          main_video_blue_o       => main_video_blue,

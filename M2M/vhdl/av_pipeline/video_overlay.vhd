@@ -25,7 +25,7 @@ entity video_overlay is
       -- QNICE
       vga_cfg_shift_i  : in  natural;
       vga_cfg_enable_i : in  std_logic;
-      vga_cfg_double_i : in  std_logic;
+      vga_cfg_r15kHz_i : in  std_logic;
       vga_cfg_xy_i     : in  std_logic_vector(15 downto 0);
       vga_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
       vga_vram_addr_o  : out std_logic_vector(15 downto 0);
@@ -96,7 +96,7 @@ begin
       ); -- i_vga_recover_counters
 
    vga_col_d <= to_integer(unsigned(vga_pix_x_d)) - vga_cfg_shift_i;
-   vga_row_d <= to_integer(unsigned(vga_pix_y_d))*2 when vga_cfg_double_i = '1' else to_integer(unsigned(vga_pix_y_d));
+   vga_row_d <= to_integer(unsigned(vga_pix_y_d)) when vga_cfg_r15kHz_i = '0' else to_integer(unsigned(vga_pix_y_d))*2;
 
    -----------------------------------------------
    -- Instantiate On-Screen-Menu generator

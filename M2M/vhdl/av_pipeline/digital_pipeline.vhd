@@ -465,7 +465,7 @@ begin
          vga_de_i         => hdmi_de,
          vga_cfg_shift_i  => hdmi_shift,
          vga_cfg_enable_i => hdmi_osm_cfg_enable_i,
-         vga_cfg_double_i => '0',
+         vga_cfg_r15kHz_i => '0',  
          vga_cfg_xy_i     => hdmi_osm_cfg_xy_i,
          vga_cfg_dxdy_i   => hdmi_osm_cfg_dxdy_i,
          vga_vram_addr_o  => hdmi_osm_vram_addr_o,

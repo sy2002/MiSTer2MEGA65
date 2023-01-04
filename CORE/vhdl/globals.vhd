@@ -53,7 +53,7 @@ constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- a change here has de
 ----------------------------------------------------------------------------------------------------------
 
 -- Rendering constants (in pixels)
---    VGA_*   size of the final output on the screen
+--    VGA_*   size of the core's target output post scandoubler
 --    FONT_*  size of one OSM character
 constant VGA_DX               : natural := 720;
 constant VGA_DY               : natural := 576;

@@ -23,7 +23,7 @@ entity analog_pipeline is
       video_clk_i            : in  std_logic;
       video_rst_i            : in  std_logic;
       video_ce_i             : in  std_logic;
-      video_ce_2x_i          : in  std_logic;           -- 2x the speed of video_ce_i
+      video_ce_ovl_i         : in  std_logic;           -- 2x the speed of video_ce_i
       video_red_i            : in  std_logic_vector(7 downto 0);
       video_green_i          : in  std_logic_vector(7 downto 0);
       video_blue_i           : in  std_logic_vector(7 downto 0);
@@ -38,7 +38,11 @@ entity analog_pipeline is
       
       -- Configure the scandoubler: 0=off/1=on
       -- Make sure the signal is in the video_clk clock domain
-      video_scandoubler_i    : in  std_logic;      
+      video_scandoubler_i    : in  std_logic;
+      
+      -- Is the input from the core in the retro 15 kHz analog RGB mode: 0=no/1=yes
+      -- (Hint: Scandoubler off does not automatically mean retro 15 kHz on.)
+      video_retro15kHz_i     : in  std_logic;   
 
       -- Video output (VGA)
       vga_red_o              : out std_logic_vector(7 downto 0);
@@ -87,9 +91,6 @@ architecture synthesis of analog_pipeline is
    signal vga_blue_ps        : std_logic_vector(7 downto 0);
    signal vga_hs_ps          : std_logic;
    signal vga_vs_ps          : std_logic;
-
-   -- depends on scandoubler: needs to be 2x faster, if scandoubler is active
-   signal video_ce_overlay   : std_logic;
 
    component video_mixer is
       port (
@@ -186,8 +187,6 @@ begin
       end if;
    end process vga_data_enable;
 
-   video_ce_overlay <= video_ce_2x_i when video_scandoubler_i = '1' else video_ce_i;
-   
    i_video_overlay : entity work.video_overlay
       generic  map (
          G_VGA_DX         => G_VGA_DX,
@@ -198,7 +197,7 @@ begin
       )
       port map (
          vga_clk_i        => video_clk_i,
-         vga_ce_i         => video_ce_overlay,
+         vga_ce_i         => video_ce_ovl_i,
          vga_red_i        => mix_r,
          vga_green_i      => mix_g,
          vga_blue_i       => mix_b,
@@ -207,7 +206,7 @@ begin
          vga_de_i         => mix_vga_de,
          vga_cfg_shift_i  => 0,
          vga_cfg_enable_i => video_osm_cfg_enable_i,
-         vga_cfg_double_i => video_scandoubler_i,
+         vga_cfg_r15kHz_i => video_retro15kHz_i,
          vga_cfg_xy_i     => video_osm_cfg_xy_i,
          vga_cfg_dxdy_i   => video_osm_cfg_dxdy_i,
          vga_vram_addr_o  => video_osm_vram_addr_o,

@@ -115,7 +115,8 @@ port (
    main_audio_l_i          : in  signed(15 downto 0);
    main_audio_r_i          : in  signed(15 downto 0);
    main_video_ce_i         : in  std_logic;
-   main_video_ce_2x_i      : in  std_logic;
+   main_video_ce_ovl_i     : in  std_logic;
+   main_retro15kHz_i       : in  std_logic;
    main_video_red_i        : in  std_logic_vector(7 downto 0);
    main_video_green_i      : in  std_logic_vector(7 downto 0);
    main_video_blue_i       : in  std_logic_vector(7 downto 0);
@@ -1002,7 +1003,8 @@ begin
          video_clk_i              => main_clk_i,
          video_rst_i              => main_rst_i,
          video_ce_i               => main_video_ce_i,
-         video_ce_2x_i            => main_video_ce_2x_i,
+         video_ce_ovl_i           => main_video_ce_ovl_i,
+         video_retro15kHz_i       => main_retro15kHz_i,
          video_red_i              => main_video_red_i,
          video_green_i            => main_video_green_i,
          video_blue_i             => main_video_blue_i,
