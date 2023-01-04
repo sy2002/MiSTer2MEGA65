@@ -60,32 +60,32 @@ begin
    -- assign output signals and support the flip joystick ports feature and the on/off switches
    handle_outputs: process(all)
    begin
+      dbnce_joy1_up_n      <= '1';
+      dbnce_joy1_down_n    <= '1';
+      dbnce_joy1_left_n    <= '1';
+      dbnce_joy1_right_n   <= '1';
+      dbnce_joy1_fire_n    <= '1';
+      
+      dbnce_joy2_up_n      <= '1';
+      dbnce_joy2_down_n    <= '1';
+      dbnce_joy2_left_n    <= '1';
+      dbnce_joy2_right_n   <= '1';
+      dbnce_joy2_fire_n    <= '1';
+      
       if joy_1_on then
          dbnce_joy1_up_n      <= j1_u when flip_joys_i = '0' else j2_u;
          dbnce_joy1_down_n    <= j1_d when flip_joys_i = '0' else j2_d;
          dbnce_joy1_left_n    <= j1_l when flip_joys_i = '0' else j2_l;
          dbnce_joy1_right_n   <= j1_r when flip_joys_i = '0' else j2_r;
          dbnce_joy1_fire_n    <= j1_f when flip_joys_i = '0' else j2_f;
-      else
-         dbnce_joy1_up_n      <= '1';
-         dbnce_joy1_down_n    <= '1';
-         dbnce_joy1_left_n    <= '1';
-         dbnce_joy1_right_n   <= '1';
-         dbnce_joy1_fire_n    <= '1';      
       end if;
-   
+ 
       if joy_2_on then
          dbnce_joy2_up_n      <= j2_u when flip_joys_i = '0' else j1_u;
          dbnce_joy2_down_n    <= j2_d when flip_joys_i = '0' else j1_d;
          dbnce_joy2_left_n    <= j2_l when flip_joys_i = '0' else j1_l;
          dbnce_joy2_right_n   <= j2_r when flip_joys_i = '0' else j1_r;
          dbnce_joy2_fire_n    <= j2_f when flip_joys_i = '0' else j1_f;
-      else
-         dbnce_joy2_up_n      <= '1';
-         dbnce_joy2_down_n    <= '1';
-         dbnce_joy2_left_n    <= '1';
-         dbnce_joy2_right_n   <= '1';
-         dbnce_joy2_fire_n    <= '1';      
       end if;
    end process;
    
