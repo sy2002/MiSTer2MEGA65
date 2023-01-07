@@ -46,17 +46,38 @@ Getting started, detailed documentation and support
 * Post a question in our
   [Discussion Forum](https://github.com/sy2002/MiSTer2MEGA65/discussions).
 
-Progress
---------
+Status of the framework
+-----------------------
 
-CAUTION: RIGHT NOW THIS STILL IS A WORK-IN-PROGRESS VERSION.
+**The MiSTer2MEGA (M2M) framework is stable and ready for being used.**
+The first production quality core that is based on M2M is the
+[Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65/tree/M2M-V0.9).
+Additionally there is a work-in-progress
+[Apple II core](https://github.com/lydon42/Apple-II_MEGA65/tree/progress)
+based on M2M. The main reason why we are currently using "Version 0.9"
+(0.9.x) for the M2M framework instead of "Version 1.0" is that there is not
+enough documentation available, yet. If you have a look at the
+[MiSTer2MEGA65 Wiki](https://github.com/sy2002/MiSTer2MEGA65/wiki)
+then you will notice, that there are many gaps in the documentation.
 
-Yet, there is already one successful project live and up and
-running that is based on this version of the M2M framework:
-The [C64 for MEGA65](https://github.com/MJoergen/C64MEGA65).
+This should not discourage you from using the MiSTer2MEGA65 framework right
+now to port MiSTer cores and other cores to the MEGA65. You can use the
+source code of the
+[Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65/tree/M2M-V0.9)
+as your "user's manual" and "reference handbook" for the M2M framework;
+additionally to the existing
+[Wiki pages](https://github.com/sy2002/MiSTer2MEGA65/wiki).
+For being able to actually use the C64 core's source code as your
+documentation of how to use the M2M framework, we added a tag called
+`M2M-V0.9` to the GitHub repository of the
+[Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65/tree/M2M-V0.9).
+The tag is necessary, because Version 4 of the C64 core was based on an
+earlier version of the M2M framwork and only from the tag `M2M-V0.9` on the
+C64 core is aligned with Version 0.9 of M2M.
 
-M2M is not officially released at this moment:
-
-It is somewhere between an Alpha and a Beta version. We try
-to keep the M2M architecture as stable as possible from now
-on so that you can rely on it and start porting MiSTer cores.
+Additionally to helping yourself with the Wiki (and the turorials there) and
+the C64 source code as your "user's manual" and "reference handbook": Post
+your question in the
+[Discussion Forum](https://github.com/sy2002/MiSTer2MEGA65/discussions)
+and join the
+[friendly MEGA65 community on Discord](https://discord.gg/PMBxcDvbX8).
