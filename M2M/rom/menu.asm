@@ -170,7 +170,7 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 MOVE    @R3, R3
                 ADD     OPTM_IR_LINES, R3
                 MOVE    @R3, R3
-                MOVE    OPTM_DATA, R4           ; R4: groups (single-select)
+                MOVE    OPTM_DATA, R4           ; R4: menu groups
                 MOVE    @R4, R4
                 ADD     OPTM_IR_GROUPS, R4
                 MOVE    @R4, R4
@@ -241,41 +241,55 @@ _OPTM_MS_4      SUB     1, R8                   ; more entries?
                 MOVE    OPTM_FP_PRINT, R7       ; print menu
                 RSUB    _OPTM_CALL, 1
 
-                ; DEBUG
-                RBRA    _OPTM_SHOW_RET, 1 
-
                 ; ------------------------------------------------------------
                 ; Highlight Headlines/Titles
                 ; ------------------------------------------------------------
 
+                ; use INCRB to protect R0..R7
+                ; bring R4 and R5 over the INCRB hump
+                MOVE    R4, @--SP
+                MOVE    R5, @--SP
                 INCRB                           ; protect R0..R7
+                MOVE    @SP++, R5               ; R5: (sub)menu structure
+                ADD     1, R5                   ; skip menu size info                
+                MOVE    @SP++, R0               ; R0: menu groups
+                MOVE    @R5++, R2               ; R2: amount of menu items
 
-                MOVE    OPTM_DATA, R0
-                MOVE    @R0, R0
-                ADD     OPTM_IR_GROUPS, R0
-                MOVE    @R0, R0                 ; bit flag: #12 in menu group
-                XOR     R1, R1
-                MOVE    OPTM_DATA, R2           ; amount of menu items
-                MOVE    @R2, R2
-                ADD     OPTM_IR_SIZE, R2
-                MOVE    @R2, R2
+                XOR     R1, R1                  ; R1: menu item loop variable
+                XOR     R4, R4                  ; R4: skip counter
+
 _OPTM_TT_0      MOVE    @R0++, R3
 
                 AND     OPTM_HEADLINE, R3
-                RBRA    _OPTM_TT_1, Z           ; flag not set: continue
+                RBRA    _OPTM_TT_1B, Z          ; flag not set: continue
+
+                CMP     1, @R5++                ; menu item visible as per..
+                RBRA    _OPTM_TT_1A, !Z         ; .. (sub)menu structure?
 
                 ; flag is set, so print the menu item in highlighted mode
                 MOVE    OPTM_FP_SELECT, R7
-                MOVE    R1, R8
+                MOVE    R1, R8                  ; itm to highlight, cnt frm 0
+                SUB     R4, R8                  ; deduct skip counter
                 MOVE    OPTM_SEL_TLL, R9
                 RSUB    _OPTM_CALL, 1
+                RBRA    _OPTM_TT_1B, 1
+
+                ; for each entry that we skip because of an invisible flag in
+                ; the (sub)menu structure, we need to increase a skip counter
+                ; so that the position of the highlight is still correct
+_OPTM_TT_1A     ADD     1, R4
 
                 ; iterate
-_OPTM_TT_1      ADD     1, R1
+_OPTM_TT_1B     ADD     1, R1                   ; next item
                 CMP     R1, R2                  ; end of menu structure?
                 RBRA    _OPTM_TT_0, !Z          ; no: continue
 
                 DECRB                           ; restore R0..R7
+
+                MOVE    R5, R1                  ; save R5
+
+                ; DEBUG
+                RBRA    _OPTM_SHOW_0, 1
 
                 ; ------------------------------------------------------------
                 ; Handle "%s" in menu items
@@ -380,20 +394,26 @@ _OPTM_HM_2      ADD     1, R0
                 ; Tag selected menu items and draw lines
                 ; ------------------------------------------------------------
 
-_OPTM_SHOW_0    MOVE    OPTM_DATA, R0           ; R0: string to be printed
-                MOVE    @R0, R0
-                ADD     OPTM_IR_ITEMS, R0
-                MOVE    @R0, R0
-
-                MOVE    OPTM_X, R5              ; R5: current x-pos
-                MOVE    @R5, R5
-                ADD     1, R5
+_OPTM_SHOW_0    MOVE    R1, R5                  ; restore R5: (sub)menu struct
+                MOVE    @R5++, R1               ; amount of menu items
                 MOVE    1, R6                   ; R6: current y-pos
+                XOR     R12, R12                ; R12: skip counter
 
                 XOR     R0, R0                  ; R0: iteration position
 _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
                 RBRA    _OPTM_SHOW_RET, Z       ; end reached
-                CMP     0, @R2++                ; show select. at this point?
+
+                CMP     1, @R5++                ; active (sub)menu item?
+                RBRA    _OPTM_SHOW_1A, Z        ; yes
+                ADD     1, R12                  ; no: increase skip counter
+                RBRA    _OPTM_SHOW_3, 1         ; next iteration
+
+                ; @TODO: subtract skip counter at the right places
+                ; And then in the RUN part: create a mapping function that
+                ; leverages the output of _OPTM_STRUCT to map back to the
+                ; original menu group data 
+
+_OPTM_SHOW_1A   CMP     0, @R2++                ; show select. at this point?
                 RBRA    _OPTM_SHOW_2, Z         ; no
                 MOVE    OPTM_DATA, R8           ; yes: print selection here
                 MOVE    @R8, R8
@@ -401,11 +421,13 @@ _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
                 ADD     OPTM_IR_SEL, R8         ; decide: single or multi-sel.
                 MOVE    @R4, R7
                 AND     OPTM_SINGLESEL, R7
-                RBRA    _OPTM_SHOW_1A, Z        ; multi-select
+                RBRA    _OPTM_SHOW_1B, Z        ; multi-select
                 ADD     2, R8                   ; single-select
 
-_OPTM_SHOW_1A   MOVE    R5, R9
-                MOVE    R6, R10
+_OPTM_SHOW_1B   MOVE    OPTM_X, R9              ; R9: current x-pos
+                MOVE    @R9, R9
+                ADD     1, R9
+                MOVE    R6, R10                 ; R10: current y-pos
                 MOVE    OPTM_FP_PRINTXY, R7
                 MOVE    R11, @--SP              ; save R11
                 XOR     R11, R11                ; R11=0: show main menu
