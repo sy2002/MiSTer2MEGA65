@@ -717,7 +717,7 @@ _ROSMS_7        SYSCALL(f32_fflush, 1)          ; flush SD write buffer
 
                 ; Log success message
 _ROSMS_8        MOVE    LOG_STR_CFG_REM, R8
-                SYSCALL(puts, 1)                
+                SYSCALL(puts, 1)
 
 _ROSMS_RET      SYSCALL(leave, 1)
                 RET
@@ -744,65 +744,49 @@ OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, OPT_PRINTSTR, SCR$PRINTSTRXY
 ;    print the line otherwise it will skip the line
 OPT_PRINTSTR    SYSCALL(enter, 1)
 
-                ; DEBUG
-                MOVE    R8, @--SP
-                MOVE    0x2222, R8
-                SYSCALL(puthex, 1)
-                MOVE    SP, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-                MOVE    @SP++, R8
+                MOVE    @R9++, R0               ; R0: size of menu
+                MOVE    R9, R1                  ; R1: pointer to mask array
+                MOVE    R8, R2                  ; R2: current string segment
+                MOVE    SP, R3                  ; R3: remember stack pointer
+                XOR     R4, R4                  ; R4: item counter
 
-                MOVE    SCR$OSM_O_X, R0         ; R0: x-pos. for printing
-                MOVE    @R0, R0
-                ADD     1, R0
-                MOVE    SCR$OSM_O_Y, R1         ; R1: y-pos. for printing
-                MOVE    @R1, R1
-                ADD     1, R1
-                MOVE    @R9++, R2               ; size of menu
-                MOVE    @R9, R3                 ; pointer to mask array
-                MOVE    R8, R4                  ; current segment of string
-                MOVE    SP, R5                  ; remember stack pointer
+_OPT_PRINTSTR_1 MOVE    R2, R8                  ; treat current seg. as start
 
                 MOVE    OPTM_NL, R9             ; string containing \n
-_OPT_PRINTSTR_1 SYSCALL(strstr, 1)              ; search in input string
+                SYSCALL(strstr, 1)              ; search in input string
                 CMP     0, R10                  ; \n found?
-                RBRA    _OPT_PRINTSTR_F, Z      ; no
+                RBRA    _OPT_PRINTSTR_F, Z      ; no: fatal
+
+                MOVE    R10, R6                 ; R6: length of segment..
+                SUB     R2, R6                  
+                ADD     2, R6                   ; ..including \n                              
+
+                CMP     1, @R1++                ; print current item?
+                RBRA    _OPT_PRINTSTR_2, !Z     ; no: next iteration
 
                 ; copy current segment to the stack so that we can add a
-                ; zero terminator so that SCR$PRINTSTRXY can print it
-                MOVE    R10, R6
-                SUB     R4, R6                  ; R6: length of segment
+                ; zero terminator so that SCR$PRINTSTR can print it
                 SUB     R6, SP                  ; reserve space on stack
-                SUB     1, SP                   ; also for zero terminator
-                MOVE    R4, R8                  ; copy string segment
+                SUB     1, SP                   ; add space for zero term.
+                MOVE    R2, R8                  ; copy string segment
                 MOVE    SP, R9
                 MOVE    R6, R10
                 SYSCALL(memcpy, 1)
                 ADD     R6, R9
                 MOVE    0, @R9                  ; add zero terminator
+                MOVE    SP, R8                  ; print current segment
+                RSUB    SCR$PRINTSTR, 1
+                MOVE    R3, SP                  ; restore stack pointer
 
-                ; print current segment
-                MOVE    SP, R8
-                MOVE    R0, R9
-                MOVE    R1, R10
-                RSUB    SCR$PRINTSTRXY, 1
+_OPT_PRINTSTR_2 ADD     R6, R2                  ; skip current segment
+                ADD     1, R4                   ; next item
+                CMP     R0, R4                  ; done?
+                RBRA    _OPT_PRINTSTR_1, !Z     ; no: iterate
 
-_OPT_PRINTSTR_R MOVE    R5, SP                  ; restore stack pointer
-
-                ; DEBUG
-                MOVE    R8, @--SP
-                MOVE    0x2233, R8
-                SYSCALL(puthex, 1)
-                MOVE    SP, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-                MOVE    @SP++, R8                
-
-                SYSCALL(leave, 1)
+                SYSCALL(leave, 1)               ; yes, done: return
                 RET
 
-_OPT_PRINTSTR_F MOVE    ERR_F_NEWLINE, R8      ; no: fatal
+_OPT_PRINTSTR_F MOVE    ERR_F_NEWLINE, R8      ; fatal due to missing newline
                 XOR     R9, R9
                 RBRA    FATAL, 1                
 

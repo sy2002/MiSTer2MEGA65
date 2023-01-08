@@ -338,7 +338,7 @@ constant OPTM_ITEMS        : string :=
    "\n"                     &
 
    " HDMI: %s\n"            &    -- HDMI submenu
-   " HDMI Settings"         &
+   " HDMI Settings\n"       &
    "\n"                     &
    " 720p 50 Hz 16:9\n"     &
    " 720p 60 Hz 16:9\n"     &

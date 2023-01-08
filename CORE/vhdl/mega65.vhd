@@ -160,13 +160,13 @@ signal main_rst               : std_logic;
 ---------------------------------------------------------------------------------------------
 
 -- Democore menu items
-constant C_MENU_HDMI_16_9_50  : natural := 9;
-constant C_MENU_HDMI_16_9_60  : natural := 10;
-constant C_MENU_HDMI_4_3_50   : natural := 11;
-constant C_MENU_HDMI_5_4_50   : natural := 12;
-constant C_MENU_CRT_EMULATION : natural := 22;
-constant C_MENU_HDMI_ZOOM     : natural := 23;
-constant C_MENU_IMPROVE_AUDIO : natural := 24;
+constant C_MENU_HDMI_16_9_50  : natural := 12;
+constant C_MENU_HDMI_16_9_60  : natural := 13;
+constant C_MENU_HDMI_4_3_50   : natural := 14;
+constant C_MENU_HDMI_5_4_50   : natural := 15;
+constant C_MENU_CRT_EMULATION : natural := 27;
+constant C_MENU_HDMI_ZOOM     : natural := 28;
+constant C_MENU_IMPROVE_AUDIO : natural := 29;
 
 -- QNICE clock domain
 signal qnice_demo_vd_data_o   : std_logic_vector(15 downto 0);

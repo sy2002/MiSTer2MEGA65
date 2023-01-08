@@ -206,28 +206,18 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 XOR     R10, R10                ; R10: first submen. line flag
 
 _OPTM_MS_1      CMP     0, @R9                  ; are we in the main menu?
-                RBRA    _OPTM_MS_2, Z           ; yes: set to 1 and next entry
+                RBRA    _OPTM_MS_3A, Z          ; yes: set to 1 and next entry
                 CMP     1, R10                  ; no: is it first subm. line?
-                RBRA    _OPTM_MS_4, Z           ; no: set it to 0
-                MOVE    1, R10                  ; yes: set flag
-
-_OPTM_MS_2      MOVE    1, @R9++                ; current entry to 1 and next
-_OPTM_MS_3      SUB     1, R8                   ; more entries?
+                RBRA    _OPTM_MS_2, Z           ; no: set it to 0
+                MOVE    1, R10                  ; yes: set flag and..
+                RBRA    _OPTM_MS_3B, 1          ; .. write a 1
+_OPTM_MS_2      MOVE    0, @R9++
+                RBRA    _OPTM_MS_4, 1
+_OPTM_MS_3A     XOR     R10, R10                ; reset first submen. ln flag
+_OPTM_MS_3B     MOVE    1, @R9++                ; current entry to 1 and next
+_OPTM_MS_4      SUB     1, R8                   ; more entries?
                 RBRA    _OPTM_MS_1, !Z          ; yes: iterate
-                RBRA    _OPTM_MS_5, 1
-
-_OPTM_MS_4      MOVE    0, @R9++
-                RBRA    _OPTM_MS_3, 1
  
-                ; DEBUG
-_OPTM_MS_5      MOVE    R5, R9
-                MOVE    @R9++, R10
-_DEBUGLOOP      MOVE    @R9++, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-                SUB     1, R10
-                RBRA    _DEBUGLOOP, !Z
-
                 ; ------------------------------------------------------------
                 ; Draw the first iteration of the menu
                 ; (In case there are %s, they will be drawn as %s)
@@ -246,8 +236,8 @@ _DEBUGLOOP      MOVE    @R9++, R8
                 MOVE    @R11, R11
                 MOVE    OPTM_FP_FRAME, R7       ; draw frame
                 RSUB    _OPTM_CALL, 1
-                MOVE    R0, R8
-                XOR     R9, R9                  ; R9=0: print main menu
+                MOVE    R0, R8                  ; R8: strint to be printed
+                MOVE    R5, R9                  ; R9: (sub)menu mask array
                 MOVE    OPTM_FP_PRINT, R7       ; print menu
                 RSUB    _OPTM_CALL, 1
 
