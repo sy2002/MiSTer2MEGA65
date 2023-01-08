@@ -188,6 +188,10 @@ _HLP_HEAP1_OK   MOVE    MENU_HEAP_SIZE, R8
 _HLP_HEAP2_OK   RSUB    ROSM_REM_OLD, 1         ; remember current settings
                 RSUB    OPTM_SHOW, 1            ; fill VRAM
                 RSUB    SCR$OSM_O_ON, 1         ; make overlay visible
+
+                ; DEBUG
+                SYSCALL(exit, 1)
+
                 MOVE    OPTM_SELECTED, R9       ; use recently selected line
                 MOVE    @R9, R8
                 RSUB    OPTM_RUN, 1             ; run menu
@@ -725,12 +729,82 @@ _ROSMS_RET      SYSCALL(leave, 1)
 ; Menu initialization record (needed by OPTM_INIT)
 ; Will be copied to the HEAP, together with the configuration data from
 ; config.vhd and then modified to point to the right addresses on the heap
-OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, SCR$PRINTSTR, SCR$PRINTSTRXY
+OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, OPT_PRINTSTR, SCR$PRINTSTRXY
                 .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
                 .DW     OPTM_CB_SEL, OPTM_CB_SHOW,
                 .DW     M2M$OPT_SEL_MULTI, 0    ; selection char + zero term.:
                 .DW     M2M$OPT_SEL_SINGLE, 0   ; multi- and single-select
                 .DW     0, 0, 0, 0, 0           ; will be filled dynamically
+
+; Print function that handles everything incl. cursor pos and \n by itself
+; R8 contains the string that shall be printed
+; R9 contains a pointer to a mask array: the first word is the size of the
+;    array (and therefore the amount of menu items) and then we have one entry
+;    (word) per menu line: If the entry is non-zero, then OPTM_FP_PRINT will
+;    print the line otherwise it will skip the line
+OPT_PRINTSTR    SYSCALL(enter, 1)
+
+                ; DEBUG
+                MOVE    R8, @--SP
+                MOVE    0x2222, R8
+                SYSCALL(puthex, 1)
+                MOVE    SP, R8
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)
+                MOVE    @SP++, R8
+
+                MOVE    SCR$OSM_O_X, R0         ; R0: x-pos. for printing
+                MOVE    @R0, R0
+                ADD     1, R0
+                MOVE    SCR$OSM_O_Y, R1         ; R1: y-pos. for printing
+                MOVE    @R1, R1
+                ADD     1, R1
+                MOVE    @R9++, R2               ; size of menu
+                MOVE    @R9, R3                 ; pointer to mask array
+                MOVE    R8, R4                  ; current segment of string
+                MOVE    SP, R5                  ; remember stack pointer
+
+                MOVE    OPTM_NL, R9             ; string containing \n
+_OPT_PRINTSTR_1 SYSCALL(strstr, 1)              ; search in input string
+                CMP     0, R10                  ; \n found?
+                RBRA    _OPT_PRINTSTR_F, Z      ; no
+
+                ; copy current segment to the stack so that we can add a
+                ; zero terminator so that SCR$PRINTSTRXY can print it
+                MOVE    R10, R6
+                SUB     R4, R6                  ; R6: length of segment
+                SUB     R6, SP                  ; reserve space on stack
+                SUB     1, SP                   ; also for zero terminator
+                MOVE    R4, R8                  ; copy string segment
+                MOVE    SP, R9
+                MOVE    R6, R10
+                SYSCALL(memcpy, 1)
+                ADD     R6, R9
+                MOVE    0, @R9                  ; add zero terminator
+
+                ; print current segment
+                MOVE    SP, R8
+                MOVE    R0, R9
+                MOVE    R1, R10
+                RSUB    SCR$PRINTSTRXY, 1
+
+_OPT_PRINTSTR_R MOVE    R5, SP                  ; restore stack pointer
+
+                ; DEBUG
+                MOVE    R8, @--SP
+                MOVE    0x2233, R8
+                SYSCALL(puthex, 1)
+                MOVE    SP, R8
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)
+                MOVE    @SP++, R8                
+
+                SYSCALL(leave, 1)
+                RET
+
+_OPT_PRINTSTR_F MOVE    ERR_F_NEWLINE, R8      ; no: fatal
+                XOR     R9, R9
+                RBRA    FATAL, 1                
 
 ; Draws a horizontal line/menu separator at the y-pos given in R8, dx in R9
 OPT_PRINTLINE   INCRB

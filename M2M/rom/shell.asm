@@ -1155,11 +1155,12 @@ FATAL           MOVE    R8, R0
                 MOVE    R9, R8
                 RSUB    SCR$PRINTSTR, 1
                 SYSCALL(puts, 1)
-                MOVE    NEWLINE, R8
+
+_FATAL_END      MOVE    NEWLINE, R8
                 RSUB    SCR$PRINTSTR, 1
                 SYSCALL(crlf, 1)
 
-_FATAL_END      MOVE    ERR_FATAL_STOP, R8
+                MOVE    ERR_FATAL_STOP, R8
                 RSUB    SCR$PRINTSTR, 1
                 SYSCALL(puts, 1)
 

@@ -10,8 +10,9 @@
 ; Special values for OPTM_IR_GROUPS
 ; ----------------------------------------------------------------------------
 
-OPTM_CLOSE      .EQU 0x00FF                     ; menu item that closes menu
+OPTM_CLOSE      .EQU 0x00FF                     ; menu item: close (sub)menu
 OPTM_HEADLINE   .EQU 0x1000                     ; AND mask: headline/title itm
+OPTM_SUBMENU    .EQU 0x4000                     ; AND mask: submenu start/stop
 OPTM_SINGLESEL  .EQU 0x8000                     ; AND mask: single select item
 
 ; ----------------------------------------------------------------------------
@@ -46,9 +47,13 @@ OPTM_FP_FRAME   .EQU 1
 
 ; Print function that handles everything incl. cursor pos and \n by itself
 ; R8 contains the string that shall be printed
+; R9 contains a pointer to a mask array: the first word is the size of the
+;    array (and therefore the amount of menu items) and then we have one entry
+;    (word) per menu line: If the entry is non-zero, then OPTM_FP_PRINT will
+;    print the line otherwise it will skip the line
 OPTM_FP_PRINT   .EQU 2
 
-; Like print but contains target x|y coords in R9|R10
+; Like OPTM_FP_PRINT but contains target x|y coords in R9|R10; R11: mask ptr
 OPTM_FP_PRINTXY .EQU 3
 
 ; Draws a horizontal line/menu separator at the y-pos given in R8
@@ -100,9 +105,7 @@ OPTM_IR_SIZE    .EQU 13
 ; pointer to string containing the menu items and separating them with \n
 OPTM_IR_ITEMS   .EQU 14
 
-; array of digits that define and group menu items,
-; 0xEEEE automatically closes the menu when selected by the user
-; 0x8xxx denotes single-select menu items
+; array of digits that define and group menu items
 OPTM_IR_GROUPS  .EQU 15
 
 ; array of 0s and 1s to define menu items that are activated by default
@@ -176,6 +179,56 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 RSUB    _OPTM_CALL, 1
 
                 ; ------------------------------------------------------------
+                ; Create the menu/submenu structure (array) on the stack
+                ; ------------------------------------------------------------
+
+                ; DEBUG
+                MOVE    SP, R8
+                SYSCALL(puthex, 1)
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)                
+
+                SUB     R1, SP                  ; reserve memory on the stack
+                SUB     1, SP                   ; 1st word in array = size
+                MOVE    SP, R8
+                MOVE    R8, R5                  ; remember address of array
+                MOVE    R1, R9
+                RSUB    _OPTM_STRUCT, 1
+
+                ; modify the structure such, that we only have 1s and 0s and
+                ; that the very first entry of a sub-menu structure, which is
+                ; the headline, has a "1" so that it continues to be printed
+                ; by OPTM_FP_PRINT and "selected" by OPTM_FP_SELECT
+
+                MOVE    R1, R8                  ; R1: size of menu (# items)
+                MOVE    R5, R9                  ; R9: current array entry
+                ADD     1, R9                   ; skip size information
+                XOR     R10, R10                ; R10: first submen. line flag
+
+_OPTM_MS_1      CMP     0, @R9                  ; are we in the main menu?
+                RBRA    _OPTM_MS_2, Z           ; yes: set to 1 and next entry
+                CMP     1, R10                  ; no: is it first subm. line?
+                RBRA    _OPTM_MS_4, Z           ; no: set it to 0
+                MOVE    1, R10                  ; yes: set flag
+
+_OPTM_MS_2      MOVE    1, @R9++                ; current entry to 1 and next
+_OPTM_MS_3      SUB     1, R8                   ; more entries?
+                RBRA    _OPTM_MS_1, !Z          ; yes: iterate
+                RBRA    _OPTM_MS_5, 1
+
+_OPTM_MS_4      MOVE    0, @R9++
+                RBRA    _OPTM_MS_3, 1
+ 
+                ; DEBUG
+_OPTM_MS_5      MOVE    R5, R9
+                MOVE    @R9++, R10
+_DEBUGLOOP      MOVE    @R9++, R8
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)
+                SUB     1, R10
+                RBRA    _DEBUGLOOP, !Z
+
+                ; ------------------------------------------------------------
                 ; Draw the first iteration of the menu
                 ; (In case there are %s, they will be drawn as %s)
                 ; ------------------------------------------------------------
@@ -194,8 +247,12 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 MOVE    OPTM_FP_FRAME, R7       ; draw frame
                 RSUB    _OPTM_CALL, 1
                 MOVE    R0, R8
+                XOR     R9, R9                  ; R9=0: print main menu
                 MOVE    OPTM_FP_PRINT, R7       ; print menu
                 RSUB    _OPTM_CALL, 1
+
+                ; DEBUG
+                RBRA    _OPTM_SHOW_RET, 1 
 
                 ; ------------------------------------------------------------
                 ; Highlight Headlines/Titles
@@ -302,7 +359,7 @@ _OPTM_HM_1      CMP     '%', @R0                ; search for "%s"
                 MOVE    R5, R9
                 RSUB    _OPTM_CALL, 1
 
-                ; print string from callback, which is in R8
+                ; print string from callback, which is in R8                
                 MOVE    OPTM_FP_PRINTXY, R7
                 MOVE    OPTM_X, R9
                 MOVE    @R9, R9
@@ -311,7 +368,10 @@ _OPTM_HM_1      CMP     '%', @R0                ; search for "%s"
                 MOVE    @R10, R10
                 ADD     R5, R10                 ; R5 is # of menu item, so..
                 ADD     1, R10                  ; ..add 1 to y b/c of frame
+                MOVE    R11, @--SP              ; save R11
+                XOR     R11, R11                ; R11=0: show main menu
                 RSUB    _OPTM_CALL, 1
+                MOVE    @SP++, R11              ; restore R11
 
                 MOVE    @SP++, R7               ; restore ptr
 
@@ -357,7 +417,10 @@ _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
 _OPTM_SHOW_1A   MOVE    R5, R9
                 MOVE    R6, R10
                 MOVE    OPTM_FP_PRINTXY, R7
+                MOVE    R11, @--SP              ; save R11
+                XOR     R11, R11                ; R11=0: show main menu
                 RSUB    _OPTM_CALL, 1
+                MOVE    @SP++, R11              ; restore R11
 
 _OPTM_SHOW_2    CMP     0, @R3++                ; horiz. line here?
                 RBRA    _OPTM_SHOW_3, Z         ; no
@@ -370,7 +433,16 @@ _OPTM_SHOW_3    ADD     1, R6                   ; next y-pos
                 ADD     1, R4                   ; next single/multi sel. info
                 RBRA    _OPTM_SHOW_1, 1
 
-_OPTM_SHOW_RET  SYSCALL(leave, 1)
+_OPTM_SHOW_RET  ADD     R1, SP                  ; restore SP / free memory
+                ADD     1, SP
+
+                ; DEBUG
+                MOVE    SP, R8
+                SYSCALL(puthex, 1)
+                SYSCALL(puthex, 1)
+                SYSCALL(crlf, 1)
+
+                SYSCALL(leave, 1)
                 RET
 
 ; Runs menu and returns results
@@ -502,8 +574,11 @@ _OPTM_RUN_6C    MOVE    R8, R11                 ; R11: remember selection key
                 MOVE    @R10, R10
                 ADD     R2, R10
                 ADD     1, R10
+                MOVE    R11, @--SP              ; save R11
+                XOR     R11, R11                ; R11=0: show main menu
                 MOVE    OPTM_FP_PRINTXY, R7     ; delete marker at current pos
                 RSUB    _OPTM_CALL, 1           ; ..on screen
+                MOVE    @SP++, R11              ; restore R11
 
                 MOVE    @SP++, R8               ; group id
                 XOR     R9, R9
@@ -554,8 +629,11 @@ _OPTM_RUN_7     CMP     R4, R0                  ; R4 < R0 (size of structure)
                 CMP     @R5++, R6               ; current entry group member?
                 RBRA    _OPTM_RUN_8, !Z         ; no
                 MOVE    OPTM_FP_PRINTXY, R7     ; delete marker at current pos
+                MOVE    R11, @--SP              ; save R11
+                XOR     R11, R11                ; R11=0: show main menu
                 MOVE    0, @R12
                 RSUB    _OPTM_CALL, 1
+                MOVE    @SP++, R11              ; restore R11
 _OPTM_RUN_8     ADD     1, R10                  ; y-pos + 1
                 ADD     1, R4                   ; loop-var + 1
                 ADD     1, R12                  ; stdsel-ptr + 1
@@ -572,8 +650,11 @@ _OPTM_RUN_9     MOVE    OPTM_Y, R10
                 ADD     OPTM_IR_SEL, R8
                 MOVE    OPTM_SSMS, R7           ; single select flag
                 ADD     @R7, R8
+                MOVE    R11, @--SP              ; save R11
+                XOR     R11, R11                ; R11=0: show main menu
                 MOVE    OPTM_FP_PRINTXY, R7
                 RSUB    _OPTM_CALL, 1
+                MOVE    @SP++, R11              ; restore R11
                 MOVE    OPTM_DATA, R12          ; R12: OPTM_IR_STDSEL ptr
                 MOVE    @R12, R12
                 ADD     OPTM_IR_STDSEL, R12
@@ -636,4 +717,53 @@ _OPTM_CALL      MOVE    R7, @--SP               ; save R7 for usage & restore
                 ASUB    R7, 1                   ; call function
 
                 MOVE    @SP++, R7               ; restore R7
+                RET
+
+; Create an array that represents the menu structure: Each item in the array
+; is a word and represents one menu item. A zero represents that this item
+; is located on the main menu level and any integer value represents that this
+; item is located in a certain submenu
+; R8: pointer to a memory region that is as large as all items together
+; R9: amount of menu items
+_OPTM_STRUCT    INCRB
+
+                MOVE    R8, R0                  ; R0: current array element
+                MOVE    R9, R1                  ; R1: amount of menu items
+                MOVE    OPTM_DATA, R2           ; R2: OPTM_IR_GROUPS array
+                MOVE    @R2, R2
+                ADD     OPTM_IR_GROUPS, R2
+                MOVE    @R2, R2
+                XOR     R3, R3                  ; R3: current main/submen id
+                MOVE    1, R4                   ; R4: next submen id
+                XOR     R5, R5                  ; R5: submenu region flag
+
+                MOVE    R1, @R0++               ; 1st element = size
+
+_OPTM_STRUCT_1  MOVE    @R2++, R6               ; R6: next menu group item
+                AND     OPTM_SUBMENU, R6        ; check for submenu marker
+                RBRA    _OPTM_STRUCT_3, Z       ; jump, if no submenu marker
+
+                CMP     1, R5                   ; are we already in a region?
+                RBRA    _OPTM_STRUCT_2, Z       ; yes: jump
+                MOVE    1, R5                   ; no: set region flag
+                MOVE    R4, R3                  ; current submen id = next..
+                ADD     1, R4                   ; ..submen id and inc. next
+                RBRA    _OPTM_STRUCT_3, 1       ; continue with storing
+
+_OPTM_STRUCT_2  MOVE    R3, @R0++               ; store item in struct array
+                XOR     R5, R5                  ; clear region flag
+                XOR     R3, R3                  ; current id = main menu
+                RBRA    _OPTM_STRUCT_4, 1       ; continue with next iteration
+
+_OPTM_STRUCT_3  MOVE    R3, @R0++               ; store item in struct array
+_OPTM_STRUCT_4  SUB     1, R1                   ; more menu items?
+                RBRA    _OPTM_STRUCT_1, !Z      ; yes: loop
+
+                CMP     1, R5                   ; no: region cntr still actve?
+                RBRA    _OPTM_STRUCT_R, !Z      ; no: all good: return
+                MOVE    ERR_F_MENUSUB, R8       ; yes: fatal
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+_OPTM_STRUCT_R  DECRB
                 RET

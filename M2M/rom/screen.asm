@@ -256,7 +256,7 @@ SCR$GOTOXY      INCRB
 ; Oputput: R8: VRAM address
 ; ----------------------------------------------------------------------------
 
-CALC_VRAM       SYSCALL(enter, 1)
+SCR$CALC_VRAM   SYSCALL(enter, 1)
 
                 MOVE    SCR$CUR_Y, R8           ; SCR$CUR_Y x SCR$SYS_DX 
                 MOVE    @R8, R8
@@ -294,7 +294,7 @@ SCR$PRINTSTR    SYSCALL(enter, 1)
                 MOVE    SCR$CUR_X, R1           ; R1: running x-cursor
                 MOVE    SCR$CUR_Y, R2           ; R2: running y-cursor
 
-                RSUB    CALC_VRAM, 1            ; R8: VRAM addr. of curs. pos.
+                RSUB    SCR$CALC_VRAM, 1        ; R8: VRAM addr. of curs. pos.
 
 _PS_L1          MOVE    @R0++, R4               ; read char
                 CMP     0x000D, R4              ; is it a CR?
@@ -332,7 +332,7 @@ _PS_L2          MOVE    R4, R7                  ; remember original char
 _PS_L3          MOVE    SCR$ILX, R12
                 MOVE    @R12, @R1               ; inner-left start x-coord
                 ADD     1, @R2                  ; new line
-                RSUB    CALC_VRAM, 1
+                RSUB    SCR$CALC_VRAM, 1
                 RBRA    _PS_L1, 1
 
 _PS_RET         SYSCALL(leave, 1)
@@ -405,7 +405,7 @@ SCR$PRINTFRAME  SYSCALL(enter, 1)
                 MOVE    0, @R0
                 
                 RSUB    SCR$GOTOXY, 1
-                RSUB    CALC_VRAM, 1
+                RSUB    SCR$CALC_VRAM, 1
 
                 MOVE    SCR$CUR_X, R0
                 MOVE    SCR$CUR_Y, R1

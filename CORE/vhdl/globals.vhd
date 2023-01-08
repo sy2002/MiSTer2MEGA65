@@ -26,11 +26,11 @@ package globals is
 --
 -- Hint: You need to run QNICE/tools/make-toolchain.sh to obtain "monitor.rom" and
 -- you need to run CORE/m2m-rom/make_rom.sh to obtain the .rom file
-constant QNICE_FIRMWARE_MONITOR   : string  := "../../../QNICE/monitor/monitor.rom";    -- debug/development
-constant QNICE_FIRMWARE_M2M       : string  := "../../../CORE/m2m-rom/m2m-rom.rom";   -- release
+constant QNICE_FIRMWARE_MONITOR   : string  := "../../../M2M/QNICE/monitor/monitor.rom";    -- debug/development
+constant QNICE_FIRMWARE_M2M       : string  := "../../../CORE/m2m-rom/m2m-rom.rom";         -- release
 
 -- Select firmware here
-constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_M2M;
+constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_MONITOR;
 
 ----------------------------------------------------------------------------------------------------------
 -- Clock Speed(s)

@@ -286,16 +286,23 @@ constant SEL_OPTM_HELP        : std_logic_vector(15 downto 0) := x"0310";
 
 -- !!! DO NOT TOUCH !!! Configuration constants for OPTM_GROUPS (shell.asm and menu.asm expect them to be like this)
 constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
-constant OPTM_G_CLOSE      : integer := 16#00FF#;         -- menu items that closes menu
-constant OPTM_G_STDSEL     : integer := 16#0100#;         -- item within a group that is selected by default
-constant OPTM_G_LINE       : integer := 16#0200#;         -- draw a line at this position
-constant OPTM_G_START      : integer := 16#0400#;         -- selector / cursor position after startup (only use once!)
-constant OPTM_G_HEADLINE   : integer := 16#1000#;         -- like OPTM_G_TEXT but will be shown in a brigher color
-constant OPTM_G_MOUNT_DRV  : integer := 16#8800#;         -- line item means: mount drive; first occurance = drive 0, second = drive 1, ...
-constant OPTM_G_HELP       : integer := 16#A000#;         -- line item means: help screen; first occurance = WHS(1), second = WHS(2), ...
-constant OPTM_G_SINGLESEL  : integer := 16#8000#;         -- single select item
+constant OPTM_G_CLOSE      : integer := 16#000FF#;        -- menu items that closes menu
+constant OPTM_G_STDSEL     : integer := 16#00100#;        -- item within a group that is selected by default
+constant OPTM_G_LINE       : integer := 16#00200#;        -- draw a line at this position
+constant OPTM_G_START      : integer := 16#00400#;        -- selector / cursor position after startup (only use once!)
+                                                          -- 16#00800# is used in OPTM_G_MOUNT_DRV (OPTM_G_SINGLESEL)
+constant OPTM_G_HEADLINE   : integer := 16#01000#;        -- like OPTM_G_TEXT but will be shown in a brigher color
+                                                          -- 16#02000# is used in OPTM_G_HELP (plus OPTM_G_SINGLESEL)
+                                                          -- 16#04000# is used in OPTM_G_SUBMENU 
+constant OPTM_G_SINGLESEL  : integer := 16#08000#;        -- single select item OPTM_G_LOAD_ROM
+constant OPTM_G_MOUNT_DRV  : integer := 16#08800#;        -- line item means: mount drive; first occurance = drive 0, second = drive 1, ...
+constant OPTM_G_HELP       : integer := 16#0A000#;        -- line item means: help screen; first occurance = WHS(1), second = WHS(2), ...
+constant OPTM_G_SUBMENU    : integer := 16#0C000#;        -- line item means: load ROM; first occurance = rom 0, second = rom 1, ...
+constant OPTM_G_LOAD_ROM   : integer := 16#18000#;        -- starts/ends a section that is treated as submenu
 -- @TODO/REMINDER: As soon as we extend the OSM system so that we support loading ROMs and other things that need to be ignored
--- when saving settings: Make sure to extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly
+-- when saving settings: Make sure to extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly:
+--     OPTM_G_SUBMENU
+--     OPTM_G_LOAD_ROM
 
 -- START YOUR CONFIGURATION BELOW THIS LINE:
 
@@ -308,7 +315,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";       -- the internal write c
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 27;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 32;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -316,7 +323,7 @@ constant OPTM_SIZE         : natural := 27;  -- amount of items including empty 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
 -- We advise to use OPTM_SIZE as height, but there might be reasons for you to change it.
 constant OPTM_DX           : natural := 23;
-constant OPTM_DY           : natural := OPTM_SIZE;
+constant OPTM_DY           : natural := 24;
                                              
 constant OPTM_ITEMS        : string :=
 
@@ -327,12 +334,19 @@ constant OPTM_ITEMS        : string :=
    " Item A.3\n"            &
    " Item A.4\n"            &
    "\n"                     &
-   " HDMI Mode\n"           &
+   " Demo Headline B\n"     &
+   "\n"                     &
+
+   " HDMI: %s\n"            &    -- HDMI submenu
+   " HDMI Settings"         &
    "\n"                     &
    " 720p 50 Hz 16:9\n"     &
    " 720p 60 Hz 16:9\n"     &
    " 576p 50 Hz 4:3\n"      &
    " 576p 50 Hz 5:4\n"      &
+   "\n"                     &
+   " Back to main menu\n"   &
+
    "\n"                     &
    " Drives\n"              &
    "\n"                     &
@@ -362,23 +376,34 @@ constant OPTM_G_CRT        : integer := 6;
 constant OPTM_G_Zoom       : integer := 7;
 constant OPTM_G_Audio      : integer := 8;
 
+-- !!! DO NOT TOUCH !!!
+constant OPTM_GTC          : natural := 16;
+type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC- 1;
+
 -- define your menu groups: which menu items are belonging together to form a group?
 -- where are separator lines? which items should be selected by default?
 -- make sure that you have exactly the same amount of entries here than in OPTM_ITEMS and defined by OPTM_SIZE
-type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 65535;
-constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Demo Headline"
+constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Demo Headline A"
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_Demo_A + OPTM_G_START,             -- Item A.1, cursor start position
                                              OPTM_G_Demo_A + OPTM_G_STDSEL,            -- Item A.2, selected by default
                                              OPTM_G_Demo_A,                            -- Item A.3
                                              OPTM_G_Demo_A,                            -- Item A.4
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headline "HDMI Mode"
+                                             OPTM_G_TEXT,                              -- Headline "Demo Headline B"
+                                             OPTM_G_LINE,                              -- Line
+                                             
+                                             OPTM_G_SUBMENU,                           -- HDMI submenu block: START: "HDMI: %s"
+                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "HDMI Settings"
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_HDMI + OPTM_G_STDSEL,              -- 720p 50 Hz 16:9, selected by default
                                              OPTM_G_HDMI,                              -- 720p 60 Hz 16:9
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 4:3
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 5:4
+                                             OPTM_G_LINE,                              -- open
+                                             OPTM_G_CLOSE + OPTM_G_SUBMENU,            -- Close submenu / back to main menu
+                                                                                       -- HDMI submenu block: END
+                                                                                       
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "Drives"
                                              OPTM_G_LINE,                              -- Line
@@ -507,15 +532,16 @@ begin
             when SEL_OPTM_ITEMS        => data_o <= str2data(OPTM_ITEMS);
             when SEL_OPTM_MOUNT_STR    => data_o <= str2data(OPTM_S_MOUNT);
             when SEL_OPTM_SAVING_STR   => data_o <= str2data(OPTM_S_SAVING);
-            when SEL_OPTM_GROUPS       => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), 16)(15)) & "00" & 
-                                                    std_logic(to_unsigned(OPTM_GROUPS(index), 16)(12)) & "0000" &
-                                                    std_logic_vector(to_unsigned(OPTM_GROUPS(index), 16)(7 downto 0));
-            when SEL_OPTM_STDSEL       => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(8));
-            when SEL_OPTM_LINES        => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(9));
-            when SEL_OPTM_START        => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(10));
-            when SEL_OPTM_MOUNT_DRV    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(11));
-            when SEL_OPTM_HELP         => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(13));
-            when SEL_OPTM_SINGLESEL    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), 16)(15));      
+            when SEL_OPTM_GROUPS       => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15)) & 
+                                                    std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(14)) & "0" & 
+                                                    std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(12)) & "0000" &
+                                                    std_logic_vector(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(7 downto 0));
+            when SEL_OPTM_STDSEL       => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(8));
+            when SEL_OPTM_LINES        => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(9));
+            when SEL_OPTM_START        => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(10));
+            when SEL_OPTM_MOUNT_DRV    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(11));
+            when SEL_OPTM_HELP         => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(13));
+            when SEL_OPTM_SINGLESEL    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15));
             when SEL_OPTM_ICOUNT       => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_SIZE, 8));
             when SEL_OPTM_DIMENSIONS   => data_o <= getDXDY(OPTM_DX, OPTM_DY, index);
 
