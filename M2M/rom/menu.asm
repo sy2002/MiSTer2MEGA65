@@ -3,7 +3,7 @@
 ;
 ; Options Menu
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -286,10 +286,9 @@ _OPTM_TT_1B     ADD     1, R1                   ; next item
 
                 DECRB                           ; restore R0..R7
 
-                MOVE    R5, R1                  ; save R5
-
-                ; DEBUG
-                RBRA    _OPTM_SHOW_0, 1
+                MOVE    R5, @--SP               ; save R5
+                MOVE    R5, R1                  ; R1: (sub)menu structure
+                ADD     1, R1                   ; skip size info
 
                 ; ------------------------------------------------------------
                 ; Handle "%s" in menu items
@@ -301,7 +300,9 @@ _OPTM_TT_1B     ADD     1, R1                   ; next item
                 MOVE    @R8, R8
                 ADD     OPTM_CLBK_SHOW, R8
                 CMP     0, @R8
-                RBRA    _OPTM_SHOW_0, Z         ; no: skip 
+                RBRA    _OPTM_SHOW_0, Z         ; no: skip
+
+                XOR     R12, R12                ; R12: skip counter
 
                 ; loop through the string, char by char and interpret \n as
                 ; newline (i.e. increment the index of the menu item)
@@ -309,23 +310,32 @@ _OPTM_TT_1B     ADD     1, R1                   ; next item
                 MOVE    R0, R7                  ; R7 = start of current str
 _OPTM_HM_0      CMP     0, @R0                  ; end of string reached?
                 RBRA    _OPTM_SHOW_0, Z         ; yes
+
                 CMP     0x005C, @R0             ; search newline: backslash
-                RBRA    _OPTM_HM_1, !Z          ; no
+                RBRA    _OPTM_HM_1A, !Z         ; no
                 ADD     1, R0                   ; skip character
                 CMP     'n', @R0                ; "\n" found?
-                RBRA    _OPTM_HM_1, !Z          ; no
+                RBRA    _OPTM_HM_1A, !Z         ; no
                 ADD     1, R0                   ; skip character
                 MOVE    R0, R7                  ; R7 starts from the new line
-                ADD     1, R5                   ; next index of menu item
+                ADD     1, R5                   ; next index of menu item                
+                ADD     1, R1                   ; ..and next idx of men. strct
+                CMP     0, @R1                  ; item currently invisible?
+                RBRA    _OPTM_HM_0, !Z          ; no: continue
+                ADD     1, R12                  ; yes: invis.: incr. skip cnt.                
                 RBRA    _OPTM_HM_0, 1                
 
                 ; search for %s in the string
-_OPTM_HM_1      CMP     '%', @R0                ; search for "%s"
+_OPTM_HM_1A     CMP     '%', @R0                ; search for "%s"
                 RBRA    _OPTM_HM_2, !Z          ; no
                 ADD     1, R0                   ; skip character
                 CMP     's', @R0                ; "%s" found?
                 RBRA    _OPTM_HM_2, !Z          ; no
                 ADD     1, R0                   ; skip character
+
+                ; respect (sub)menu structure: skip invisible items
+                CMP     1, @R1                  ; item visible?
+                RBRA    _OPTM_HM_2, !Z          ; no: skip printing
 
                 ; Extract from R7 (start of current string) to \n and provide
                 ; this string and the index to the callback function. This
@@ -372,6 +382,7 @@ _OPTM_HM_1      CMP     '%', @R0                ; search for "%s"
                 MOVE    @R10, R10
                 ADD     R5, R10                 ; R5 is # of menu item, so..
                 ADD     1, R10                  ; ..add 1 to y b/c of frame
+                SUB     R12, R10                ; adjust for skipped items
                 MOVE    R11, @--SP              ; save R11
                 XOR     R11, R11                ; R11=0: show main menu
                 RSUB    _OPTM_CALL, 1
@@ -381,7 +392,11 @@ _OPTM_HM_1      CMP     '%', @R0                ; search for "%s"
 
                 ADD     R6, SP                  ; restore stack
                 ADD     1, R5                   ; next line
-                MOVE    R7, R0                  ; next part of original string
+                ADD     1, R1                   ; next (sub)menu struct. item
+                CMP     0, @R1                  ; next item invisible?
+                RBRA    _OPTM_HM_1B, !Z         ; no: proceed
+                ADD     1, R12                  ; yes: increase skip counter
+_OPTM_HM_1B     MOVE    R7, R0                  ; next part of original string
                 ADD     R6, R0
                 MOVE    R0, R7
                 ADD     1, R7
@@ -394,7 +409,7 @@ _OPTM_HM_2      ADD     1, R0
                 ; Tag selected menu items and draw lines
                 ; ------------------------------------------------------------
 
-_OPTM_SHOW_0    MOVE    R1, R5                  ; restore R5: (sub)menu struct
+_OPTM_SHOW_0    MOVE    @SP++, R5               ; restore R5: (sub)menu struct
                 MOVE    @R5++, R1               ; amount of menu items
                 MOVE    1, R6                   ; R6: current y-pos
                 XOR     R12, R12                ; R12: skip counter
@@ -406,12 +421,7 @@ _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
                 CMP     1, @R5++                ; active (sub)menu item?
                 RBRA    _OPTM_SHOW_1A, Z        ; yes
                 ADD     1, R12                  ; no: increase skip counter
-                RBRA    _OPTM_SHOW_3, 1         ; next iteration
-
-                ; @TODO: subtract skip counter at the right places
-                ; And then in the RUN part: create a mapping function that
-                ; leverages the output of _OPTM_STRUCT to map back to the
-                ; original menu group data 
+                RBRA    _OPTM_SHOW_3A, 1         ; next iteration
 
 _OPTM_SHOW_1A   CMP     0, @R2++                ; show select. at this point?
                 RBRA    _OPTM_SHOW_2, Z         ; no
@@ -428,6 +438,7 @@ _OPTM_SHOW_1B   MOVE    OPTM_X, R9              ; R9: current x-pos
                 MOVE    @R9, R9
                 ADD     1, R9
                 MOVE    R6, R10                 ; R10: current y-pos
+                SUB     R12, R10                ; adjust for skipped items
                 MOVE    OPTM_FP_PRINTXY, R7
                 MOVE    R11, @--SP              ; save R11
                 XOR     R11, R11                ; R11=0: show main menu
@@ -435,12 +446,15 @@ _OPTM_SHOW_1B   MOVE    OPTM_X, R9              ; R9: current x-pos
                 MOVE    @SP++, R11              ; restore R11
 
 _OPTM_SHOW_2    CMP     0, @R3++                ; horiz. line here?
-                RBRA    _OPTM_SHOW_3, Z         ; no
+                RBRA    _OPTM_SHOW_3B, Z        ; no
                 MOVE    R6, R8                  ; yes: R8: y-pos of line
+                SUB     R12, R8                 ; adjust for skipped items
                 MOVE    OPTM_FP_LINE, R7
                 RSUB    _OPTM_CALL, 1
+                RBRA    _OPTM_SHOW_3B, 1
 
-_OPTM_SHOW_3    ADD     1, R6                   ; next y-pos
+_OPTM_SHOW_3A   ADD     1, R3                   ; next horiz. line flag
+_OPTM_SHOW_3B   ADD     1, R6                   ; next y-pos
                 ADD     1, R0                   ; next menu item
                 ADD     1, R4                   ; next single/multi sel. info
                 RBRA    _OPTM_SHOW_1, 1

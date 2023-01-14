@@ -3,7 +3,7 @@
 ;
 ; Screen: Manage the OSM screen and print strings
 ;
-; done by sy2002 in 2021 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------

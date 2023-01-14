@@ -6,7 +6,7 @@
 ; This On-Screen-Menu (OSM) offers various facilities that can be configured
 ; using config.vhd. The file options.asm needs the environment of shell.asm.
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -1130,6 +1130,10 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: string pointer
                 MOVE    R0, R7
+
+                ; DEBUG
+                SYSCALL(puts, 1)
+                SYSCALL(crlf, 1)
 
                 ; get menu group ID associated with this menu item
                 ; (mount menu items need to have unique group IDs)

@@ -31,3 +31,9 @@ hardware ports. Replace them with lower case for:
 
 * top_mega65-r3.vhd
 * m2m.vhd
+
+## Offer configurable key mappings and behaviors
+
+* For example cursor left/right to enter/leave subdirectories and other keys
+  then for page up/page down
+* For example "Close menu after mounting something"
