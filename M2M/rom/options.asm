@@ -740,7 +740,7 @@ OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, OPT_PRINTSTR, SCR$PRINTSTRXY
 ; R8 contains the string that shall be printed
 ; R9 contains a pointer to a mask array: the first word is the size of the
 ;    array (and therefore the amount of menu items) and then we have one entry
-;    (word) per menu line: If the entry is non-zero, then OPTM_FP_PRINT will
+;    (word) per menu line: If the highest bit is one, then OPTM_FP_PRINT will
 ;    print the line otherwise it will skip the line
 OPT_PRINTSTR    SYSCALL(enter, 1)
 
@@ -761,8 +761,8 @@ _OPT_PRINTSTR_1 MOVE    R2, R8                  ; treat current seg. as start
                 SUB     R2, R6                  
                 ADD     2, R6                   ; ..including \n                              
 
-                CMP     1, @R1++                ; print current item?
-                RBRA    _OPT_PRINTSTR_2, !Z     ; no: next iteration
+                CMP     @R1++, 0x7FFF           ; print current item?
+                RBRA    _OPT_PRINTSTR_2, !N     ; no: next iteration
 
                 ; copy current segment to the stack so that we can add a
                 ; zero terminator so that SCR$PRINTSTR can print it
@@ -776,6 +776,7 @@ _OPT_PRINTSTR_1 MOVE    R2, R8                  ; treat current seg. as start
                 MOVE    0, @R9                  ; add zero terminator
                 MOVE    SP, R8                  ; print current segment
                 RSUB    SCR$PRINTSTR, 1
+
                 MOVE    R3, SP                  ; restore stack pointer
 
 _OPT_PRINTSTR_2 ADD     R6, R2                  ; skip current segment

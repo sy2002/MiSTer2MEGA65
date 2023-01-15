@@ -49,7 +49,7 @@ OPTM_FP_FRAME   .EQU 1
 ; R8 contains the string that shall be printed
 ; R9 contains a pointer to a mask array: the first word is the size of the
 ;    array (and therefore the amount of menu items) and then we have one entry
-;    (word) per menu line: If the entry is non-zero, then OPTM_FP_PRINT will
+;    (word) per menu line: If the highest bit is one, then OPTM_FP_PRINT will
 ;    print the line otherwise it will skip the line
 OPTM_FP_PRINT   .EQU 2
 
@@ -182,12 +182,6 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 ; Create the menu/submenu structure (array) on the stack
                 ; ------------------------------------------------------------
 
-                ; DEBUG
-                MOVE    SP, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)                
-
                 SUB     R1, SP                  ; reserve memory on the stack
                 SUB     1, SP                   ; 1st word in array = size
                 MOVE    SP, R8
@@ -195,10 +189,11 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 MOVE    R1, R9
                 RSUB    _OPTM_STRUCT, 1
 
-                ; modify the structure such, that we only have 1s and 0s and
-                ; that the very first entry of a sub-menu structure, which is
-                ; the headline, has a "1" so that it continues to be printed
-                ; by OPTM_FP_PRINT and "selected" by OPTM_FP_SELECT
+                ; Modify the structure such, that the highest bit is 1 when
+                ; the entry is to be shown in the current menu level else 0.
+                ; The very first entry of a sub-menu structure, which is
+                ; the headline, always has a 1 so that it continues to be
+                ; printed by OPTM_FP_PRINT and "selected" by OPTM_FP_SELECT
 
                 MOVE    R1, R8                  ; R1: size of menu (# items)
                 MOVE    R5, R9                  ; R9: current array entry
@@ -211,10 +206,10 @@ _OPTM_MS_1      CMP     0, @R9                  ; are we in the main menu?
                 RBRA    _OPTM_MS_2, Z           ; no: set it to 0
                 MOVE    1, R10                  ; yes: set flag and..
                 RBRA    _OPTM_MS_3B, 1          ; .. write a 1
-_OPTM_MS_2      MOVE    0, @R9++
+_OPTM_MS_2      AND     0x7FFF, @R9++           ; highest bit = 0
                 RBRA    _OPTM_MS_4, 1
 _OPTM_MS_3A     XOR     R10, R10                ; reset first submen. ln flag
-_OPTM_MS_3B     MOVE    1, @R9++                ; current entry to 1 and next
+_OPTM_MS_3B     OR      0x8000, @R9++           ; highest bit to 1 and next
 _OPTM_MS_4      SUB     1, R8                   ; more entries?
                 RBRA    _OPTM_MS_1, !Z          ; yes: iterate
  
@@ -251,20 +246,19 @@ _OPTM_MS_4      SUB     1, R8                   ; more entries?
                 MOVE    R5, @--SP
                 INCRB                           ; protect R0..R7
                 MOVE    @SP++, R5               ; R5: (sub)menu structure
-                ADD     1, R5                   ; skip menu size info                
                 MOVE    @SP++, R0               ; R0: menu groups
                 MOVE    @R5++, R2               ; R2: amount of menu items
 
-                XOR     R1, R1                  ; R1: menu item loop variable
+                XOR     R1, R1                  ; R1: hilight itm; count frm 0
                 XOR     R4, R4                  ; R4: skip counter
 
 _OPTM_TT_0      MOVE    @R0++, R3
 
+                CMP     @R5++, 0x7FFF           ; menu item visible as per..
+                RBRA    _OPTM_TT_1A, !N         ; .. (sub)menu structure?
+
                 AND     OPTM_HEADLINE, R3
                 RBRA    _OPTM_TT_1B, Z          ; flag not set: continue
-
-                CMP     1, @R5++                ; menu item visible as per..
-                RBRA    _OPTM_TT_1A, !Z         ; .. (sub)menu structure?
 
                 ; flag is set, so print the menu item in highlighted mode
                 MOVE    OPTM_FP_SELECT, R7
@@ -280,8 +274,8 @@ _OPTM_TT_0      MOVE    @R0++, R3
 _OPTM_TT_1A     ADD     1, R4
 
                 ; iterate
-_OPTM_TT_1B     ADD     1, R1                   ; next item
-                CMP     R1, R2                  ; end of menu structure?
+_OPTM_TT_1B     ADD     1, R1                   ; next item to highlight
+                SUB     1, R2                   ; next item; are we done?
                 RBRA    _OPTM_TT_0, !Z          ; no: continue
 
                 DECRB                           ; restore R0..R7
@@ -320,8 +314,8 @@ _OPTM_HM_0      CMP     0, @R0                  ; end of string reached?
                 MOVE    R0, R7                  ; R7 starts from the new line
                 ADD     1, R5                   ; next index of menu item                
                 ADD     1, R1                   ; ..and next idx of men. strct
-                CMP     0, @R1                  ; item currently invisible?
-                RBRA    _OPTM_HM_0, !Z          ; no: continue
+                CMP     @R1, 0x7FFF             ; item currently invisible?
+                RBRA    _OPTM_HM_0, N           ; no: continue
                 ADD     1, R12                  ; yes: invis.: incr. skip cnt.                
                 RBRA    _OPTM_HM_0, 1                
 
@@ -334,8 +328,8 @@ _OPTM_HM_1A     CMP     '%', @R0                ; search for "%s"
                 ADD     1, R0                   ; skip character
 
                 ; respect (sub)menu structure: skip invisible items
-                CMP     1, @R1                  ; item visible?
-                RBRA    _OPTM_HM_2, !Z          ; no: skip printing
+                CMP     @R1, 0x7FFF             ; item visible?
+                RBRA    _OPTM_HM_2, !N          ; no: skip printing
 
                 ; Extract from R7 (start of current string) to \n and provide
                 ; this string and the index to the callback function. This
@@ -393,8 +387,8 @@ _OPTM_HM_1A     CMP     '%', @R0                ; search for "%s"
                 ADD     R6, SP                  ; restore stack
                 ADD     1, R5                   ; next line
                 ADD     1, R1                   ; next (sub)menu struct. item
-                CMP     0, @R1                  ; next item invisible?
-                RBRA    _OPTM_HM_1B, !Z         ; no: proceed
+                CMP     @R1, 0x7FFF             ; next item invisible?
+                RBRA    _OPTM_HM_1B, N          ; no: proceed
                 ADD     1, R12                  ; yes: increase skip counter
 _OPTM_HM_1B     MOVE    R7, R0                  ; next part of original string
                 ADD     R6, R0
@@ -418,8 +412,8 @@ _OPTM_SHOW_0    MOVE    @SP++, R5               ; restore R5: (sub)menu struct
 _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
                 RBRA    _OPTM_SHOW_RET, Z       ; end reached
 
-                CMP     1, @R5++                ; active (sub)menu item?
-                RBRA    _OPTM_SHOW_1A, Z        ; yes
+                CMP     @R5++, 0x7FFF           ; active (sub)menu item?
+                RBRA    _OPTM_SHOW_1A, N        ; yes
                 ADD     1, R12                  ; no: increase skip counter
                 RBRA    _OPTM_SHOW_3A, 1         ; next iteration
 
@@ -461,12 +455,6 @@ _OPTM_SHOW_3B   ADD     1, R6                   ; next y-pos
 
 _OPTM_SHOW_RET  ADD     R1, SP                  ; restore SP / free memory
                 ADD     1, SP
-
-                ; DEBUG
-                MOVE    SP, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
 
                 SYSCALL(leave, 1)
                 RET
