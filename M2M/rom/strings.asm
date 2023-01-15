@@ -104,9 +104,10 @@ ERR_F_MENUSIZE  .ASCII_P "config.vhd: Illegal menu size (OPTM_SIZE):\n"
                 .ASCII_W "Must be between 1 and 254\n"
 ERR_F_MENUSTART .ASCII_P "config.vhd: No start menu item tag\n"
                 .ASCII_W "(OPTM_G_START) found in OPTM_GROUPS\n"
-ERR_F_MENUSUB   .ASCII_W "config.vhd: Closing OPTM_G_SUBMENU is missing\n"
+ERR_F_MENUSUB   .ASCII_W "config.vhd: No closing OPTM_G_SUBMENU found\n"
 ERR_F_NEWLINE   .ASCII_P "config.vhd: Each line in OPTM_ITEMS needs\n"
                 .ASCII_W "to be terminated by a newline character."
+ERR_F_NO_S      .ASCII_W "M2M$RPL_S: No %s found in source string.\n"
 
 ; ------------------------------------------------------------------|
 ; @TODO: Adjust strings so that every string ends at the |
@@ -138,7 +139,7 @@ ERR_FATAL_INST  .ASCII_W "Instable system state.\n"
 
 ; Error codes for ERR_FATAL_INST: They will help to debug the situation,
 ; because we will at least know, where the instable system state occured
-ERR_FATAL_INST1 .EQU 1 ; options.asm:   _OPTM_CBS_REPL
+ERR_FATAL_INST1 .EQU 1 ; @TODO: deprecated; can be used for new situation
 ERR_FATAL_INST2 .EQU 2 ; shell.asm:     _HM_MOUNTED
 ERR_FATAL_INST3 .EQU 3 ; shell.asm:     _HM_SDMOUNTED2A
 ERR_FATAL_INST4 .EQU 4 ; options.asm:   _OPTM_GK_MNT

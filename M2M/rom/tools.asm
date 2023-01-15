@@ -50,6 +50,116 @@ _M2M$CHK_EX_RET MOVE    R0, R8                  ; restore R8..R10
                 RET
 
 ; ----------------------------------------------------------------------------
+; M2M$RPL_S
+; 
+; Replaces the first instance of %s in a string by another string. There needs
+; to be at least one occurance of %s in the string otherwise fatal. if the
+; target string (that contains the replacement string for %s) is longer than
+; R11 then the replacement is shortened using FN_ELLIPSIS. The memory region
+; specified by the target string needs to be large enough to actually hold it.
+;
+; Input:  R8: Source string
+;         R9: Target string
+;        R10: Replacement string for %s
+;        R11: Maximum amount of characters for target string
+; Output: None. No registers are changed
+; ----------------------------------------------------------------------------
+
+M2M$RPL_S       SYSCALL(enter, 1)
+
+                MOVE    R9, R0                  ; R0: target string
+                MOVE    R8, R7                  ; R7: input string
+                MOVE    R10, R8                 ; R8: replacement string
+                MOVE    R11, R4                 ; R4: max width
+
+                MOVE    R8, R6                  ; remember R8
+                MOVE    R7, R8                  ; find "%s" in R7
+                MOVE    _M2M$RPL_S_S, R9
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; R10: position of %s
+                RBRA    _M2M$RPL_S_1, !Z
+
+                ; if "%s" is not being found at this place, then something
+                ; went wrong terribly
+                MOVE    ERR_F_NO_S, R8
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+                ; copy the string from 0 to one before %s to the output buf.
+_M2M$RPL_S_1    MOVE    R10, R2                 ; R2: save %s pos, later use
+                SUB     R7, R10
+                MOVE    R7, R8
+                MOVE    R0, R9
+                SYSCALL(memcpy, 1)
+
+                ; overwrite the "%s" from the "%" on with new string, make
+                ; sure that we are not longer than the max width, which is
+                ; @SCR$OSM_O_DX
+                ; R10 contains the length of the string before the %s
+                MOVE    R6, R8                  ; replacement string
+                SYSCALL(strlen, 1)
+                ADD     R10, R9                 ; prefix string + repl. string
+
+                CMP     R9, R4                  ; is it larger than max width?
+                RBRA    _M2M$RPL_S_3, N         ; yes
+                MOVE    R0, R9                  ; R8 still points to repl. str
+                ADD     R10, R9                 ; ptr to "%"
+                SYSCALL(strcpy, 1)
+
+                ; if we land here, we successfully used "prefix" + "%s"; now
+                ; lets check, if we can add parts or everything of the
+                ; "suffix", i.e. the part after the "%s"
+                MOVE    R0, R8
+                SYSCALL(strlen, 1)
+                MOVE    R9, R3                  ; R3: size of concat string
+                CMP     R3, R4                  ; R3 < max width?
+                RBRA    _M2M$RPL_S_RET, Z       ; no (< means not Z)
+                RBRA    _M2M$RPL_S_RET, N       ; no (< means also not N)
+                
+                ADD     2, R2                   ; R2: first char behind "%s"
+                MOVE    R2, R8
+                SYSCALL(strlen, 1)
+                CMP     0, R9                   ; is there anything to add?
+                RBRA    _M2M$RPL_S_RET, Z       ; no
+
+                SUB     R3, R4                  ; R4 = max amt. chars to add
+
+                ; pick the minimum of (R4: max. amt. chars to add) and
+                ; (R9: size of "suffix") and copy the data into the buffer
+                CMP     R4, R9                  ; R4 > R9?
+                RBRA    _M2M$RPL_S_2, !N        ; no
+                MOVE    R9, R4                  ; yes: then use R9 instead
+_M2M$RPL_S_2    MOVE    R2, R8                  ; first char behind "%s"
+                MOVE    R0, R9
+                ADD     R3, R9                  ; last char of concat string
+                MOVE    R4, R10                 ; amount of chars to copy
+                SYSCALL(memcpy, 1)
+                ADD     R10, R9                 ; add zero terminator
+                MOVE    0, @R9
+                RBRA    _M2M$RPL_S_RET, 1
+
+                ; if we land here, the overall string consisting of the first
+                ; two parts ("prefix" + "%s") is too long, so we may only copy
+                ; the maximum amount and we need to add an
+                ; ellipsis (aka "...") at the end
+_M2M$RPL_S_3    MOVE    R0, R9
+                ADD     R10, R9
+                MOVE    R4, R5
+                SUB     R10, R5                 ; max amount we can copy
+                MOVE    R5, R10         
+                SYSCALL(memcpy, 1)
+                ADD     R10, R9                 ; add zero terminator
+                MOVE    0, @R9
+                SUB     3, R9                   ; add ellipsis
+                MOVE    FN_ELLIPSIS, R8
+                SYSCALL(strcpy, 1)
+
+_M2M$RPL_S_RET  SYSCALL(leave, 1)
+                RET
+
+_M2M$RPL_S_S    .ASCII_W "%s"
+
+; ----------------------------------------------------------------------------
 ; WAIT1SEC
 ;   Waits about 1 second
 ; WAIT333MS

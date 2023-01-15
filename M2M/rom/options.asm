@@ -1110,10 +1110,17 @@ _OPTMCB_RET     DECRB
 ; if there is a "%s" within a menu item.
 ;
 ; menu.asm is not aware of the semantics that we are implementing here:
+;
+; Case (a) Submenus:
+;
+; In case of submenus, the semantics can be defined by 
+;
+; Case (b) Virtual drives:
+;
 ; "%s" is meant to denote the space where we will either print
 ; OPTM_S_MOUNT from config.vhd, which is "<Mount Drive>" by default, if the
 ; drive is not mounted, yet, or we print the file name of the disk image,
-; abbreviated to the width of the frame. We also handle the "cache diry"
+; abbreviated to the width of the frame. We also handle the "cache dirty"
 ; situation and show OPTM_S_SAVING which defaults to "<Saving>".
 ;
 ; Input:
@@ -1132,10 +1139,6 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
                 MOVE    R8, R0                  ; R0: string pointer
                 MOVE    R0, R7
 
-                ; DEBUG
-                SYSCALL(puts, 1)
-                SYSCALL(crlf, 1)
-
                 ; get menu group ID associated with this menu item
                 ; (mount menu items need to have unique group IDs)
                 MOVE    M2M$RAMROM_DEV, R1
@@ -1146,9 +1149,43 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
                 ADD     R9, R1
                 MOVE    @R1, R1                 ; R1: menu group id
 
+                ; ------------------------------------------------------------
+                ; Case (a): Submenus
+                ; ------------------------------------------------------------
+
+                MOVE    R1, R2
+                AND     OPTM_SUBMENU, R2        ; is this group id a submenu?
+                RBRA    _OPTM_CBS_VD, Z         ; no: go on with case (b)
+
+                ; @TODO: Next steps:
+                ; Enhance SUBMENU_SUMMARY and check the output here: if the
+                ; output is zero, then we perform standard semantics,
+                ; otherwise we return the output of SUBMENU_SUMMARY
+
+                ; DEBUG
+                SYSCALL(puts, 1)
+                SYSCALL(crlf, 1)
+                MOVE    R0, R8
+                MOVE    HANDLE_FILE1, R9
+                MOVE    LOG_STR_LOADOK, R10
+                MOVE    SCR$OSM_O_DX, R11
+                MOVE    @R11, R11
+                SUB     2, R11                  ; R11: max width
+                RSUB    M2M$RPL_S, 1
+                MOVE    HANDLE_FILE1, R0
+                MOVE    R0, R8
+                SYSCALL(puts, 1)
+                SYSCALL(crlf, 1)
+
+                RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
+
+                ; ------------------------------------------------------------
+                ; Case (b): Virtual Drives
+                ; ------------------------------------------------------------
+
                 ; VD_DRVNO checks if the menu item is associated with a
                 ; virtual drive and returns the virtual drive number in R8
-                MOVE    R1, R8
+_OPTM_CBS_VD    MOVE    R1, R8
                 RSUB    VD_DRVNO, 1
                 RBRA    _OPTM_CBS_RET, !C
 
@@ -1288,94 +1325,15 @@ _OPTM_CBS_RET   MOVE    R0, @--SP               ; lift R0 over the leave hump
                 ; expects the input string that has the "%s" that shall
                 ; be replaced in R7 and actual replacement for the "%s"
                 ; is expected in R8
-_OPTM_CBS_REPL  MOVE    R8, R6                  ; remember R8
-                MOVE    R7, R8                  ; find "%s" in R7
-                MOVE    _OPTM_CBS_S, R9
-                SYSCALL(strstr, 1)
-                CMP     0, R10                  ; R10: position of %s
-                RBRA    _OPTM_CBSR_1, !Z
-
-                ; if "%s" is not being found at this place, then something
-                ; went wrong terribly
-                MOVE    ERR_FATAL_INST, R8
-                MOVE    ERR_FATAL_INST1, R9
-                RBRA    FATAL, 1
-
-                ; copy the string from 0 to one before %s to the output buf.
-_OPTM_CBSR_1    MOVE    R10, R2                 ; R2: save %s pos, later use
-                SUB     R7, R10
-                MOVE    R7, R8
+_OPTM_CBS_REPL  MOVE    R8, R10
                 MOVE    R0, R9
-                SYSCALL(memcpy, 1)
+                MOVE    R7, R8
 
                 ; the maximum width that we have to display the string is
                 ; @SCR$OSM_O_DX minus 2 because of the frame
-                MOVE    SCR$OSM_O_DX, R4
-                MOVE    @R4, R4
-                SUB     2, R4                   ; R4: max width
+                MOVE    SCR$OSM_O_DX, R11
+                MOVE    @R11, R11
+                SUB     2, R11                  ; R11: max width
 
-                ; overwrite the "%s" from the "%" on with new string, make
-                ; sure that we are not longer than the max width, which is
-                ; @SCR$OSM_O_DX
-                ; R10 contains the length of the string before the %s
-                MOVE    R6, R8                  ; replacement string
-                SYSCALL(strlen, 1)
-                ADD     R10, R9                 ; prefix string + repl. string
-
-                CMP     R9, R4                  ; is it larger than max width?
-                RBRA    _OPTM_CBSR_3, N         ; yes
-                MOVE    R0, R9                  ; R8 still points to repl. str
-                ADD     R10, R9                 ; ptr to "%"
-                SYSCALL(strcpy, 1)
-
-                ; if we land here, we successfully used "prefix" + "%s"; now
-                ; lets check, if we can add parts or everything of the
-                ; "suffix", i.e. the part after the "%s"
-                MOVE    R0, R8
-                SYSCALL(strlen, 1)
-                MOVE    R9, R3                  ; R3: size of concat string
-                CMP     R3, R4                  ; R3 < max width?
-                RBRA    _OPTM_CBSR_RET, Z       ; no (< means not Z)
-                RBRA    _OPTM_CBSR_RET, N       ; no (< means also not N)
-                
-                ADD     2, R2                   ; R2: first char behind "%s"
-                MOVE    R2, R8
-                SYSCALL(strlen, 1)
-                CMP     0, R9                   ; is there anything to add?
-                RBRA    _OPTM_CBSR_RET, Z       ; no
-
-                SUB     R3, R4                  ; R4 = max amt. chars to add
-
-                ; pick the minimum of (R4: max. amt. chars to add) and
-                ; (R9: size of "suffix") and copy the data into the buffer
-                CMP     R4, R9                  ; R4 > R9?
-                RBRA    _OPTM_CBSR_2, !N        ; no
-                MOVE    R9, R4                  ; yes: then use R9 instead
-_OPTM_CBSR_2    MOVE    R2, R8                  ; first char behind "%s"
-                MOVE    R0, R9
-                ADD     R3, R9                  ; last char of concat string
-                MOVE    R4, R10                 ; amount of chars to copy
-                SYSCALL(memcpy, 1)
-                ADD     R10, R9                 ; add zero terminator
-                MOVE    0, @R9
-                RBRA    _OPTM_CBSR_RET, 1
-
-                ; if we land here, the overall string consisting of the first
-                ; two parts ("prefix" + "%s") is too long, so we may only copy
-                ; the maximum amount and we need to add an
-                ; ellipsis (aka "...") at the end
-_OPTM_CBSR_3    MOVE    R0, R9
-                ADD     R10, R9
-                MOVE    R4, R5
-                SUB     R10, R5                 ; max amount we can copy
-                MOVE    R5, R10         
-                SYSCALL(memcpy, 1)
-                ADD     R10, R9                 ; add zero terminator
-                MOVE    0, @R9
-                SUB     3, R9                   ; add ellipsis
-                MOVE    FN_ELLIPSIS, R8
-                SYSCALL(strcpy, 1)
-
-_OPTM_CBSR_RET  RET
-
-_OPTM_CBS_S     .ASCII_W "%s"
+                RSUB    M2M$RPL_S, 1
+                RET

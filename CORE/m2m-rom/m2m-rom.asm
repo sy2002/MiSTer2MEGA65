@@ -43,6 +43,21 @@
 START_FIRMWARE  RBRA    START_SHELL, 1
 
 ; ----------------------------------------------------------------------------
+; Core specific callback functions: Submenus
+; ----------------------------------------------------------------------------
+
+; SUBMENU_SUMMARY callback function:
+;
+; Called when displaying the main menu for every %s that is found in the
+; "headline" / starting point of any submenu in config.vhd: You are able to
+; change the standard semantics when it comes to summarizing the status of the
+; very submenu that is meant by the "headline" / starting point.
+;
+; Input:
+;   R8:
+SUBMENU_SUMMARY 
+
+; ----------------------------------------------------------------------------
 ; Core specific callback functions: File browsing and disk image mounting
 ; ----------------------------------------------------------------------------
 
