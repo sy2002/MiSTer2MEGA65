@@ -30,6 +30,10 @@ HELP_MENU       SYSCALL(enter, 1)
                 ; are not passed along to the core
                 RSUB    RP_OPTM_START, 1
 
+                ; Init instance counter for submenus in OPTM_CB_SHOW
+                MOVE    OPTM_SUBMENINST, R0
+                MOVE    0, @R0
+
                 ; Copy menu items from config.vhd to heap
                 MOVE    M2M$RAMROM_DEV, R0
                 MOVE    M2M$CONFIG, @R0
@@ -82,7 +86,7 @@ HELP_MENU       SYSCALL(enter, 1)
                 MOVE    HEAP, R8                ; store pointer to record
                 ADD     OPTM_IR_GROUPS, R8
                 MOVE    R9, @R8
-                MOVE    R9, R12                  ; R12: pointer to menu groups
+                MOVE    R9, R12                 ; R12: pointer to menu groups
 
                 ; Copy the standard selectors (which menu items are selected
                 ; by default) from the QNICE M2M$CFM_DATA register to the
@@ -157,23 +161,26 @@ _HLP_HEAP1_OK   MOVE    MENU_HEAP_SIZE, R8
                 ; from config.vhd. The maximum length per string (rounded up)
                 ; equals to @SCR$OSM_O_DX and the maximum amount of such kind
                 ; of "%s" strings equals to the actual amount of virtual
-                ; drives, i.e. VDRIVES_NUM
+                ; drives, i.e. VDRIVES_NUM plus the amount of submenus
                 ;
                 ; But need one more than VDRIVES_NUM (i.e. VDRIVES_NUM + 1)
                 ; because we need a scratch buffer to remember the adjusted
                 ; filename during the period, where OPTM_S_SAVING from
                 ; config.vhd is being shown, i.e. while the save buffer
                 ; is dirty. We store the pointer to this in OPTM_HEAP_LAST.
+                MOVE    OPTM_SCOUNT, R11        ; R11: amount of submenus
+                MOVE    @R11, R11
                 MOVE    SCR$OSM_O_DX, R8
                 MOVE    @R8, R8
                 MOVE    VDRIVES_NUM, R9
-                MOVE    @R9, R9
+                MOVE    @R9, R9                 ; R9: amount of virtual drives
+                ADD     R11, R9                 ; add amount of submenus
                 SYSCALL(mulu, 1)                ; R10 = result lo word of mulu
                 MOVE    OPTM_HEAP_LAST, R8      ; clc. addr. of OPTM_HEAP_LAST
                 MOVE    R10, @R8
                 MOVE    OPTM_HEAP, R11
                 ADD     @R11, @R8
-                MOVE    SCR$OSM_O_DX, R8        ; VDRIVES_NUM + 1 
+                MOVE    SCR$OSM_O_DX, R8        ; VDRIVES_NUM + amt submen + 1
                 ADD     @R8, R10 
                 MOVE    OPTM_HEAP_SIZE, R8
                 CMP     R10, @R8                ; demand > heap?
@@ -514,7 +521,38 @@ _HLP_S2         SUB     1, R3                   ; one less menu item to go
                 RBRA    _HLP_S3, Z              ; no: do not destroy @R1
                 MOVE    R5, @R1                 ; yes: update @R1
 
-_HLP_S3         SYSCALL(leave, 1)
+                ; determine the amount of submenus (if any)
+                ; fatal if the amount is an odd number, because this indicates
+                ; that at least one "opened" OPTM_G_SUBMENU in config.vhd is
+                ; not "closed" by another instance of OPTM_G_SUBMENU
+_HLP_S3         MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0
+                MOVE    M2M$CFG_OPTM_GROUPS, @R0
+                MOVE    M2M$RAMROM_DATA, R0     ; R0: ptr cur men itm grp id
+
+                MOVE    OPTM_ICOUNT, R1
+                MOVE    @R1, R1                 ; R1: amount of menu items
+                XOR     R8, R8                  ; R8: amount of submenus
+
+_HLP_S4         MOVE    @R0++, R2
+                AND     OPTM_SUBMENU, R2        ; is a submenu?
+                RBRA    _HLP_S5, Z              ; no
+                ADD     1, R8                   ; yes
+_HLP_S5         SUB     1, R1                   ; one more item done
+                RBRA    _HLP_S4, !Z             ; iterate until done
+
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     1, R8                   ; divide R8 by two
+                RBRA    _HLP_S_RET, !X          ; R8 was an even number..
+                MOVE    ERR_F_MENUSUB, R8       ; ..else fatal
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+_HLP_S_RET      MOVE    OPTM_SCOUNT, R0         ; store in variable
+                MOVE    R8, @R0
+
+                SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------
@@ -1229,16 +1267,67 @@ _OPTM_CBS_E     CMP     R2, R3                  ; selected item reached?
                 ADD     1, R2
                 RBRA    _OPTM_CBS_D, 1          ; next item
 
-_OPTM_CBS_F     
-                ; DEBUG
+                ; find next \n to determine the length of the current segment
+                ; and copy it to the stack so that we can add a zero-terminatr
+                ; to make sure that the \n is not derailing M2M$RPL_S
+_OPTM_CBS_F     MOVE    R1, R8
+                MOVE    OPTM_NL, R9
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; \n found?
+                RBRA    _OPTM_CBS_G, !Z         ; yes: proceed
+                MOVE    ERR_FATAL_INST, R8      ; no: fatal
+                MOVE    ERR_FATAL_INST1, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_G     MOVE    SP, R7                  ; remember SP
                 MOVE    R1, R8
-                MOVE    HANDLE_FILE1, R9
-                SUB     R8, R10
+                SUB     R8, R10                 ; R10: length until \n
+                SUB     R10, SP
+                SUB     1, SP                   ; room for zero-terminator
+                MOVE    SP, R9
                 SYSCALL(memcpy, 1)
+                MOVE    R9, R1                  ; R1: replacement string segm.
                 ADD     R10, R9
-                MOVE    0, @R9                  ; add zero-terminator for str
-                MOVE    HANDLE_FILE1, R0
-                
+                MOVE    0, @R9                  ; add zero terminator
+
+                ; Get rid of leading spaces. We can assume that the string
+                ; consists at least of a %s, so there will be at least a bunch
+                ; non-space characters
+_OPTM_CBS_H     CMP     0x0020, @R1
+                RBRA    _OPTM_CBS_I, !Z         ; non-space character found
+                ADD     1, R1
+                RBRA    _OPTM_CBS_H, 1
+
+                ; Determine position in OPTM_HEAP that we can use for our
+                ; string replacement: The space that can be used for 
+                ; the headline/label strings of submenus is directly after the
+                ; abbreviated filenames of the vdrives.
+                ; The variable OPTM_SUBMENINST is a static variable of this
+                ; very callback function and counts (from 0) which instance
+                ; of submenu we are currently working on.
+                ; So the formula to calculate the position on the heap is:
+                ; (Amount of vdrives + OPTM_SUBMENINST) * @SCR$OSM_O_DX
+_OPTM_CBS_I     MOVE    VDRIVES_NUM, R8
+                MOVE    @R8, R8
+                MOVE    OPTM_SUBMENINST, R2
+                ADD     @R2, R8
+                MOVE    SCR$OSM_O_DX, R9
+                MOVE    @R9, R9
+                MOVE    R9, R5                  ; R5: @SCR$OSM_O_DX
+                SYSCALL(mulu, 1)                ; R10: result
+
+                MOVE    R0, R8                  ; R8: source string
+                MOVE    OPTM_HEAP, R9           ; R9: target string
+                MOVE    @R9, R9
+                ADD     R10, R9
+                MOVE    R1, R10                 ; R10: replacement for %s
+                MOVE    R5, R11                 ; R11: max. amt. of chars
+                SUB     2, R11
+                RSUB    M2M$RPL_S, 1            ; replace %s
+
+                ADD     1, @R2                  ; next iteration of callback
+                MOVE    R9, R0                  ; return target string
+                MOVE    R7, SP                  ; restore SP
+
                 RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
 
                 ; ------------------------------------------------------------

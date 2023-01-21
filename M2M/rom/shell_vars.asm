@@ -4,7 +4,7 @@
 ; Variables for shell.asm and its direct includes:
 ; options.asm
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 
@@ -20,6 +20,7 @@ WELCOME_SHOWN   .BLOCK 1                        ; we need to trust that this
 
 ; option menu
 OPTM_ICOUNT     .BLOCK 1                        ; amount of menu items
+OPTM_SCOUNT     .BLOCK 1                        ; amount of submenus
 OPTM_START      .BLOCK 1                        ; initially selected menu item
 OPTM_SELECTED   .BLOCK 1                        ; last options menu selection
 OPTM_MNT_STATUS .BLOCK 1                        ; drive mount status; all drvs
@@ -29,12 +30,19 @@ OPTM_DTY_STATUS .BLOCK 1                        ; cache dirty status; all drvs
 ; disk images used by mounted drives: Filenames need to be abbreviated by
 ; "..." if they are too long. See also HELP_MENU and HANDLE_MOUNTING.
 ;
+; OPTM_HEAP also stores the replacement strings for %s within submenu
+; headlines / entry points.
+;
 ; OPTM_HEAP_LAST points to a scratch buffer that can hold a modified filename
 ; for saving/restoring while the cache dirty "Saving" message is shown.
 ; See also OPTM_CB_SHOW. 
 OPTM_HEAP       .BLOCK 1
 OPTM_HEAP_LAST  .BLOCK 1
 OPTM_HEAP_SIZE  .BLOCK 1                        ; size of this scratch buffer
+
+; Static variable used by the callback function OPTM_CB_SHOW to keep track
+; of the instance of submenu that is currently being processed
+OPTM_SUBMENINST .BLOCK 1
 
 SCRATCH_HEX     .BLOCK 5
 
@@ -79,7 +87,7 @@ SD_WAIT_DONE    .BLOCK 1                        ; initial waiting done
 
 ; file browser persistent status
 FB_HEAP         .BLOCK 1                        ; heap used by file browser
-FB_STACK        .BLOCK 1                        ; local stack used by  browser
+FB_STACK        .BLOCK 1                        ; local stack used by browser
 FB_STACK_INIT   .BLOCK 1                        ; initial local browser stack
 FB_MAINSTACK    .BLOCK 1                        ; stack of main program
 FB_HEAD         .BLOCK 1                        ; lnkd list: curr. disp. head
