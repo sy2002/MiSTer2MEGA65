@@ -54,8 +54,16 @@ START_FIRMWARE  RBRA    START_SHELL, 1
 ; very submenu that is meant by the "headline" / starting point.
 ;
 ; Input:
-;   R8:
-SUBMENU_SUMMARY 
+;   R8: pointer to the string that includes the "%s"
+;   R9: pointer to the menu item within the M2M$CFG_OPTM_GROUPS structure
+;  R10: end-of-menu-marker: if R9 == R10: we reached end of the menu structure
+; Output:
+;   R8: 0, if no custom SUBMENU_SUMMARY, else:
+;       string pointer to completely new headline (do not modify/re-use R8)
+;   R9, R10: unchanged
+
+SUBMENU_SUMMARY XOR     R8, R8                  ; R8 = 0 = no custom string
+                RET
 
 ; ----------------------------------------------------------------------------
 ; Core specific callback functions: File browsing and disk image mounting

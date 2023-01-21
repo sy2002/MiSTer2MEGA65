@@ -53,10 +53,10 @@ _M2M$CHK_EX_RET MOVE    R0, R8                  ; restore R8..R10
 ; M2M$RPL_S
 ; 
 ; Replaces the first instance of %s in a string by another string. There needs
-; to be at least one occurance of %s in the string otherwise fatal. if the
-; target string (that contains the replacement string for %s) is longer than
-; R11 then the replacement is shortened using FN_ELLIPSIS. The memory region
-; specified by the target string needs to be large enough to actually hold it.
+; to be at least one occurance of %s in the string otherwise fatal. If the
+; resulting string (Target string including %s) is longer than R11 then the
+; resulting string is shortened using FN_ELLIPSIS. The memory region specified
+; by the target string needs to be large enough to actually hold it.
 ;
 ; Input:  R8: Source string
 ;         R9: Target string

@@ -1113,7 +1113,12 @@ _OPTMCB_RET     DECRB
 ;
 ; Case (a) Submenus:
 ;
-; In case of submenus, the semantics can be defined by 
+; In case of submenus, the semantics can be defined by the user of the
+; framework in SUBMENU_SUMMARY in m2m-rom.asm. The standard semantics are:
+; Replace %s by the selected menu item of the first menu group. If there is
+; no menu group then fatal, because then one should not have put an %s in the
+; headline - or - one should have used SUBMENU_SUMMARY to define a custom
+; semantics.
 ;
 ; Case (b) Virtual drives:
 ;
@@ -1138,6 +1143,7 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: string pointer
                 MOVE    R0, R7
+                MOVE    R9, R5                  ; R5: remember R9
 
                 ; get menu group ID associated with this menu item
                 ; (mount menu items need to have unique group IDs)
@@ -1149,6 +1155,11 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
                 ADD     R9, R1
                 MOVE    @R1, R1                 ; R1: menu group id
 
+                MOVE    M2M$RAMROM_DATA, R6
+                MOVE    OPTM_ICOUNT, R3
+                ADD     @R3, R6                 ; R6: 1 word behind last item
+
+
                 ; ------------------------------------------------------------
                 ; Case (a): Submenus
                 ; ------------------------------------------------------------
@@ -1157,26 +1168,77 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
                 AND     OPTM_SUBMENU, R2        ; is this group id a submenu?
                 RBRA    _OPTM_CBS_VD, Z         ; no: go on with case (b)
 
-                ; @TODO: Next steps:
-                ; Enhance SUBMENU_SUMMARY and check the output here: if the
-                ; output is zero, then we perform standard semantics,
-                ; otherwise we return the output of SUBMENU_SUMMARY
+                ; Check if the M2M user defined a custom SUBMENU_SUMMARY and
+                ; if yes, use the string returned by SUBMENU_SUMMARY
+                MOVE    R9, R10
+                MOVE    M2M$RAMROM_DATA, R9
+                ADD     R10, R9                 ; R9: ptr to current men. item
+                MOVE    R6, R10                 ; R10: end-of-menu marker
+                RSUB    SUBMENU_SUMMARY, 1
+                MOVE    R8, R0                  ; custom SUBMENU_SUMMARY?
+                RBRA    _OPTM_CBS_RET, !Z       ; yes
+                MOVE    R7, R0                  ; no: standard semantics
+                MOVE    R9, R3                  ; 3: ptr to current men. item
 
+                ; Search for the first menu group within the submenu and
+                ; within this menu group, find the currently selected item
+_OPTM_CBS_A     ADD     1, R3                   ; next item
+                CMP     R6, R3                  ; end of (overall)menu?
+                RBRA    _OPTM_CBS_B, !Z         ; no: continue
+                MOVE    ERR_F_MENUSUB, R8       ; yes: fatal
+                XOR     R9, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_B     MOVE    @R3, R1
+                AND     OPTM_SUBMENU, R1        ; end-of-submenu marker?
+                RBRA    _OPTM_CBS_C, Z          ; no: continue
+                MOVE    ERR_F_MENUNGRP, R8      ; yes: fatal
+                MOVE    R5, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_C     MOVE    @R3, R8
+                MOVE    1, R9
+                MOVE    255, R10
+                SYSCALL(in_range_u, 1)          ; is the item a menu group?
+                RBRA    _OPTM_CBS_A, !C         ; no: next item
+                MOVE    HEAP, R8                ; get selected menu group item
+                ADD     OPTM_IR_STDSEL, R8
+                MOVE    @R8, R8
+                ADD     R3, R8
+                SUB     M2M$RAMROM_DATA, R8     ; R3 is relative to RAMROM_DTA
+                MOVE    @R8, R8                 ; is the item selected?
+                RBRA    _OPTM_CBS_A, Z          ; no
+
+                ; extract the label of the selected item from the \n separated
+                ; OPTM_ITEMS string
+                SUB     M2M$RAMROM_DATA, R3     ; R3: index of selected item
+                MOVE    HEAP, R1
+                ADD     OPTM_IR_ITEMS, R1
+                MOVE    @R1, R1                 ; R1: current segment in strng
+                XOR     R2, R2                  ; R2: loop variable
+_OPTM_CBS_D     MOVE    R1, R8
+                MOVE    OPTM_NL, R9
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; \n found?
+                RBRA    _OPTM_CBS_E, !Z         ; yes: proceed
+                MOVE    ERR_FATAL_INST, R8      ; no: fatal
+                MOVE    ERR_FATAL_INST1, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_E     CMP     R2, R3                  ; selected item reached?
+                RBRA    _OPTM_CBS_F, Z          ; yes
+                ADD     2, R10                  ; no: skip \n and proceed
+                MOVE    R10, R1
+                ADD     1, R2
+                RBRA    _OPTM_CBS_D, 1          ; next item
+
+_OPTM_CBS_F     
                 ; DEBUG
-                SYSCALL(puts, 1)
-                SYSCALL(crlf, 1)
-                MOVE    R0, R8
+                MOVE    R1, R8
                 MOVE    HANDLE_FILE1, R9
-                MOVE    LOG_STR_LOADOK, R10
-                MOVE    SCR$OSM_O_DX, R11
-                MOVE    @R11, R11
-                SUB     2, R11                  ; R11: max width
-                RSUB    M2M$RPL_S, 1
+                SUB     R8, R10
+                SYSCALL(memcpy, 1)
+                ADD     R10, R9
+                MOVE    0, @R9                  ; add zero-terminator for str
                 MOVE    HANDLE_FILE1, R0
-                MOVE    R0, R8
-                SYSCALL(puts, 1)
-                SYSCALL(crlf, 1)
-
+                
                 RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
 
                 ; ------------------------------------------------------------
