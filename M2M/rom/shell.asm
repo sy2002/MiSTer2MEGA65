@@ -1122,7 +1122,7 @@ _START_MON_GO   DECRB
 ; QNICE Monitor. This is invisible to end users but might be helpful for
 ; debugging purposes, if you are able to connect a JTAG interface.
 ;
-; R8: Pointer to error message from strings.asm
+; R8: Pointer to error message
 ; R9: if not zero: contains an error code for additional debugging info
 ; ----------------------------------------------------------------------------
 

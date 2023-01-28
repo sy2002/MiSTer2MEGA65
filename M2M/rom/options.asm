@@ -195,10 +195,6 @@ _HLP_HEAP1_OK   MOVE    MENU_HEAP_SIZE, R8
 _HLP_HEAP2_OK   RSUB    ROSM_REM_OLD, 1         ; remember current settings
                 RSUB    OPTM_SHOW, 1            ; fill VRAM
                 RSUB    SCR$OSM_O_ON, 1         ; make overlay visible
-
-                ; DEBUG
-                SYSCALL(exit, 1)
-
                 MOVE    OPTM_SELECTED, R9       ; use recently selected line
                 MOVE    @R9, R8
                 RSUB    OPTM_RUN, 1             ; run menu
@@ -769,7 +765,7 @@ _ROSMS_RET      SYSCALL(leave, 1)
 ; config.vhd and then modified to point to the right addresses on the heap
 OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, OPT_PRINTSTR, SCR$PRINTSTRXY
                 .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
-                .DW     OPTM_CB_SEL, OPTM_CB_SHOW,
+                .DW     OPTM_CB_SEL, OPTM_CB_SHOW, FATAL,
                 .DW     M2M$OPT_SEL_MULTI, 0    ; selection char + zero term.:
                 .DW     M2M$OPT_SEL_SINGLE, 0   ; multi- and single-select
                 .DW     0, 0, 0, 0, 0           ; will be filled dynamically
@@ -976,9 +972,9 @@ _OPTMGK_RET     DECRB
                 RET
 
                 ; the archetypical situation that the mount status changes
-                ; "in the background" (i.e. not controlled by any) callback
-                ; function, while the OPTM is open is a "Smart Reset" reset of
-                ; the core. "Core" as in "core only", not the M2M framework.
+                ; "in the background", i.e. not controlled by any callback
+                ; function while the OPTM is open, is a "Smart Reset" reset
+                ; of the core. "Core" as in "core only", not the framework.
 _OPTM_GK_MNT    SYSCALL(enter, 1)
 
                 RSUB    VD_ACTIVE, 1            ; are there any vdrives?
@@ -1103,7 +1099,9 @@ OPTM_CB_SEL     INCRB
                 RSUB    HANDLE_MOUNTING, 1             
 
                 ; Standard behavior
-_OPTMC_NOMNT    CMP     OPTM_CLOSE, R8          ; CLOSE = no changes: leave
+_OPTMC_NOMNT    MOVE    R8, R7                  ; For detecting CLOSE, we..
+                AND     0x00FF, R7              ; ..only look at low-byte
+                CMP     OPTM_CLOSE, R7          ; CLOSE = no changes: leave
                 RBRA    _OPTMCB_RET, Z
 
                 MOVE    OPTM_ICOUNT, R0         ; R0: amount of menu items

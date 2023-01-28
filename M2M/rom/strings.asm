@@ -3,6 +3,8 @@
 ;
 ; Hardcoded Shell strings that cannot be changed by config.vhd
 ;
+; Hint: There are more hardcoded strings in menu.asm.
+;
 ; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
