@@ -204,6 +204,15 @@ set_property -dict {PACKAGE_PIN AB3  IOSTANDARD TMDS_33}  [get_ports {tmds_data_
 set_property -dict {PACKAGE_PIN AB5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_n[2]}]
 set_property -dict {PACKAGE_PIN AA5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p[2]}]
 
+#set_property -dict {PACKAGE_PIN AB7  IOSTANDARD LVCMOS33} [get_ports hdmi_scl]
+#set_property -dict {PACKAGE_PIN V9   IOSTANDARD LVCMOS33} [get_ports hdmi_sda]
+#set_property -dict {PACKAGE_PIN AB8  IOSTANDARD LVCMOS33} [get_ports hdmi_enable]
+#set_property -dict {PACKAGE_PIN Y8   IOSTANDARD LVCMOS33} [get_ports hdmi_hotplugdetect]
+#set_property -dict {PACKAGE_PIN W9   IOSTANDARD LVCMOS33} [get_ports hdmi_cec_a]
+#set_property -dict {PACKAGE_PIN Y8   IOSTANDARD LVCMOS33} [get_ports hpd_a]
+set_property -dict {PACKAGE_PIN M15  IOSTANDARD LVCMOS33} [get_ports ct_hpd]
+#set_property -dict {PACKAGE_PIN AB8  IOSTANDARD LVCMOS33} [get_ports ls_oe]
+
 ## HyperRAM (standard)
 set_property -dict {PACKAGE_PIN D22 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports hr_clk_p]
 set_property -dict {PACKAGE_PIN A21 IOSTANDARD LVCMOS33 PULLUP FALSE SLEW FAST DRIVE 16} [get_ports {hr_d[0]}]

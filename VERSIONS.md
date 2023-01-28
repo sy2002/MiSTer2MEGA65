@@ -1,4 +1,13 @@
-Version 0.9.0 - January, 9 2023
+Version 0.9.1 - January 28, 2023
+================================
+
+Works with more HDMI monitors, frame grabbers, HDMI switches, etc.
+
+MiSTer2MEGA65 was not compliant to section 4.2.7 of the HDMI specification
+version 1.4b: It did not assert the +5V power signal. Now it does assert the
++5 power signal via the FPGA pin `ct_hpd`.
+
+Version 0.9.0 - January 9, 2023
 ===============================
 
 After being in development since April 5, 2021 while being in a constant

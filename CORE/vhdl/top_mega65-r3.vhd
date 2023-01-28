@@ -40,6 +40,7 @@ port (
    tmds_data_n    : out std_logic_vector(2 downto 0);
    tmds_clk_p     : out std_logic;
    tmds_clk_n     : out std_logic;
+   ct_hpd         : out std_logic := '1';          -- Needed for HDMI compliancy: Assert +5V according to section 4.2.7 of the specification version 1.4b
 
    -- MEGA65 smart keyboard controller
    kb_io0         : out std_logic;                 -- clock to keyboard
