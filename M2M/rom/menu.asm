@@ -685,23 +685,26 @@ _OPTM_RUN_6C    MOVE    R8, R11                 ; R11: remember selection key
                 MOVE    0, @R7                  ; unselect single-select item
                                                 ; in memory
 
-                MOVE    R8, @--SP               ; R8 still contains group id
+                MOVE    R8, R12                 ; R8 still contains group id
 
-                MOVE    _OPTM_RUN_SPCE, R8      ; R8: use space char to delete
                 MOVE    OPTM_X, R9              ; R9: x-coord
                 MOVE    @R9, R9
                 ADD     1, R9
                 MOVE    OPTM_Y, R10             ; R10: y-coord
                 MOVE    @R10, R10
-                ADD     R2, R10
+                MOVE    R2, R8                  ; transform R2 from flat..
+                RSUB    _OPTM_R_F2M, 1          ; ..to relative to (sub)menu
+                ADD     R8, R10
                 ADD     1, R10
                 MOVE    R11, @--SP              ; save R11
-                XOR     R11, R11                ; R11=0: show main menu
+                MOVE    OPTM_MENULEVEL, R11     ; R11: (sub)menu level, 0=main
+                MOVE    @R11, R11
                 MOVE    OPTM_FP_PRINTXY, R7     ; delete marker at current pos
+                MOVE    _OPTM_RUN_SPCE, R8      ; R8: use space char to delete            
                 RSUB    _OPTM_CALL, 1           ; ..on screen
                 MOVE    @SP++, R11              ; restore R11
 
-                MOVE    @SP++, R8               ; group id
+                MOVE    R12, R8                 ; restore group id
                 XOR     R9, R9
                 MOVE    R11, R10                ; selection key
                 MOVE    OPTM_CLBK_SEL, R7       ; call callback
@@ -765,7 +768,9 @@ _OPTM_RUN_8     ADD     1, R10                  ; y-pos + 1
 _OPTM_RUN_9     MOVE    OPTM_Y, R10
                 MOVE    @R10, R10
                 ADD     1, R10
-                ADD     R2, R10
+                MOVE    R2, R8                  ; transform R2 from flat..
+                RSUB    _OPTM_R_F2M, 1          ; ..coords to (sub)menu coords
+                ADD     R8, R10
                 MOVE    OPTM_DATA, R8
                 MOVE    @R8, R8
                 ADD     OPTM_IR_SEL, R8
@@ -832,54 +837,6 @@ _OPTM_RUN_RET   ADD     R0, SP                  ; restore SP / free memory
                 RET
 
 _OPTM_RUN_SPCE  .ASCII_W " "
-
-; _OPTM_R_F2M
-;
-; Converts a position relative to OPTM_ITEMS or OPTM_GROUPS (starting from 0)
-; to a position relative to the currently active (sub)menu
-;
-; Input:  R8 as flat position
-; Output: R8 as position relative to the currently active (sub)menu
-;
-; Helper subroutine for _OPTM_RUN that expects the stack to be set-up like
-; described above. We need to add +1 to the SP because we are in a subroutine.
-_OPTM_R_F2M     INCRB
-
-                MOVE    SP, R0                  ; R0: size of current (sub)men
-                ADD     1, R0
-                MOVE    @R0, R0
-                MOVE    SP, R1                  ; R1: (sub)menu structure
-                ADD     4, R1                   ; 4 to also skip size info
-                MOVE    R8, R2                  ; R2: flat input position
-                XOR     R3, R3                  ; R3: relative output position
-                XOR     R4, R4                  ; R4: loop counter
-
-                ; Check for corrupt memory layout: Is R8 larger than the
-                ; size of the current (sub)menu allows? We need to subtract
-                ; 1 from the size of the current (sub)menu because R8 starts
-                ; to count from zero
-                MOVE    R1, R6
-                SUB     1, R6
-                CMP     R2, R6
-                RBRA    _OPTM_R_F2M_1, !N       ; all good: continue
-                MOVE    OPTM_CLBK_FATAL, R7     ; otherwise: fatal
-                MOVE    R2, R9
-                MOVE    OPTM_F_F2M, R8
-                RBRA    _OPTM_CALL, 1           ; RBRA because of fatal
-
-_OPTM_R_F2M_1   MOVE    @R1++, R6               ; check bit 15
-                SHL     1, R6                   ; cur strct item=cur active?
-                RBRA    _OPTM_R_F2M_2, !C       ; no: next item
-                CMP     R4, R2                  ; flat position reached?
-                RBRA    _OPTM_R_F2M_R, Z        ; yes: return
-                ADD     1, R3                   ; increase rel. pos.
-_OPTM_R_F2M_2   ADD     1, R4                   ; increase abs. pos
-                RBRA    _OPTM_R_F2M_1, 1
-
-_OPTM_R_F2M_R   MOVE    R3, R8                  ; return relative output pos.
-
-                DECRB
-                RET
 
 ; ----------------------------------------------------------------------------
 ; Internal helper functions
@@ -985,6 +942,54 @@ _OPTM_STRUCT_8  SUB     1, R0                   ; more entries?
                 RBRA    _OPTM_STRUCT_5, !Z      ; yes: iterate
 
                 MOVE    R7, R9                  ; return amount of active itms
+
+                DECRB
+                RET
+
+; _OPTM_R_F2M
+;
+; Converts a position relative to OPTM_ITEMS or OPTM_GROUPS (starting from 0)
+; to a position relative to the currently active (sub)menu
+;
+; Input:  R8 as flat position
+; Output: R8 as position relative to the currently active (sub)menu
+;
+; Helper subroutine for _OPTM_RUN that expects the stack to be set-up like
+; described above. We need to add +1 to the SP because we are in a subroutine.
+_OPTM_R_F2M     INCRB
+
+                MOVE    SP, R0                  ; R0: size of current (sub)men
+                ADD     1, R0
+                MOVE    @R0, R0
+                MOVE    SP, R1                  ; R1: (sub)menu structure
+                ADD     3, R1                   ; R1 now points to size info
+                MOVE    R8, R2                  ; R2: flat input position
+                XOR     R3, R3                  ; R3: relative output position
+                XOR     R4, R4                  ; R4: loop counter
+
+                ; Check for corrupt memory layout: Is R8 (aka R2) larger than
+                ; the size of the current (sub)menu allows? We need to
+                ; subtract 1 from the size of the current (sub)menu in R6
+                ; because R8 starts to count from zero.
+                MOVE    @R1++, R6
+                SUB     1, R6
+                CMP     R2, R6
+                RBRA    _OPTM_R_F2M_1, !N       ; all good: continue
+                MOVE    OPTM_CLBK_FATAL, R7     ; otherwise: fatal
+                MOVE    OPTM_F_F2M, R8
+                MOVE    R2, R9
+                RBRA    _OPTM_CALL, 1           ; RBRA because of fatal
+
+_OPTM_R_F2M_1   MOVE    @R1++, R6               ; check bit 15
+                SHL     1, R6                   ; cur strct item=cur active?
+                RBRA    _OPTM_R_F2M_2, !C       ; no: next item
+                CMP     R4, R2                  ; flat position reached?
+                RBRA    _OPTM_R_F2M_R, Z        ; yes: return
+                ADD     1, R3                   ; increase rel. pos.
+_OPTM_R_F2M_2   ADD     1, R4                   ; increase abs. pos
+                RBRA    _OPTM_R_F2M_1, 1
+
+_OPTM_R_F2M_R   MOVE    R3, R8                  ; return relative output pos.
 
                 DECRB
                 RET
