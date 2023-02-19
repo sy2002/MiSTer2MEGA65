@@ -1069,19 +1069,20 @@ OPTM_CB_SEL     INCRB
 
                 ; Special treatment for help menu items
                 RSUB    HANDLE_HELP, 1
-                RBRA    _OPTMC_NOMNT, C         ; if help then no drive mount
+                RBRA    _OPTMC_NOMNT_1, C       ; if help then no drive mount
 
                 ; Special treatment for drive-mount items: Drive-mount items
                 ; are per definition also single-select items
                 MOVE    R8, R0                  ; R8: selected menu group
                 MOVE    R0, R1                  ; R1: save selected group
+                MOVE    R9, R2                  ; R2: save select item in grp
                 AND     OPTM_SINGLESEL, R0      ; single-select item?
-                RBRA    _OPTMC_NOMNT, Z         ; no: proceed to std. beh.
+                RBRA    _OPTMC_NOMNT_1, Z       ; no: proceed to std. beh.
                 RSUB    VD_ACTIVE, 1            ; are there any vdrives?
-                RBRA    _OPTMC_NOMNT, !C        ; no: proceed to std. beh.
-                MOVE    R1, R8                  ; R1: selected menu group
+                RBRA    _OPTMC_NOMNT_0, !C      ; no: proceed to std. beh.
+                MOVE    R1, R8                  ; restore R8
                 RSUB    VD_DRVNO, 1             ; is menu item a mount item?
-                RBRA    _OPTMC_NOMNT, !C        ; no: : proceed to std. beh.
+                RBRA    _OPTMC_NOMNT_0, !C      ; no: : proceed to std. beh.
 
                 ; Handle mounting
                 ; Input:
@@ -1096,10 +1097,13 @@ OPTM_CB_SEL     INCRB
                 ; It is important that the standard behavior runs after the
                 ; mounting is done, this is why we do RSUB and not RBRA
                 MOVE    R10, R9
-                RSUB    HANDLE_MOUNTING, 1             
+                RSUB    HANDLE_MOUNTING, 1
+
+_OPTMC_NOMNT_0  MOVE    R1, R8                  ; restore R8
+                MOVE    R2, R9                  ; restore R9
 
                 ; Standard behavior
-_OPTMC_NOMNT    MOVE    R8, R7                  ; For detecting CLOSE, we..
+_OPTMC_NOMNT_1  MOVE    R8, R7                  ; For detecting CLOSE, we..
                 AND     0x00FF, R7              ; ..only look at low-byte
                 CMP     OPTM_CLOSE, R7          ; CLOSE = no changes: leave
                 RBRA    _OPTMCB_RET, Z
