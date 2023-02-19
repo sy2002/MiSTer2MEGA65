@@ -429,9 +429,9 @@ _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
                 CMP     @R5++, 0x7FFF           ; active (sub)menu item?
                 RBRA    _OPTM_SHOW_1A, N        ; yes
                 ADD     1, R12                  ; no: increase skip counter
-                RBRA    _OPTM_SHOW_3A, 1         ; next iteration
+                RBRA    _OPTM_SHOW_3, 1         ; next iteration
 
-_OPTM_SHOW_1A   CMP     0, @R2++                ; show select. at this point?
+_OPTM_SHOW_1A   CMP     0, @R2                  ; show select. at this point?
                 RBRA    _OPTM_SHOW_2, Z         ; no
                 MOVE    OPTM_DATA, R8           ; yes: print selection here
                 MOVE    @R8, R8
@@ -452,19 +452,20 @@ _OPTM_SHOW_1B   MOVE    OPTM_X, R9              ; R9: current x-pos
                 XOR     R11, R11                ; R11=0: show main menu
                 RSUB    _OPTM_CALL, 1
                 MOVE    @SP++, R11              ; restore R11
+                RBRA    _OPTM_SHOW_3, 1
 
-_OPTM_SHOW_2    CMP     0, @R3++                ; horiz. line here?
-                RBRA    _OPTM_SHOW_3B, Z        ; no
+_OPTM_SHOW_2    CMP     0, @R3                  ; horiz. line here?
+                RBRA    _OPTM_SHOW_3, Z         ; no
                 MOVE    R6, R8                  ; yes: R8: y-pos of line
                 SUB     R12, R8                 ; adjust for skipped items
                 MOVE    OPTM_FP_LINE, R7
                 RSUB    _OPTM_CALL, 1
-                RBRA    _OPTM_SHOW_3B, 1
 
-_OPTM_SHOW_3A   ADD     1, R3                   ; next horiz. line flag
-_OPTM_SHOW_3B   ADD     1, R6                   ; next y-pos
-                ADD     1, R0                   ; next menu item
-                ADD     1, R4                   ; next single/multi sel. info
+_OPTM_SHOW_3    ADD     1, R0                   ; next menu item
+                ADD     1, R2                   ; next selected info
+                ADD     1, R3                   ; next horiz. line flag
+                ADD     1, R4                   ; next single/multi sel. info                
+                ADD     1, R6                   ; next y-pos
                 RBRA    _OPTM_SHOW_1, 1
 
 _OPTM_SHOW_RET  ADD     R1, SP                  ; restore SP / free memory
