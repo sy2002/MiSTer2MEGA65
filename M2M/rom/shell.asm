@@ -457,6 +457,7 @@ _HM_MOUNTED_C   CMP     OPTM_KEY_SELALT, R6
 
                 ; Unmount the whole drive by stobing the image mount signal
                 ; while setting the image size to zero
+                MOVE    R7, R8                  ; virtual drive number
                 XOR     R9, R9                  ; low word of image size
                 XOR     R10, R10                ; high word of image size
                 XOR     R11, R11                ; 0=read/write disk
