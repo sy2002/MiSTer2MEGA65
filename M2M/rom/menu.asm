@@ -1022,37 +1022,45 @@ _OPTM_STRUCT_7  OR      0x8000, @R1++           ; active itm: highest bit to 1
 _OPTM_STRUCT_8  SUB     1, R0                   ; more entries?
                 RBRA    _OPTM_STRUCT_5, !Z      ; yes: iterate
 
-                MOVE    R9, R4                  ; preserve overall amount
+                MOVE    R9, R4                  ; R4: preserve overall amount
                 MOVE    R7, R9                  ; return amount of active itms
 
                 ; Correct for the special case described above: In the case
                 ; that we are in main menu, the first item is part of the
                 ; list and otherwise it is not.
+                XOR     R1, R1                  ; R1: last menu number
                 MOVE    1, R5                   ; R5: first occurance flag
                 MOVE    R8, R7                  ; R7: ptr. to curr. itm in lst
                 ADD     1, R7                   ; skip size info
 _OPTM_STRUCT_9  MOVE    @R7, R6
+                AND     0x00FF, R6
+                CMP     R1, R6                  ; last menu number changed?
+                RBRA    _OPTM_STRUCT_10, Z      ; no
+                MOVE    R6, R1                  ; yes: store this num as last
+                MOVE    1, R5                   ; set first occurance flag
+
+_OPTM_STRUCT_10 MOVE    @R7, R6
                 AND     0x8000, R6              ; part of current list?
-                RBRA    _OPTM_STRUCT_10, !Z     ; yes
+                RBRA    _OPTM_STRUCT_11, !Z     ; yes
 
                 CMP     0, R3                   ; are we in the main menu?
-                RBRA    _OPTM_STRUCT_11, !Z     ; no
+                RBRA    _OPTM_STRUCT_12, !Z     ; no
                 CMP     1, R5                   ; yes: and is it first ocurr.?
-                RBRA    _OPTM_STRUCT_11, !Z     ; no
+                RBRA    _OPTM_STRUCT_12, !Z     ; no
                 XOR     R5, R5                  ; yes: delete flag and..
                 OR      0x8000, @R7             ; ..make it part of the list
                 ADD     1, R9                   ; one more active item
-                RBRA    _OPTM_STRUCT_11, 1
+                RBRA    _OPTM_STRUCT_12, 1
 
-_OPTM_STRUCT_10 CMP     0, R3                   ; are we in the main menu?
-                RBRA    _OPTM_STRUCT_11, Z      ; yes: move on
+_OPTM_STRUCT_11 CMP     0, R3                   ; are we in the main menu?
+                RBRA    _OPTM_STRUCT_12, Z      ; yes: move on
                 CMP     1, R5                   ; no: and is it first ocurr.?
-                RBRA    _OPTM_STRUCT_11, !Z     ; no
+                RBRA    _OPTM_STRUCT_12, !Z     ; no
                 XOR     R5, R5                  ; yes: delete flag and..
                 AND     0x7FFF, @R7             ; ..remove it from the list
                 SUB     1, R9                   ; one less active item         
 
-_OPTM_STRUCT_11 ADD     1, R7                   ; next list element
+_OPTM_STRUCT_12 ADD     1, R7                   ; next list element
                 SUB     1, R4                   ; one less item to process
                 RBRA    _OPTM_STRUCT_9, !Z
 
