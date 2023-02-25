@@ -297,8 +297,8 @@ constant OPTM_G_HEADLINE   : integer := 16#01000#;        -- like OPTM_G_TEXT bu
 constant OPTM_G_SINGLESEL  : integer := 16#08000#;        -- single select item
 constant OPTM_G_MOUNT_DRV  : integer := 16#08800#;        -- line item means: mount drive; first occurance = drive 0, second = drive 1, ...
 constant OPTM_G_HELP       : integer := 16#0A000#;        -- line item means: help screen; first occurance = WHS(1), second = WHS(2), ...
-constant OPTM_G_SUBMENU    : integer := 16#0C000#;        -- line item means: load ROM; first occurance = rom 0, second = rom 1, ...
-constant OPTM_G_LOAD_ROM   : integer := 16#18000#;        -- starts/ends a section that is treated as submenu
+constant OPTM_G_SUBMENU    : integer := 16#0C000#;        -- starts/ends a section that is treated as submenu
+constant OPTM_G_LOAD_ROM   : integer := 16#18000#;        -- line item means: load ROM; first occurance = rom 0, second = rom 1, ...
 -- @TODO/REMINDER: As soon as we extend the OSM system so that we support loading ROMs and other things that need to be ignored
 -- when saving settings: Make sure to extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly:
 --     OPTM_G_SUBMENU
@@ -321,7 +321,7 @@ constant OPTM_SIZE         : natural := 32;  -- amount of items including empty 
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
--- We advise to use OPTM_SIZE as height, but there might be reasons for you to change it.
+-- Without submenus: Use OPTM_SIZE as height, otherwise count how large the actually visible main menu is.
 constant OPTM_DX           : natural := 23;
 constant OPTM_DY           : natural := 24;
                                              
