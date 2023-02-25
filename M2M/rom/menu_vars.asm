@@ -3,7 +3,7 @@
 ;
 ; Variables for Options Menu (menu.asm): Need to be located in RAM
 ;
-; done by sy2002 in 2021 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; screen coordinates
@@ -15,6 +15,9 @@ OPTM_DY         .BLOCK 1
 ; currently active (sub)menu level; 0 means main menu
 OPTM_MENULEVEL  .BLOCK 1
 
+; selected menu item in main menu before diving into a submenu
+OPTM_MAINSEL    .BLOCK 1
+
 ; currently selected menu item (real-time)
 OPTM_CUR_SEL    .BLOCK 1
 
@@ -23,3 +26,6 @@ OPTM_DATA       .BLOCK 1
 
 ; single-select vs multi-select item flag
 OPTM_SSMS       .BLOCK 1
+
+; temporary variable
+OPTM_TEMP       .BLOCK 1

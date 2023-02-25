@@ -49,6 +49,9 @@ OPTM_F_MENUSUB  .ASCII_P "menu.asm: One or more submenu is not\n"
 OPTM_F_F2M      .ASCII_P "menu.asm: _OPTM_R_F2M:\n"
                 .ASCII_P "Corrupt memory layout: Flat coordinate is\n"
                 .ASCII_W "larger than menu size.\n"
+OPTM_F_NOSEL    .ASCII_P "menu.asm: _OPTM_RUN_SM:\n"
+                .ASCII_P "Corrupt memory layout: No selectable menu\n"
+                .ASCII_W "item found.\n"
 
 ; ----------------------------------------------------------------------------
 ; Initialization record that is filled using OPTM_INIT
@@ -424,7 +427,7 @@ _OPTM_SHOW_0    MOVE    @SP++, R5               ; restore R5: (sub)menu struct
 
                 XOR     R0, R0                  ; R0: iteration position
 _OPTM_SHOW_1    CMP     R0, R1                  ; R0 < R1 (start from 0)
-                RBRA    _OPTM_SHOW_RET, Z       ; end reached
+                RBRA    _OPTM_SHOW_4, Z         ; end reached
 
                 CMP     @R5++, 0x7FFF           ; active (sub)menu item?
                 RBRA    _OPTM_SHOW_1A, N        ; yes
@@ -458,7 +461,7 @@ _OPTM_SHOW_2    CMP     0, @R3                  ; horiz. line here?
                 RBRA    _OPTM_SHOW_3, Z         ; no
                 MOVE    R6, R8                  ; yes: R8: y-pos of line
                 SUB     R12, R8                 ; adjust for skipped items
-                MOVE    OPTM_FP_LINE, R7
+                MOVE    OPTM_FP_LINE, R7        ; draw line
                 RSUB    _OPTM_CALL, 1
 
 _OPTM_SHOW_3    ADD     1, R0                   ; next menu item
@@ -467,6 +470,30 @@ _OPTM_SHOW_3    ADD     1, R0                   ; next menu item
                 ADD     1, R4                   ; next single/multi sel. info                
                 ADD     1, R6                   ; next y-pos
                 RBRA    _OPTM_SHOW_1, 1
+
+                ; End of list reached: Special case: Are we in a submenu and
+                ; is the submenu shorter than the window? Then draw a line
+                ; under the menu item that closes the submenu if there are
+                ; at least two lines before the end of the window (EOW)
+_OPTM_SHOW_4    MOVE    OPTM_MENULEVEL, R8
+                CMP     0, @R8
+                RBRA    _OPTM_SHOW_RET, Z       ; main menu: no special case
+
+                MOVE    OPTM_Y, R8
+                MOVE    @R8, R8
+                MOVE    OPTM_DY, R9
+                ADD     @R9, R8
+                SUB     3, R8                   ; at least 2 lines before EOW
+                CMP     0, R8                   ; underflow?
+                RBRA    _OPTM_SHOW_RET, V       ; yes: do not draw the line
+                MOVE    R8, R9
+
+                MOVE    R6, R8                  ; R8: y-pos of line
+                SUB     R12, R8                 ; adjust for skipped items
+                CMP     R8, R9                  ; should we draw the line?
+                RBRA    _OPTM_SHOW_RET, N       ; no
+                MOVE    OPTM_FP_LINE, R7        ; yes: draw line
+                RSUB    _OPTM_CALL, 1
 
 _OPTM_SHOW_RET  ADD     R1, SP                  ; restore SP / free memory
                 ADD     1, SP
@@ -483,7 +510,9 @@ _OPTM_SHOW_RET  ADD     R1, SP                  ; restore SP / free memory
 ; Output:
 ;   R8: Selected cursor position
 ;   plus: Will callback OPTM_CLBK_SEL (see above) on each press
-;         of the selection key
+;         of the selection key (with the exception that pressing the selection
+;         key while hovering over a submenu entry or exit point handles the
+;         submenu instead of calling OPTM_CLBK_SEL).
 ;
 ; Semantics of "cursor position" in R8: It is the position within OPTM_ITEMS
 ; and OPTM_GROUPS (both from config.vhd), i.e. R8 considers the menu to be
@@ -491,13 +520,6 @@ _OPTM_SHOW_RET  ADD     R1, SP                  ; restore SP / free memory
 ; ----------------------------------------------------------------------------
 
 OPTM_RUN        SYSCALL(enter, 1)
-
-                ; DEBUG
-                MOVE    R8, R0
-                MOVE    SP, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-                MOVE    R0, R8
 
                 MOVE    OPTM_DATA, R0           ; R0: size of data structure
                 MOVE    @R0, R0
@@ -528,6 +550,7 @@ OPTM_RUN        SYSCALL(enter, 1)
                 SUB     1, SP                   ; reserve space for (SP+1)
                 MOVE    R9, @--SP               ; size of (sub)men at (SP+0)
 
+                ; Main loop
 _OPTM_RUN_SEL   MOVE    SP, R8                  ; update (SP+1), i.e. update..
                 ADD     3, R8                   ; ..the pointer to the curr..
                 ADD     R2, R8                  ; ..iteration pos
@@ -640,9 +663,8 @@ _OPTM_RUN_5     CMP     OPTM_KEY_CLOSE, R8      ; key: close?
 
                 ; Select key
 _OPTM_RUN_6A    CMP     OPTM_KEY_SELECT, R8     ; key: select?
-                RBRA    _OPTM_RUN_6B, !Z
-                RBRA    _OPTM_RUN_6C, 1
-_OPTM_RUN_6B    CMP     OPTM_KEY_SELALT, R8
+                RBRA    _OPTM_RUN_6C, Z         ; yes
+_OPTM_RUN_6B    CMP     OPTM_KEY_SELALT, R8     ; key: alternative select?
                 RBRA    _OPTM_RUN_SEL, !Z       ; no: ignore key
 
                 ; avoid "double-firing" of already selected items by
@@ -657,6 +679,14 @@ _OPTM_RUN_6B    CMP     OPTM_KEY_SELALT, R8
                 ; needs to be robust enough to not fail in this case
 _OPTM_RUN_6C    MOVE    R8, R11                 ; R11: remember selection key
 
+                ; Submenus: Special behavior
+                MOVE    R1, R6                  ; R1: ptr. to OPTM_IR_GROUPS 
+                ADD     R2, R6                  ; R2: sel. item in flat coord
+                MOVE    @R6, R7
+                AND     OPTM_SUBMENU, R7        ; is it a submenu?
+                RBRA    _OPTM_RUN_SM, !Z        ; yes
+
+                ; No submenu: Standard behavior
                 MOVE    OPTM_DATA, R6           ; already selected?
                 MOVE    @R6, R6
                 ADD     OPTM_IR_STDSEL, R6
@@ -667,11 +697,8 @@ _OPTM_RUN_6C    MOVE    R8, R11                 ; R11: remember selection key
                 RBRA    _OPTM_RUN_6D, Z         ; no: not selected
 
                 ; yes: selected: is it a single-select item?
-                MOVE    OPTM_DATA, R6
-                MOVE    @R6, R6
-                ADD     OPTM_IR_GROUPS, R6
-                MOVE    @R6, R6
-                ADD     R2, R6
+                MOVE    R1, R6                  ; R1: ptr. to OPTM_IR_GROUPS 
+                ADD     R2, R6                  ; R2: sel. item in flat coord
                 MOVE    @R6, R8                 ; remember @R6 for later
                 MOVE    @R6, R6                 ; do not destroy original data
                 AND     OPTM_SINGLESEL, R6      ; ..by the AND command but use
@@ -742,23 +769,38 @@ _OPTM_RUN_16    MOVE    OPTM_SSMS, R12          ; Flag on stack: multi-select
                 ADD     OPTM_IR_STDSEL, R12
                 MOVE    @R12, R12
                 XOR     R4, R4                  ; R4: loop var
-                MOVE    _OPTM_RUN_SPCE, R8      ; R8: use space char to delete
                 MOVE    OPTM_X, R9              ; R9: x-coord
                 MOVE    @R9, R9
                 ADD     1, R9
-                MOVE    OPTM_Y, R10             ; R10: y-coord
-                MOVE    @R10, R10
-                ADD     1, R10
+                XOR     R10, R10                ; R10: flat list item pos
+
 _OPTM_RUN_7     CMP     R4, R0                  ; R4 < R0 (size of structure)
                 RBRA    _OPTM_RUN_9, Z          ; no
                 CMP     @R5++, R6               ; current entry group member?
                 RBRA    _OPTM_RUN_8, !Z         ; no
+
+                MOVE    OPTM_TEMP, R8           ; save R10
+                MOVE    R10, @R8
+
+                MOVE    R10, R8                 ; transform flat lst itm pos..
+                RSUB    _OPTM_R_F2M, 1          ; ..into relative list pos..
+                MOVE    OPTM_Y, R7              ; ..and then..
+                ADD     @R7, R8                 ; transform into screen coord
+                ADD     1, R8                   ; add 1 because of top frame
+                MOVE    R8, R10                 ; R10: OPTM_FP_PRINTXY y coord
+
                 MOVE    OPTM_FP_PRINTXY, R7     ; delete marker at current pos
-                MOVE    R11, @--SP              ; save R11
-                XOR     R11, R11                ; R11=0: show main menu
+                MOVE    R11, @--SP              ; save R11            
+                MOVE    OPTM_MENULEVEL, R11     ; R11: current (sub)menu level
+                MOVE    @R11, R11
                 MOVE    0, @R12
+                MOVE    _OPTM_RUN_SPCE, R8      ; R8: use space char to delete
                 RSUB    _OPTM_CALL, 1
+
                 MOVE    @SP++, R11              ; restore R11
+                MOVE    OPTM_TEMP, R8           ; restore R10
+                MOVE    @R8, R10
+
 _OPTM_RUN_8     ADD     1, R10                  ; y-pos + 1
                 ADD     1, R4                   ; loop-var + 1
                 ADD     1, R12                  ; stdsel-ptr + 1
@@ -826,16 +868,61 @@ _OPTM_RUN_RET   ADD     R0, SP                  ; restore SP / free memory
                 SYSCALL(leave, 1)
                 MOVE    @SP++, R8
 
-                ; DEBUG
-                INCRB
-                MOVE    R8, R0
-                MOVE    SP, R8
-                SYSCALL(puthex, 1)
-                SYSCALL(crlf, 1)
-                MOVE    R0, R8
-                DECRB
-
                 RET
+
+                ; ------------------------------------------------------------
+                ; Switch menu level (enter/leave submenu)
+                ; ------------------------------------------------------------
+
+_OPTM_RUN_SM    MOVE    OPTM_MENULEVEL, R9
+
+                ; Find out: Which submenu level are we talking about
+                MOVE    SP, R8                  ; R8: ptr. to submenu struct.
+                ADD     3, R8
+                ADD     R2, R8                  ; R2: current selection
+                MOVE    @R8, R8
+                AND     0x7FFF, R8              ; R8: (sub)menu number
+
+                ; Are we entering or leaving a (sub)menu?
+                MOVE    @R6, R7                 ; R7: selected group item
+                AND     OPTM_CLOSE, R7          ; leave submenu?
+                RBRA    _OPTM_RUN_SM_1, Z       ; no: enter submenu
+
+                ; Leave submenu
+                MOVE    0, @R9                  ; 0=main menu
+                MOVE    OPTM_MAINSEL, R8
+                MOVE    @R8, R2                 ; restore main menu selection
+                RBRA    _OPTM_RUN_SM_4, 1       ; execute level change
+
+                ; Enter submenu
+_OPTM_RUN_SM_1  MOVE    R8, @R9                 ; R8: submenu number
+                MOVE    OPTM_MAINSEL, R8        ; remember main menu selection
+                MOVE    R2, @R8
+
+                ; Calculate the menu item that will be selected
+_OPTM_RUN_SM_2  ADD     1, R2                   ; next item
+                CMP     R0, R2                  ; error condition?
+                RBRA    _OPTM_RUN_SM_3, Z       ; yes
+                ADD     1, R6                   ; no error
+                MOVE    @R6, R7
+                AND     0x00FF, R7              ; selectable item?
+                RBRA    _OPTM_RUN_SM_2, Z       ; no: continue to search
+                RBRA    _OPTM_RUN_SM_4, 1
+
+                ; Fatal: No selectable menu item found
+_OPTM_RUN_SM_3  MOVE    OPTM_CLBK_FATAL, R7
+                MOVE    OPTM_F_NOSEL, R8
+                XOR     R9, R9
+                RBRA    _OPTM_CALL, 1           ; RBRA because of fatal
+
+                ; Execute the (sub)menu level change
+_OPTM_RUN_SM_4  ADD     R0, SP                  ; restore SP / free memory
+                ADD     3, SP
+                RSUB    OPTM_SHOW, 1            ; redraw
+                MOVE    R2, @--SP               ; carry R2 over the LEAVE bump
+                SYSCALL(leave, 1)
+                MOVE    @SP++, R8               ; R8: selected menu item
+                RBRA    OPTM_RUN, 1             ; restart _OPTM_RUN
 
 _OPTM_RUN_SPCE  .ASCII_W " "
 
@@ -870,7 +957,7 @@ _OPTM_CALL      MOVE    R7, @--SP               ; save R7 for usage & restore
 ; main menu (OPTM_MENULEVEL is 0) then we treat the very first entry of the
 ; sub-menu structure as the "headline"/"label" of the sub-menu, i.e. it needs
 ; to be shown in the menu menu (bit 15 is 1). If we are within a sub-menu,
-; then this very ; first line is being ignored (bit 15 is 0).
+; then this very first line is being ignored (bit 15 is 0).
 ;
 ; Input:
 ;   R8: pointer to a memory region that is as large as all items together
@@ -922,27 +1009,52 @@ _OPTM_STRUCT_4  SUB     1, R1                   ; more menu items?
 _OPTM_STRUCT_C  MOVE    R9, R0                  ; R0: size of menu (#items)
                 MOVE    R8, R1                  ; R1: current array entry
                 ADD     1, R1                   ; skip size information
-                XOR     R2, R2                  ; R2: first submen. line flag
                 MOVE    OPTM_MENULEVEL, R3      ; R3: current menu level
                 MOVE    @R3, R3
                 XOR     R7, R7                  ; R7: count active menu items
 
 _OPTM_STRUCT_5  CMP     R3, @R1                 ; are we in the curr. men. lvl
-                RBRA    _OPTM_STRUCT_7A, Z      ; yes: set to 1 and next entry
-                CMP     1, R2                   ; no: is it first subm. line?
-                RBRA    _OPTM_STRUCT_6, Z       ; no: set it to 0
-                MOVE    1, R2                   ; yes: set flag
-                CMP     0, R3                   ; spec. case: are we in main?
-                RBRA    _OPTM_STRUCT_7B, Z      ; yes: set bit 15 to 1 else 0
-_OPTM_STRUCT_6  AND     0x7FFF, @R1++           ; highest bit = 0
+                RBRA    _OPTM_STRUCT_7, Z       ; yes: set to 1 and next entry
+_OPTM_STRUCT_6  AND     0x7FFF, @R1++           ; no: highest bit = 0 and next
                 RBRA    _OPTM_STRUCT_8, 1
-_OPTM_STRUCT_7A XOR     R2, R2                  ; reset first submen. ln flag
-_OPTM_STRUCT_7B OR      0x8000, @R1++           ; active itm: highest bit to 1
+_OPTM_STRUCT_7  OR      0x8000, @R1++           ; active itm: highest bit to 1
                 ADD     1, R7                   ; one more active item
 _OPTM_STRUCT_8  SUB     1, R0                   ; more entries?
                 RBRA    _OPTM_STRUCT_5, !Z      ; yes: iterate
 
+                MOVE    R9, R4                  ; preserve overall amount
                 MOVE    R7, R9                  ; return amount of active itms
+
+                ; Correct for the special case described above: In the case
+                ; that we are in main menu, the first item is part of the
+                ; list and otherwise it is not.
+                MOVE    1, R5                   ; R5: first occurance flag
+                MOVE    R8, R7                  ; R7: ptr. to curr. itm in lst
+                ADD     1, R7                   ; skip size info
+_OPTM_STRUCT_9  MOVE    @R7, R6
+                AND     0x8000, R6              ; part of current list?
+                RBRA    _OPTM_STRUCT_10, !Z     ; yes
+
+                CMP     0, R3                   ; are we in the main menu?
+                RBRA    _OPTM_STRUCT_11, !Z     ; no
+                CMP     1, R5                   ; yes: and is it first ocurr.?
+                RBRA    _OPTM_STRUCT_11, !Z     ; no
+                XOR     R5, R5                  ; yes: delete flag and..
+                OR      0x8000, @R7             ; ..make it part of the list
+                ADD     1, R9                   ; one more active item
+                RBRA    _OPTM_STRUCT_11, 1
+
+_OPTM_STRUCT_10 CMP     0, R3                   ; are we in the main menu?
+                RBRA    _OPTM_STRUCT_11, Z      ; yes: move on
+                CMP     1, R5                   ; no: and is it first ocurr.?
+                RBRA    _OPTM_STRUCT_11, !Z     ; no
+                XOR     R5, R5                  ; yes: delete flag and..
+                AND     0x7FFF, @R7             ; ..remove it from the list
+                SUB     1, R9                   ; one less active item         
+
+_OPTM_STRUCT_11 ADD     1, R7                   ; next list element
+                SUB     1, R4                   ; one less item to process
+                RBRA    _OPTM_STRUCT_9, !Z
 
                 DECRB
                 RET
