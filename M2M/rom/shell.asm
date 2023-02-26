@@ -708,6 +708,8 @@ _HANDLE_IO_NXT3 ADD     1, R0                   ; next drive
 ;
 ; Transfer the data requested by the core from the linear disk image buffer
 ; to the internal buffer inside the core
+;
+; @TODO: Sanity check as described in vdrives.vhd protocol comment (3)
 HANDLE_DRV_RD   SYSCALL(enter, 1)
 
                 MOVE    R8, R11                 ; R11: virtual drive ID
