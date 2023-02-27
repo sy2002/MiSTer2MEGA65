@@ -501,6 +501,11 @@ _HM_RET         RSUB    VD_MNT_ST_SET, 1        ; remember mount status
 ; Input:
 ;   R8: Index of menu item to change
 ;   R9: 0=unset / 1=set
+;
+; @TODO: Refactor this, see also this file in the develop branch of the
+; C64 core: tests/README.md (section that starts with @@@-#-#). 
+; Also to-be-checked: Is the SCR$PRINTSTRXY necessary at all (and where is it
+; actually printing to in a "below-the-fold" situation).
 _HM_SETMENU     SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: menu index
