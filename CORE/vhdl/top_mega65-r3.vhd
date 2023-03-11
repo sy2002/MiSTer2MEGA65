@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 
 entity CORE_R3 is
 port (
-   CLK            : in  std_logic;                  -- 100 MHz clock
+   CLK            : in  std_logic;                 -- 100 MHz clock
 
    -- MAX10 FPGA (delivers reset)
    max10_tx          : in std_logic;
@@ -21,8 +21,8 @@ port (
 
    -- serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
-   UART_RXD       : in  std_logic;                  -- receive data
-   UART_TXD       : out std_logic;                  -- send data
+   UART_RXD       : in  std_logic;                 -- receive data
+   UART_TXD       : out std_logic;                 -- send data
 
    -- VGA and VDAC
    VGA_RED        : out std_logic_vector(7 downto 0);

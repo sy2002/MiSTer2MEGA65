@@ -1,4 +1,4 @@
-const unsigned int FONT_SIZE = 256*32;
+#define FONT_SIZE (256*32)
 const unsigned char FONT[FONT_SIZE] =
 {
    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
