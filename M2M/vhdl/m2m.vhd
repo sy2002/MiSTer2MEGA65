@@ -12,81 +12,81 @@ use ieee.numeric_std.all;
 
 entity m2m is
 port (
-   CLK            : in  std_logic;                  -- 100 MHz clock
+   CLK              : in  std_logic;                  -- 100 MHz clock
 
    -- MAX10 FPGA (delivers reset)
-   max10_tx          : in std_logic;
-   max10_rx          : out std_logic;
-   max10_clkandsync  : out std_logic;
+   max10_tx         : in  std_logic;
+   max10_rx         : out std_logic;
+   max10_clkandsync : out std_logic;
 
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
-   UART_RXD       : in  std_logic;                  -- receive data
-   UART_TXD       : out std_logic;                  -- send data
+   UART_RXD         : in  std_logic;                  -- receive data
+   UART_TXD         : out std_logic;                  -- send data
 
    -- VGA
-   VGA_RED        : out std_logic_vector(7 downto 0);
-   VGA_GREEN      : out std_logic_vector(7 downto 0);
-   VGA_BLUE       : out std_logic_vector(7 downto 0);
-   VGA_HS         : out std_logic;
-   VGA_VS         : out std_logic;
+   VGA_RED          : out std_logic_vector(7 downto 0);
+   VGA_GREEN        : out std_logic_vector(7 downto 0);
+   VGA_BLUE         : out std_logic_vector(7 downto 0);
+   VGA_HS           : out std_logic;
+   VGA_VS           : out std_logic;
 
    -- VDAC
-   vdac_clk       : out std_logic;
-   vdac_sync_n    : out std_logic;
-   vdac_blank_n   : out std_logic;
+   vdac_clk         : out std_logic;
+   vdac_sync_n      : out std_logic;
+   vdac_blank_n     : out std_logic;
 
    -- Digital Video (HDMI)
-   tmds_data_p    : out std_logic_vector(2 downto 0);
-   tmds_data_n    : out std_logic_vector(2 downto 0);
-   tmds_clk_p     : out std_logic;
-   tmds_clk_n     : out std_logic;
+   tmds_data_p      : out std_logic_vector(2 downto 0);
+   tmds_data_n      : out std_logic_vector(2 downto 0);
+   tmds_clk_p       : out std_logic;
+   tmds_clk_n       : out std_logic;
 
    -- MEGA65 smart keyboard controller
-   kb_io0         : out std_logic;                 -- clock to keyboard
-   kb_io1         : out std_logic;                 -- data output to keyboard
-   kb_io2         : in  std_logic;                 -- data input from keyboard
+   kb_io0           : out std_logic;                 -- clock to keyboard
+   kb_io1           : out std_logic;                 -- data output to keyboard
+   kb_io2           : in  std_logic;                 -- data input from keyboard
 
    -- SD Card (internal on bottom)
-   SD_RESET       : out std_logic;
-   SD_CLK         : out std_logic;
-   SD_MOSI        : out std_logic;
-   SD_MISO        : in  std_logic;
-   SD_CD          : in  std_logic;
+   SD_RESET         : out std_logic;
+   SD_CLK           : out std_logic;
+   SD_MOSI          : out std_logic;
+   SD_MISO          : in  std_logic;
+   SD_CD            : in  std_logic;
 
    -- SD Card (external on back)
-   SD2_RESET      : out std_logic;
-   SD2_CLK        : out std_logic;
-   SD2_MOSI       : out std_logic;
-   SD2_MISO       : in  std_logic;
-   SD2_CD         : in  std_logic;
+   SD2_RESET        : out std_logic;
+   SD2_CLK          : out std_logic;
+   SD2_MOSI         : out std_logic;
+   SD2_MISO         : in  std_logic;
+   SD2_CD           : in  std_logic;
 
    -- 3.5mm analog audio jack
-   pwm_l          : out std_logic;
-   pwm_r          : out std_logic;
+   pwm_l            : out std_logic;
+   pwm_r            : out std_logic;
 
    -- Joysticks and Paddles
-   joy_1_up_n     : in  std_logic;
-   joy_1_down_n   : in  std_logic;
-   joy_1_left_n   : in  std_logic;
-   joy_1_right_n  : in  std_logic;
-   joy_1_fire_n   : in  std_logic;
+   joy_1_up_n       : in  std_logic;
+   joy_1_down_n     : in  std_logic;
+   joy_1_left_n     : in  std_logic;
+   joy_1_right_n    : in  std_logic;
+   joy_1_fire_n     : in  std_logic;
 
-   joy_2_up_n     : in  std_logic;
-   joy_2_down_n   : in  std_logic;
-   joy_2_left_n   : in  std_logic;
-   joy_2_right_n  : in  std_logic;
-   joy_2_fire_n   : in  std_logic;
-   
-   paddle         : in std_logic_vector(3 downto 0);
-   paddle_drain   : out std_logic;
+   joy_2_up_n       : in  std_logic;
+   joy_2_down_n     : in  std_logic;
+   joy_2_left_n     : in  std_logic;
+   joy_2_right_n    : in  std_logic;
+   joy_2_fire_n     : in  std_logic;
+
+   paddle           : in  std_logic_vector(3 downto 0);
+   paddle_drain     : out std_logic;
 
    -- Built-in HyperRAM
-   hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
-   hr_rwds        : inout std_logic;               -- RW Data strobe
-   hr_reset       : out std_logic;                 -- Active low RESET line to HyperRAM
-   hr_clk_p       : out std_logic;
-   hr_cs0         : out std_logic
+   hr_d             : inout std_logic_vector(7 downto 0);    -- Data/Address
+   hr_rwds          : inout std_logic;               -- RW Data strobe
+   hr_reset         : out std_logic;                 -- Active low RESET line to HyperRAM
+   hr_clk_p         : out std_logic;
+   hr_cs0           : out std_logic
 );
 end entity m2m;
 
@@ -275,7 +275,7 @@ begin
       main_key_num_o          => main_key_num,
       main_key_pressed_n_o    => main_key_pressed_n,
       main_drive_led_i        => main_drive_led,
-      main_drive_led_col_i    => main_drive_led_col,      
+      main_drive_led_col_i    => main_drive_led_col,
       main_osm_control_m_o    => main_osm_control_m,
       main_qnice_gp_reg_o     => main_qnice_gp_reg,
       main_audio_l_i          => main_audio_l,
@@ -304,7 +304,7 @@ begin
       main_pot1_y_o           => main_pot1_y,
       main_pot2_x_o           => main_pot2_x,
       main_pot2_y_o           => main_pot2_y,
-      
+
       -- Provide HyperRAM to core (in HyperRAM clock domain)
       hr_clk_o                => hr_clk,
       hr_rst_o                => hr_rst,
@@ -365,7 +365,7 @@ begin
          -- Video and audio mode control
          qnice_dvi_o             => qnice_dvi,
          qnice_video_mode_o      => qnice_video_mode,
-         qnice_scandoubler_o     => qnice_scandoubler,         
+         qnice_scandoubler_o     => qnice_scandoubler,
          qnice_audio_mute_o      => qnice_audio_mute,
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,
@@ -380,7 +380,7 @@ begin
          qnice_osm_control_i     => qnice_osm_control_m,
 
          -- QNICE general purpose register
-         qnice_gp_reg_i          => qnice_gp_reg,         
+         qnice_gp_reg_i          => qnice_gp_reg,
 
          -- Core-specific devices
          qnice_dev_id_i          => qnice_ramrom_dev,
@@ -406,7 +406,7 @@ begin
          main_osm_control_i      => main_osm_control_m,
 
          -- QNICE general purpose register (in main clock domain)
-         main_qnice_gp_reg_i          => main_qnice_gp_reg,         
+         main_qnice_gp_reg_i     => main_qnice_gp_reg,
 
          -- Video output
          main_video_ce_o         => main_video_ce,
@@ -442,16 +442,16 @@ begin
          main_joy_2_left_n_i     => main_joy2_left_n,
          main_joy_2_right_n_i    => main_joy2_right_n,
          main_joy_2_fire_n_i     => main_joy2_fire_n,
-         
+
          main_pot1_x_i           => main_pot1_x,
          main_pot1_y_i           => main_pot1_y,
          main_pot2_x_i           => main_pot2_x,
          main_pot2_y_i           => main_pot2_y,
-         
+
          --------------------------------------------------------------------------------------------------------
          -- Provide support for external memory (Avalon Memory Map)
          --------------------------------------------------------------------------------------------------------
-      
+
          hr_clk_i                => hr_clk,
          hr_rst_i                => hr_rst,
          hr_core_write_o         => hr_core_write,

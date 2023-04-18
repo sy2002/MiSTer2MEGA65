@@ -35,14 +35,14 @@ entity analog_pipeline is
       audio_rst_i            : in  std_logic;
       audio_left_i           : in  signed(15 downto 0); -- Signed PCM format
       audio_right_i          : in  signed(15 downto 0); -- Signed PCM format
-      
+
       -- Configure the scandoubler: 0=off/1=on
       -- Make sure the signal is in the video_clk clock domain
       video_scandoubler_i    : in  std_logic;
-      
+
       -- Is the input from the core in the retro 15 kHz analog RGB mode: 0=no/1=yes
       -- (Hint: Scandoubler off does not automatically mean retro 15 kHz on.)
-      video_retro15kHz_i     : in  std_logic;   
+      video_retro15kHz_i     : in  std_logic;
 
       -- Video output (VGA)
       vga_red_o              : out std_logic_vector(7 downto 0);
@@ -84,7 +84,7 @@ architecture synthesis of analog_pipeline is
    signal vga_blue           : std_logic_vector(7 downto 0);
    signal vga_hs             : std_logic;
    signal vga_vs             : std_logic;
-   
+
    -- registers used to implement the phase-shifting of the VGA output signals
    signal vga_red_ps         : std_logic_vector(7 downto 0);
    signal vga_green_ps       : std_logic_vector(7 downto 0);
@@ -227,7 +227,7 @@ begin
    -- in a VHDL block so that we can use a PBLOCK in the XDC file to tack the registers near to the
    -- FPGAs VGA output pins.
    VGA_OUT_PHASE_SHIFTED : block
-   begin  
+   begin
       phase_shift_vga_signals : process(video_clk_i)
       begin
          if falling_edge(video_clk_i) then -- phase shifting by using the negative edge of the video clock
@@ -235,7 +235,7 @@ begin
             vga_green_o <= vga_green_ps;
             vga_blue_o  <= vga_blue_ps;
             vga_hs_o    <= vga_hs_ps;
-            vga_vs_o    <= vga_vs_ps;            
+            vga_vs_o    <= vga_vs_ps;
          end if;
       end process;
    end block VGA_OUT_PHASE_SHIFTED;

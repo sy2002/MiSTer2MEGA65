@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------------
--- MiSTer2MEGA65 Framework  
+-- MiSTer2MEGA65 Framework
 --
 -- Demo core that produces a test image including test sound, so that MiSTer2MEGA65
 -- can be synthesized and tested stand alone even before the MiSTer core is being
@@ -55,13 +55,13 @@ architecture synthesis of democore is
    constant m65_horz_crsr : integer := 2;   -- means cursor right in C64 terminology
    constant m65_left_crsr : integer := 74;  -- cursor left
 
-   signal ball_pos_x   : std_logic_vector(15 downto 0);
-   signal ball_pos_y   : std_logic_vector(15 downto 0);
-   signal paddle_pos_x : std_logic_vector(15 downto 0);
-   signal paddle_pos_y : std_logic_vector(15 downto 0);
-   signal update       : std_logic;
-   signal score        : std_logic_vector(15 downto 0);
-   signal lives        : std_logic_vector( 3 downto 0);
+   signal ball_pos_x      : std_logic_vector(15 downto 0);
+   signal ball_pos_y      : std_logic_vector(15 downto 0);
+   signal paddle_pos_x    : std_logic_vector(15 downto 0);
+   signal paddle_pos_y    : std_logic_vector(15 downto 0);
+   signal update          : std_logic;
+   signal score           : std_logic_vector(15 downto 0);
+   signal lives           : std_logic_vector( 3 downto 0);
 
    signal audio_freq      : std_logic_vector(15 downto 0);
    signal audio_vol_left  : std_logic_vector(15 downto 0);
@@ -77,7 +77,7 @@ begin
       port map (
          clk_i          => clk_main_i,
          rst_i          => reset_i,
-         paddle_speed_i => paddle_speed_i, 
+         paddle_speed_i => paddle_speed_i,
          update_i       => update,
          player_start_i => not (keyboard_n_i(m65_space)     and joy_fire_n_i),
          player_left_i  => not (keyboard_n_i(m65_left_crsr) and joy_left_n_i),
@@ -97,7 +97,7 @@ begin
       port map (
          clk_main_i     => clk_main_i,
          reset_i        => reset_i,
-         ball_col_rgb_i => ball_col_rgb_i,     
+         ball_col_rgb_i => ball_col_rgb_i,
          ball_pos_x_i   => ball_pos_x,
          ball_pos_y_i   => ball_pos_y,
          paddle_pos_x_i => paddle_pos_x,

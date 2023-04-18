@@ -132,15 +132,15 @@ constant C_CRTROMS_MAN           : crtrom_buf_array := ( x"EEEE", x"EEEE",
 -- Entry 2) device ID or 4k window
 -- Entry 3) Flags, such as mandatory or not, how to treat the situation of a mandatory ROM is not found, etc.
 -- Entry 4) Error message(s) for mandatory but not found situations (?)
-                                                   
+
 ----------------------------------------------------------------------------------------------------------
 -- Audio filters
 --
 -- If you use audio filters, then you need to copy the correct values from the MiSTer core
 -- that you are porting: sys/sys_top.v
 ----------------------------------------------------------------------------------------------------------
-                                                   
--- Sample values from the C64: @TODO: Adjust to your needs 
+
+-- Sample values from the C64: @TODO: Adjust to your needs
 constant audio_flt_rate : std_logic_vector(31 downto 0) := std_logic_vector(to_signed(7056000, 32));
 constant audio_cx       : std_logic_vector(39 downto 0) := std_logic_vector(to_signed(4258969, 40));
 constant audio_cx0      : std_logic_vector( 7 downto 0) := std_logic_vector(to_signed(3, 8));
@@ -151,5 +151,6 @@ constant audio_cy1      : std_logic_vector(23 downto 0) := std_logic_vector(to_s
 constant audio_cy2      : std_logic_vector(23 downto 0) := std_logic_vector(to_signed(-2023767, 24));
 constant audio_att      : std_logic_vector( 4 downto 0) := "00000";
 constant audio_mix      : std_logic_vector( 1 downto 0) := "00"; -- 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
-                                                   
+
 end package globals;
+
