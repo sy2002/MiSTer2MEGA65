@@ -248,3 +248,35 @@ RESTORE_DEVSEL  INCRB
                 MOVE    @R1, @R0
                 DECRB
                 RET
+
+; ----------------------------------------------------------------------------
+; Print to serial terminal while processing "\n" sequences
+;
+; Input:  R8: Pointer to a string
+; Output: R8 is unchanged
+; ----------------------------------------------------------------------------
+
+LOG_STR         INCRB
+                MOVE    R8, R0
+                MOVE    R8, R7
+
+_PRINTSLF_1     CMP     0, @R0
+                RBRA    _PRINTSLF_RET, Z
+                XOR     R1, R1                  ; R1: char progression counter
+                CMP     0x005C, @R0             ; backslash?
+                RBRA    _PRINTSLF_2, !Z         ; no
+                CMP     'n', @R0                ; "\n" sequence?
+                RBRA    _PRINTSLF_2, Z          ; no
+                ADD     1, R1
+                SYSCALL(crlf, 1)
+                RBRA    _PRINTSLF_3, 1
+
+_PRINTSLF_2     MOVE    @R0, R8                 ; log char
+                SYSCALL(putc, 1)
+_PRINTSLF_3     ADD     1, R1
+                ADD     R1, R0
+                RBRA    _PRINTSLF_1, 1
+
+_PRINTSLF_RET   MOVE    R7, R8
+                DECRB
+                RET

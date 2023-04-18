@@ -18,6 +18,22 @@
 ; and an array of RAM buffers for the disk images
 VD_INIT         SYSCALL(enter, 1)
 
+                ; initialize the double-indirectly located file handles for
+                ; the virtual drive system
+                MOVE    HNDL_VD_FILES, R8
+                MOVE    VDRIVES_MAX, R9
+_VDI_L1         MOVE    @R8++, R0               ; double indirection leads..
+                MOVE    0, @R0                  ; to the data of the file hdl
+                SUB     1, R9
+                RBRA    _VDI_L1, !Z
+
+                ; make sure to initialize also in case of zero vdrives
+                MOVE    OPTM_MNT_STATUS, R8
+                MOVE    0, @R8
+                MOVE    OPTM_DTY_STATUS, R8
+                MOVE    0, @R8
+
+                ; copy data from globals.vhd
                 MOVE    M2M$RAMROM_DEV, R8
                 MOVE    M2M$SYS_INFO, @R8
                 MOVE    M2M$RAMROM_4KWIN, R8
@@ -38,6 +54,14 @@ VD_INIT         SYSCALL(enter, 1)
 _START_VD       MOVE    VD_DEVICE, R1           ; device id of vdrives.vhd
                 MOVE    VDRIVES_DEVICE, R2
                 MOVE    @R1, @R2
+
+                CMP     0, R0                   ; no vdrives at all?
+                RBRA    _VDI_RET, Z             ; yes: skip the rest
+
+                ; ------------------------------------------------------------
+                ; Initializations that are only relevant, if we have at 
+                ; least one vdrive
+                ; ------------------------------------------------------------
 
                 XOR     R1, R1                  ; loop var for buffer array
                 MOVE    VD_RAM_BUFFERS, R2      ; Source data from config.vhd
@@ -93,7 +117,7 @@ _START_VD_LP2   MOVE    R0, @R1++
                 CMP     R6, R7
                 RBRA    _START_VD_LP2, !Z
 
-                SYSCALL(leave, 1)
+_VDI_RET        SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------
@@ -223,7 +247,7 @@ _VDDTY_RET      MOVE    R0, R8
 ;
 ; Returns: Carry=1 if active, else Carry=0
 ;          R8: Amount of vdrives
-VD_ACTIVE       INCRB                           ; TEMP XYZ
+VD_ACTIVE       INCRB
 
                 MOVE    VDRIVES_NUM, R8
                 MOVE    @R8, R8

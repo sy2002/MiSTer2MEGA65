@@ -66,11 +66,18 @@ LOG_STR_CFG_SDC .ASCII_P "Configuration: Remember settings: OFF  "
 LOG_STR_CFG_REM .ASCII_P "Configuration: New settings successfully stored to "
                 .ASCII_W "SD card.\n"
 
+LOG_STR_ROMOK   .ASCII_W "Successfully loaded CRT/ROM image to buffer RAM.\n"
+LOG_STR_ROMPRS  .ASCII_W "Parsing CRT/ROM image: "
+LOG_STR_ROMPRSO .ASCII_W "OK\n"
+LOG_STR_ROMPRSE .ASCII_W "ERROR #"
+LOG_STR_ROMPRSC .ASCII_W ": "
+
 ; ----------------------------------------------------------------------------
 ; Infos
 ; ----------------------------------------------------------------------------
 
 STR_INITWAIT    .ASCII_W "Initializing. Please wait..."
+STR_SPACE       .ASCII_W "Press Space to continue."
 
 ; ----------------------------------------------------------------------------
 ; Warnings
@@ -114,6 +121,11 @@ ERR_F_NEWLINE   .ASCII_P "config.vhd: Each line in OPTM_ITEMS needs\n"
                 .ASCII_W "to be terminated by a newline character.\n"
 ERR_F_NO_S      .ASCII_W "M2M$RPL_S: No %s found in source string.\n"
 
+ERR_F_CR_M_CNT  .ASCII_P "globals.vhd: C_CRTROM_MAN_NUM too large.\n"
+                .ASCII_W "Hint: CRTROM_MAN_MAX in shell.vars.asm\n"
+ERR_F_CR_M_TYPE .ASCII_P "globals.vhd: C_CRTROMS_MAN: Illegal type\n"
+                .ASCII_W "or device id or 4k window.\n"
+
 ; ------------------------------------------------------------------|
 ; @TODO: Adjust strings so that every string ends at the |
 ; Only this guarantees that everything fits correctly on the screen
@@ -144,7 +156,12 @@ ERR_FATAL_INST  .ASCII_W "Instable system state.\n"
 
 ; Error codes for ERR_FATAL_INST: They will help to debug the situation,
 ; because we will at least know, where the instable system state occured
-ERR_FATAL_INST1 .EQU 1 ; options.asm:   OPTM_CB_SHOW
-ERR_FATAL_INST2 .EQU 2 ; shell.asm:     _HM_MOUNTED
-ERR_FATAL_INST3 .EQU 3 ; shell.asm:     _HM_SDMOUNTED2A
-ERR_FATAL_INST4 .EQU 4 ; options.asm:   _OPTM_GK_MNT
+ERR_FATAL_INST1 .EQU 1 ; options.asm:       OPTM_CB_SHOW
+ERR_FATAL_INST2 .EQU 2 ; shell.asm:         _HM_MOUNTED
+ERR_FATAL_INST3 .EQU 3 ; shell.asm:         _HM_SDMOUNTED2A
+ERR_FATAL_INST4 .EQU 4 ; options.asm:       _OPTM_GK_MNT
+ERR_FATAL_INST5 .EQU 5 ; crts-and-roms.asm  HANDLE_CRTROM_M
+ERR_FATAL_INST6 .EQU 6 ; options.asm:       _OPTM_CBS_CTRM
+ERR_FATAL_INST7 .EQU 7 ; shell.asm:         _HM_SDMOUNTED3
+ERR_FATAL_INST8 .EQU 8 ; options.asm        _OPTM_CBS_I
+ERR_FATAL_INST9 .EQU 9 ; options.asm        _OPTM_CBS_I4
