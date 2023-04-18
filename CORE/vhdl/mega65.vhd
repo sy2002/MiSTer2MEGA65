@@ -33,6 +33,7 @@ port (
 
    -- Get QNICE clock from the framework: for the vdrives as well as for RAMs and ROMs
    qnice_clk_i             : in std_logic;
+   qnice_rst_i             : in std_logic;
 
    -- Video and audio mode control
    qnice_dvi_o             : out std_logic;              -- 0=HDMI (with sound), 1=DVI (no sound)
@@ -61,6 +62,7 @@ port (
    qnice_dev_data_o        : out std_logic_vector(15 downto 0);
    qnice_dev_ce_i          : in std_logic;
    qnice_dev_we_i          : in std_logic;
+   qnice_dev_wait_o        : out std_logic;
 
    --------------------------------------------------------------------------------------------------------
    -- Core Clock Domain
@@ -126,15 +128,15 @@ port (
    
    hr_clk_i                : in  std_logic;
    hr_rst_i                : in  std_logic;
-   hr_write_o              : out std_logic := '0'; 
-   hr_read_o               : out std_logic := '0';
-   hr_address_o            : out std_logic_vector(31 downto 0) := (others => '0');
-   hr_writedata_o          : out std_logic_vector(15 downto 0) := (others => '0');
-   hr_byteenable_o         : out std_logic_vector(1 downto 0)  := (others => '0');
-   hr_burstcount_o         : out std_logic_vector(7 downto 0)  := (others => '0');
-   hr_readdata_i           : in  std_logic_vector(15 downto 0) := (others => '0');
-   hr_readdatavalid_i      : in  std_logic;
-   hr_waitrequest_i        : in  std_logic
+   hr_core_write_o         : out std_logic := '0';
+   hr_core_read_o          : out std_logic := '0';
+   hr_core_address_o       : out std_logic_vector(31 downto 0) := (others => '0');
+   hr_core_writedata_o     : out std_logic_vector(15 downto 0) := (others => '0');
+   hr_core_byteenable_o    : out std_logic_vector(1 downto 0)  := (others => '0');
+   hr_core_burstcount_o    : out std_logic_vector(7 downto 0)  := (others => '0');
+   hr_core_readdata_i      : in  std_logic_vector(15 downto 0);
+   hr_core_readdatavalid_i : in  std_logic;
+   hr_core_waitrequest_i   : in  std_logic
 );
 end entity MEGA65_Core;
 
@@ -295,6 +297,7 @@ begin
    begin
       -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
       qnice_dev_data_o     <= x"EEEE";
+      qnice_dev_wait_o     <= '0';
 
       -- Demo core specific: Delete before starting to port your core
       qnice_demo_vd_ce     <= '0';

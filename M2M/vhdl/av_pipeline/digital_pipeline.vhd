@@ -102,8 +102,8 @@ architecture synthesis of digital_pipeline is
    signal pcm_n                  : std_logic_vector(19 downto 0); -- HDMI ACR N value
    signal pcm_cts                : std_logic_vector(19 downto 0); -- HDMI ACR CTS value
 
-   signal hdmi_audio_left        : signed(15 downto 0); -- Signed PCM format
-   signal hdmi_audio_right       : signed(15 downto 0); -- Signed PCM format
+   signal hdmi_audio_left        : std_logic_vector(15 downto 0); -- Signed PCM format
+   signal hdmi_audio_right       : std_logic_vector(15 downto 0); -- Signed PCM format
 
    signal pcm_audio_counter      : integer := 0;
    signal pcm_acr_counter        : integer range 0 to pcm_acr_cnt_range := 0;
@@ -226,18 +226,19 @@ begin
    ---------------------------------------------------------------------------------------------
 
    -- Sample audio data in HDMI clock domain
-   i_audio_cdc : entity work.audio_cdc
+   i_cdc_stable : entity work.cdc_stable
       generic map (
+         G_DATA_SIZE    => 32,
          G_REGISTER_SRC => false
       )
       port map (
          src_clk_i   => audio_clk_i,   -- Not used
-         src_left_i  => audio_left_i,
-         src_right_i => audio_right_i,
+         src_data_i(15 downto  0) => std_logic_vector(audio_left_i),
+         src_data_i(31 downto 16) => std_logic_vector(audio_right_i),
          dst_clk_i   => hdmi_clk_i,
-         dst_left_o  => hdmi_audio_left,
-         dst_right_o => hdmi_audio_right
-      ); -- i_audio_cdc
+         dst_data_o(15 downto  0) => hdmi_audio_left,
+         dst_data_o(31 downto 16) => hdmi_audio_right
+      ); -- i_cdc_stable
 
 
    -- Generate PCM sample rate (48 kHz)
@@ -502,8 +503,8 @@ begin
          pcm_clk      => hdmi_clk_i,
          pcm_rst      => hdmi_rst_i,
          pcm_clken    => pcm_clken,                           -- 1/256 = 48 kHz
-         pcm_l        => std_logic_vector(hdmi_audio_left),
-         pcm_r        => std_logic_vector(hdmi_audio_right),
+         pcm_l        => hdmi_audio_left,
+         pcm_r        => hdmi_audio_right,
          pcm_acr      => pcm_acr,
          pcm_n        => pcm_n,
          pcm_cts      => pcm_cts,

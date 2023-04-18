@@ -3,7 +3,7 @@
 --
 -- Abstraction layer to simplify mega65.vhd
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -96,6 +96,7 @@ signal main_clk    : std_logic;
 signal main_rst    : std_logic;
 signal reset_m2m_n : std_logic;
 signal qnice_clk   : std_logic;
+signal qnice_rst   : std_logic;
 
 --------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -156,6 +157,22 @@ signal main_pot2_x            : std_logic_vector(7 downto 0);
 signal main_pot2_y            : std_logic_vector(7 downto 0);
 
 ---------------------------------------------------------------------------------------------
+-- HyperRAM clock domain
+---------------------------------------------------------------------------------------------
+
+signal hr_clk                 : std_logic;
+signal hr_rst                 : std_logic;
+signal hr_core_write          : std_logic;
+signal hr_core_read           : std_logic;
+signal hr_core_address        : std_logic_vector(31 downto 0);
+signal hr_core_writedata      : std_logic_vector(15 downto 0);
+signal hr_core_byteenable     : std_logic_vector(1 downto 0);
+signal hr_core_burstcount     : std_logic_vector(7 downto 0);
+signal hr_core_readdata       : std_logic_vector(15 downto 0);
+signal hr_core_readdatavalid  : std_logic;
+signal hr_core_waitrequest    : std_logic;
+
+---------------------------------------------------------------------------------------------
 -- qnice_clk
 ---------------------------------------------------------------------------------------------
 
@@ -187,22 +204,7 @@ signal qnice_ramrom_data_o    : std_logic_vector(15 downto 0);
 signal qnice_ramrom_data_i    : std_logic_vector(15 downto 0);
 signal qnice_ramrom_ce        : std_logic;
 signal qnice_ramrom_we        : std_logic;
-
----------------------------------------------------------------------------------------------
--- hr_clk_o (HyperRAM clock provided by i_framework)
----------------------------------------------------------------------------------------------
-
-signal hr_clk                 : std_logic;
-signal hr_rst                 : std_logic;
-signal hr_write               : std_logic;
-signal hr_read                : std_logic;
-signal hr_address             : std_logic_vector(31 downto 0) := (others => '0');
-signal hr_writedata           : std_logic_vector(15 downto 0);
-signal hr_byteenable          : std_logic_vector(1 downto 0);
-signal hr_burstcount          : std_logic_vector(7 downto 0);
-signal hr_readdata            : std_logic_vector(15 downto 0);
-signal hr_readdatavalid       : std_logic;
-signal hr_waitrequest         : std_logic;
+signal qnice_ramrom_wait      : std_logic;
 
 begin
 
@@ -262,6 +264,7 @@ begin
 
       -- Connect to CORE
       qnice_clk_o             => qnice_clk,
+      qnice_rst_o             => qnice_rst,
       reset_m2m_n_o           => reset_m2m_n,
       main_clk_i              => main_clk,
       main_rst_i              => main_rst,
@@ -305,15 +308,15 @@ begin
       -- Provide HyperRAM to core (in HyperRAM clock domain)
       hr_clk_o                => hr_clk,
       hr_rst_o                => hr_rst,
-      hr_write_i              => hr_write, 
-      hr_read_i               => hr_read,
-      hr_address_i            => hr_address,
-      hr_writedata_i          => hr_writedata,
-      hr_byteenable_i         => hr_byteenable,
-      hr_burstcount_i         => hr_burstcount,
-      hr_readdata_o           => hr_readdata,
-      hr_readdatavalid_o      => hr_readdatavalid,
-      hr_waitrequest_o        => hr_waitrequest,
+      hr_core_write_i         => hr_core_write,
+      hr_core_read_i          => hr_core_read,
+      hr_core_address_i       => hr_core_address,
+      hr_core_writedata_i     => hr_core_writedata,
+      hr_core_byteenable_i    => hr_core_byteenable,
+      hr_core_burstcount_i    => hr_core_burstcount,
+      hr_core_readdata_o      => hr_core_readdata,
+      hr_core_readdatavalid_o => hr_core_readdatavalid,
+      hr_core_waitrequest_o   => hr_core_waitrequest,
 
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi,
@@ -333,7 +336,8 @@ begin
       qnice_ramrom_data_out_o => qnice_ramrom_data_o,
       qnice_ramrom_data_in_i  => qnice_ramrom_data_i,
       qnice_ramrom_ce_o       => qnice_ramrom_ce,
-      qnice_ramrom_we_o       => qnice_ramrom_we
+      qnice_ramrom_we_o       => qnice_ramrom_we,
+      qnice_ramrom_wait_i     => qnice_ramrom_wait
    ); -- i_framework
 
 
@@ -356,6 +360,7 @@ begin
 
          -- Provide QNICE clock to the core: for the vdrives as well as for RAMs and ROMs
          qnice_clk_i             => qnice_clk,
+         qnice_rst_i             => qnice_rst,
 
          -- Video and audio mode control
          qnice_dvi_o             => qnice_dvi,
@@ -384,6 +389,7 @@ begin
          qnice_dev_data_o        => qnice_ramrom_data_i,
          qnice_dev_ce_i          => qnice_ramrom_ce,
          qnice_dev_we_i          => qnice_ramrom_we,
+         qnice_dev_wait_o        => qnice_ramrom_wait,
 
          --------------------------------------------------------------------------------------------------------
          -- Core Clock Domain
@@ -443,20 +449,20 @@ begin
          main_pot2_y_i           => main_pot2_y,
          
          --------------------------------------------------------------------------------------------------------
-         -- Provide HyperRAM to core (in HyperRAM clock domain)
+         -- Provide support for external memory (Avalon Memory Map)
          --------------------------------------------------------------------------------------------------------
       
          hr_clk_i                => hr_clk,
          hr_rst_i                => hr_rst,
-         hr_write_o              => hr_write, 
-         hr_read_o               => hr_read,
-         hr_address_o            => hr_address,
-         hr_writedata_o          => hr_writedata,
-         hr_byteenable_o         => hr_byteenable,
-         hr_burstcount_o         => hr_burstcount,
-         hr_readdata_i           => hr_readdata,
-         hr_readdatavalid_i      => hr_readdatavalid,
-         hr_waitrequest_i        => hr_waitrequest         
+         hr_core_write_o         => hr_core_write,
+         hr_core_read_o          => hr_core_read,
+         hr_core_address_o       => hr_core_address,
+         hr_core_writedata_o     => hr_core_writedata,
+         hr_core_byteenable_o    => hr_core_byteenable,
+         hr_core_burstcount_o    => hr_core_burstcount,
+         hr_core_readdata_i      => hr_core_readdata,
+         hr_core_readdatavalid_i => hr_core_readdatavalid,
+         hr_core_waitrequest_i   => hr_core_waitrequest
       ); -- CORE
 
 end architecture synthesis;

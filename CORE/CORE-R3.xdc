@@ -10,7 +10,7 @@
 ## TIMING CONSTRAINTS
 ################################
 
-## External clock signal (100 MHz)
+## System board clock (100 MHz)
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS33} [get_ports CLK]
 create_clock -period 10.000 -name CLK [get_ports CLK]
 
@@ -32,11 +32,10 @@ create_generated_clock -name main_clk      [get_pins M2M/CORE/clk_gen/i_clk_main
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins M2M/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins M2M/i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
-## Handle CDC of audio data
-set_max_delay 8 -datapath_only -from [get_clocks] -to [get_pins -hierarchical "*audio_cdc_gen.dst_*_d_reg[*]/D"]
+## Generic CDC
+set_max_delay 8 -datapath_only -from [get_clocks] -to [get_pins -hierarchical "*cdc_stable_gen.dst_*_d_reg[*]/D"]
 
-## QNICE's EAE combinatorial division networks take longer than
-## the regular clock period, so we specify a multicycle path
+## QNICE's EAE combinatorial division networks take longer than the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
 set_multicycle_path -from [get_cells -include_replicated {{M2M/i_framework/QNICE_SOC/eae_inst/op0_reg[*]} {M2M/i_framework/QNICE_SOC/eae_inst/op1_reg[*]}}] \
    -to [get_cells -include_replicated {M2M/i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
@@ -54,7 +53,6 @@ set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hdmi_720p_clk] -from [get_clocks main_clk]
 set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hdmi_576p_clk] -from [get_clocks main_clk]
-set_false_path -from [get_clocks qnice_clk]       -to [get_clocks main_clk]
 set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_720p_clk]
 set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_576p_clk]
 
@@ -66,7 +64,6 @@ set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks tmds_720p_clk]
 set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks tmds_576p_clk]
 
 set_false_path -from [get_clocks main_clk]        -to [get_clocks audio_clk]
-set_false_path -to   [get_clocks main_clk]      -from [get_clocks audio_clk] 
 
 ## The high level reset signals are slow enough so that we can afford a false path
 set_false_path -from [get_pins M2M/i_framework/i_reset_manager/reset_m2m_n_o_reg/C]

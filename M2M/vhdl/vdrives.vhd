@@ -58,13 +58,13 @@
 --
 -- 2. Mount a drive: MiSTer's logic reacts on the rising edge of the img_mounted_o bits. This is why it
 --    is not offering one img_readonly_o, img_size_o and img_type_o per drive but only one for all drives.
---    Instead, values are processed on the rising edge of the mount bit. This means: Do not mount multiple
+--    Instead, values are processed on the rising edge.of the mount bit. This means: Do not mount multiple
 --    drives simultaneously, unless the img_readonly_o, img_size_o and img_type_o values are the same
 --    for these drives. Make sure that you output these values before you actually trigger the rising
 --    edge of the mount bit. Also make sure that you only strobe the signal and do not keep it up all the time.
 --
--- 3. rd_i should be low while no drive is not mounted. @TODO: The QNICE firmware should output a warning on
---    the serial port, if it detects high in such a situation: There might be something wrong with the logic.
+-- 3. rd_i should be low while no drive is not mounted. The QNICE firmware will output a warning on the
+--    serial port, if it detects high in such a situation: There might be something wrong with the logic.
 --
 -- 4. As soon the core's drive needs data, it pulls rd_i to high. The following routine should be executed
 --    with as high performance as possible for example by buffering the mounted drive in RAM instead of

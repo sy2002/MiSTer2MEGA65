@@ -3,7 +3,7 @@
 --
 -- Configuration data for the Shell
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -267,7 +267,7 @@ constant VD_ITERATION_SIZE       : natural := 100;
 -- !!! CAUTION: CURRENTLY NOT YET SUPPORTED BY THE FIRMWARE !!!
 
 --------------------------------------------------------------------------------------------------------------------
--- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0307) 
+-- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0312): DO NOT TOUCH
 --------------------------------------------------------------------------------------------------------------------
 
 -- !!! DO NOT TOUCH !!! Selectors for accessing the menu configuration data
@@ -283,6 +283,8 @@ constant SEL_OPTM_MOUNT_STR   : std_logic_vector(15 downto 0) := x"0308";
 constant SEL_OPTM_DIMENSIONS  : std_logic_vector(15 downto 0) := x"0309";
 constant SEL_OPTM_SAVING_STR  : std_logic_vector(15 downto 0) := x"030A";
 constant SEL_OPTM_HELP        : std_logic_vector(15 downto 0) := x"0310";
+constant SEL_OPTM_CRTROM      : std_logic_vector(15 downto 0) := x"0311";
+constant SEL_OPTM_CRTROM_STR  : std_logic_vector(15 downto 0) := x"0312";
 
 -- !!! DO NOT TOUCH !!! Configuration constants for OPTM_GROUPS (shell.asm and menu.asm expect them to be like this)
 constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
@@ -299,16 +301,24 @@ constant OPTM_G_MOUNT_DRV  : integer := 16#08800#;        -- line item means: mo
 constant OPTM_G_HELP       : integer := 16#0A000#;        -- line item means: help screen; first occurance = WHS(1), second = WHS(2), ...
 constant OPTM_G_SUBMENU    : integer := 16#0C000#;        -- starts/ends a section that is treated as submenu
 constant OPTM_G_LOAD_ROM   : integer := 16#18000#;        -- line item means: load ROM; first occurance = rom 0, second = rom 1, ...
--- @TODO/REMINDER: As soon as we extend the OSM system so that we support loading ROMs and other things that need to be ignored
--- when saving settings: Make sure to extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly:
---     OPTM_G_SUBMENU
---     OPTM_G_LOAD_ROM
 
--- START YOUR CONFIGURATION BELOW THIS LINE:
+constant OPTM_GTC          : natural := 17;                -- Amount of significant bits in OPTM_G_* constants
+
+-- @TODO/REMINDER: If we added in future more configuration constants that are not meant to be saved in the
+-- configuration file, such as OPTM_G_MOUNT_DRV and OPTM_G_LOAD_ROM, then we need to make sure that we
+-- also extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly.
+-- Also: Right now OPTM_G_SUBMENU cannot have a "selected" state (and therefore cannot be saved in the config file)
+-- and this _ROSMS_4A and _ROSMC_NEXTBIT are not yet handling the situation. If we decided to change that in future,
+-- we would need to define the right semantics everywhere.
+
+--------------------------------------------------------------------------------------------------------------------
+-- "Help" menu / Options menu: START YOUR CONFIGURATION BELOW THIS LINE
+--------------------------------------------------------------------------------------------------------------------
 
 -- Strings with which %s will be replaced in case the menu item is of type OPTM_G_MOUNT_DRV
-constant OPTM_S_MOUNT      : string := "<Mount>";        -- no disk image mounted, yet
-constant OPTM_S_SAVING     : string := "<Saving>";       -- the internal write cache is dirty and not yet written back to the SD card
+constant OPTM_S_MOUNT      : string := "<Mount Drive>";     -- no disk image mounted, yet
+constant OPTM_S_CRTROM     : string := "<Load>";            -- no ROM loaded, yet
+constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal write cache is dirty and not yet written back to the SD card
 
 -- Size of menu and menu items
 -- CAUTION: 1. End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
@@ -377,7 +387,6 @@ constant OPTM_G_Zoom       : integer := 7;
 constant OPTM_G_Audio      : integer := 8;
 
 -- !!! DO NOT TOUCH !!!
-constant OPTM_GTC          : natural := 16;
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC- 1;
 
 -- define your menu groups: which menu items are belonging together to form a group?
@@ -531,6 +540,7 @@ begin
             when SEL_CFG_FILE          => data_o <= str2data(CFG_FILE);
             when SEL_OPTM_ITEMS        => data_o <= str2data(OPTM_ITEMS);
             when SEL_OPTM_MOUNT_STR    => data_o <= str2data(OPTM_S_MOUNT);
+            when SEL_OPTM_CRTROM_STR   => data_o <= str2data(OPTM_S_CRTROM);
             when SEL_OPTM_SAVING_STR   => data_o <= str2data(OPTM_S_SAVING);
             when SEL_OPTM_GROUPS       => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15)) & 
                                                     std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(14)) & "0" & 
@@ -542,6 +552,7 @@ begin
             when SEL_OPTM_MOUNT_DRV    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(11));
             when SEL_OPTM_HELP         => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(13));
             when SEL_OPTM_SINGLESEL    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15));
+            when SEL_OPTM_CRTROM       => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(16));
             when SEL_OPTM_ICOUNT       => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_SIZE, 8));
             when SEL_OPTM_DIMENSIONS   => data_o <= getDXDY(OPTM_DX, OPTM_DY, index);
 

@@ -68,6 +68,13 @@ constant CHAR_MEM_SIZE        : natural := CHARS_DX * CHARS_DY;
 constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 
 ----------------------------------------------------------------------------------------------------------
+-- HyperRAM memory map (in units of 4kW)
+----------------------------------------------------------------------------------------------------------
+
+constant C_HMAP_M2M           : std_logic_vector(15 downto 0) := x"0000";     -- Reserved for the M2M framework
+constant C_HMAP_DEMO          : std_logic_vector(15 downto 0) := x"0200";     -- Start address reserved for core
+
+----------------------------------------------------------------------------------------------------------
 -- Virtual Drive Management System
 ----------------------------------------------------------------------------------------------------------
 
@@ -90,6 +97,41 @@ constant C_VD_BUFFER          : vd_buf_array := (  C_DEV_DEMO_NOBUFFER,
                                                    C_DEV_DEMO_NOBUFFER,
                                                    C_DEV_DEMO_NOBUFFER,
                                                    x"EEEE");                           -- Always finish the array using x"EEEE"
+
+----------------------------------------------------------------------------------------------------------
+-- System for handling simulated cartridges and ROM loaders
+----------------------------------------------------------------------------------------------------------
+
+type crtrom_buf_array is array(natural range<>) of std_logic_vector;
+
+-- Cartridges and ROMs can be stored into QNICE devices, HyperRAM and SDRAM
+constant C_CRTROMTYPE_DEVICE     : std_logic_vector(15 downto 0) := x"0000";
+constant C_CRTROMTYPE_HYPERRAM   : std_logic_vector(15 downto 0) := x"0001";
+constant C_CRTROMTYPE_SDRAM      : std_logic_vector(15 downto 0) := x"0002";           -- @TODO/RESERVED for future R4 boards
+
+-- Manually loadable ROMs and cartridges as defined in config.vhd
+-- If you are not using this, then make sure that:
+--    C_CRTROM_MAN_NUM    is 0
+--    C_CRTROMS_MAN       is (x"EEEE", x"EEEE", x"EEEE")
+-- Each entry of the array consists of two constants:
+--    1) Type of CRT or ROM: Load to a QNICE device, load into HyperRAM, load into SDRAM
+--    2) If (1) = QNICE device, then this is the device ID
+--       else it is a 4k window in HyperRAM or in SDRAM
+-- In case we are loading to a QNICE device, then the control and status register is located at the 4k window 0xFFFF.
+-- @TODO: See @TODO for more details about the control and status register
+constant C_CRTROM_MAN_NUM        : natural := 0;                                       -- amount of manually loadable ROMs and carts, if more than 3: also adjust CRTROM_MAN_MAX in M2M/rom/shell_vars.asm, Needs to be in sync with config.vhd. Maximum is 16
+constant C_CRTROMS_MAN           : crtrom_buf_array := ( x"EEEE", x"EEEE",
+                                                         x"EEEE");                     -- Always finish the array using x"EEEE"
+
+-- @TODO: See MiSTer2MEGA65/doc/temp/romloading.md: At this moment, we are only supporting
+-- manually loaded ROMs and cartridges, so we would need a second array that is accessed via
+-- a different address (see framework.vhd section "when C_CRTSANDROMS") and more Shell code to
+-- support automatically loaded mandatory and optional ROMs.
+-- The array will be something along these lines (to be fine-tuned):
+-- Entry 1) Storage type to load to (device, HyperRAM, SDRAM)
+-- Entry 2) device ID or 4k window
+-- Entry 3) Flags, such as mandatory or not, how to treat the situation of a mandatory ROM is not found, etc.
+-- Entry 4) Error message(s) for mandatory but not found situations (?)
                                                    
 ----------------------------------------------------------------------------------------------------------
 -- Audio filters

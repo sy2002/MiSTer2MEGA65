@@ -99,6 +99,7 @@ port (
 
    -- Connect to CORE
    qnice_clk_o             : out std_logic;
+   qnice_rst_o             : out std_logic;
    reset_m2m_n_o           : out std_logic;
    main_clk_i              : in  std_logic;
    main_rst_i              : in  std_logic;
@@ -142,15 +143,15 @@ port (
    -- Provide HyperRAM to core (in HyperRAM clock domain)
    hr_clk_o                : out std_logic;
    hr_rst_o                : out std_logic;
-   hr_write_i              : in  std_logic; 
-   hr_read_i               : in  std_logic;
-   hr_address_i            : in  std_logic_vector(31 downto 0);
-   hr_writedata_i          : in  std_logic_vector(15 downto 0);
-   hr_byteenable_i         : in  std_logic_vector(1 downto 0);
-   hr_burstcount_i         : in  std_logic_vector(7 downto 0);
-   hr_readdata_o           : out std_logic_vector(15 downto 0);
-   hr_readdatavalid_o      : out std_logic;
-   hr_waitrequest_o        : out std_logic;
+   hr_core_write_i         : in  std_logic;
+   hr_core_read_i          : in  std_logic;
+   hr_core_address_i       : in  std_logic_vector(31 downto 0);
+   hr_core_writedata_i     : in  std_logic_vector(15 downto 0);
+   hr_core_byteenable_i    : in  std_logic_vector(1 downto 0);
+   hr_core_burstcount_i    : in  std_logic_vector(7 downto 0);
+   hr_core_readdata_o      : out std_logic_vector(15 downto 0);
+   hr_core_readdatavalid_o : out std_logic;
+   hr_core_waitrequest_o   : out std_logic;
 
    -- QNICE control signals
    qnice_dvi_i             : in  std_logic;
@@ -172,7 +173,8 @@ port (
    qnice_ramrom_data_out_o : out std_logic_vector(15 downto 0);
    qnice_ramrom_data_in_i  : in  std_logic_vector(15 downto 0);
    qnice_ramrom_ce_o       : out std_logic;
-   qnice_ramrom_we_o       : out std_logic
+   qnice_ramrom_we_o       : out std_logic;
+   qnice_ramrom_wait_i     : in  std_logic
 );
 end entity framework;
 
@@ -190,12 +192,14 @@ constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
 constant C_DEV_VRAM_ATTR      : std_logic_vector(15 downto 0) := x"0001";
 constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
 constant C_DEV_ASCAL_PPHASE   : std_logic_vector(15 downto 0) := x"0003";
+constant C_DEV_HYPERRAM       : std_logic_vector(15 downto 0) := x"0004";
 constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 
 -- SysInfo record numbers
 constant C_SYS_DRIVES         : std_logic_vector(15 downto 0) := x"0000";
 constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
+constant C_CRTSANDROMS        : std_logic_vector(15 downto 0) := x"0020";
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -227,7 +231,12 @@ signal reset_core_n           : std_logic;
 ---------------------------------------------------------------------------------------------
 
 -- Device management
-signal qnice_ramrom_data_in   : std_logic_vector(15 downto 0);
+signal qnice_ramrom_data_in          : std_logic_vector(15 downto 0);
+signal qnice_ramrom_data_in_hyperram : std_logic_vector(15 downto 0);
+signal qnice_ramrom_wait             : std_logic;
+signal qnice_ramrom_wait_hyperram    : std_logic;
+signal qnice_ramrom_ce_hyperram      : std_logic;
+signal qnice_ramrom_address          : std_logic_vector(31 downto 0);
 
 -- QNICE control and status register
 signal main_csr_keyboard_on   : std_logic;
@@ -310,6 +319,16 @@ signal qnice_pot1_y_n         : unsigned(7 downto 0);
 signal qnice_pot2_x_n         : unsigned(7 downto 0);
 signal qnice_pot2_y_n         : unsigned(7 downto 0);
 
+signal qnice_avm_write         : std_logic;
+signal qnice_avm_read          : std_logic;
+signal qnice_avm_address       : std_logic_vector(31 downto 0);
+signal qnice_avm_writedata     : std_logic_vector(15 downto 0);
+signal qnice_avm_byteenable    : std_logic_vector(1 downto 0);
+signal qnice_avm_burstcount    : std_logic_vector(7 downto 0);
+signal qnice_avm_readdata      : std_logic_vector(15 downto 0);
+signal qnice_avm_readdatavalid : std_logic;
+signal qnice_avm_waitrequest   : std_logic;
+
 ---------------------------------------------------------------------------------------------
 -- hdmi_clk
 ---------------------------------------------------------------------------------------------
@@ -341,6 +360,16 @@ signal hr_dig_burstcount    : std_logic_vector(7 downto 0);
 signal hr_dig_readdata      : std_logic_vector(15 downto 0);
 signal hr_dig_readdatavalid : std_logic;
 signal hr_dig_waitrequest   : std_logic;
+
+signal hr_qnice_write         : std_logic;
+signal hr_qnice_read          : std_logic;
+signal hr_qnice_address       : std_logic_vector(31 downto 0) := (others => '0');
+signal hr_qnice_writedata     : std_logic_vector(15 downto 0);
+signal hr_qnice_byteenable    : std_logic_vector(1 downto 0);
+signal hr_qnice_burstcount    : std_logic_vector(7 downto 0);
+signal hr_qnice_readdata      : std_logic_vector(15 downto 0);
+signal hr_qnice_readdatavalid : std_logic;
+signal hr_qnice_waitrequest   : std_logic;
 
 -- HyperRAM controller
 signal hr_write               : std_logic;
@@ -403,9 +432,11 @@ end component audio_out;
 
 begin
 
-   qnice_clk_o <= qnice_clk;
    hr_clk_o    <= hr_clk_x1;
    hr_rst_o    <= hr_rst;   
+
+   qnice_clk_o <= qnice_clk;
+   qnice_rst_o <= qnice_rst;
 
    -----------------------------------------------------------------------------------------
    -- MAX10 FPGA handling: extract reset signal
@@ -610,6 +641,7 @@ begin
          ramrom_data_o           => qnice_ramrom_data_out_o,
          ramrom_data_i           => qnice_ramrom_data_in,
          ramrom_ce_o             => qnice_ramrom_ce_o,
+         ramrom_wait_i           => qnice_ramrom_wait,
          ramrom_we_o             => qnice_ramrom_we_o
       ); -- QNICE_SOC
 
@@ -631,7 +663,9 @@ begin
    -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
    qnice_ramrom_devices : process(all)
    begin
+      qnice_ramrom_ce_hyperram <= '0';
       qnice_ramrom_data_in    <= x"EEEE";
+      qnice_ramrom_wait        <= '0';
       qnice_vram_we           <= '0';
       qnice_vram_attr_we      <= '0';
       qnice_poly_wr           <= '0';
@@ -659,6 +693,12 @@ begin
                qnice_ramrom_data_in       <= x"EEEE"; -- write-only
                qnice_poly_wr              <= qnice_ramrom_we_o;
 
+            -- HyperRAM access
+            when C_DEV_HYPERRAM =>
+               qnice_ramrom_ce_hyperram   <= qnice_ramrom_ce_o;
+               qnice_ramrom_data_in       <= qnice_ramrom_data_in_hyperram;
+               qnice_ramrom_wait          <= qnice_ramrom_wait_hyperram;
+
             -- Read-only System Info (constants are defined in sysdef.asm)
             when C_DEV_SYS_INFO =>
                case qnice_ramrom_addr_o(27 downto 12) is
@@ -674,6 +714,14 @@ begin
                               qnice_ramrom_data_in <= C_VD_BUFFER(to_integer(unsigned(qnice_ramrom_addr_o(3 downto 0))));
                            end if;
                      end case;
+
+                  -- Simulated cartridges and ROMs
+                  when C_CRTSANDROMS =>
+                     if qnice_ramrom_addr_o(11 downto 0) = x"000" then
+                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROM_MAN_NUM, 16));
+                     elsif qnice_ramrom_addr_o(11 downto 8) = x"1" then
+                        qnice_ramrom_data_in <= C_CRTROMS_MAN(to_integer(unsigned(qnice_ramrom_addr_o(3 downto 0))));
+                     end if;
 
                   -- Graphics card VGA
                   when C_SYS_VGA =>
@@ -715,8 +763,34 @@ begin
       -----------------------------------
       else
          qnice_ramrom_data_in <= qnice_ramrom_data_in_i;
+         qnice_ramrom_wait    <= qnice_ramrom_wait_i;
       end if;
    end process qnice_ramrom_devices;
+
+   qnice_ramrom_address <= "10000" & qnice_ramrom_addr_o(26 downto 0) when qnice_ramrom_addr_o(27) = '1'
+                           else "000000000" & qnice_ramrom_addr_o(22 downto 0);
+
+   i_qnice2hyperram : entity work.qnice2hyperram
+      port map (
+         clk_i                 => qnice_clk,
+         rst_i                 => qnice_rst,
+         s_qnice_wait_o        => qnice_ramrom_wait_hyperram,
+         s_qnice_address_i     => qnice_ramrom_address,
+         s_qnice_cs_i          => qnice_ramrom_ce_hyperram,
+         s_qnice_write_i       => qnice_ramrom_we_o,
+         s_qnice_writedata_i   => qnice_ramrom_data_out_o,
+         s_qnice_byteenable_i  => "11",
+         s_qnice_readdata_o    => qnice_ramrom_data_in_hyperram,
+         m_avm_write_o         => qnice_avm_write,
+         m_avm_read_o          => qnice_avm_read,
+         m_avm_address_o       => qnice_avm_address,
+         m_avm_writedata_o     => qnice_avm_writedata,
+         m_avm_byteenable_o    => qnice_avm_byteenable,
+         m_avm_burstcount_o    => qnice_avm_burstcount,
+         m_avm_readdata_i      => qnice_avm_readdata,
+         m_avm_readdatavalid_i => qnice_avm_readdatavalid,
+         m_avm_waitrequest_i   => qnice_avm_waitrequest
+      ); -- i_qnice2hyperram
 
    -- Generate the paddle readings (mouse not supported, yet)
    -- Works with 50 MHz, which happens to be the QNICE clock domain
@@ -1132,12 +1206,46 @@ begin
          hr_waitrequest_i         => hr_dig_waitrequest
       ); -- i_digital_pipeline
 
+   i_avm_fifo_qnice : entity work.avm_fifo
+      generic map (
+         G_WR_DEPTH     => 16,
+         G_RD_DEPTH     => 16,
+         G_FILL_SIZE    => 1,
+         G_ADDRESS_SIZE => 32,
+         G_DATA_SIZE    => 16
+      )
+      port map (
+         s_clk_i               => qnice_clk,
+         s_rst_i               => qnice_rst,
+         s_avm_waitrequest_o   => qnice_avm_waitrequest,
+         s_avm_write_i         => qnice_avm_write,
+         s_avm_read_i          => qnice_avm_read,
+         s_avm_address_i       => qnice_avm_address,
+         s_avm_writedata_i     => qnice_avm_writedata,
+         s_avm_byteenable_i    => qnice_avm_byteenable,
+         s_avm_burstcount_i    => qnice_avm_burstcount,
+         s_avm_readdata_o      => qnice_avm_readdata,
+         s_avm_readdatavalid_o => qnice_avm_readdatavalid,
+         m_clk_i               => hr_clk_x1,
+         m_rst_i               => hr_rst,
+         m_avm_waitrequest_i   => hr_qnice_waitrequest,
+         m_avm_write_o         => hr_qnice_write,
+         m_avm_read_o          => hr_qnice_read,
+         m_avm_address_o       => hr_qnice_address,
+         m_avm_writedata_o     => hr_qnice_writedata,
+         m_avm_byteenable_o    => hr_qnice_byteenable,
+         m_avm_burstcount_o    => hr_qnice_burstcount,
+         m_avm_readdata_i      => hr_qnice_readdata,
+         m_avm_readdatavalid_i => hr_qnice_readdatavalid
+      ); -- i_avm_fifo_qnice
+
    --------------------------------------------------------
    -- Instantiate HyperRAM arbiter
    --------------------------------------------------------
 
-   i_avm_arbit : entity work.avm_arbit
+   i_avm_arbit_general : entity work.avm_arbit_general
       generic map (
+         G_NUM_SLAVES   => 3,
          G_FREQ_HZ      => BOARD_CLK_SPEED,
          G_ADDRESS_SIZE => 32,
          G_DATA_SIZE    => 16
@@ -1145,24 +1253,21 @@ begin
       port map (
          clk_i                  => hr_clk_x1,
          rst_i                  => hr_rst,
-         s0_avm_write_i         => hr_dig_write,
-         s0_avm_read_i          => hr_dig_read,
-         s0_avm_address_i       => hr_dig_address,
-         s0_avm_writedata_i     => hr_dig_writedata,
-         s0_avm_byteenable_i    => hr_dig_byteenable,
-         s0_avm_burstcount_i    => hr_dig_burstcount,
-         s0_avm_readdata_o      => hr_dig_readdata,
-         s0_avm_readdatavalid_o => hr_dig_readdatavalid,
-         s0_avm_waitrequest_o   => hr_dig_waitrequest,
-         s1_avm_write_i         => hr_write_i,
-         s1_avm_read_i          => hr_read_i,
-         s1_avm_address_i       => hr_address_i,
-         s1_avm_writedata_i     => hr_writedata_i,
-         s1_avm_byteenable_i    => hr_byteenable_i,
-         s1_avm_burstcount_i    => hr_burstcount_i,
-         s1_avm_readdata_o      => hr_readdata_o,
-         s1_avm_readdatavalid_o => hr_readdatavalid_o,
-         s1_avm_waitrequest_o   => hr_waitrequest_o,
+         s_avm_write_i         => hr_dig_write         & hr_core_write_i         & hr_qnice_write,
+         s_avm_read_i          => hr_dig_read          & hr_core_read_i          & hr_qnice_read,
+         s_avm_address_i       => hr_dig_address       & hr_core_address_i       & hr_qnice_address,
+         s_avm_writedata_i     => hr_dig_writedata     & hr_core_writedata_i     & hr_qnice_writedata,
+         s_avm_byteenable_i    => hr_dig_byteenable    & hr_core_byteenable_i    & hr_qnice_byteenable,
+         s_avm_burstcount_i    => hr_dig_burstcount    & hr_core_burstcount_i    & hr_qnice_burstcount,
+         s_avm_readdata_o(3*16-1 downto 2*16) => hr_dig_readdata,
+         s_avm_readdata_o(2*16-1 downto 1*16) => hr_core_readdata_o,
+         s_avm_readdata_o(1*16-1 downto 0*16) => hr_qnice_readdata,
+         s_avm_readdatavalid_o(2) => hr_dig_readdatavalid,
+         s_avm_readdatavalid_o(1) => hr_core_readdatavalid_o,
+         s_avm_readdatavalid_o(0) => hr_qnice_readdatavalid,
+         s_avm_waitrequest_o(2)   => hr_dig_waitrequest,
+         s_avm_waitrequest_o(1)   => hr_core_waitrequest_o,
+         s_avm_waitrequest_o(0)   => hr_qnice_waitrequest,
          m_avm_write_o          => hr_write,
          m_avm_read_o           => hr_read,
          m_avm_address_o        => hr_address,
@@ -1172,7 +1277,7 @@ begin
          m_avm_readdata_i       => hr_readdata,
          m_avm_readdatavalid_i  => hr_readdatavalid,
          m_avm_waitrequest_i    => hr_waitrequest
-      ); -- i_avm_arbit
+      ); -- i_avm_arbit_general
 
    ---------------------------------------------------------------------------------------------------------------
    -- HyperRAM controller

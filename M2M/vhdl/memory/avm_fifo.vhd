@@ -5,7 +5,8 @@ use ieee.numeric_std_unsigned.all;
 
 entity avm_fifo is
    generic (
-      G_DEPTH        : integer;
+      G_WR_DEPTH     : integer;
+      G_RD_DEPTH     : integer;
       G_FILL_SIZE    : natural := 5;
       G_ADDRESS_SIZE : integer; -- Number of bits
       G_DATA_SIZE    : integer  -- Number of bits
@@ -78,7 +79,7 @@ begin
 
    i_axi_fifo_wr : entity work.axi_fifo
       generic map (
-         G_DEPTH     => G_DEPTH,
+         G_DEPTH     => G_WR_DEPTH,
          G_FILL_SIZE => G_FILL_SIZE,
          G_DATA_SIZE => C_FIFO_WR_SIZE,
          G_USER_SIZE => 8  -- burstcount
@@ -105,7 +106,7 @@ begin
 
    i_axi_fifo_rd : entity work.axi_fifo
       generic map (
-         G_DEPTH     => G_DEPTH,
+         G_DEPTH     => G_RD_DEPTH,
          G_FILL_SIZE => G_FILL_SIZE,
          G_DATA_SIZE => G_DATA_SIZE-8,
          G_USER_SIZE => 8  -- must be nonzero multiple of 8
