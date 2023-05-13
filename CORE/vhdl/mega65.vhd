@@ -38,6 +38,7 @@ port (
    qnice_dvi_o             : out std_logic;              -- 0=HDMI (with sound), 1=DVI (no sound)
    qnice_video_mode_o      : out natural range 0 to 3;   -- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
    qnice_scandoubler_o     : out std_logic;              -- 0 = no scandoubler, 1 = scandoubler
+   qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
@@ -135,7 +136,9 @@ port (
    hr_core_burstcount_o    : out std_logic_vector( 7 downto 0) := (others => '0');
    hr_core_readdata_i      : in  std_logic_vector(15 downto 0);
    hr_core_readdatavalid_i : in  std_logic;
-   hr_core_waitrequest_i   : in  std_logic
+   hr_core_waitrequest_i   : in  std_logic;
+   hr_high_i               : in  std_logic;  -- Core is too fast
+   hr_low_i                : in  std_logic   -- Core is too slow
 );
 end entity MEGA65_Core;
 
