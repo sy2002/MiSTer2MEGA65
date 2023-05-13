@@ -103,6 +103,54 @@ PREP_LOAD_IMAGE XOR     R8, R8                  ; no errors
                 RET
 
 ; ----------------------------------------------------------------------------
+; Core specific callback functions: Custom tasks
+; ----------------------------------------------------------------------------
+
+; PREP_START callback function:
+;
+; Called right before the core is being started. At this point, the core
+; is ready to run, settings are loaded (if the core uses settings) and the
+; core is still held in reset (if RESET_KEEP is on). So at this point in time,
+; you can execute tasks that change the run-state of the core.
+;
+; Input: None
+; Output:
+;   R8: 0=OK, else pointer to string with error message
+;   R9: 0=OK, else error code
+PREP_START      INCRB
+                XOR     R8, R8
+                XOR     R9, R9
+                DECRB
+                RET
+
+; OSM_SELECTED callback function:
+;
+; Called each time the user selects something in the on-screen-menu (OSM),
+; and while the OSM is still visible. This means, that this callback function
+; is called on each press of one of the valid selection keys with the
+; exception that pressing a selection key while hovering over a submenu entry
+; or exit point does not call this function. All the functionality and
+; semantics associated with a certain menu item is already handled by the
+; framework when OSM_SELECTED is called, so you are not able to change the
+; basic semantics but you are able to add core specific additional
+; "intelligent" semantics and behaviors.
+;
+; Input:
+;   R8: selected menu group (as defined in config.vhd)
+;   R9: selected item within menu group
+;       in case of single selected items: 0=not selected, 1=selected
+;   R10: OPTM_KEY_SELECT (by default means "Return") or
+;        OPTM_KEY_SELALT (by default means "Space")
+; Output:
+;   R8: 0=OK, else pointer to string with error message
+;   R9: 0=OK, else error code
+OSM_SELECTED    INCRB
+                XOR     R8, R8
+                XOR     R9, R9
+                DECRB
+                RET
+
+; ----------------------------------------------------------------------------
 ; Core specific callback functions: Custom messages
 ; ----------------------------------------------------------------------------
 
