@@ -63,6 +63,8 @@ entity digital_pipeline is
       hdmi_osm_vram_addr_o     : out std_logic_vector(15 downto 0);
       hdmi_osm_vram_data_i     : in  std_logic_vector(15 downto 0);
       sys_info_hdmi_o          : out std_logic_vector(47 downto 0);
+      video_hdmax_o            : out natural range 0 to 4095;
+      video_vdmax_o            : out natural range 0 to 4095;
 
       -- QNICE connection to ascal's mode register
       qnice_ascal_mode_i       : in  unsigned(4 downto 0);
@@ -367,8 +369,8 @@ begin
          vimax             => 0,                            -- input
 
          -- Detected input image size
-         i_hdmax           => open,                         -- output
-         i_vdmax           => open,                         -- output
+         i_hdmax           => video_hdmax_o,                -- output
+         i_vdmax           => video_vdmax_o,                -- output
 
          -- Output video parameters
          run               => '1',                          -- input

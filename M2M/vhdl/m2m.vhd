@@ -171,6 +171,8 @@ signal hr_core_burstcount     : std_logic_vector(7 downto 0);
 signal hr_core_readdata       : std_logic_vector(15 downto 0);
 signal hr_core_readdatavalid  : std_logic;
 signal hr_core_waitrequest    : std_logic;
+signal hr_low                 : std_logic;
+signal hr_high                : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- qnice_clk
@@ -180,6 +182,7 @@ signal hr_core_waitrequest    : std_logic;
 signal qnice_dvi              : std_logic;
 signal qnice_video_mode       : natural range 0 to 3;
 signal qnice_scandoubler      : std_logic;
+signal qnice_csync            : std_logic;
 signal qnice_audio_mute       : std_logic;
 signal qnice_audio_filter     : std_logic;
 signal qnice_zoom_crop        : std_logic;
@@ -317,11 +320,14 @@ begin
       hr_core_readdata_o      => hr_core_readdata,
       hr_core_readdatavalid_o => hr_core_readdatavalid,
       hr_core_waitrequest_o   => hr_core_waitrequest,
+      hr_high_o               => hr_high,
+      hr_low_o                => hr_low,
 
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi,
       qnice_video_mode_i      => qnice_video_mode,
       qnice_scandoubler_i     => qnice_scandoubler,
+      qnice_csync_i           => qnice_csync,
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
@@ -366,6 +372,7 @@ begin
          qnice_dvi_o             => qnice_dvi,
          qnice_video_mode_o      => qnice_video_mode,
          qnice_scandoubler_o     => qnice_scandoubler,
+         qnice_csync_o           => qnice_csync,
          qnice_audio_mute_o      => qnice_audio_mute,
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,
@@ -462,7 +469,9 @@ begin
          hr_core_burstcount_o    => hr_core_burstcount,
          hr_core_readdata_i      => hr_core_readdata,
          hr_core_readdatavalid_i => hr_core_readdatavalid,
-         hr_core_waitrequest_i   => hr_core_waitrequest
+         hr_core_waitrequest_i   => hr_core_waitrequest,
+         hr_high_i               => hr_high,
+         hr_low_i                => hr_low
       ); -- CORE
 
 end architecture synthesis;

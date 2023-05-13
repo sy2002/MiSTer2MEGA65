@@ -12,6 +12,7 @@ entity cdc_slow is
   );
   port (
     src_clk_i   : in    std_logic;
+    src_rst_i   : in    std_logic;
     src_valid_i : in    std_logic;
     src_data_i  : in    std_logic_vector(G_DATA_SIZE - 1 downto 0);
     dst_clk_i   : in    std_logic;
@@ -33,6 +34,10 @@ begin
       if rising_edge(src_clk_i) then
          src_data(G_DATA_SIZE-1 downto 0) <= src_data_i;
          src_data(G_DATA_SIZE) <= src_data(G_DATA_SIZE) xor src_valid_i;
+
+         if src_rst_i = '1' then
+            src_data <= (others => '0');
+         end if;
       end if;
    end process;
 
