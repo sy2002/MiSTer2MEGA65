@@ -38,7 +38,7 @@ port (
    sd_mosi_o            : out std_logic;
    sd_miso_i            : in std_logic;
    sd_cd_i              : in std_logic;
-   
+
    -- SD Card (external on back)
    sd2_reset_o          : out std_logic;           -- SD card interface via SPI
    sd2_clk_o            : out std_logic;
@@ -53,29 +53,29 @@ port (
    csr_keyboard_o       : out std_logic;           -- couple the MEGA65 keyboard with the MiSTer core
    csr_joy1_o           : out std_logic;           -- ditto joystick port #1
    csr_joy2_o           : out std_logic;           -- ditto joystick port #2
-   osm_xy_o             : out std_logic_vector(15 downto 0);   -- On-Screen-Menu x|y (in chars): x=hi-byte y=lo-byte 
+   osm_xy_o             : out std_logic_vector(15 downto 0);   -- On-Screen-Menu x|y (in chars): x=hi-byte y=lo-byte
    osm_dxdy_o           : out std_logic_vector(15 downto 0);   -- On-Screen-Menu dx|dy (in chars): dx=hi-byte dy=lo-byte
-   
+
    -- ascal.vhd mode register
    -- ascal_mode_o is equal to ascal_mode_i if QNICE CSR bit 11 = 1 otherwise ascal_mode_o is set via
    -- QNICE register 0xFFE3 (M2M$ASCAL_MODE)
    ascal_mode_i         : in std_logic_vector(4 downto 0);
    ascal_mode_o         : out std_logic_vector(4 downto 0);
-   
+
    -- Keyboard input for the firmware and Shell (see sysdef.asm)
    keys_n_i             : in std_logic_vector(15 downto 0);
-   
+
    -- 256-bit general purpose control (output) flags
    -- "d" = directly controled by the firmware
    -- "m" = indirectly controled by the menu system
    control_d_o          : out std_logic_vector(255 downto 0);
    control_m_o          : out std_logic_vector(255 downto 0);
-   
+
    -- 16-bit special-purpose and 16-bit general purpose input flags: Read-only
    -- Special-purpose is meant to be used by the Shell, but currently it is reserved and not used, yet
    -- General-purpose can be used freely by custom QNICE assembly code
    special_i            : in std_logic_vector(15 downto 0);
-   general_i            : in std_logic_vector(15 downto 0); 
+   general_i            : in std_logic_vector(15 downto 0);
 
    -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
    -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
@@ -85,9 +85,10 @@ port (
    ramrom_data_o        : out std_logic_vector(15 downto 0);
    ramrom_data_i        : in std_logic_vector(15 downto 0);
    ramrom_ce_o          : out std_logic;
+   ramrom_wait_i        : in std_logic;
    ramrom_we_o          : out std_logic
-); 
-end QNICE;
+);
+end entity QNICE;
 
 architecture beh of QNICE is
 
@@ -218,19 +219,19 @@ begin
                   osm_dxdy_data_out          or
                   ascal_mode_data_out        or
                   special_data_out           or
-                  general_data_out           or                                    
-                  keys_data_out              or                 
+                  general_data_out           or
+                  keys_data_out              or
                   cfd_addr_data_out          or
                   cfd_data_data_out          or
                   cfm_addr_data_out          or
                   cfm_data_data_out          or
                   ramrom_dev_data_out        or
                   ramrom_4kwin_data_out;
-                                                                                          
+
    -- generate the general reset signal
-   reset_ctl <= '1' when (reset_pre_pore = '1' or reset_post_pore = '1') else '0';                     
-                  
-   -- connect external registers with internal registers 
+   reset_ctl <= '1' when (reset_pre_pore = '1' or reset_post_pore = '1') else '0';
+
+   -- connect external registers with internal registers
    csr_reset_o       <= reg_csr(0);
    csr_pause_o       <= reg_csr(1);
    csr_osm_o         <= reg_csr(2);
@@ -244,14 +245,14 @@ begin
    ramrom_we_o       <= ramrom_we;
    ramrom_addr_o     <= std_logic_vector(to_unsigned(reg_ramrom_4kwin * 4096 + to_integer(unsigned(cpu_addr(11 downto 0))), 28));
    ramrom_data_o     <= cpu_data_out;
-                     
+
    -- QNICE CPU
    cpu : entity work.QNICE_CPU
       port map
       (
          CLK                  => clk50_i,
          RESET                => reset_ctl,
-         WAIT_FOR_DATA        => cpu_wait_for_data,
+         WAIT_FOR_DATA        => cpu_wait_for_data or ramrom_wait_i,
          ADDR                 => cpu_addr,
          DATA_IN              => cpu_data_in,
          DATA_OUT             => cpu_data_out,
@@ -262,7 +263,7 @@ begin
          INT_N                => '1',
          IGRANT_N             => open
       );
-                  
+
    -- QNICE ROM
    rom : entity work.BROM
       generic map
@@ -276,7 +277,7 @@ begin
          address              => cpu_addr(14 downto 0),
          data                 => rom_data_out
       );
-     
+
    -- RAM: up to 64kB consisting of up to 32.000 16 bit words
    ram : entity work.BRAM
       port map
@@ -284,10 +285,10 @@ begin
          clk                  => clk50_i,
          ce                   => ram_en,
          address              => cpu_addr(14 downto 0),
-         we                   => cpu_data_dir,         
+         we                   => cpu_data_dir,
          data_i               => cpu_data_out,
          data_o               => ram_data_out,
-         busy                 => open         
+         busy                 => open
       );
 
    -- special UART with FIFO that can be directly connected to the CPU bus
@@ -307,11 +308,11 @@ begin
          uart_en              => uart_en,
          uart_we              => uart_we,
          uart_reg             => uart_reg,
-         uart_cpu_ws          => uart_cpu_ws,         
+         uart_cpu_ws          => uart_cpu_ws,
          cpu_data_in          => cpu_data_out,
          cpu_data_out         => uart_data_out
       );
-      
+
    -- EAE - Extended Arithmetic Element (32-bit multiplication, division, modulo)
    eae_inst : entity work.eae
       port map
@@ -324,43 +325,43 @@ begin
          data_in              => cpu_data_out,
          data_out             => eae_data_out
       );
-      
-   -- Smart SD card multiplexer: handles the two different SD Card slots of the MEGA65 (see also sysdef.asm)       
+
+   -- Smart SD card multiplexer: handles the two different SD Card slots of the MEGA65 (see also sysdef.asm)
    i_sdmux : entity work.sdmux
       port map
       (
          -- QNICE system interface
          sysclk50Mhz_i        => clk50_i,
          sysreset_i           => reset_ctl,
-         
+
          -- Configuration lines to control the behavior of the multiplexer
          mode_i               => sd_mode,
          active_o             => sd_inuse_rd,
          force_i              => sd_inuse_wr,
          detected_int_o       => sd_cd_int,
          detected_ext_o       => sd_cd_ext,
-                  
+
          -- interface to bottom tray's SD card
          sd_tray_detect_i     => sd_cd_i,
          sd_tray_reset_o      => sd_reset_o,
          sd_tray_clk_o        => sd_clk_o,
          sd_tray_mosi_o       => sd_mosi_o,
          sd_tray_miso_i       => sd_miso_i,
-         
+
          -- interface to the SD card in the back slot
          sd_back_detect_i     => sd2_cd_i,
          sd_back_reset_o      => sd2_reset_o,
          sd_back_clk_o        => sd2_clk_o,
          sd_back_mosi_o       => sd2_mosi_o,
          sd_back_miso_i       => sd2_miso_i,
-         
+
          -- interface to the QNICE SD card controller
-         ctrl_reset_o         => sd_mux_reset_ctrl, 
+         ctrl_reset_o         => sd_mux_reset_ctrl,
          ctrl_sd_reset_i      => sd_mux_reset_card,
          ctrl_sd_clk_i        => sd_mux_clk,
          ctrl_sd_mosi_i       => sd_mux_mosi,
          ctrl_sd_miso_o       => sd_mux_miso
-      );      
+      );
 
    -- SD Card: connect QNICE SD Card logic to the smart multiplexer
    sd_card : entity work.sdcard
@@ -378,23 +379,23 @@ begin
          sd_mosi              => sd_mux_mosi,
          sd_miso              => sd_mux_miso
       );
-      
+
    -- Cycle Counter: used by the M2M firmware for measuring delays
    i_cyc_count: entity work.cycle_counter
       port map (
          clk                  => clk50_i,
          impulse              => '1',
          reset                => reset_ctl,
-         
+
          -- cycle counter's registers
          en                   => cyc_count_en,
          we                   => cyc_count_we,
          reg                  => cyc_count_reg,
          data_in              => cpu_data_out,
          data_out             => cyc_count_data_out
-      );   
-    
-   -- Standard QNICE-FPGA MMIO controller  
+      );
+
+   -- Standard QNICE-FPGA MMIO controller
    mmio_std : entity work.mmio_mux
       generic map
       (
@@ -407,49 +408,49 @@ begin
          -- input from hardware
          HW_RESET             => not reset_n_i,
          CLK                  => clk50_i,
-      
+
          -- input from CPU
          addr                 => cpu_addr,
          data_dir             => cpu_data_dir,
          data_valid           => cpu_data_valid,
          cpu_halt             => cpu_halt,
          cpu_igrant_n         => '1',
-         
+
          -- let the CPU wait for data from the bus
          cpu_wait_for_data    => cpu_wait_for_data,
-         
+
          -- ROM is enabled when the address is < $8000 and the CPU is reading
          -- But because we map the general purpose 4k MMIO window to $7000, this is only a "maybe"
          rom_enable           => rom_en_maybe,
          rom_busy             => '0',
-         
+
          -- RAM is enabled when the address is in ($8000..$FEFF)
          ram_enable           => ram_en,
          ram_busy             => '0',
-                          
+
          -- SWITCHES is $FF00
          switch_reg_enable    => open,    -- hardcoded to zero (STDIN=STDOUT=UART)
-         
+
          -- UART register range $FF10..$FF13
          uart_en              => uart_en,
          uart_we              => uart_we,
          uart_reg             => uart_reg,
          uart_cpu_ws          => uart_cpu_ws,
-         
+
          -- Extended Arithmetic Element register range $FF18..$FF1F
          eae_en               => eae_en,
          eae_we               => eae_we,
          eae_reg              => eae_reg,
-      
+
          -- SD Card register range $FF20..FF27
          sd_en                => sd_en,
          sd_we                => sd_we,
          sd_reg               => sd_reg,
-         
+
          -- global state and reset management
          reset_pre_pore       => reset_pre_pore,
          reset_post_pore      => reset_post_pore,
-                                 
+
          -- Cycle Counter
          cyc_en               => cyc_count_en,
          cyc_we               => cyc_count_we,
@@ -457,7 +458,7 @@ begin
 
          -- QNICE hardware unsupported by MiSTer2MEGA65
          til_reg0_enable      => open,
-         til_reg1_enable      => open,         
+         til_reg1_enable      => open,
          kbd_en               => open,
          kbd_we               => open,
          kbd_reg              => open,
@@ -465,7 +466,7 @@ begin
          ins_we               => open,
          ins_reg              => open,
          pore_rom_enable      => open,
-         pore_rom_busy        => '0',      
+         pore_rom_busy        => '0',
          tin_en               => open,
          tin_we               => open,
          tin_reg              => open,
@@ -474,12 +475,12 @@ begin
          vga_reg              => open,
          hram_en              => open,
          hram_we              => open,
-         hram_reg             => open, 
-         hram_cpu_ws          => '0'          
+         hram_reg             => open,
+         hram_cpu_ws          => '0'
       );
-               
+
    -- Additional MiSTer2MEGA65 specific MMIO (refer to M2M/rom/sysdef.asm for a memory map and more details)
-   -- 0x7000: 4k MMIO window 
+   -- 0x7000: 4k MMIO window
    -- 0xFFE0: Control and status register
    -- 0xFFE1: OSM x|y coordinates (in chars)
    -- 0xFFE2: OSM dx|dy width|height (in chars)
@@ -497,7 +498,7 @@ begin
    csr_we                     <= csr_en and cpu_data_dir and cpu_data_valid;
    csr_data_out               <=                  "0000" & -- see sysdef.asm for details about the mapping of the bits
                                  /* bit 11 */      reg_csr(11) &
-                                 /* bit 10 */      sd_cd_ext & 
+                                 /* bit 10 */      sd_cd_ext &
                                  /* bit 9  */      sd_cd_int &
                                  /* bit 8  */      sd_inuse_rd &
                                                    reg_csr(7 downto 0) when csr_en = '1' and csr_we = '0' else (others => '0');
@@ -530,7 +531,7 @@ begin
 
    cfd_data_en                <= '1' when cpu_addr = x"FFF1" else '0';
    cfd_data_we                <= cfd_data_en and cpu_data_dir and cpu_data_valid;
-   cfd_data_data_out          <= control_d_o(((reg_cfd_addr + 1) * 16) - 1 downto (reg_cfd_addr * 16)) when cfd_data_en = '1' and cfd_data_we = '0' else (others => '0');  
+   cfd_data_data_out          <= control_d_o(((reg_cfd_addr + 1) * 16) - 1 downto (reg_cfd_addr * 16)) when cfd_data_en = '1' and cfd_data_we = '0' else (others => '0');
 
    cfm_addr_en                <= '1' when cpu_addr = x"FFF2" else '0';
    cfm_addr_we                <= cfm_addr_en and cpu_data_dir and cpu_data_valid;
@@ -546,7 +547,7 @@ begin
 
    ramrom_4kwin_en            <= '1' when cpu_addr = x"FFF5" else '0';
    ramrom_4kwin_we            <= ramrom_4kwin_en and cpu_data_dir and cpu_data_valid;
-   ramrom_4kwin_data_out      <= std_logic_vector(to_unsigned(reg_ramrom_4kwin, 16)) when ramrom_4kwin_en = '1' and ramrom_4kwin_we = '0' else (others => '0');    
+   ramrom_4kwin_data_out      <= std_logic_vector(to_unsigned(reg_ramrom_4kwin, 16)) when ramrom_4kwin_en = '1' and ramrom_4kwin_we = '0' else (others => '0');
 
    -- Registers (see also M2M/rom/sysdef.asm)
    handle_regs : process(clk50_i)
@@ -558,19 +559,19 @@ begin
                                      -- Default: Auto select SD card: bit 6 = 0
                                      -- Default: internal card (bottom tray): bit 7 = 0
                                      -- Default: Auto-sync ascal settings = on: bit 11 aka ascal_usage = 1
-                                                
+
             ascal_mode_o <= "00000"; -- nearest neighbor scaler, no triple buffering
 
              -- OSM is fullscreen by default
             osm_xy_o    <= x"0000";
             osm_dxdy_o  <= std_logic_vector(to_unsigned(CHARS_DX * 256 + CHARS_DY, 16));
-            
+
             -- General purpose control flag management registers
             reg_cfd_addr <= 0;
             reg_cfm_addr <= 0;
             control_d_o <= (others => '0');
             control_m_o <= (others => '0');
-            
+
             -- MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
             ramrom_dev_o <= x"0000";
             reg_ramrom_4kwin <= 0;
@@ -579,16 +580,16 @@ begin
             if csr_we then
                reg_csr <= cpu_data_out;
             end if;
-            
+
             -- ascal mode register
             if ascal_usage = '0' then
                if ascal_mode_we then
                   ascal_mode_o <= cpu_data_out(4 downto 0);
-               end if;            
+               end if;
             else
                ascal_mode_o <= ascal_mode_i;
             end if;
-                        
+
             -- OSM registers
             if osm_xy_we then
                osm_xy_o <= cpu_data_out;
@@ -596,7 +597,7 @@ begin
             if osm_dxdy_we then
                osm_dxdy_o <= cpu_data_out;
             end if;
-            
+
             -- General purpose control flag management registers
             if cfd_addr_we then
                reg_cfd_addr <= to_integer(unsigned(cpu_data_out(3 downto 0)));
@@ -608,12 +609,12 @@ begin
                reg_cfm_addr <= to_integer(unsigned(cpu_data_out(3 downto 0)));
             end if;
             if cfm_data_we then
-               control_m_o(((reg_cfm_addr + 1) * 16) - 1 downto (reg_cfm_addr * 16)) <= cpu_data_out;            
+               control_m_o(((reg_cfm_addr + 1) * 16) - 1 downto (reg_cfm_addr * 16)) <= cpu_data_out;
             end if;
-            
+
             -- MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
             if ramrom_dev_we then
-               ramrom_dev_o <= cpu_data_out;   
+               ramrom_dev_o <= cpu_data_out;
             end if;
             if ramrom_4kwin_we then
                reg_ramrom_4kwin <= to_integer(unsigned(cpu_data_out));
@@ -621,6 +622,6 @@ begin
          end if;
       end if;
    end process;
-         
-end beh;
+
+end architecture beh;
 

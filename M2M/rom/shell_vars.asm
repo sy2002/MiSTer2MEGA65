@@ -31,7 +31,15 @@ OPTM_DTY_STATUS .BLOCK 1                        ; cache dirty status; all drvs
 ; "..." if they are too long. See also HELP_MENU and HANDLE_MOUNTING.
 ;
 ; OPTM_HEAP also stores the replacement strings for %s within submenu
-; headlines / entry points.
+; headlines/entry points and the replacem. strings for %s for CRT/ROM loading
+;
+; Each reserved memory block for one string is @SCR$OSM_O_DX in size.
+;
+; Memory map:
+;
+; VDrive strings:   <amount of virtual drives> x @SCR$OSM_O_DX
+; Submenu strings:  <amount of submenus> x @SCR$OSM_O_DX
+; CRT/ROM strings:  <amount of manual loadable CRTs/ROMs> x @SCR$OSM_O_DX
 ;
 ; OPTM_HEAP_LAST points to a scratch buffer that can hold a modified filename
 ; for saving/restoring while the cache dirty "Saving" message is shown.
@@ -40,26 +48,34 @@ OPTM_HEAP       .BLOCK 1
 OPTM_HEAP_LAST  .BLOCK 1
 OPTM_HEAP_SIZE  .BLOCK 1                        ; size of this scratch buffer
 
-; Static variable used by the callback function OPTM_CB_SHOW to keep track
-; of the instance of submenu that is currently being processed
-OPTM_SUBMENINST .BLOCK 1
-
+; Temporary variables (only to be used in a very narrow local scope)
 SCRATCH_HEX     .BLOCK 5
+SCRATCH_DWORD   .BLOCK 2
 
 ; SD card device handle and array of pointers to file handles for disk images
 HANDLE_DEV      .BLOCK  FAT32$DEV_STRUCT_SIZE
 
 ; Important: Make sure you have as many ".BLOCK FAT32$FDH_STRUCT_SIZE"
-; statements listed one after another as the .EQU VDRIVES_MAX (below) demands
-; and make sure that the HANDLES_FILES array in shell.asm points 
-; to all of them, i.e. you need to edit shell.asm
+; statements listed one after another as the .EQU VDRIVES_MAX (below) plus
+; the .EQU CRTROM_MAN_MAX demands and make sure that the HNDL_VD_FILES
+; and HNDL_RM_FILES arrays in shell.asm point to the right amount of them
+; as well, i.e. you need to edit shell.asm
 HANDLE_FILE1    .BLOCK  FAT32$FDH_STRUCT_SIZE
 HANDLE_FILE2    .BLOCK  FAT32$FDH_STRUCT_SIZE
 HANDLE_FILE3    .BLOCK  FAT32$FDH_STRUCT_SIZE
+HANDLE_FILE4    .BLOCK  FAT32$FDH_STRUCT_SIZE
+HANDLE_FILE5    .BLOCK  FAT32$FDH_STRUCT_SIZE
+HANDLE_FILE6    .BLOCK  FAT32$FDH_STRUCT_SIZE
 
 ; Remember configuration handling:
 ; * We are using a separate device handle because some logic around SD card
 ;   switching in shell.asm is tied to the status of HANDLE_DEV.
+;   Warning: This is not a best practice. If you want to leverage the
+;   automatic data corruption prevention built in to the FAT32 library of the
+;   monitor, then stick to one device handle per device. Since we are not
+;   following this best practice, we need to prevent data corruption by
+;   ourselves, for example see the ROSM_SAVE dirty check in options.asm.
+;   @TODO: We might want to re-factor the handling of device handles.
 ; * File-handle for config file (saving/loading OSM settings) is valid (i.e.
 ;   not null) when SAVE_SETTINGS (config.vhd) is true and when the file
 ;   specified by CFG_FILE (config.vhd) exists and has exactly the size of
@@ -91,9 +107,11 @@ FB_STACK        .BLOCK 1                        ; local stack used by browser
 FB_STACK_INIT   .BLOCK 1                        ; initial local browser stack
 FB_MAINSTACK    .BLOCK 1                        ; stack of main program
 FB_HEAD         .BLOCK 1                        ; lnkd list: curr. disp. head
+FB_LASTCALLER   .BLOCK 1                        ; vdrive id/CRTROM id + mode
 
 ; context variables (see CTX_* constants in sysdef.asm)
 SF_CONTEXT      .BLOCK 1                        ; context for SELECT_FILE
+SF_CONTEXT_DATA .BLOCK 1                        ; optional add. data for ctx
 
 ; Virtual drive system (aka mounting disk/module/tape images):
 ; VDRIVES_NUM:      Amount of virtual, mountable drives; needs to correlate
@@ -132,3 +150,22 @@ VDRIVES_FLUSH_L .BLOCK  VDRIVES_MAX
 VDRIVES_ITERSIZ .BLOCK  VDRIVES_MAX
 VDRIVES_FL_4K   .BLOCK  VDRIVES_MAX
 VDRIVES_FL_OFS  .BLOCK  VDRIVES_MAX
+
+; System to handle manually and automatically loaded cartridges and ROMs
+; See also globals.vhd: There are multiple types of "byte streaming devices"
+; that are able to receive the CRT/ROM data. All need to obey to a certain
+; protocol that is: 4K windows 0x0000..0xFFFE can be used to recieve data and
+; the 4K window 0xFFFF is used as a control and status register
+CRTROM_MAN_NUM  .BLOCK 1                        ; amount of manual CRTs/ROMs
+CRTROM_MAN_MAX  .EQU   3                        ; max. amt. of. man. CRTS/ROMs
+CRTROM_MAN_LDF  .BLOCK CRTROM_MAN_MAX           ; flag: has been loaded
+CRTROM_MAN_DEV  .BLOCK CRTROM_MAN_MAX           ; byte streaming device ids
+CRTROM_MAN_4KS  .BLOCK CRTROM_MAN_MAX           ; 4K start address within dev.
+CRTROM_AUT_NUM  .BLOCK 1                        ; amount of automatic ROMSs
+CRTROM_AUT_MAX  .EQU   3                        ; max. amt. of. automatic ROMs
+CRTROM_AUT_LDF  .BLOCK CRTROM_AUT_MAX           ; flag: has been loaded
+CRTROM_AUT_DEV  .BLOCK CRTROM_AUT_MAX           ; byte streaming device ids
+CRTROM_AUT_4KS  .BLOCK CRTROM_AUT_MAX           ; 4K start address within dev.
+CRTROM_AUT_MOD  .BLOCK CRTROM_AUT_MAX           ; mode: mandatory or optional
+CRTROM_AUT_NAM  .BLOCK CRTROM_AUT_MAX           ; startpos of filenames
+CRTROM_AUT_FILE .BLOCK  FAT32$FDH_STRUCT_SIZE   ; file handle to autoload ROMs

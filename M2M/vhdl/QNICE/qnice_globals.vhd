@@ -13,6 +13,8 @@ use IEEE.STD_LOGIC_1164.all;
 
 package env1_globals is
 
+constant QNICE_CLK_SPEED      : natural   := 50_000_000;
+
 -- size of lower register bank: needs to be 256 for standard QNICE
 -- depending on the ROM/firmware we ca reduce it to save FPGA resources
 -- for MiSTer2MEGA65 we assume that 32 is enough

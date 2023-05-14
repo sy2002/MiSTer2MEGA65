@@ -87,7 +87,7 @@ _HH_7           ADD     M2M$WHS_HELP_INDEX, R1
                 RSUB    SCR$OSM_O_ON, 1
                 MOVE    R2, R8
                 XOR     R9, R9
-                RSUB    _HM_SETMENU, 1
+                RSUB    OPTM_SET, 1
                 RBRA    _HH_C1, 1
 
 _HH_C0          AND     0xFFFB, SR              ; clear Carry

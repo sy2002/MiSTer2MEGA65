@@ -105,6 +105,8 @@ M2M$DIR_L           .EQU 17     ; left char for displaying a directory
 M2M$DIR_R           .EQU 16     ; right char for displaying a directory
 M2M$OPT_SEL_MULTI   .EQU 7      ; selection char for options menu: multi-sel.
 M2M$OPT_SEL_SINGLE  .EQU 61     ; ditto for single select
+M2M$LD_PROGRESS     .EQU 254    ; character used for progress bar
+M2M$LD_SPACE        .EQU 32     ; space character
 
 ; ----------------------------------------------------------------------------
 ; HDMI: Avalon Scaler (ascal.vhd)
@@ -200,6 +202,8 @@ M2M$VRAM_DATA       .EQU 0x0000     ; Device for VRAM: Data
 M2M$VRAM_ATTR       .EQU 0x0001     ; Device for VRAM: Attributes
 M2M$CONFIG          .EQU 0x0002     ; Static Shell config data (config.vhd)
 M2M$ASCAL_PPHASE    .EQU 0x0003     ; ascal.vhd Polyphase filter RAM
+M2M$HYPERRAM        .EQU 0x0004     ; Device for the built-in 8MB of HyperRAM
+M2M$SDRAM           .EQU 0x0005     ; @TODO/RESERVED for future R4 boards 
 
 M2M$SYS_INFO        .EQU 0x00FF     ; Device for System Info
 
@@ -211,9 +215,10 @@ M2M$RAMROM_DATA     .EQU 0x7000     ; 4k MMIO window to read/write
 ; ----------------------------------------------------------------------------
 
 ; Selectors (4k windows)
-M2M$SYS_VDRIVES     .EQU 0x0000     ; vdrives constants
+M2M$SYS_VDRIVES     .EQU 0x0000     ; vdrives constants (globals.vhd)
 M2M$SYS_VGA         .EQU 0x0010     ; gfx adaptor 0: VGA
 M2M$SYS_HDMI        .EQU 0x0011     ; gfx adaptor 1: HDMI
+M2M$SYS_CRTSANDROMS .EQU 0x0020     ; sim. CRTs. & ROMs (globals.vhd)
 
 ; The following read-only registers are meant to be used by the QNICE
 ; firmware. They enable the ability to specify the hardware screen resolution
@@ -233,7 +238,6 @@ M2M$CFG_WHS         .EQU 0x1000     ; Welcome & Help screens
 M2M$CFG_DIR_START   .EQU 0x0100     ; Start folder for file browser
 M2M$CFG_CFG_FILE    .EQU 0x0101     ; Config file for OSM persistence
 M2M$CFG_GENERAL     .EQU 0x0110     ; General configuration settings
-M2M$CFG_ROMS        .EQU 0x0200     ; Mandatory and optional ROMs
 
 M2M$CFG_OPTM_ITEMS  .EQU 0x0300     ; "Help" menu / Options menu items
 M2M$CFG_OPTM_GROUPS .EQU 0x0301     ; Menu groups
@@ -247,6 +251,8 @@ M2M$CFG_OPTM_MSTR   .EQU 0x0308     ; Mount string to display instead of %s
 M2M$CFG_OPTM_DIM    .EQU 0x0309     ; DX and DY of Options/Help menu
 M2M$CFG_OPTM_SSTR   .EQU 0x030A     ; Saving string to display instead of %s
 M2M$CFG_OPTM_HELP   .EQU 0x0310     ; Menu item = show a help menu
+M2M$CFG_OPTM_CRTROM .EQU 0x0311     ; Menu item = manually load CRT/ROM
+M2M$CFG_OPTM_CRSTR  .EQU 0x0312     ; CRT/ROM load str. to show instead of %s
 
 ; M2M$CFG_WHS
 
@@ -292,7 +298,7 @@ M2M$CFG_AUSE_AUTO   .EQU 0x0002     ; auto-sync via M2M$CFG_ASCAL_USAGE
 ; Virtual Drives Device for MiSTer "SD" interface (vdrives.vhd)
 ; ----------------------------------------------------------------------------
 
-; sysinfo addresses
+; sysinfo addresses (data is configured by the user in globals.vhd)
 VD_NUM              .EQU 0x7000     ; amount of virtual drives
 VD_DEVICE           .EQU 0x7001     ; address of the vdrives.vhd device
 VD_RAM_BUFFERS      .EQU 0x7100     ; array of RAM buffers to store dsk images
@@ -333,6 +339,48 @@ VD_CACHE_FLUSH_ST   .EQU 0x700E     ; cache flushing can start now
 VD_CACHE_FLUSH_DE   .EQU 0x700F     ; delay in ms between VD_WR and FLUSH_ST
 
 ; ----------------------------------------------------------------------------
+; Automatically and manually loadable cartridges and ROMs
+; ----------------------------------------------------------------------------
+
+; sysinfo addresses (data is configured by the user in globals.vhd)
+CRTROM_MAN_NUM_A    .EQU 0x7000     ; amount of manually loadable CRTs/ROMs
+CRTROM_AUT_NUM_A    .EQU 0x7001     ; amount of automatically loadable ROMs
+CRTROM_MAN_BUFFERS  .EQU 0x7100     ; array of records: manually loadable
+CRTROM_AUT_BUFFERS  .EQU 0x7200     ; array of records: automatically loadable
+CRTROM_AUT_FILES    .EQU 0x7300     ; auto-load filesnames
+
+; Type of byte streaming device for receiving the CRT/ROM data
+CRTROM_TYPE_DEVICE  .EQU 0x0000     ; any QNICE compatible device
+CRTROM_TYPE_HYPRAM  .EQU 0x0001     ; HyperRAM
+CRTROM_TYPE_SDRAM   .EQU 0x0002     ; @TODO/RESERVED for future R4 boards
+CRTROM_TYPE_MNDTRY  .EQU 0x0003     ; mandatory ROM
+CTRROM_TYPE_OPTNL   .EQU 0x0004     ; optional ROM
+
+; Control and status registers of a CRT/ROM device
+CRTROM_CSR_4KWIN    .EQU 0xFFFF     ; 4K window in the device addr. space
+   
+CRTROM_CSR_STATUS   .EQU 0x7000     ; QNICE to device: load status (see below)
+CRTROM_CSR_FS_LO    .EQU 0x7001     ; filesize of CRT/ROM: low word
+CRTROM_CSR_FS_HI    .EQU 0x7002     ; filesize of CRT/ROM: high word
+CRTROM_CSR_PARSEST  .EQU 0x7010     ; device to QNICE: parse status
+CRTROM_CSR_PARSEE1  .EQU 0x7011     ; device to QNICE: error code
+CRTROM_CSR_ADDR_LO  .EQU 0x7012     ; device to QNICE: load address low word
+CRTROM_CSR_ADDR_HI  .EQU 0x7013     ; device to QNICE: load address high word
+CRTROM_CSR_ERR_STRT .EQU 0x7100     ; device to QNICE: status string
+
+; QNICE to device: CRT/ROM load status
+CRTROM_CSR_ST_IDLE  .EQU 0x0000     ; device is initialized, no loading
+CRTROM_CSR_ST_LDNG  .EQU 0x0001     ; loading takes place
+CRTROM_CSR_ST_ERR   .EQU 0x0002     ; loading failed
+CRTROM_CSR_ST_OK    .EQU 0x0003     ; loading successful
+
+; Device to QNICE: Parsing status
+CRTROM_CSR_PT_IDLE  .EQU 0x0000     ; parser is idle
+CRTROM_CSR_PT_PRSNG .EQU 0x0001     ; parser is parsing
+CRTROM_CSR_PT_OK    .EQU 0x0002     ; parsing successful
+CRTROM_CSR_PT_ERR   .EQU 0x0003     ; parsing error
+
+; ----------------------------------------------------------------------------
 ; Situation and context identifiers for custom messages
 ; ----------------------------------------------------------------------------
 
@@ -344,7 +392,6 @@ CTX_MASK_PARAM      .EQU 0x00FF     ; used to mask out the higher byte
 ; to filter for the right types and to output context-sensitive messages
 CTX_MOUNT_DISKIMG   .EQU 0x0100     ; trying to mount a disk image
 CTX_LOAD_ROM        .EQU 0x0200     ; trying to mount a rom image
-
 
 ; The filter function returned an empty linked list. This happens when there
 ; is no file that fits the criteria in the root folder and additionally the

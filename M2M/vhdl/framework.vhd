@@ -21,84 +21,85 @@ use xpm.vcomponents.all;
 
 entity framework is
 port (
-   CLK            : in  std_logic;                  -- 100 MHz clock
-   
+   CLK                     : in  std_logic;                  -- 100 MHz clock
+
    -- MAX10 FPGA (delivers reset)
-   max10_tx          : in std_logic;
-   max10_rx          : out std_logic;
-   max10_clkandsync  : out std_logic;
+   max10_tx                : in  std_logic;
+   max10_rx                : out std_logic;
+   max10_clkandsync        : out std_logic;
 
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
-   UART_RXD       : in  std_logic;                  -- receive data
-   UART_TXD       : out std_logic;                  -- send data
+   UART_RXD                : in  std_logic;                  -- receive data
+   UART_TXD                : out std_logic;                  -- send data
 
    -- VGA
-   VGA_RED        : out std_logic_vector(7 downto 0);
-   VGA_GREEN      : out std_logic_vector(7 downto 0);
-   VGA_BLUE       : out std_logic_vector(7 downto 0);
-   VGA_HS         : out std_logic;
-   VGA_VS         : out std_logic;
+   VGA_RED                 : out std_logic_vector(7 downto 0);
+   VGA_GREEN               : out std_logic_vector(7 downto 0);
+   VGA_BLUE                : out std_logic_vector(7 downto 0);
+   VGA_HS                  : out std_logic;
+   VGA_VS                  : out std_logic;
 
    -- VDAC
-   vdac_clk       : out std_logic;
-   vdac_sync_n    : out std_logic;
-   vdac_blank_n   : out std_logic;
+   vdac_clk                : out std_logic;
+   vdac_sync_n             : out std_logic;
+   vdac_blank_n            : out std_logic;
 
    -- Digital Video (HDMI)
-   tmds_data_p    : out std_logic_vector(2 downto 0);
-   tmds_data_n    : out std_logic_vector(2 downto 0);
-   tmds_clk_p     : out std_logic;
-   tmds_clk_n     : out std_logic;
+   tmds_data_p             : out std_logic_vector(2 downto 0);
+   tmds_data_n             : out std_logic_vector(2 downto 0);
+   tmds_clk_p              : out std_logic;
+   tmds_clk_n              : out std_logic;
 
    -- MEGA65 smart keyboard controller
-   kb_io0         : out std_logic;                 -- clock to keyboard
-   kb_io1         : out std_logic;                 -- data output to keyboard
-   kb_io2         : in  std_logic;                 -- data input from keyboard
+   kb_io0                  : out std_logic;                 -- clock to keyboard
+   kb_io1                  : out std_logic;                 -- data output to keyboard
+   kb_io2                  : in  std_logic;                 -- data input from keyboard
 
    -- SD Card (internal on bottom)
-   SD_RESET       : out std_logic;
-   SD_CLK         : out std_logic;
-   SD_MOSI        : out std_logic;
-   SD_MISO        : in  std_logic;
-   SD_CD          : in  std_logic;
+   SD_RESET                : out std_logic;
+   SD_CLK                  : out std_logic;
+   SD_MOSI                 : out std_logic;
+   SD_MISO                 : in  std_logic;
+   SD_CD                   : in  std_logic;
 
    -- SD Card (external on back)
-   SD2_RESET      : out std_logic;
-   SD2_CLK        : out std_logic;
-   SD2_MOSI       : out std_logic;
-   SD2_MISO       : in  std_logic;
-   SD2_CD         : in  std_logic;
+   SD2_RESET               : out std_logic;
+   SD2_CLK                 : out std_logic;
+   SD2_MOSI                : out std_logic;
+   SD2_MISO                : in  std_logic;
+   SD2_CD                  : in  std_logic;
 
    -- 3.5mm analog audio jack
-   pwm_l          : out std_logic;
-   pwm_r          : out std_logic;
+   pwm_l                   : out std_logic;
+   pwm_r                   : out std_logic;
 
    -- Joysticks and Paddles
-   joy_1_up_n     : in  std_logic;
-   joy_1_down_n   : in  std_logic;
-   joy_1_left_n   : in  std_logic;
-   joy_1_right_n  : in  std_logic;
-   joy_1_fire_n   : in  std_logic;
+   joy_1_up_n              : in  std_logic;
+   joy_1_down_n            : in  std_logic;
+   joy_1_left_n            : in  std_logic;
+   joy_1_right_n           : in  std_logic;
+   joy_1_fire_n            : in  std_logic;
 
-   joy_2_up_n     : in  std_logic;
-   joy_2_down_n   : in  std_logic;
-   joy_2_left_n   : in  std_logic;
-   joy_2_right_n  : in  std_logic;
-   joy_2_fire_n   : in  std_logic;
-   
-   paddle         : in std_logic_vector(3 downto 0);
-   paddle_drain   : out std_logic;   
+   joy_2_up_n              : in  std_logic;
+   joy_2_down_n            : in  std_logic;
+   joy_2_left_n            : in  std_logic;
+   joy_2_right_n           : in  std_logic;
+   joy_2_fire_n            : in  std_logic;
+
+   paddle                  : in  std_logic_vector(3 downto 0);
+   paddle_drain            : out std_logic;
 
    -- Built-in HyperRAM
-   hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
-   hr_rwds        : inout std_logic;               -- RW Data strobe
-   hr_reset       : out std_logic;                 -- Active low RESET line to HyperRAM
-   hr_clk_p       : out std_logic;
-   hr_cs0         : out std_logic;
+   hr_d                    : inout std_logic_vector(7 downto 0);    -- Data/Address
+   hr_rwds                 : inout std_logic;               -- RW Data strobe
+   hr_reset                : out std_logic;                 -- Active low RESET line to HyperRAM
+   hr_clk_p                : out std_logic;
+   hr_cs0                  : out std_logic;
 
    -- Connect to CORE
    qnice_clk_o             : out std_logic;
+   qnice_rst_o             : out std_logic;
    reset_m2m_n_o           : out std_logic;
    main_clk_i              : in  std_logic;
    main_rst_i              : in  std_logic;
@@ -138,24 +139,27 @@ port (
    main_pot1_y_o           : out std_logic_vector(7 downto 0);
    main_pot2_x_o           : out std_logic_vector(7 downto 0);
    main_pot2_y_o           : out std_logic_vector(7 downto 0);
-   
+
    -- Provide HyperRAM to core (in HyperRAM clock domain)
    hr_clk_o                : out std_logic;
    hr_rst_o                : out std_logic;
-   hr_write_i              : in  std_logic; 
-   hr_read_i               : in  std_logic;
-   hr_address_i            : in  std_logic_vector(31 downto 0);
-   hr_writedata_i          : in  std_logic_vector(15 downto 0);
-   hr_byteenable_i         : in  std_logic_vector(1 downto 0);
-   hr_burstcount_i         : in  std_logic_vector(7 downto 0);
-   hr_readdata_o           : out std_logic_vector(15 downto 0);
-   hr_readdatavalid_o      : out std_logic;
-   hr_waitrequest_o        : out std_logic;
+   hr_core_write_i         : in  std_logic;
+   hr_core_read_i          : in  std_logic;
+   hr_core_address_i       : in  std_logic_vector(31 downto 0);
+   hr_core_writedata_i     : in  std_logic_vector(15 downto 0);
+   hr_core_byteenable_i    : in  std_logic_vector(1 downto 0);
+   hr_core_burstcount_i    : in  std_logic_vector(7 downto 0);
+   hr_core_readdata_o      : out std_logic_vector(15 downto 0);
+   hr_core_readdatavalid_o : out std_logic;
+   hr_core_waitrequest_o   : out std_logic;
+   hr_high_o               : out std_logic; -- Core is too fast
+   hr_low_o                : out std_logic; -- Core is too slow
 
    -- QNICE control signals
    qnice_dvi_i             : in  std_logic;
    qnice_video_mode_i      : in  natural range 0 to 3;
    qnice_scandoubler_i     : in  std_logic;
+   qnice_csync_i           : in  std_logic;
    qnice_audio_mute_i      : in  std_logic;
    qnice_audio_filter_i    : in  std_logic;
    qnice_zoom_crop_i       : in  std_logic;
@@ -165,14 +169,15 @@ port (
    qnice_flip_joyports_i   : in  std_logic;
    qnice_osm_control_m_o   : out std_logic_vector(255 downto 0);
    qnice_gp_reg_o          : out std_logic_vector(255 downto 0);
-   
+
    -- QNICE device management
    qnice_ramrom_dev_o      : out std_logic_vector(15 downto 0);
    qnice_ramrom_addr_o     : out std_logic_vector(27 downto 0);
    qnice_ramrom_data_out_o : out std_logic_vector(15 downto 0);
    qnice_ramrom_data_in_i  : in  std_logic_vector(15 downto 0);
    qnice_ramrom_ce_o       : out std_logic;
-   qnice_ramrom_we_o       : out std_logic
+   qnice_ramrom_we_o       : out std_logic;
+   qnice_ramrom_wait_i     : in  std_logic
 );
 end entity framework;
 
@@ -190,12 +195,14 @@ constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
 constant C_DEV_VRAM_ATTR      : std_logic_vector(15 downto 0) := x"0001";
 constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
 constant C_DEV_ASCAL_PPHASE   : std_logic_vector(15 downto 0) := x"0003";
+constant C_DEV_HYPERRAM       : std_logic_vector(15 downto 0) := x"0004";
 constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 
 -- SysInfo record numbers
 constant C_SYS_DRIVES         : std_logic_vector(15 downto 0) := x"0000";
 constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
+constant C_CRTSANDROMS        : std_logic_vector(15 downto 0) := x"0020";
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -227,7 +234,12 @@ signal reset_core_n           : std_logic;
 ---------------------------------------------------------------------------------------------
 
 -- Device management
-signal qnice_ramrom_data_in   : std_logic_vector(15 downto 0);
+signal qnice_ramrom_data_in          : std_logic_vector(15 downto 0);
+signal qnice_ramrom_data_in_hyperram : std_logic_vector(15 downto 0);
+signal qnice_ramrom_wait             : std_logic;
+signal qnice_ramrom_wait_hyperram    : std_logic;
+signal qnice_ramrom_ce_hyperram      : std_logic;
+signal qnice_ramrom_address          : std_logic_vector(31 downto 0);
 
 -- QNICE control and status register
 signal main_csr_keyboard_on   : std_logic;
@@ -236,6 +248,7 @@ signal main_csr_joy2_on       : std_logic;
 
 signal main_zoom_crop         : std_logic;
 signal main_scandoubler       : std_logic;
+signal main_csync             : std_logic;
 
 -- keyboard handling
 signal main_qnice_keys_n      : std_logic_vector(15 downto 0);
@@ -262,9 +275,11 @@ signal main_osm_cfg_xy        : std_logic_vector(15 downto 0);
 signal main_osm_cfg_dxdy      : std_logic_vector(15 downto 0);
 signal main_osm_vram_addr     : std_logic_vector(15 downto 0);
 signal main_osm_vram_data     : std_logic_vector(15 downto 0);
+signal main_hdmax             : natural range 0 to 4095;
+signal main_vdmax             : natural range 0 to 4095;
 
 --- control signals from QNICE in main's clock domain
-signal main_audio_filter      : std_logic;      
+signal main_audio_filter      : std_logic;
 signal main_audio_mute        : std_logic;
 signal main_flip_joyports     : std_logic;
 
@@ -292,6 +307,8 @@ signal qnice_vram_attr_we     : std_logic;   -- Writing to bits 15-8
 signal qnice_osm_cfg_enable   : std_logic;
 signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
 signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
+signal qnice_hdmax            : std_logic_vector(15 downto 0);
+signal qnice_vdmax            : std_logic_vector(15 downto 0);
 
 -- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
 signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
@@ -309,6 +326,16 @@ signal qnice_pot1_x_n         : unsigned(7 downto 0);
 signal qnice_pot1_y_n         : unsigned(7 downto 0);
 signal qnice_pot2_x_n         : unsigned(7 downto 0);
 signal qnice_pot2_y_n         : unsigned(7 downto 0);
+
+signal qnice_avm_write         : std_logic;
+signal qnice_avm_read          : std_logic;
+signal qnice_avm_address       : std_logic_vector(31 downto 0);
+signal qnice_avm_writedata     : std_logic_vector(15 downto 0);
+signal qnice_avm_byteenable    : std_logic_vector(1 downto 0);
+signal qnice_avm_burstcount    : std_logic_vector(7 downto 0);
+signal qnice_avm_readdata      : std_logic_vector(15 downto 0);
+signal qnice_avm_readdatavalid : std_logic;
+signal qnice_avm_waitrequest   : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- hdmi_clk
@@ -332,15 +359,25 @@ signal hdmi_osm_control_m     : std_logic_vector(255 downto 0);
 ---------------------------------------------------------------------------------------------
 
 -- Digital pipeline's signals to the HyperRAM arbiter
-signal hr_dig_write         : std_logic;
-signal hr_dig_read          : std_logic;
-signal hr_dig_address       : std_logic_vector(31 downto 0) := (others => '0');
-signal hr_dig_writedata     : std_logic_vector(15 downto 0);
-signal hr_dig_byteenable    : std_logic_vector(1 downto 0);
-signal hr_dig_burstcount    : std_logic_vector(7 downto 0);
-signal hr_dig_readdata      : std_logic_vector(15 downto 0);
-signal hr_dig_readdatavalid : std_logic;
-signal hr_dig_waitrequest   : std_logic;
+signal hr_dig_write           : std_logic;
+signal hr_dig_read            : std_logic;
+signal hr_dig_address         : std_logic_vector(31 downto 0) := (others => '0');
+signal hr_dig_writedata       : std_logic_vector(15 downto 0);
+signal hr_dig_byteenable      : std_logic_vector(1 downto 0);
+signal hr_dig_burstcount      : std_logic_vector(7 downto 0);
+signal hr_dig_readdata        : std_logic_vector(15 downto 0);
+signal hr_dig_readdatavalid   : std_logic;
+signal hr_dig_waitrequest     : std_logic;
+
+signal hr_qnice_write         : std_logic;
+signal hr_qnice_read          : std_logic;
+signal hr_qnice_address       : std_logic_vector(31 downto 0) := (others => '0');
+signal hr_qnice_writedata     : std_logic_vector(15 downto 0);
+signal hr_qnice_byteenable    : std_logic_vector(1 downto 0);
+signal hr_qnice_burstcount    : std_logic_vector(7 downto 0);
+signal hr_qnice_readdata      : std_logic_vector(15 downto 0);
+signal hr_qnice_readdatavalid : std_logic;
+signal hr_qnice_waitrequest   : std_logic;
 
 -- HyperRAM controller
 signal hr_write               : std_logic;
@@ -403,9 +440,11 @@ end component audio_out;
 
 begin
 
-   qnice_clk_o <= qnice_clk;
    hr_clk_o    <= hr_clk_x1;
-   hr_rst_o    <= hr_rst;   
+   hr_rst_o    <= hr_rst;
+
+   qnice_clk_o <= qnice_clk;
+   qnice_rst_o <= qnice_rst;
 
    -----------------------------------------------------------------------------------------
    -- MAX10 FPGA handling: extract reset signal
@@ -429,7 +468,7 @@ begin
          j21ddr            => (others => '0'),
          j21out            => (others => '0')
       );
-      
+
    -- 20 ms stable time for the reset button
    i_reset_debouncer : entity work.debounce
       generic map(initial => '1', clk_freq => BOARD_CLK_SPEED, stable_time => 20)
@@ -512,7 +551,7 @@ begin
          dbnce_joy2_left_n    => main_joy2_left_n_o,
          dbnce_joy2_right_n   => main_joy2_right_n_o,
          dbnce_joy2_fire_n    => main_joy2_fire_n_o
-      );
+      ); -- i_joy_debouncer
 
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    i_m2m_keyb : entity work.m2m_keyb
@@ -530,7 +569,7 @@ begin
          key_num_o            => main_key_num_o,
          key_pressed_n_o      => main_key_pressed_n_o,
 
-         -- control the drive led on the MEGA65 keyboard      
+         -- control the drive led on the MEGA65 keyboard
          drive_led_i          => main_drive_led_i,
          drive_led_col_i      => main_drive_led_col_i,
 
@@ -610,6 +649,7 @@ begin
          ramrom_data_o           => qnice_ramrom_data_out_o,
          ramrom_data_i           => qnice_ramrom_data_in,
          ramrom_ce_o             => qnice_ramrom_ce_o,
+         ramrom_wait_i           => qnice_ramrom_wait,
          ramrom_we_o             => qnice_ramrom_we_o
       ); -- QNICE_SOC
 
@@ -630,11 +670,15 @@ begin
    --    All others are user specific / core specific devices
    -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
    qnice_ramrom_devices : process(all)
+      variable strpos      : natural;
+      variable current_chr : std_logic_vector(15 downto 0);
    begin
-      qnice_ramrom_data_in    <= x"EEEE";
-      qnice_vram_we           <= '0';
-      qnice_vram_attr_we      <= '0';
-      qnice_poly_wr           <= '0';
+      qnice_ramrom_ce_hyperram <= '0';
+      qnice_ramrom_data_in     <= x"EEEE";
+      qnice_ramrom_wait        <= '0';
+      qnice_vram_we            <= '0';
+      qnice_vram_attr_we       <= '0';
+      qnice_poly_wr            <= '0';
 
       -----------------------------------
       -- Framework devices
@@ -659,6 +703,12 @@ begin
                qnice_ramrom_data_in       <= x"EEEE"; -- write-only
                qnice_poly_wr              <= qnice_ramrom_we_o;
 
+            -- HyperRAM access
+            when C_DEV_HYPERRAM =>
+               qnice_ramrom_ce_hyperram   <= qnice_ramrom_ce_o;
+               qnice_ramrom_data_in       <= qnice_ramrom_data_in_hyperram;
+               qnice_ramrom_wait          <= qnice_ramrom_wait_hyperram;
+
             -- Read-only System Info (constants are defined in sysdef.asm)
             when C_DEV_SYS_INFO =>
                case qnice_ramrom_addr_o(27 downto 12) is
@@ -675,6 +725,21 @@ begin
                            end if;
                      end case;
 
+                  -- Simulated cartridges and ROMs
+                  when C_CRTSANDROMS =>
+                     if qnice_ramrom_addr_o(11 downto 0) = x"000" then
+                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROMS_MAN_NUM, 16));
+                     elsif qnice_ramrom_addr_o(11 downto 0) = x"001" then
+                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROMS_AUTO_NUM, 16));
+                     elsif qnice_ramrom_addr_o(11 downto 8) = x"1" then
+                        qnice_ramrom_data_in <= C_CRTROMS_MAN(to_integer(unsigned(qnice_ramrom_addr_o(7 downto 0))));
+                     elsif qnice_ramrom_addr_o(11 downto 8) = x"2" then
+                        qnice_ramrom_data_in <= C_CRTROMS_AUTO(to_integer(unsigned(qnice_ramrom_addr_o(7 downto 0))));
+                     elsif qnice_ramrom_addr_o(11 downto 8) >= x"3" then
+                        strpos := to_integer(unsigned(qnice_ramrom_addr_o(15 downto 0))) - 16#7300# + 1;
+                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(character'pos(C_CRTROMS_AUTO_NAMES(strpos)), 16));
+                     end if;
+
                   -- Graphics card VGA
                   when C_SYS_VGA =>
                      case qnice_ramrom_addr_o(11 downto 0) is
@@ -686,6 +751,12 @@ begin
 
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
+
+                        -- CORE_X: Horizontal size of core display
+                        when X"003" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_hdmax) + 1);
+
+                        -- CORE_Y: Vertical size of core display
+                        when X"004" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_vdmax) + 1);
 
                         when others => null;
                      end case;
@@ -709,14 +780,40 @@ begin
                end case;
             when others => null;
          end case;
-         
+
       -----------------------------------
       -- User/core specific devices
       -----------------------------------
       else
          qnice_ramrom_data_in <= qnice_ramrom_data_in_i;
+         qnice_ramrom_wait    <= qnice_ramrom_wait_i;
       end if;
    end process qnice_ramrom_devices;
+
+   qnice_ramrom_address <= "10000" & qnice_ramrom_addr_o(26 downto 0) when qnice_ramrom_addr_o(27) = '1'
+                      else "000000000" & qnice_ramrom_addr_o(22 downto 0);
+
+   i_qnice2hyperram : entity work.qnice2hyperram
+      port map (
+         clk_i                 => qnice_clk,
+         rst_i                 => qnice_rst,
+         s_qnice_wait_o        => qnice_ramrom_wait_hyperram,
+         s_qnice_address_i     => qnice_ramrom_address,
+         s_qnice_cs_i          => qnice_ramrom_ce_hyperram,
+         s_qnice_write_i       => qnice_ramrom_we_o,
+         s_qnice_writedata_i   => qnice_ramrom_data_out_o,
+         s_qnice_byteenable_i  => "11",
+         s_qnice_readdata_o    => qnice_ramrom_data_in_hyperram,
+         m_avm_write_o         => qnice_avm_write,
+         m_avm_read_o          => qnice_avm_read,
+         m_avm_address_o       => qnice_avm_address,
+         m_avm_writedata_o     => qnice_avm_writedata,
+         m_avm_byteenable_o    => qnice_avm_byteenable,
+         m_avm_burstcount_o    => qnice_avm_burstcount,
+         m_avm_readdata_i      => qnice_avm_readdata,
+         m_avm_readdatavalid_i => qnice_avm_readdatavalid,
+         m_avm_waitrequest_i   => qnice_avm_waitrequest
+      ); -- i_qnice2hyperram
 
    -- Generate the paddle readings (mouse not supported, yet)
    -- Works with 50 MHz, which happens to be the QNICE clock domain
@@ -765,8 +862,8 @@ begin
          pota_y                  => qnice_pot1_y,
          potb_x                  => qnice_pot2_x,
          potb_y                  => qnice_pot2_y
-      );
-      
+      ); -- i_mouse_paddles
+
     -- We need to invert the values that we get from i_mouse_paddles
    correct_and_flip_paddles : process(all)
    begin
@@ -779,7 +876,7 @@ begin
          qnice_pot2_x_n <= x"FF" - qnice_pot1_x;
          qnice_pot2_y_n <= x"FF" - qnice_pot1_y;
          qnice_pot1_x_n <= x"FF" - qnice_pot2_x;
-         qnice_pot1_y_n <= x"FF" - qnice_pot2_y;      
+         qnice_pot1_y_n <= x"FF" - qnice_pot2_y;
       end if;
    end process correct_and_flip_paddles;
 
@@ -790,7 +887,7 @@ begin
    -- Clock domain crossing: QNICE to core
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 554
+         WIDTH => 555
       )
       port map (
          src_clk                    => qnice_clk,
@@ -806,10 +903,11 @@ begin
          src_in(264 downto 9)       => qnice_osm_control_m_o,
          src_in(520 downto 265)     => qnice_gp_reg_o,
          src_in(521)                => qnice_scandoubler_i,
-         src_in(529 downto 522)     => std_logic_vector(qnice_pot1_x_n),
-         src_in(537 downto 530)     => std_logic_vector(qnice_pot1_y_n),
-         src_in(545 downto 538)     => std_logic_vector(qnice_pot2_x_n),
-         src_in(553 downto 546)     => std_logic_vector(qnice_pot2_y_n),
+         src_in(522)                => qnice_csync_i,
+         src_in(530 downto 523)     => std_logic_vector(qnice_pot1_x_n),
+         src_in(538 downto 531)     => std_logic_vector(qnice_pot1_y_n),
+         src_in(546 downto 539)     => std_logic_vector(qnice_pot2_x_n),
+         src_in(554 downto 547)     => std_logic_vector(qnice_pot2_y_n),
          dest_clk                   => main_clk_i,
          dest_out(0)                => main_qnice_reset_o,
          dest_out(1)                => main_qnice_pause_o,
@@ -823,22 +921,27 @@ begin
          dest_out(264 downto 9)     => main_osm_control_m_o,
          dest_out(520 downto 265)   => main_qnice_gp_reg_o,
          dest_out(521)              => main_scandoubler,
-         dest_out(529 downto 522)   => main_pot1_x_o,
-         dest_out(537 downto 530)   => main_pot1_y_o,
-         dest_out(545 downto 538)   => main_pot2_x_o,
-         dest_out(553 downto 546)   => main_pot2_y_o         
+         dest_out(522)              => main_csync,
+         dest_out(530 downto 523)   => main_pot1_x_o,
+         dest_out(538 downto 531)   => main_pot1_y_o,
+         dest_out(546 downto 539)   => main_pot2_x_o,
+         dest_out(554 downto 547)   => main_pot2_y_o
       ); -- i_qnice2main
 
    -- Clock domain crossing: core to QNICE
    i_main2qnice: xpm_cdc_array_single
       generic map (
-         WIDTH => 16
+         WIDTH => 48
       )
       port map (
          src_clk                => main_clk_i,
-         src_in(15 downto 0)    => main_qnice_keys_n,
+         src_in(15 downto  0)   => main_qnice_keys_n,
+         src_in(31 downto 16)   => std_logic_vector(to_unsigned(main_vdmax, 16)),
+         src_in(47 downto 32)   => std_logic_vector(to_unsigned(main_hdmax, 16)),
          dest_clk               => qnice_clk,
-         dest_out(15 downto 0)  => qnice_qnice_keys_n
+         dest_out(15 downto  0) => qnice_qnice_keys_n,
+         dest_out(31 downto 16) => qnice_vdmax,
+         dest_out(47 downto 32) => qnice_hdmax
       ); -- i_main2qnice
 
    -- Clock domain crossing: QNICE to VGA QNICE-On-Screen-Display
@@ -891,7 +994,7 @@ begin
          dest_clk                => main_clk_i,
          dest_out(0)             => main_reset_m2m_o,
          dest_out(1)             => main_reset_core_o
-      );
+      ); -- i_board2main
 
    ---------------------------------------------------------------------------------------------------------------
    -- On-Screen-Menu video and attribute RAM: Dual-clock qnice_clk and main_clk_i
@@ -988,7 +1091,7 @@ begin
             audio_r <= signed(filt_audio_r);
          end if;
       end if;
-   end process;
+   end process select_or_mute_audio;
 
    i_analog_pipeline : entity work.analog_pipeline
       generic map (
@@ -1016,10 +1119,13 @@ begin
          audio_rst_i              => audio_rst,
          audio_left_i             => audio_l,
          audio_right_i            => audio_r,
-         
+
          -- Configure the scandoubler: 0=off/1=on
          -- Make sure the signal is in the video_clk clock domain
          video_scandoubler_i      => main_scandoubler,
+
+         -- Configure composite sync: 0=off/1=on
+         video_csync_i            => main_csync,
 
          -- Analog output (VGA and audio jack)
          vga_red_o                => vga_red,
@@ -1085,6 +1191,8 @@ begin
          video_vs_i               => main_crop_vs,
          video_hblank_i           => main_crop_hblank,
          video_vblank_i           => main_crop_vblank,
+         video_hdmax_o            => main_hdmax,
+         video_vdmax_o            => main_vdmax,
          audio_clk_i              => audio_clk, -- 30 MHz
          audio_rst_i              => audio_rst,
          audio_left_i             => audio_l,
@@ -1132,47 +1240,78 @@ begin
          hr_waitrequest_i         => hr_dig_waitrequest
       ); -- i_digital_pipeline
 
+   i_avm_fifo_qnice : entity work.avm_fifo
+      generic map (
+         G_WR_DEPTH     => 16,
+         G_RD_DEPTH     => 16,
+         G_FILL_SIZE    => 1,
+         G_ADDRESS_SIZE => 32,
+         G_DATA_SIZE    => 16
+      )
+      port map (
+         s_clk_i               => qnice_clk,
+         s_rst_i               => qnice_rst,
+         s_avm_waitrequest_o   => qnice_avm_waitrequest,
+         s_avm_write_i         => qnice_avm_write,
+         s_avm_read_i          => qnice_avm_read,
+         s_avm_address_i       => qnice_avm_address,
+         s_avm_writedata_i     => qnice_avm_writedata,
+         s_avm_byteenable_i    => qnice_avm_byteenable,
+         s_avm_burstcount_i    => qnice_avm_burstcount,
+         s_avm_readdata_o      => qnice_avm_readdata,
+         s_avm_readdatavalid_o => qnice_avm_readdatavalid,
+         m_clk_i               => hr_clk_x1,
+         m_rst_i               => hr_rst,
+         m_avm_waitrequest_i   => hr_qnice_waitrequest,
+         m_avm_write_o         => hr_qnice_write,
+         m_avm_read_o          => hr_qnice_read,
+         m_avm_address_o       => hr_qnice_address,
+         m_avm_writedata_o     => hr_qnice_writedata,
+         m_avm_byteenable_o    => hr_qnice_byteenable,
+         m_avm_burstcount_o    => hr_qnice_burstcount,
+         m_avm_readdata_i      => hr_qnice_readdata,
+         m_avm_readdatavalid_i => hr_qnice_readdatavalid
+      ); -- i_avm_fifo_qnice
+
    --------------------------------------------------------
    -- Instantiate HyperRAM arbiter
    --------------------------------------------------------
 
-   i_avm_arbit : entity work.avm_arbit
+   i_avm_arbit_general : entity work.avm_arbit_general
       generic map (
+         G_NUM_SLAVES   => 3,
          G_FREQ_HZ      => BOARD_CLK_SPEED,
          G_ADDRESS_SIZE => 32,
          G_DATA_SIZE    => 16
       )
       port map (
-         clk_i                  => hr_clk_x1,
-         rst_i                  => hr_rst,
-         s0_avm_write_i         => hr_dig_write,
-         s0_avm_read_i          => hr_dig_read,
-         s0_avm_address_i       => hr_dig_address,
-         s0_avm_writedata_i     => hr_dig_writedata,
-         s0_avm_byteenable_i    => hr_dig_byteenable,
-         s0_avm_burstcount_i    => hr_dig_burstcount,
-         s0_avm_readdata_o      => hr_dig_readdata,
-         s0_avm_readdatavalid_o => hr_dig_readdatavalid,
-         s0_avm_waitrequest_o   => hr_dig_waitrequest,
-         s1_avm_write_i         => hr_write_i,
-         s1_avm_read_i          => hr_read_i,
-         s1_avm_address_i       => hr_address_i,
-         s1_avm_writedata_i     => hr_writedata_i,
-         s1_avm_byteenable_i    => hr_byteenable_i,
-         s1_avm_burstcount_i    => hr_burstcount_i,
-         s1_avm_readdata_o      => hr_readdata_o,
-         s1_avm_readdatavalid_o => hr_readdatavalid_o,
-         s1_avm_waitrequest_o   => hr_waitrequest_o,
-         m_avm_write_o          => hr_write,
-         m_avm_read_o           => hr_read,
-         m_avm_address_o        => hr_address,
-         m_avm_writedata_o      => hr_writedata,
-         m_avm_byteenable_o     => hr_byteenable,
-         m_avm_burstcount_o     => hr_burstcount,
-         m_avm_readdata_i       => hr_readdata,
-         m_avm_readdatavalid_i  => hr_readdatavalid,
-         m_avm_waitrequest_i    => hr_waitrequest
-      ); -- i_avm_arbit
+         clk_i                 => hr_clk_x1,
+         rst_i                 => hr_rst,
+         s_avm_write_i         => hr_dig_write         & hr_core_write_i         & hr_qnice_write,
+         s_avm_read_i          => hr_dig_read          & hr_core_read_i          & hr_qnice_read,
+         s_avm_address_i       => hr_dig_address       & hr_core_address_i       & hr_qnice_address,
+         s_avm_writedata_i     => hr_dig_writedata     & hr_core_writedata_i     & hr_qnice_writedata,
+         s_avm_byteenable_i    => hr_dig_byteenable    & hr_core_byteenable_i    & hr_qnice_byteenable,
+         s_avm_burstcount_i    => hr_dig_burstcount    & hr_core_burstcount_i    & hr_qnice_burstcount,
+         s_avm_readdata_o(3*16-1 downto 2*16) => hr_dig_readdata,
+         s_avm_readdata_o(2*16-1 downto 1*16) => hr_core_readdata_o,
+         s_avm_readdata_o(1*16-1 downto 0*16) => hr_qnice_readdata,
+         s_avm_readdatavalid_o(2) => hr_dig_readdatavalid,
+         s_avm_readdatavalid_o(1) => hr_core_readdatavalid_o,
+         s_avm_readdatavalid_o(0) => hr_qnice_readdatavalid,
+         s_avm_waitrequest_o(2)   => hr_dig_waitrequest,
+         s_avm_waitrequest_o(1)   => hr_core_waitrequest_o,
+         s_avm_waitrequest_o(0)   => hr_qnice_waitrequest,
+         m_avm_write_o         => hr_write,
+         m_avm_read_o          => hr_read,
+         m_avm_address_o       => hr_address,
+         m_avm_writedata_o     => hr_writedata,
+         m_avm_byteenable_o    => hr_byteenable,
+         m_avm_burstcount_o    => hr_burstcount,
+         m_avm_readdata_i      => hr_readdata,
+         m_avm_readdatavalid_i => hr_readdatavalid,
+         m_avm_waitrequest_i   => hr_waitrequest
+      ); -- i_avm_arbit_general
 
    ---------------------------------------------------------------------------------------------------------------
    -- HyperRAM controller
@@ -1210,4 +1349,20 @@ begin
    hr_rwds_in <= hr_rwds;
    hr_dq_in   <= hr_d;
 
+   -- Monitor the read and write accesses to the HyperRAM by the ascaler.
+   i_hdmi_flicker_free : entity work.hdmi_flicker_free
+      generic map (
+         G_THRESHOLD_LOW  => X"0000_1000",  -- @TODO: Optimize these threshold values
+         G_THRESHOLD_HIGH => X"0000_2000"
+      )
+      port map (
+         hr_clk_i       => hr_clk_x1,
+         hr_write_i     => hr_dig_write,
+         hr_read_i      => hr_dig_read,
+         hr_address_i   => hr_dig_address,
+         high_o         => hr_high_o,       -- Core is too fast
+         low_o          => hr_low_o         -- Core is too slow
+      ); -- i_hdmi_flicker_free
+
 end architecture synthesis;
+

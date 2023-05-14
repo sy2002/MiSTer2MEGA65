@@ -25,7 +25,7 @@ entity digital_pipeline is
       G_VGA_DY               : natural;
       G_FONT_FILE            : string;
       G_FONT_DX              : natural;
-      G_FONT_DY              : natural      
+      G_FONT_DY              : natural
    );
    port (
       -- Input from Core (video and audio)
@@ -63,15 +63,17 @@ entity digital_pipeline is
       hdmi_osm_vram_addr_o     : out std_logic_vector(15 downto 0);
       hdmi_osm_vram_data_i     : in  std_logic_vector(15 downto 0);
       sys_info_hdmi_o          : out std_logic_vector(47 downto 0);
-    
+      video_hdmax_o            : out natural range 0 to 4095;
+      video_vdmax_o            : out natural range 0 to 4095;
+
       -- QNICE connection to ascal's mode register
-      qnice_ascal_mode_i       : in unsigned(4 downto 0);
-    
+      qnice_ascal_mode_i       : in  unsigned(4 downto 0);
+
       -- QNICE device for interacting with the Polyphase filter coefficients
-      qnice_poly_clk_i         : in std_logic;
-      qnice_poly_dw_i          : in unsigned(9 downto 0);
-      qnice_poly_a_i           : in unsigned(6+3 downto 0);    -- FRAC+3 downto 0, if we change FRAC below, we need to change quite some code, also in the M2M Firmware
-      qnice_poly_wr_i          : in std_logic;
+      qnice_poly_clk_i         : in  std_logic;
+      qnice_poly_dw_i          : in  unsigned(9 downto 0);
+      qnice_poly_a_i           : in  unsigned(6+3 downto 0);    -- FRAC+3 downto 0, if we change FRAC below, we need to change quite some code, also in the M2M Firmware
+      qnice_poly_wr_i          : in  std_logic;
 
       -- Connect to HyperRAM controller
       hr_clk_i                 : in  std_logic;
@@ -80,8 +82,8 @@ entity digital_pipeline is
       hr_read_o                : out std_logic;
       hr_address_o             : out std_logic_vector(31 downto 0);
       hr_writedata_o           : out std_logic_vector(15 downto 0);
-      hr_byteenable_o          : out std_logic_vector(1 downto 0);
-      hr_burstcount_o          : out std_logic_vector(7 downto 0);
+      hr_byteenable_o          : out std_logic_vector( 1 downto 0);
+      hr_burstcount_o          : out std_logic_vector( 7 downto 0);
       hr_readdata_i            : in  std_logic_vector(15 downto 0);
       hr_readdatavalid_i       : in  std_logic;
       hr_waitrequest_i         : in  std_logic
@@ -102,8 +104,8 @@ architecture synthesis of digital_pipeline is
    signal pcm_n                  : std_logic_vector(19 downto 0); -- HDMI ACR N value
    signal pcm_cts                : std_logic_vector(19 downto 0); -- HDMI ACR CTS value
 
-   signal hdmi_audio_left        : signed(15 downto 0); -- Signed PCM format
-   signal hdmi_audio_right       : signed(15 downto 0); -- Signed PCM format
+   signal hdmi_audio_left        : std_logic_vector(15 downto 0); -- Signed PCM format
+   signal hdmi_audio_right       : std_logic_vector(15 downto 0); -- Signed PCM format
 
    signal pcm_audio_counter      : integer := 0;
    signal pcm_acr_counter        : integer range 0 to pcm_acr_cnt_range := 0;
@@ -210,7 +212,7 @@ begin
    hdmi_vmin <= 0                                                                         when hdmi_crop_mode_i = '1' else
                 0                                                                         when hdmi_video_mode_i = 0 else
                 0                                                                         when hdmi_video_mode_i = 1 else
-                0                                                                         when hdmi_video_mode_i = 2 else                
+                0                                                                         when hdmi_video_mode_i = 2 else
                 (G_VIDEO_MODE_VECTOR(3).V_PIXELS-G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = 3 else
                 0;
 
@@ -226,18 +228,19 @@ begin
    ---------------------------------------------------------------------------------------------
 
    -- Sample audio data in HDMI clock domain
-   i_audio_cdc : entity work.audio_cdc
+   i_cdc_stable : entity work.cdc_stable
       generic map (
+         G_DATA_SIZE    => 32,
          G_REGISTER_SRC => false
       )
       port map (
-         src_clk_i   => audio_clk_i,   -- Not used
-         src_left_i  => audio_left_i,
-         src_right_i => audio_right_i,
-         dst_clk_i   => hdmi_clk_i,
-         dst_left_o  => hdmi_audio_left,
-         dst_right_o => hdmi_audio_right
-      ); -- i_audio_cdc
+         src_clk_i                => audio_clk_i, -- Not used
+         src_data_i(15 downto  0) => std_logic_vector(audio_left_i),
+         src_data_i(31 downto 16) => std_logic_vector(audio_right_i),
+         dst_clk_i                => hdmi_clk_i,
+         dst_data_o(15 downto  0) => hdmi_audio_left,
+         dst_data_o(31 downto 16) => hdmi_audio_right
+      ); -- i_cdc_stable
 
 
    -- Generate PCM sample rate (48 kHz)
@@ -287,11 +290,11 @@ begin
       generic map (
          MASK      => x"ff",
          RAMBASE   => (others => '0'),
-         
+
          -- ascal needs an input buffer according to this formula: dx * dy * 3 bytes (RGB) per pixel and then rounded up
          -- to the next power of two
          RAMSIZE   => to_unsigned(2**f_log2(G_VGA_DX * G_VGA_DY * 3), 32),
-         
+
          INTER     => false,        -- Not needed: Progressive input only
          HEADER    => false,        -- Not needed: Used on MiSTer to read the sampled image back from the ARM side to do screenshots. The header provides informations such as image size.
          DOWNSCALE => false,        -- Not needed: We use ascal only to upscale
@@ -366,8 +369,8 @@ begin
          vimax             => 0,                            -- input
 
          -- Detected input image size
-         i_hdmax           => open,                         -- output
-         i_vdmax           => open,                         -- output
+         i_hdmax           => video_hdmax_o,                -- output
+         i_vdmax           => video_vdmax_o,                -- output
 
          -- Output video parameters
          run               => '1',                          -- input
@@ -465,7 +468,7 @@ begin
          vga_de_i         => hdmi_de,
          vga_cfg_shift_i  => hdmi_shift,
          vga_cfg_enable_i => hdmi_osm_cfg_enable_i,
-         vga_cfg_r15kHz_i => '0',  
+         vga_cfg_r15kHz_i => '0',
          vga_cfg_xy_i     => hdmi_osm_cfg_xy_i,
          vga_cfg_dxdy_i   => hdmi_osm_cfg_dxdy_i,
          vga_vram_addr_o  => hdmi_osm_vram_addr_o,
@@ -502,8 +505,8 @@ begin
          pcm_clk      => hdmi_clk_i,
          pcm_rst      => hdmi_rst_i,
          pcm_clken    => pcm_clken,                           -- 1/256 = 48 kHz
-         pcm_l        => std_logic_vector(hdmi_audio_left),
-         pcm_r        => std_logic_vector(hdmi_audio_right),
+         pcm_l        => hdmi_audio_left,
+         pcm_r        => hdmi_audio_right,
          pcm_acr      => pcm_acr,
          pcm_n        => pcm_n,
          pcm_cts      => pcm_cts,

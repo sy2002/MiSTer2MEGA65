@@ -3,7 +3,7 @@
 --
 -- Configuration data for the Shell
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -17,11 +17,11 @@ port (
    -- bits 27 .. 12:    select configuration data block; called "Selector" hereafter
    -- bits 11 downto 0: address the up to 4k the configuration data
    address_i   : in std_logic_vector(27 downto 0);
-   
+
    -- config data
    data_o      : out std_logic_vector(15 downto 0)
 );
-end config;
+end entity config;
 
 architecture beh of config is
 
@@ -36,7 +36,7 @@ constant CHR_LINE_10 : string := CHR_LINE_5 & CHR_LINE_5;
 constant CHR_LINE_50 : string := CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10;
 
 --------------------------------------------------------------------------------------------------------------------
--- Welcome and Help Screens (Selectors 0x1000 .. 0x1FFF) 
+-- Welcome and Help Screens (Selectors 0x1000 .. 0x1FFF)
 --------------------------------------------------------------------------------------------------------------------
 
 -- define the amount of WHS array elements: between 1 and 16
@@ -54,7 +54,7 @@ type WHS_RECORD_TYPE is record
    page_start  : WHS_INDEX_TYPE;
    page_length : WHS_INDEX_TYPE;
 end record;
-type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE; 
+type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE;
 
 -- START YOUR CONFIGURATION BELOW THIS LINE
 
@@ -63,14 +63,14 @@ type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE;
 --
 -- WHS array position 0 is defined as the "Welcome Screen" as controled by WELCOME_ACTIVE and WELCOME_AT_RESET.
 -- If you are not using a Welcome Screen but only Help menu items, then you need to leave WHS array pos. 0 empty.
--- 
+--
 -- WHS array position 1 and onwards is for all the Option Menu items tagged as "Help": The first one in the
 -- Options menu is WHS array pos. 1, the second one in the menu is WHS array pos. 2 and so on.
 --
 -- Maximum 16 WHS array positions: The selector's bits 11 downto 8 select the WHS array position; 0=Welcome Screen
 -- That means a maximum of 15 menu items in the Options menu can be tagged as "Help"
 -- The selector's bits 7 downto 0 are selecting the page within the WHS array, so maximum 256 pages per Welcome Screen or Help menu item
--- 
+--
 -- Within a selector's address range, address 0 is the beginning of the string itself, while address 0xFFF of the 4k
 -- window contains the amount of pages, so each zero-terminated string can be up to 4095 bytes = 4094 characters long.
 
@@ -87,7 +87,7 @@ constant SCR_WELCOME : string :=
    "You can for example show the keyboard map.\n" &
    "Look at this example for the Demo core:\n\n\n" &
 
-   "    Key                Demo core\n" & 
+   "    Key                Demo core\n" &
    "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
    "    Left Cursor        Paddle left\n" &
    "    Right Cursor       Paddle right\n" &
@@ -95,38 +95,38 @@ constant SCR_WELCOME : string :=
    "    Help               Options menu\n\n\n" &
 
    "\n\n    Press Space to continue.\n\n\n";
-   
+
 constant HELP_1 : string :=
 
    "\n Demo Core for MEGA65 Version 1\n\n" &
-   
-   " MiSTer port 2022 by YOU\n" &   
+
+   " MiSTer port 2022 by YOU\n" &
    " Powered by MiSTer2MEGA65\n\n\n" &
-      
+
    " Lorem ipsum dolor sit amet, consetetur\n" &
    " sadipscing elitr, sed diam nonumy eirmod\n" &
    " Mpor invidunt ut labore et dolore magna\n" &
    " aliquyam erat, sed diam voluptua. At vero\n" &
    " eos et accusam et justo duo.\n\n" &
-   
+
    " Dolores et ea rebum. Stet clita kasd gube\n" &
    " gren, no sea takimata sanctus est Lorem ip\n" &
    " Sed diam nonumy eirmod tempor invidunt ut\n" &
    " labore et dolore magna aliquyam era\n\n" &
-   
+
    " Cursor right to learn more.       (1 of 3)\n" &
    " Press Space to close the help screen.";
 
 constant HELP_2 : string :=
 
    "\n Demo Core for MEGA65 Version 1\n\n" &
-   
+
    " XYZ ABCDEFGH:\n\n" &
 
    " 1. ABCD EFGH\n" &
    " 2. IJK LM NOPQ RSTUVWXYZ\n" &
    " 3. 10 20 30 40 50\n\n" &
-   
+
    " a) Dolores et ea rebum\n" &
    " b) Takimata sanctus est\n" &
    " c) Tempor Invidunt ut\n" &
@@ -136,19 +136,19 @@ constant HELP_2 : string :=
    " Ut wisi enim ad minim veniam, quis nostru\n" &
    " exerci tation ullamcorper suscipit lobor\n" &
    " tis nisl ut aliquip ex ea commodo.\n\n" &
-   
+
    " Crsr left: Prev  Crsr right: Next (2 of 3)\n" &
    " Press Space to close the help screen.";
 
 constant HELP_3 : string :=
 
    "\n Help Screens\n\n" &
-   
+
    " You can have 255 screens per help topic.\n\n" &
-     
+
    " 15 topics overall.\n" &
-   " 1 menu item per topic.\n\n\n\n" &   
-   
+   " 1 menu item per topic.\n\n\n\n" &
+
    " Cursor left to go back.           (3 of 3)\n" &
    " Press Space to close the help screen.";
 
@@ -179,7 +179,7 @@ constant WHS : WHS_RECORD_ARRAY_TYPE := (
 );
 
 --------------------------------------------------------------------------------------------------------------------
--- Set start folder for file browser and specify config file for menu persistence (Selectors 0x0100 and 0x0101) 
+-- Set start folder for file browser and specify config file for menu persistence (Selectors 0x0100 and 0x0101)
 --------------------------------------------------------------------------------------------------------------------
 
 -- !!! DO NOT TOUCH !!!
@@ -199,7 +199,7 @@ constant SEL_GENERAL       : std_logic_vector(15 downto 0) := x"0110";  -- !!! D
 
 -- START YOUR CONFIGURATION BELOW THIS LINE
 
--- keep the core in RESET state after the hardware starts up and after pressing the MEGA65's reset button 
+-- keep the core in RESET state after the hardware starts up and after pressing the MEGA65's reset button
 constant RESET_KEEP        : boolean := false;
 
 -- alternative to RESET_KEEP: keep the reset line active for this amount of "QNICE loops" (see shell.asm)
@@ -228,7 +228,7 @@ constant JOY_2_AT_OSD      : boolean := false;
 -- Avalon Scaler settings (see ascal.vhd, used for HDMI output only)
 -- 0=set ascal mode (via QNICE's ascal_mode_o) to the value of the config.vhd constant ASCAL_MODE
 -- 1=do nothing, leave ascal mode alone, custom QNICE assembly code can still change it via M2M$ASCAL_MODE
---               and QNICE's CSR will be set to not automatically sync ascal_mode_i 
+--               and QNICE's CSR will be set to not automatically sync ascal_mode_i
 -- 2=keep ascal mode in sync with the QNICE input register ascal_mode_i:
 --   use this if you want to control the ascal mode for example via the Options menu
 --   where you would wire the output of certain options menu bits with ascal_mode_i
@@ -261,13 +261,13 @@ constant VD_ANTI_THRASHING_DELAY : natural := 2000;
 constant VD_ITERATION_SIZE       : natural := 100;
 
 --------------------------------------------------------------------------------------------------------------------
--- Load one or more mandatory or optional BIOS/ROMs  (Selectors 0x0200 .. 0x02FF) 
+-- Load one or more mandatory or optional BIOS/ROMs  (Selectors 0x0200 .. 0x02FF)
 --------------------------------------------------------------------------------------------------------------------
 
 -- !!! CAUTION: CURRENTLY NOT YET SUPPORTED BY THE FIRMWARE !!!
 
 --------------------------------------------------------------------------------------------------------------------
--- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0307) 
+-- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0312): DO NOT TOUCH
 --------------------------------------------------------------------------------------------------------------------
 
 -- !!! DO NOT TOUCH !!! Selectors for accessing the menu configuration data
@@ -283,6 +283,8 @@ constant SEL_OPTM_MOUNT_STR   : std_logic_vector(15 downto 0) := x"0308";
 constant SEL_OPTM_DIMENSIONS  : std_logic_vector(15 downto 0) := x"0309";
 constant SEL_OPTM_SAVING_STR  : std_logic_vector(15 downto 0) := x"030A";
 constant SEL_OPTM_HELP        : std_logic_vector(15 downto 0) := x"0310";
+constant SEL_OPTM_CRTROM      : std_logic_vector(15 downto 0) := x"0311";
+constant SEL_OPTM_CRTROM_STR  : std_logic_vector(15 downto 0) := x"0312";
 
 -- !!! DO NOT TOUCH !!! Configuration constants for OPTM_GROUPS (shell.asm and menu.asm expect them to be like this)
 constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
@@ -293,22 +295,30 @@ constant OPTM_G_START      : integer := 16#00400#;        -- selector / cursor p
                                                           -- 16#00800# is used in OPTM_G_MOUNT_DRV (OPTM_G_SINGLESEL)
 constant OPTM_G_HEADLINE   : integer := 16#01000#;        -- like OPTM_G_TEXT but will be shown in a brigher color
                                                           -- 16#02000# is used in OPTM_G_HELP (plus OPTM_G_SINGLESEL)
-                                                          -- 16#04000# is used in OPTM_G_SUBMENU 
+                                                          -- 16#04000# is used in OPTM_G_SUBMENU
 constant OPTM_G_SINGLESEL  : integer := 16#08000#;        -- single select item
 constant OPTM_G_MOUNT_DRV  : integer := 16#08800#;        -- line item means: mount drive; first occurance = drive 0, second = drive 1, ...
 constant OPTM_G_HELP       : integer := 16#0A000#;        -- line item means: help screen; first occurance = WHS(1), second = WHS(2), ...
 constant OPTM_G_SUBMENU    : integer := 16#0C000#;        -- starts/ends a section that is treated as submenu
 constant OPTM_G_LOAD_ROM   : integer := 16#18000#;        -- line item means: load ROM; first occurance = rom 0, second = rom 1, ...
--- @TODO/REMINDER: As soon as we extend the OSM system so that we support loading ROMs and other things that need to be ignored
--- when saving settings: Make sure to extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly:
---     OPTM_G_SUBMENU
---     OPTM_G_LOAD_ROM
 
--- START YOUR CONFIGURATION BELOW THIS LINE:
+constant OPTM_GTC          : natural := 17;                -- Amount of significant bits in OPTM_G_* constants
+
+-- @TODO/REMINDER: If we added in future more configuration constants that are not meant to be saved in the
+-- configuration file, such as OPTM_G_MOUNT_DRV and OPTM_G_LOAD_ROM, then we need to make sure that we
+-- also extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly.
+-- Also: Right now OPTM_G_SUBMENU cannot have a "selected" state (and therefore cannot be saved in the config file)
+-- and this _ROSMS_4A and _ROSMC_NEXTBIT are not yet handling the situation. If we decided to change that in future,
+-- we would need to define the right semantics everywhere.
+
+--------------------------------------------------------------------------------------------------------------------
+-- "Help" menu / Options menu: START YOUR CONFIGURATION BELOW THIS LINE
+--------------------------------------------------------------------------------------------------------------------
 
 -- Strings with which %s will be replaced in case the menu item is of type OPTM_G_MOUNT_DRV
-constant OPTM_S_MOUNT      : string := "<Mount>";        -- no disk image mounted, yet
-constant OPTM_S_SAVING     : string := "<Saving>";       -- the internal write cache is dirty and not yet written back to the SD card
+constant OPTM_S_MOUNT      : string := "<Mount Drive>";     -- no disk image mounted, yet
+constant OPTM_S_CRTROM     : string := "<Load>";            -- no ROM loaded, yet
+constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal write cache is dirty and not yet written back to the SD card
 
 -- Size of menu and menu items
 -- CAUTION: 1. End each line (also the last one) with a \n and make sure empty lines / separator lines are only consisting of a "\n"
@@ -324,11 +334,11 @@ constant OPTM_SIZE         : natural := 32;  -- amount of items including empty 
 -- Without submenus: Use OPTM_SIZE as height, otherwise count how large the actually visible main menu is.
 constant OPTM_DX           : natural := 23;
 constant OPTM_DY           : natural := 24;
-                                             
+
 constant OPTM_ITEMS        : string :=
 
    " Demo Headline A\n"     &
-   "\n"                     & 
+   "\n"                     &
    " Item A.1\n"            &
    " Item A.2\n"            &
    " Item A.3\n"            &
@@ -361,7 +371,7 @@ constant OPTM_ITEMS        : string :=
    " Audio improvements\n"  &
    "\n"                     &
    " Close Menu\n";
-        
+
 -- define your own constants here and choose meaningful names
 -- make sure that your first group uses the value 1 (0 means "no menu item", such as text and line),
 -- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
@@ -377,7 +387,6 @@ constant OPTM_G_Zoom       : integer := 7;
 constant OPTM_G_Audio      : integer := 8;
 
 -- !!! DO NOT TOUCH !!!
-constant OPTM_GTC          : natural := 16;
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC- 1;
 
 -- define your menu groups: which menu items are belonging together to form a group?
@@ -392,7 +401,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "Demo Headline B"
                                              OPTM_G_LINE,                              -- Line
-                                             
+
                                              OPTM_G_SUBMENU,                           -- HDMI submenu block: START: "HDMI: %s"
                                              OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "HDMI Settings"
                                              OPTM_G_LINE,                              -- Line
@@ -403,7 +412,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_LINE,                              -- open
                                              OPTM_G_CLOSE + OPTM_G_SUBMENU,            -- Close submenu / back to main menu
                                                                                        -- HDMI submenu block: END
-                                                                                       
+
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "Drives"
                                              OPTM_G_LINE,                              -- Line
@@ -494,17 +503,17 @@ addr_decode : process(clk_i, address_i)
 begin
    index := to_integer(unsigned(address_i(11 downto 0)));
    whs_array_index := to_integer(unsigned(address_i(23 downto 20)));
-   whs_page_index  := to_integer(unsigned(address_i(19 downto 12)));   
+   whs_page_index  := to_integer(unsigned(address_i(19 downto 12)));
 
    if falling_edge(clk_i) then
-      data_o <= x"EEEE";  
-   
+      data_o <= x"EEEE";
+
       -----------------------------------------------------------------------------------
       -- Welcome & Help System: upper 4 bits of address equal SEL_WHS' upper 4 bits
       -----------------------------------------------------------------------------------
-      
+
       if address_i(27 downto 24) = SEL_WHS(15 downto 12) then
-   
+
          if  whs_array_index < WHS_RECORDS then
             if index = 4095 then
                data_o <= std_logic_vector(to_unsigned(WHS(whs_array_index).page_count, 16));
@@ -518,22 +527,23 @@ begin
                end if;
             end if;
          end if;
-         
+
       -----------------------------------------------------------------------------------
       -- All other selectors, which are 16-bit values
       -----------------------------------------------------------------------------------
-      
+
       else
 
-         case address_i(27 downto 12) is   
+         case address_i(27 downto 12) is
             when SEL_GENERAL           => data_o <= getGenConf(index);
             when SEL_DIR_START         => data_o <= str2data(DIR_START);
             when SEL_CFG_FILE          => data_o <= str2data(CFG_FILE);
             when SEL_OPTM_ITEMS        => data_o <= str2data(OPTM_ITEMS);
             when SEL_OPTM_MOUNT_STR    => data_o <= str2data(OPTM_S_MOUNT);
+            when SEL_OPTM_CRTROM_STR   => data_o <= str2data(OPTM_S_CRTROM);
             when SEL_OPTM_SAVING_STR   => data_o <= str2data(OPTM_S_SAVING);
-            when SEL_OPTM_GROUPS       => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15)) & 
-                                                    std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(14)) & "0" & 
+            when SEL_OPTM_GROUPS       => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15)) &
+                                                    std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(14)) & "0" &
                                                     std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(12)) & "0000" &
                                                     std_logic_vector(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(7 downto 0));
             when SEL_OPTM_STDSEL       => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(8));
@@ -542,13 +552,15 @@ begin
             when SEL_OPTM_MOUNT_DRV    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(11));
             when SEL_OPTM_HELP         => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(13));
             when SEL_OPTM_SINGLESEL    => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15));
+            when SEL_OPTM_CRTROM       => data_o <= x"000" & "000" & std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(16));
             when SEL_OPTM_ICOUNT       => data_o <= x"00" & std_logic_vector(to_unsigned(OPTM_SIZE, 8));
             when SEL_OPTM_DIMENSIONS   => data_o <= getDXDY(OPTM_DX, OPTM_DY, index);
 
-            when others                => null;         
-         end case;   
+            when others                => null;
+         end case;
       end if;
-   end if;   
+   end if;
 end process;
 
-end beh;
+end architecture beh;
+

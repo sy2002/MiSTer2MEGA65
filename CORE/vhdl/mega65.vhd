@@ -14,30 +14,31 @@ library work;
 use work.globals.all;
 use work.types_pkg.all;
 
-
 library xpm;
 use xpm.vcomponents.all;
 
 entity MEGA65_Core is
 port (
-   CLK                     : in std_logic;         -- 100 MHz clock
-   RESET_M2M_N             : in std_logic;         -- Debounced system reset in system clock domain
+   CLK                     : in  std_logic;              -- 100 MHz clock
+   RESET_M2M_N             : in  std_logic;              -- Debounced system reset in system clock domain
 
    -- Share clock and reset with the framework
-   main_clk_o              : out std_logic;        -- CORE's 54 MHz clock
-   main_rst_o              : out std_logic;        -- CORE's reset, synchronized
+   main_clk_o              : out std_logic;              -- CORE's 54 MHz clock
+   main_rst_o              : out std_logic;              -- CORE's reset, synchronized
 
    --------------------------------------------------------------------------------------------------------
    -- QNICE Clock Domain
    --------------------------------------------------------------------------------------------------------
 
    -- Get QNICE clock from the framework: for the vdrives as well as for RAMs and ROMs
-   qnice_clk_i             : in std_logic;
+   qnice_clk_i             : in  std_logic;
+   qnice_rst_i             : in  std_logic;
 
    -- Video and audio mode control
    qnice_dvi_o             : out std_logic;              -- 0=HDMI (with sound), 1=DVI (no sound)
    qnice_video_mode_o      : out natural range 0 to 3;   -- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
    qnice_scandoubler_o     : out std_logic;              -- 0 = no scandoubler, 1 = scandoubler
+   qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
@@ -49,18 +50,19 @@ port (
    qnice_flip_joyports_o   : out std_logic;
 
    -- On-Screen-Menu selections
-   qnice_osm_control_i     : in std_logic_vector(255 downto 0);
+   qnice_osm_control_i     : in  std_logic_vector(255 downto 0);
 
    -- QNICE general purpose register
-   qnice_gp_reg_i          : in std_logic_vector(255 downto 0);
+   qnice_gp_reg_i          : in  std_logic_vector(255 downto 0);
 
    -- Core-specific devices
-   qnice_dev_id_i          : in std_logic_vector(15 downto 0);
-   qnice_dev_addr_i        : in std_logic_vector(27 downto 0);
-   qnice_dev_data_i        : in std_logic_vector(15 downto 0);
+   qnice_dev_id_i          : in  std_logic_vector(15 downto 0);
+   qnice_dev_addr_i        : in  std_logic_vector(27 downto 0);
+   qnice_dev_data_i        : in  std_logic_vector(15 downto 0);
    qnice_dev_data_o        : out std_logic_vector(15 downto 0);
-   qnice_dev_ce_i          : in std_logic;
-   qnice_dev_we_i          : in std_logic;
+   qnice_dev_ce_i          : in  std_logic;
+   qnice_dev_we_i          : in  std_logic;
+   qnice_dev_wait_o        : out std_logic;
 
    --------------------------------------------------------------------------------------------------------
    -- Core Clock Domain
@@ -69,10 +71,10 @@ port (
    -- M2M's reset manager provides 2 signals:
    --    m2m:   Reset the whole machine: Core and Framework
    --    core:  Only reset the core
-   main_reset_m2m_i        : in std_logic;
-   main_reset_core_i       : in std_logic;
+   main_reset_m2m_i        : in  std_logic;
+   main_reset_core_i       : in  std_logic;
 
-   main_pause_core_i       : in std_logic;
+   main_pause_core_i       : in  std_logic;
 
    -- Video output
    main_video_ce_o         : out std_logic;
@@ -91,50 +93,52 @@ port (
    main_audio_right_o      : out signed(15 downto 0);
 
    -- M2M Keyboard interface (incl. drive led)
-   main_kb_key_num_i       : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
-   main_kb_key_pressed_n_i : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
+   main_kb_key_num_i       : in  integer range 0 to 79;  -- cycles through all MEGA65 keys
+   main_kb_key_pressed_n_i : in  std_logic;              -- low active: debounced feedback: is kb_key_num_i pressed right now?
    main_drive_led_o        : out std_logic;
    main_drive_led_col_o    : out std_logic_vector(23 downto 0);
 
    -- Joysticks input
-   main_joy_1_up_n_i       : in std_logic;
-   main_joy_1_down_n_i     : in std_logic;
-   main_joy_1_left_n_i     : in std_logic;
-   main_joy_1_right_n_i    : in std_logic;
-   main_joy_1_fire_n_i     : in std_logic;
+   main_joy_1_up_n_i       : in  std_logic;
+   main_joy_1_down_n_i     : in  std_logic;
+   main_joy_1_left_n_i     : in  std_logic;
+   main_joy_1_right_n_i    : in  std_logic;
+   main_joy_1_fire_n_i     : in  std_logic;
 
-   main_joy_2_up_n_i       : in std_logic;
-   main_joy_2_down_n_i     : in std_logic;
-   main_joy_2_left_n_i     : in std_logic;
-   main_joy_2_right_n_i    : in std_logic;
-   main_joy_2_fire_n_i     : in std_logic;
-   
-   main_pot1_x_i           : in std_logic_vector(7 downto 0);
-   main_pot1_y_i           : in std_logic_vector(7 downto 0);
-   main_pot2_x_i           : in std_logic_vector(7 downto 0);
-   main_pot2_y_i           : in std_logic_vector(7 downto 0);   
+   main_joy_2_up_n_i       : in  std_logic;
+   main_joy_2_down_n_i     : in  std_logic;
+   main_joy_2_left_n_i     : in  std_logic;
+   main_joy_2_right_n_i    : in  std_logic;
+   main_joy_2_fire_n_i     : in  std_logic;
+
+   main_pot1_x_i           : in  std_logic_vector(7 downto 0);
+   main_pot1_y_i           : in  std_logic_vector(7 downto 0);
+   main_pot2_x_i           : in  std_logic_vector(7 downto 0);
+   main_pot2_y_i           : in  std_logic_vector(7 downto 0);
 
    -- On-Screen-Menu selections
-   main_osm_control_i     : in std_logic_vector(255 downto 0);
-   
+   main_osm_control_i      : in  std_logic_vector(255 downto 0);
+
    -- QNICE general purpose register converted to main clock domain
-   main_qnice_gp_reg_i    : in std_logic_vector(255 downto 0);
-   
+   main_qnice_gp_reg_i     : in  std_logic_vector(255 downto 0);
+
    --------------------------------------------------------------------------------------------------------
    -- Provide HyperRAM to core (in HyperRAM clock domain)
-   --------------------------------------------------------------------------------------------------------   
-   
+   --------------------------------------------------------------------------------------------------------
+
    hr_clk_i                : in  std_logic;
    hr_rst_i                : in  std_logic;
-   hr_write_o              : out std_logic := '0'; 
-   hr_read_o               : out std_logic := '0';
-   hr_address_o            : out std_logic_vector(31 downto 0) := (others => '0');
-   hr_writedata_o          : out std_logic_vector(15 downto 0) := (others => '0');
-   hr_byteenable_o         : out std_logic_vector(1 downto 0)  := (others => '0');
-   hr_burstcount_o         : out std_logic_vector(7 downto 0)  := (others => '0');
-   hr_readdata_i           : in  std_logic_vector(15 downto 0) := (others => '0');
-   hr_readdatavalid_i      : in  std_logic;
-   hr_waitrequest_i        : in  std_logic
+   hr_core_write_o         : out std_logic := '0';
+   hr_core_read_o          : out std_logic := '0';
+   hr_core_address_o       : out std_logic_vector(31 downto 0) := (others => '0');
+   hr_core_writedata_o     : out std_logic_vector(15 downto 0) := (others => '0');
+   hr_core_byteenable_o    : out std_logic_vector( 1 downto 0) := (others => '0');
+   hr_core_burstcount_o    : out std_logic_vector( 7 downto 0) := (others => '0');
+   hr_core_readdata_i      : in  std_logic_vector(15 downto 0);
+   hr_core_readdatavalid_i : in  std_logic;
+   hr_core_waitrequest_i   : in  std_logic;
+   hr_high_i               : in  std_logic;  -- Core is too fast
+   hr_low_i                : in  std_logic   -- Core is too slow
 );
 end entity MEGA65_Core;
 
@@ -238,11 +242,11 @@ begin
          joy_2_left_n_i       => main_joy_2_left_n_i,
          joy_2_right_n_i      => main_joy_2_right_n_i,
          joy_2_fire_n_i       => main_joy_2_fire_n_i,
-         
+
          pot1_x_i             => main_pot1_x_i,
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
-         pot2_y_i             => main_pot2_y_i     
+         pot2_y_i             => main_pot2_y_i
       ); -- i_main
 
    ---------------------------------------------------------------------------------------------
@@ -295,6 +299,7 @@ begin
    begin
       -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
       qnice_dev_data_o     <= x"EEEE";
+      qnice_dev_wait_o     <= '0';
 
       -- Demo core specific: Delete before starting to port your core
       qnice_demo_vd_ce     <= '0';
@@ -338,7 +343,7 @@ begin
    -- @TODO:
    -- a) In case that this is handled in main.vhd, you need to add the appropriate ports to i_main
    -- b) You might want to change the drive led's color (just like the C64 core does) as long as
-   --    the cache is dirty (i.e. as long as the write process is not finished, yet)  
+   --    the cache is dirty (i.e. as long as the write process is not finished, yet)
    main_drive_led_o     <= '0';
    main_drive_led_col_o <= x"00FF00";
 
@@ -358,7 +363,7 @@ begin
          img_size_o        => open,
          img_type_o        => open,
          drive_mounted_o   => open,
-         
+
          -- Cache output signals: The dirty flags can be used to enforce data consistency
          -- (for example by ignoring/delaying a reset or delaying a drive unmount/mount, etc.)
          -- The flushing flags can be used to signal the fact that the caches are currently
@@ -386,6 +391,7 @@ begin
          qnice_data_o      => qnice_demo_vd_data_o,
          qnice_ce_i        => qnice_demo_vd_ce,
          qnice_we_i        => qnice_demo_vd_we
-      );
+      ); -- i_vdrives
 
 end architecture synthesis;
+

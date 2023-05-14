@@ -40,7 +40,7 @@ DBG_START2
 
 LOG_M2M         .ASCII_P "                                                 \n"
                 .ASCII_P "MiSTer2MEGA65 Firmware and Shell, "
-                .ASCII_P "done by sy2002 & MJoergen in 2022\n"
+                .ASCII_P "done by sy2002 & MJoergen in 2022 & 2023\n"
                 .ASCII_P "https://github.com/sy2002/MiSTer2MEGA65\n\n"
                 .ASCII_P "Press 'Run/Stop' + 'Cursor Up' and then while "
                 .ASCII_P "holding these press 'Help' to enter the debug "
@@ -65,12 +65,36 @@ LOG_STR_CFG_SDC .ASCII_P "Configuration: Remember settings: OFF  "
                 .ASCII_W "Reason: SD card changed.\n"
 LOG_STR_CFG_REM .ASCII_P "Configuration: New settings successfully stored to "
                 .ASCII_W "SD card.\n"
+LOG_STR_CFG_NO  .ASCII_P "Configuration: New settings cannot be saved because"
+                .ASCII_W " the core is currently saving to a disk image.\n"
+
+LOG_STR_ROMOK   .ASCII_W "Successfully loaded CRT/ROM image to buffer RAM.\n"
+LOG_STR_ROMPRS  .ASCII_W "Parsing CRT/ROM image: "
+LOG_STR_ROMPRSO .ASCII_W "OK\n"
+LOG_STR_ROMPRSE .ASCII_W "ERROR #"
+LOG_STR_ROMPRSC .ASCII_W ": "
+
+LOG_STR_ARSTART .ASCII_W " auto-load ROMs are part of this core:\n"
+LOG_STR_ARLINE1 .ASCII_W "  ROM #"
+LOG_STR_ARLINE2 .ASCII_W ": type="
+LOG_STR_ARLINE3 .ASCII_W " device="
+LOG_STR_ARLINE4 .ASCII_W " 4k window="
+LOG_STR_ARLINE5 .ASCII_W " mode=mandatory"
+LOG_STR_ARLINE6 .ASCII_W " mode=optional"
+LOG_STR_ARLINE7 .ASCII_W " file="
+LOG_STR_ARLINE8 .ASCII_W "LOADING ROM #"
+LOG_STR_ROMPRS9 .ASCII_W ": OK\n"
+LOG_STR_ROMPRSA .ASCII_W ": FAILED\n"
+LOG_STR_RNOMNT  .ASCII_P "Automatic ROM loading failed: Cannot mount SD card."
+                .ASCII_P " Will try to continue without loading ROMs."
+                .ASCII_W " Mount error code: "
 
 ; ----------------------------------------------------------------------------
 ; Infos
 ; ----------------------------------------------------------------------------
 
 STR_INITWAIT    .ASCII_W "Initializing. Please wait..."
+STR_SPACE       .ASCII_W "Press Space to continue."
 
 ; ----------------------------------------------------------------------------
 ; Warnings
@@ -114,6 +138,21 @@ ERR_F_NEWLINE   .ASCII_P "config.vhd: Each line in OPTM_ITEMS needs\n"
                 .ASCII_W "to be terminated by a newline character.\n"
 ERR_F_NO_S      .ASCII_W "M2M$RPL_S: No %s found in source string.\n"
 
+ERR_F_CR_M_CNT  .ASCII_P "globals.vhd: C_CRTROMS_MAN_NUM too large.\n"
+                .ASCII_W "Hint: CRTROM_MAN_MAX in shell.vars.asm\n"
+ERR_F_CR_M_TYPE .ASCII_P "globals.vhd: C_CRTROMS_MAN: Illegal type\n"
+                .ASCII_W "or device id or 4k window.\n"
+
+ERR_F_CR_A_CNT  .ASCII_P "globals.vhd: C_CRTROMS_AUT_NUM too large.\n"
+                .ASCII_W "Hint: CRTROM_AUT_MAX in shell.vars.asm\n"
+ERR_F_CR_A_TYPE .ASCII_P "globals.vhd: C_CRTROMS_AUT: Illegal type\n"
+                .ASCII_W "or device id or 4k window or mode.\n"
+ERR_F_ATRMNMNT  .ASCII_P "This core needs to load one or more\n"
+                .ASCII_P "mandatory ROMs from SD card. But no SD\n"
+                .ASCII_W "card can be mounted.\n"
+ERR_F_ATRMLOAD  .ASCII_P "\n\nFile not found or file read error.\n"
+                .ASCII_W "The core needs this ROM to start.\n\n"
+
 ; ------------------------------------------------------------------|
 ; @TODO: Adjust strings so that every string ends at the |
 ; Only this guarantees that everything fits correctly on the screen
@@ -139,12 +178,22 @@ ERR_FATAL_ROSMW .ASCII_W "Settings file: Writing failed.\n"
 ERR_FATAL_ROSMF .ASCII_P "Settings file:\n"
                 .ASCII_W "Flushing of SD card buffer failed.\n"
 ERR_FATAL_ROSMC .ASCII_W "Settings file:\nCorrupt: Illegal config value.\n"
+ERR_FATAL_TG    .ASCII_W "tools.asm: M2M$GET_SETTING: Illegal index.\n"
+ERR_FATAL_TS    .ASCII_W "tools.asm: M2M$SET_SETTING: Illegal index.\n"
 
 ERR_FATAL_INST  .ASCII_W "Instable system state.\n"
 
 ; Error codes for ERR_FATAL_INST: They will help to debug the situation,
 ; because we will at least know, where the instable system state occured
-ERR_FATAL_INST1 .EQU 1 ; options.asm:   OPTM_CB_SHOW
-ERR_FATAL_INST2 .EQU 2 ; shell.asm:     _HM_MOUNTED
-ERR_FATAL_INST3 .EQU 3 ; shell.asm:     _HM_SDMOUNTED2A
-ERR_FATAL_INST4 .EQU 4 ; options.asm:   _OPTM_GK_MNT
+ERR_FATAL_INST1 .EQU 1  ; options.asm:       OPTM_CB_SHOW
+ERR_FATAL_INST2 .EQU 2  ; shell.asm:         _HM_MOUNTED
+ERR_FATAL_INST3 .EQU 3  ; shell.asm:         _HM_SDMOUNTED2A
+ERR_FATAL_INST4 .EQU 4  ; options.asm:       _OPTM_GK_MNT
+ERR_FATAL_INST5 .EQU 5  ; crts-and-roms.asm  HANDLE_CRTROM_M
+ERR_FATAL_INST6 .EQU 6  ; options.asm:       _OPTM_CBS_CTRM
+ERR_FATAL_INST7 .EQU 7  ; shell.asm:         _HM_SDMOUNTED3
+ERR_FATAL_INST8 .EQU 8  ; options.asm        _OPTM_CBS_I
+ERR_FATAL_INST9 .EQU 9  ; options.asm        _OPTM_CBS_I4
+ERR_FATAL_INSTA .EQU 10 ; shell.asm:         _HM_SDMOUNTED6B
+ERR_FATAL_INSTB .EQU 11 ; options.asm        _OPTM_GK_CRTROM
+

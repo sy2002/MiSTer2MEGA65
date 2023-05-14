@@ -3,10 +3,10 @@
 ;
 ; Shell: User interface and core automation
 ;
-; The intention of the Shell is to provide a uniform user interface and core
-; automation for all MiSTer2MEGA65 projects.
+; The Shell provides a uniform user interface and core automation
+; for all MiSTer2MEGA65 projects.
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -49,18 +49,19 @@ START_SHELL     MOVE    LOG_M2M, R8
                 ; Initialize stack, heap, variables, libraries and IO
                 ; ------------------------------------------------------------
 
-                ; initialize device (SD card) and file handle
+                ; FAT32 subsystem: initialize SD card device handles for the
+                ; vdrive and CRT/ROM loader (HANDLE_DEV) and for the config
+                ; file (CONFIG_DEVH) and initialize the config file and the
+                ; ROM auto-load filehandle.
+                ; It is important that these handles are initialized to zero
+                ; as parts of the code use this as a flag.
                 MOVE    HANDLE_DEV, R8
                 MOVE    0, @R8
-                MOVE    HANDLES_FILES, R8
-                MOVE    VDRIVES_MAX, R9
-_SS_INITFH_L    MOVE    @R8++, R0
-                MOVE    0, @R0
-                SUB     1, R9
-                RBRA    _SS_INITFH_L, !Z
                 MOVE    CONFIG_DEVH, R8
                 MOVE    0, @R8
                 MOVE    CONFIG_FILE, R8
+                MOVE    0, @R8
+                MOVE    CRTROM_AUT_FILE, R8
                 MOVE    0, @R8
 
                 ; initialize file browser persistence variables
@@ -73,6 +74,8 @@ _SS_INITFH_L    MOVE    @R8++, R0
                 MOVE    0, @R9
                 MOVE    INITIAL_SD, R9
                 MOVE    R8, @R9
+                MOVE    FB_LASTCALLER, R8
+                MOVE    0xFFFF, @R8
                 RSUB    FB_INIT, 1              ; init persistence variables
                 MOVE    FB_HEAP, R8             ; heap for file browsing
                 MOVE    HEAP, @R8                 
@@ -92,21 +95,22 @@ _SS_INITFH_L    MOVE    @R8++, R0
                 MOVE    SP, @R8                
                 SUB     B_STACK_SIZE, SP        ; reserve memory on the stack
 
-                ; make sure OPTM_HEAP is initialized to zero, as it will be
-                ; calculated and activated inside HELP_MENU
-                MOVE    OPTM_HEAP, R8
+                ; default = no context
+                MOVE    SF_CONTEXT, R8
                 MOVE    0, @R8
-                MOVE    OPTM_HEAP_SIZE, R8
+                MOVE    SF_CONTEXT_DATA, R8
                 MOVE    0, @R8
 
                 ; Initialize libraries: The order in which these libraries are
                 ; initialized matters and the initialization needs to happen
                 ; before RP_SYSTEM_START is called.
-                RSUB    SCR$INIT, 1             ; retrieve VHDL generics
+                RSUB    SCR$INIT, 1             ; retrieve visual constants
                 RSUB    FRAME_FULLSCR, 1        ; draw fullscreen frame
                 RSUB    VD_INIT, 1              ; virtual drive system
+                RSUB    CRTROM_INIT, 1          ; CRT/ROM loader system
                 RSUB    KEYB$INIT, 1            ; keyboard library
                 RSUB    HELP_MENU_INIT, 1       ; menu library
+                RSUB    CRTROM_AUTOLOAD, 1      ; auto-load ROMs
 
                 ; ------------------------------------------------------------
                 ; Reset management
@@ -128,8 +132,19 @@ _SS_INITFH_L    MOVE    @R8++, R0
 
                 ; Show welcome screen at all?
                 RSUB    RP_WELCOME, 1
-                RBRA    START_CONNECT, !C
+                RBRA    PREP_CONNECT, !C
                 RSUB    SHOW_WELCOME, 1
+
+                ; At this point, the core is ready to run, settings are loaded
+                ; (if the core uses settings) and the core is still held in
+                ; reset (if RESET_KEEP is on). So at this point in time, the
+                ; user of the framework can execute tasks that change the
+                ; run-state of the core.
+PREP_CONNECT    RSUB    PREP_START, 1
+                CMP     0, R8
+                RBRA    START_CONNECT, Z        ; R8=0: ready to start core
+                RBRA    FATAL, 1                ; else fatal and R8/R9 are set
+                                                ; by PREP_START
 
                 ; Unreset (in case the core is still in reset at this point
                 ; due to RESET_KEEP in config.vhd) and connect keyboard and
@@ -148,11 +163,12 @@ START_CONNECT   RSUB    WAIT333MS, 1
                 ; The core is running and QNICE is waiting for triggers to
                 ; react. Such triggers could be for example the "Help" button
                 ; which is meant to open the options menu but also triggers
-                ; from the core such as data requests from disk drives.
+                ; from the core such as data requests from the IO subsystem
+                ; (for example from virtual disk drives).
                 ;
                 ; The latter one could also be done via interrupts, but we
-                ; will try to keep it simple in the first iteration and only
-                ; increase complexity by using interrupts if neccessary.
+                ; will try to keep it simple and only increase complexity by
+                ; using interrupts if neccessary.
                 ; ------------------------------------------------------------
 
 MAIN_LOOP       RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
@@ -170,28 +186,39 @@ MAIN_LOOP       RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
                 ; stack pointer.
 
 ; ----------------------------------------------------------------------------
-; SD card & virtual drive mount handling
+; SD card, virtual drive mount handling & CRT/ROM loading
 ; ----------------------------------------------------------------------------
 
-; array of pointers to all the file handles for the virtual drives
-; needs to be in line with VDRIVES_MAX (see shell_vars.asm)
-HANDLES_FILES   .DW     HANDLE_FILE1, HANDLE_FILE2, HANDLE_FILE3
+; arrays of pointers to all the file handles for the virtual drives
+; (needs to be in line with VDRIVES_MAX) and for the CRT/ROM loading mechanism
+; (needs to be in line with CRTROM_MAN_MAX, both in shell_vars.asm)
+HNDL_VD_FILES   .DW     HANDLE_FILE1, HANDLE_FILE2, HANDLE_FILE3
+HNDL_RM_FILES   .DW     HANDLE_FILE4, HANDLE_FILE5, HANDLE_FILE6
 
-; Handle mounting:
+; Handle mounting of virtual drives and manual loading of CRTs/ROMs
 ;
 ; Input:
-;   R8 contains the drive number
+;   R8 contains the drive or CRT/ROM number
+;   R9 is for virtual drives only:
 ;   R9=OPTM_KEY_SELECT:
 ;      Just replace the disk image, if it has been mounted
 ;      before without unmounting the drive (aka without
 ;      resetting the drive/"switching the drive on/off")
 ;   R9=OPTM_KEY_SELALT:
 ;      Unmount the drive (aka "switch the drive off")
+;  R10=Mode selector:
+;      0: Virtual drives
+;      1: Manually loadable CRTs/ROMs
 HANDLE_MOUNTING SYSCALL(enter, 1)
 
-                MOVE    R8, R7                  ; R7: drive number
-                MOVE    R9, R6                  ; R6: mount mode
+                MOVE    R8, R7                  ; R7: drive or CRT/ROM number
+                MOVE    R9, R6                  ; R6: key to trigger mounting
+                MOVE    R10, R5                 ; R5: mount mode
 
+                CMP     1, R5                   ; CRT/ROM mode?
+                RBRA    _HM_START_MOUNT, Z      ; yes
+
+                ; we treat already mounted drives differently
                 RSUB    VD_MOUNTED, 1           ; C=1: the given drive in R8..
                 RBRA    _HM_MOUNTED, C          ; ..is already mounted
 
@@ -262,12 +289,40 @@ _HM_SDMOUNTED1  MOVE    SD_CHANGED, R0
                 ; subdirectory that has been selected so that a subsequent
                 ; file open can be directly done.
                 ;
-                ; We are hard-coding the context "disk image mounting" as we
-                ; currently are not supporting yet any other type of mounting
-                ; such as modules, ROM images, etc.
-_HM_SDMOUNTED2  MOVE    SF_CONTEXT, R8
+                ; The idea of FB_LASTCALLER is all about ensuring that
+                ; when the user switches between potentially different file
+                ; types (for example disk images and different types of
+                ; manually loadbale CRTs/ROMs), the file browser is being 
+                ; reset so that the directory can be reloaded with the new
+                ; file filters.
+_HM_SDMOUNTED2  XOR     R8, R8                  ; remember last caller by..
+                MOVE    R7, R9                  ; combining the ID of the..
+                AND     0x00FF, R9              ; vdrive or CRT/ROM with the..
+                OR      R9, R8                  ; mode
+                SWAP    R8, R8
+                MOVE    R5, R9
+                AND     0x00FF, R9
+                OR      R9, R8
+                MOVE    R8, R9
+
+                MOVE    FB_LASTCALLER, R8       ; first call?
+                CMP     0xFFFF, @R8
+                RBRA    _HM_SDMOUNTEDXA, !Z     ; no
+                MOVE    R9, @R8                 ; yes: remember last caller..
+                RBRA    _HM_SDMOUNTEDXS, 1      ; ..begin browsing
+
+_HM_SDMOUNTEDXA CMP     R9, @R8                 ; same caller als last time?
+                RBRA    _HM_SDMOUNTEDXS, Z      ; yes; browse where we were
+                MOVE    R9, @R8                 ; no: remember last caller..
+                RSUB    FB_RE_INIT, 1           ; ..and reset file browser
+
+_HM_SDMOUNTEDXS MOVE    SF_CONTEXT, R8
+                CMP     0, R5                   ; virtual drive mode?
+                RBRA    _HM_SDMOUNTEDX1, !Z
                 MOVE    CTX_MOUNT_DISKIMG, @R8
-                RSUB    SELECT_FILE, 1
+                RBRA    _HM_SDMOUNTEDX2, 1
+_HM_SDMOUNTEDX1 MOVE    CTX_LOAD_ROM, @R8 
+_HM_SDMOUNTEDX2 RSUB    SELECT_FILE, 1
 
                 ; No error and no special status
                 CMP     0, R9
@@ -289,12 +344,18 @@ _HM_SDCHANGED   MOVE    LOG_STR_SD, R8
 _HM_SDMOUNTED2A CMP     2, R9                   ; Run/Stop?
                 RBRA    _HM_SDMOUNTED2C, !Z     ; no            
 _HM_SDMOUNTED2E RSUB    SCR$OSM_OFF, 1          ; hide the big window
+                MOVE    R7, R8                  ; vdrive or CRT/ROM number
+                CMP     1, R5                   ; CRT/ROM mode?
+                RBRA    _HM_SDMOUNTED2F, Z      ; yes
 
-                MOVE    R7, R8                  ; R7: virtual drive number
-                RSUB    VD_MENGRP, 1            ; get index of menu item
-                RBRA    _HM_SDMOUNTED2B, C
+                RSUB    VD_MENGRP, 1            ; get index of vdrive in R9
+                RBRA    _HM_SDMOUNTED2B, C      ; success: continue
+                RBRA    _HM_SDMOUNTED2G, 1      ; failure: fatal
 
-                MOVE    ERR_FATAL_INST, R8
+_HM_SDMOUNTED2F RSUB    CRTROM_M_GI, 1          ; get index of CRT/ROM in R9
+                RBRA    _HM_SDMOUNTED2B, C      ; success: continue
+
+_HM_SDMOUNTED2G MOVE    ERR_FATAL_INST, R8
                 MOVE    ERR_FATAL_INST3, R9
                 RBRA    FATAL, 1 
 
@@ -307,7 +368,7 @@ _HM_SDMOUNTED2B MOVE    R9, R10                 ; menu index
                 AND     1, R9                   ; R9 contains mount status
 
                 MOVE    R10, R8                 ; menu index
-                RSUB    _HM_SETMENU, 1          ; see comment at _HM_MOUNTED
+                RSUB    OPTM_SET, 1             ; see comment at _HM_MOUNTED
                 RBRA    _HM_SDMOUNTED7, 1       ; return to OSM
 
                 ; Everything filtered, see CMSG_BROWSENOTHING in sysdef.asm
@@ -330,14 +391,29 @@ _HM_SDMOUNTED3  MOVE    R8, R0                  ; R8: selected file name
                 SYSCALL(puts, 1)
                 SYSCALL(crlf, 1)
 
-                ; remember the file name for displaying it in the OSM
+                ; remember the file name for displaying it in the OSM in R2
+                ;
                 ; the convention for the position in the @OPTM_HEAP is:
-                ; virtual drive number times @SCR$OSM_O_DX
+                ; a) for vdrives: vdrive number times @SCR$OSM_O_DX
+                ; b) for CRTs/ROMs: (#vdrives+#submenus+crt/rom id)
+                ;    times @SCR$OSM_O_DX
                 MOVE    R8, R2                  ; R2: file name
                 MOVE    OPTM_HEAP, R0
                 MOVE    @R0, R0
-                RBRA    _HM_SDMOUNTED5, Z       ; OPTM_HEAP not ready, yet
-                MOVE    R7, R8
+                RBRA    _HM_SDMOUNTED3A, !Z     ; OPTM_HEAP is ready
+                MOVE    ERR_FATAL_INST, R8
+                MOVE    ERR_FATAL_INST7, R9
+                RBRA    FATAL, 1
+
+_HM_SDMOUNTED3A XOR     R8, R8
+                CMP     1, R5                   ; case (b)?
+                RBRA    _HM_SDMOUNTED3B, !Z     ; no, case (a)
+                MOVE    VDRIVES_NUM, R9
+                ADD     @R9, R8
+                MOVE    OPTM_SCOUNT, R9
+                ADD     @R9, R8
+
+_HM_SDMOUNTED3B ADD     R7, R8
                 MOVE    SCR$OSM_O_DX, R9
                 MOVE    @R9, R9
                 SYSCALL(mulu, 1)
@@ -374,11 +450,13 @@ _HM_SDMOUNTED5  MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 MOVE    0, @R8
 
                 ; load the disk image to the mount buffer
+                MOVE    SP, R6                  ; remember stack pointer
                 MOVE    R7, R8                  ; R8: drive ID to be mounted
-                MOVE    R2, R9                  ; R9: file name of disk image                
+                MOVE    R2, R9                  ; R9: file name of disk image
+                MOVE    R5, R10                 ; R10: mode: vdrive or CRT/ROM
                 RSUB    LOAD_IMAGE, 1           ; copy disk img to mount buf.
                 CMP     0, R8                   ; everything OK?
-                RBRA    _HM_SDMOUNTED6, Z       ; yes
+                RBRA    _HM_SDMOUNTED6A, Z      ; yes
 
                 ; loading the disk image did not work
                 ; none of the errors that LOAD_IMAGE returns is fatal, so we
@@ -394,8 +472,46 @@ _HM_SDMOUNTED5  MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 RSUB    WORD2HEXSTR, 1
                 MOVE    R9, R8
                 RSUB    SCR$PRINTSTR, 1
-                MOVE    R1, R8
+                CMP     0, R1
+                RBRA    _HM_SDMOUNTED5A, Z
+                MOVE    NEWLINE, R8
                 RSUB    SCR$PRINTSTR, 1
+                
+                ; retrieve error string from CRT/ROM device and put it
+                ; temporarily on the stack so that we can print the
+                ; error message on screen
+                CMP     1, R5                   ; CRT/ROM: switch device..
+                RBRA    _HM_SDMOUNTED5S, !Z     ; ..to make string visible
+
+                MOVE    SCRATCH_HEX, R8         ; save screen device
+                RSUB    SAVE_DEVSEL, 1
+                MOVE    M2M$RAMROM_DEV, R12     ; switch to CRT/ROM device
+                MOVE    CRTROM_MAN_DEV, R11
+                ADD     R7, R11
+                MOVE    @R11, @R12
+                MOVE    M2M$RAMROM_4KWIN, R12
+                MOVE    CRTROM_CSR_4KWIN, @R12
+
+                MOVE    R1, R8                  ; R12: string length
+                SYSCALL(strlen, 1)
+                SUB     R9, SP                  ; reserve space on stack
+                SUB     1, SP                   ; incl zero terminator
+                MOVE    SP, R9                  ; R9: strcpy target
+                MOVE    R1, R8                  ; R8: strcpy source
+                SYSCALL(strcpy, 1)
+                MOVE    R9, R1
+
+                MOVE    SCRATCH_HEX, R8         ; restore screen device
+                RSUB    RESTORE_DEVSEL, 1
+
+_HM_SDMOUNTED5S MOVE    R1, R8                  ; output optional error string
+                RSUB    SCR$PRINTSTR, 1
+                MOVE    NEWLINE, R8
+                RSUB    SCR$PRINTSTR, 1
+                MOVE    STR_SPACE, R8
+                RSUB    SCR$PRINTSTR, 1
+                MOVE    R6, SP                  ; restore SP
+
 _HM_SDMOUNTED5A RSUB    HANDLE_IO, 1            ; wait for Space to be pressed
                 RSUB    KEYB$SCAN, 1
                 RSUB    KEYB$GETKEY, 1
@@ -404,12 +520,15 @@ _HM_SDMOUNTED5A RSUB    HANDLE_IO, 1            ; wait for Space to be pressed
                 RSUB    SCR$CLRINNER, 1         ; next try
                 RBRA    _HM_SDMOUNTED2, 1
 
-_HM_SDMOUNTED6  MOVE    R9, R6                  ; R6: disk image type
+_HM_SDMOUNTED6A MOVE    R9, R6                  ; R6: disk image type
                 RSUB    SCR$OSM_OFF, 1          ; hide the big window
 
-                ; Step #5: Notify MiSTer using the "SD" protocol
-                MOVE    R7, R8                  ; R8: drive number
-                MOVE    HANDLES_FILES, R9
+                ; Step #5: Notify MiSTer using the "SD" protocol, if we
+                ; are in virtual drive mode, otherwise skip
+                CMP     0, R5                   ; vdrive mode?
+                RBRA    _HM_SDMOUNTED6B, !Z     ; no
+                MOVE    R7, R8                  ; yes: R8: drive number
+                MOVE    HNDL_VD_FILES, R9
                 ADD     R7, R9
                 MOVE    @R9, R9
                 MOVE    R9, R10
@@ -426,6 +545,24 @@ _HM_SDMOUNTED6  MOVE    R9, R6                  ; R6: disk image type
                 MOVE    R7, R8
                 SYSCALL(puthex, 1)
                 SYSCALL(crlf, 1)
+                RBRA    _HM_SDMOUNTED7, 1
+
+                ; We successfully loaded a manually loadable CRT/ROM and need
+                ; to ensure that the menu items stays selected. This
+                ; situation is similar to the one described in _HM_MOUNTED_S.
+_HM_SDMOUNTED6B MOVE    R7, R8
+                RSUB    CRTROM_M_GI, 1          ; convert rom id to menu idx
+                RBRA    _HM_SDMOUNTED6C, C      ; OK: continue
+                MOVE    ERR_FATAL_INST, R8      ; Not OK: fatal
+                MOVE    ERR_FATAL_INSTA, R9
+                RBRA    FATAL, 1
+_HM_SDMOUNTED6C MOVE    R9, R8                  ; R8: menu index
+                MOVE    1, R9                   ; R9=1: set menu item
+                RSUB    OPTM_SET, 1
+
+                ; Some CRT/ROM load actions are unmounting drives, so we need
+                ; to we need to check for that and act accordingly
+                RSUB    _OPTM_GK_MNT, 1
 
                 ; 6. Redraw and show the OSM
 _HM_SDMOUNTED7  RSUB    OPTM_SHOW, 1            
@@ -448,7 +585,7 @@ _HM_MOUNTED     MOVE    R7, R8
                 RBRA    _HM_MOUNTED_F, !C       ; unsuccessful? fatal!
                 MOVE    R9, R8                  ; OK! set menu index
                 MOVE    1, R9                   ; set as "mounted"
-                RSUB    _HM_SETMENU, 1
+                RSUB    OPTM_SET, 1
                 RBRA    _HM_SDMOUNTED7, 1       ; redraw menu and exit
 
                 ; unmount the whole drive?
@@ -489,63 +626,22 @@ _HM_MOUNTED_F   MOVE    ERR_FATAL_INST, R8
 
 _HM_MOUNTED_1   MOVE    R9, R8                  ; menu index
                 MOVE    1, R9                   ; set as "mounted"
-                RSUB    _HM_SETMENU, 1
+                RSUB    OPTM_SET, 1
                 RBRA    _HM_START_MOUNT, 1      ; show browser and mount
 
 _HM_RET         RSUB    VD_MNT_ST_SET, 1        ; remember mount status
                 SYSCALL(leave, 1)
                 RET
 
-; helper function that executes the menu and data structure modification
-; described above in the comment near _HM_MOUNTED
-; Input:
-;   R8: Index of menu item to change
-;   R9: 0=unset / 1=set
+; Load a disk or CRT/ROM image to the device as configured in globals.vhd
 ;
-; @TODO: Refactor this, see also this file in the develop branch of the
-; C64 core: tests/README.md (section that starts with @@@-#-#). 
-; Also to-be-checked: Is the SCR$PRINTSTRXY necessary at all (and where is it
-; actually printing to in a "below-the-fold" situation).
-_HM_SETMENU     SYSCALL(enter, 1)
-
-                MOVE    R8, R0                  ; R0: menu index
-                MOVE    R9, R1                  ; R1: mode
-
-                MOVE    OPTM_DATA, R8
-                MOVE    @R8, R8
-                ADD     OPTM_IR_STDSEL, R8
-                MOVE    @R8, R8
-                ADD     R0, R8                  ; R0 contains menu index
-                MOVE    R0, R11                 ; save menu index
-                MOVE    R1, @R8                 ; re-set single-select flag
-
-                MOVE    SPACE, R8               ; R8 = space (unset)
-                CMP     0, R1
-                RBRA    _HM_SETMENU_1, Z
-
-                MOVE    OPTM_DATA, R8           ; R8: single-select char
-                MOVE    @R8, R8
-                MOVE    OPTM_IR_SEL, R8
-                MOVE    @R8, R8
-                ADD     2, R8
-
-_HM_SETMENU_1   MOVE    OPTM_X, R9              ; R9: x-pos
-                MOVE    @R9, R9
-                ADD     1, R9                   ; x-pos on screen b/c frame
-                MOVE    OPTM_Y, R10             ; R10: y-pos
-                MOVE    @R10, R10
-                ADD     R11, R10                ; add menu index
-                ADD     1, R10                  ; y-pos on screen b/c frame
-                RSUB    SCR$PRINTSTRXY, 1
-
-                SYSCALL(leave, 1)
-                RET
-
-; Load disk image to virtual drive buffer (VDRIVES_BUFS)
+; Shows a progress bar while doing so, i.e. it is expected that the large
+; window is open before LOAD_IMAGE is called.
 ;
 ; Input:
-;   R8: drive number
+;   R8: drive or CRT/ROM number
 ;   R9: file name of disk image
+;  R10: mode selector: 0=virtual drives 1=manually loadable CRTs/ROMs
 ;
 ; And HANDLE_DEV needs to be fully initialized and the status needs to be
 ; such, that the directory where R9 resides is active
@@ -555,40 +651,149 @@ _HM_SETMENU_1   MOVE    OPTM_X, R9              ; R9: x-pos
 ;   R9: image type if R8=0, otherwise 0 or optional ptr to  error msg string
 LOAD_IMAGE      SYSCALL(enter, 1)
 
-                MOVE    R8, R1                  ; R1: drive number
+                MOVE    R8, R1                  ; R1: drive or CRT/ROM number
+                MOVE    R8, R12                 ; R12: dito
                 MOVE    R9, R2                  ; R2: file name
+                MOVE    R10, R4                 ; R4: mode (0=vdrv, 1=crt/rom)
 
+                CMP     0, R4                   ; mode = vdrives?
+                RBRA    _LI_CRTROM, !Z          ; no
+
+                ; Case 0: virtual drives
                 MOVE    VDRIVES_BUFS, R0
                 ADD     R1, R0
-                MOVE    @R0, R0                 ; R0: device number of buffer
+                MOVE    @R0, R0                 ; R0: device number            
+                MOVE    HNDL_VD_FILES, R9
+                RBRA    _LI_OPENFILE, 1
+
+                ; Case 1: CRTs/ROMs
+_LI_CRTROM      MOVE    CRTROM_MAN_DEV, R0
+                ADD     R1, R0
+                MOVE    @R0, R0                 ; R0: device number
+                MOVE    R0, R8
+                MOVE    CRTROM_CSR_STATUS, R9   ; set CSR to "loading"
+                MOVE    CRTROM_CSR_ST_LDNG, R10
+                RSUB    CRTROM_CSR_W, 1
+                MOVE    HNDL_RM_FILES, R9
 
                 ; Open file
-                MOVE    HANDLE_DEV, R8
-                MOVE    HANDLES_FILES, R9
+_LI_OPENFILE    MOVE    HANDLE_DEV, R8          ; R8: sd card device handle
                 ADD     R1, R9
-                MOVE    @R9, R9
+                MOVE    @R9, R9                 ; R9: file handle
                 MOVE    R9, R5                  ; R5: remember file handle
                 MOVE    R2, R10
                 XOR     R11, R11
                 SYSCALL(f32_fopen, 1)
                 CMP     0, R10                  ; R10=error code; 0=OK
                 RBRA    _LI_FOPEN_OK, Z
-                MOVE    ERR_FATAL_FNF, R8
+                CMP     0, R4
+                RBRA    _LI_OPENFATAL, Z
+                MOVE    R0, R8
+                MOVE    CRTROM_CSR_STATUS, R9
+                MOVE    CRTROM_CSR_ST_ERR, R10
+                RSUB    CRTROM_CSR_W, 1
+_LI_OPENFATAL   MOVE    ERR_FATAL_FNF, R8
                 MOVE    R10, R9
                 RBRA    FATAL, 1
 
                 ; Callback function that can handle headers, sanity check
                 ; the disk image, determine the type of the disk image, etc.
 _LI_FOPEN_OK    MOVE    R5, R8
+                MOVE    SF_CONTEXT, R9
+                MOVE    @R9, R9
+                MOVE    SF_CONTEXT_DATA, R10
+                MOVE    @R10, R10
                 RSUB    PREP_LOAD_IMAGE, 1
                 MOVE    R8, R6                  ; R6: error code=0 (means OK)
                 MOVE    R9, R7                  ; R7: img type or error msg
                 CMP     0, R6                   ; everything OK?
                 RBRA    _LI_FREAD_RET, !Z       ; no
 
-                ; load disk image into buffer RAM
+                ; For showing a progress bar: Take the remaining size of the
+                ; file, which is filesize minus current read position after
+                ; PREP_LOAD_IMAGE and divide it by the amount of printable
+                ; "progress bar characters" to obtain the target of a counter
+                ; that equals one progress step in the progress bar
+                MOVE    SCRATCH_HEX, R8
+                MOVE    R5, R1
+                ADD     FAT32$FDH_ACCESS_LO, R1
+                MOVE    @R1, @R8++
+                MOVE    R5, R1
+                ADD     FAT32$FDH_ACCESS_HI, R1
+                MOVE    @R1, @R8++
+                MOVE    R5, R1
+                ADD     FAT32$FDH_SIZE_LO, R1
+                MOVE    @R1, @R8++
+                MOVE    R5, R1
+                ADD     FAT32$FDH_SIZE_HI, R1
+                MOVE    @R1, @R8++
+                MOVE    SCRATCH_HEX, R8
+                MOVE    R8, R9
+                ADD     2, R9
+                SUB     @R8++, @R9++            ; lo/hi of remaining file size
+                SUBC    @R8, @R9
+
+                MOVE    SCR$OSM_M_DX, R10       ; R10: width of progress bar
+                MOVE    @R10, R10
+                SUB     6, R10
+                XOR     R11, R11                ; R11: high word of width
+                MOVE    SCRATCH_HEX, R1
+                ADD     2, R1
+                MOVE    @R1++, R8               ; R8: low of remaining file sz
+                MOVE    @R1, R9                 ; R9: ditto high
+                SYSCALL(divu32, 1)
+                MOVE    R8, R6                  ; R6: progress counter low
+                MOVE    R9, R7                  ; R7: ditto high
+                MOVE    SCRATCH_DWORD, R1
+                MOVE    R6, @R1++
+                MOVE    R7, @R1
+
+                ; Build a string that represents the space in the main window
+                ; where we will print the progress bar
+                MOVE    SP, R2                  ; save SP
+                MOVE    SCR$OSM_M_DX, R10       ; reserve space on the stack
+                MOVE    @R10, R10
+                SUB     R10, SP
+                MOVE    SP, R11
+                SUB     6, R10
+                MOVE    R11, R8
+                MOVE    M2M$FC_HE_LEFT, @R8++
+                MOVE    R10, R9
+                MOVE    M2M$LD_SPACE, R10
+                SYSCALL(memset, 1)
+                ADD     R9, R8
+                MOVE    M2M$FC_HE_RIGHT, @R8++
+                MOVE    0, @R8
+                MOVE    R11, R8
+                MOVE    2, R9
+                MOVE    SCR$OSM_M_DY, R10
+                MOVE    @R10, R10
+                SUB     1, R10
+                MOVE    M2M$RAMROM_DEV, R1      ; activate the video ram
+                MOVE    M2M$VRAM_DATA, @R1
+                MOVE    M2M$RAMROM_4KWIN, R1
+                MOVE    0, @R1           
+                RSUB    SCR$PRINTSTRXY, 1
+                MOVE    3, R8
+                MOVE    R10, R9
+                RSUB    SCR$GOTOXY, 1
+                MOVE    R2, SP                  ; restore SP
+                MOVE    SCRATCH_HEX, R8         ; SCRATCH_HEX: progress char..
+                MOVE    M2M$LD_PROGRESS, @R8++  ; ..plus zero terminator
+                MOVE    0, @R8
+
+                ; ------------------------------------------------------------
+                ; Load disk image into buffer RAM
+                ; ------------------------------------------------------------
+
                 XOR     R1, R1                  ; R1=window: start from 0
-                XOR     R2, R2                  ; R2=start address in window
+                CMP     0, R4                   ; mode=disk image?
+                RBRA    _LI_FREAD_S, Z          ; yes
+                MOVE    CRTROM_MAN_4KS, R1      ; no: 4k win frpm globals.vhd
+                ADD     R12, R1
+                MOVE    @R1, R1
+
+_LI_FREAD_S     XOR     R2, R2                  ; R2=start address in window
                 ADD     M2M$RAMROM_DATA, R2
                 MOVE    M2M$RAMROM_DATA, R3     ; R3=end of 4k page reached
                 ADD     0x1000, R3
@@ -598,6 +803,7 @@ _LI_FOPEN_OK    MOVE    R5, R8
 _LI_FREAD_NXTWN MOVE    M2M$RAMROM_4KWIN, R8    ; set 4k window
                 MOVE    R1, @R8
 
+                ; Read next byte
 _LI_FREAD_NXTB  MOVE    R5, R8                  ; read next byte to R9
                 SYSCALL(f32_fread, 1)
                 CMP     FAT32$EOF, R10
@@ -608,16 +814,72 @@ _LI_FREAD_NXTB  MOVE    R5, R8                  ; read next byte to R9
                 MOVE    R10, R9
                 RBRA    FATAL, 1
 
-_LI_FREAD_CONT  MOVE    R9, @R2++               ; write byte to mount buffer
+                ; Write byte to mount buffer
+_LI_FREAD_CONT  MOVE    R9, @R2++
 
-                CMP     R3, R2                  ; end of 4k page reached?
+                ; Progress bar handling
+                MOVE    SCRATCH_DWORD, R8       ; next progress char?
+                MOVE    @R8++, R9
+                MOVE    @R8, R8
+                SUB     1, R9                   ; 16-bit decremebt by 1
+                SUBC    0, R8
+                MOVE    SCRATCH_DWORD, R11      ; remember new value
+                MOVE    R9, @R11++
+                MOVE    R8, @R11
+                CMP     0, R8                   ; if not zero: continue
+                RBRA    _LI_FREAD_CONT2, !Z
+                CMP     0, R9
+                RBRA    _LI_FREAD_CONT2, !Z
+                MOVE    SCRATCH_DWORD, R11      ; if zero: progress
+                MOVE    R6, @R11++              ; restore original value
+                MOVE    R7, @R11
+                MOVE    SCRATCH_HEX, R8         ; behind the progress char..
+                ADD     2, R8                   ; .. is memory we can use
+                RSUB    SAVE_DEVSEL, 1          ; save target device selection
+                MOVE    M2M$RAMROM_DEV, R8      ; activate the video ram
+                MOVE    M2M$VRAM_DATA, @R8
+                MOVE    M2M$RAMROM_4KWIN, R8
+                MOVE    0, @R8
+                MOVE    SCRATCH_HEX, R8
+                RSUB    SCR$PRINTSTR, 1         ; print next progress char
+                MOVE    SCRATCH_HEX, R8
+                ADD     2, R8
+                RSUB    RESTORE_DEVSEL, 1       ; restore target dev. sel.
+
+                ; 4k page handling
+_LI_FREAD_CONT2 CMP     R3, R2                  ; end of 4k page reached?
                 RBRA    _LI_FREAD_NXTB, !Z      ; no: read next byte
                 ADD     1, R1                   ; inc. window counter
                 MOVE    M2M$RAMROM_DATA, R2     ; start at beginning of window
                 RBRA    _LI_FREAD_NXTWN, 1      ; set next window
 
-_LI_FREAD_EOF   MOVE    LOG_STR_LOADOK, R8
+                ; End of file reached
+_LI_FREAD_EOF   XOR     R6, R6                  ; R6 and R7 are status flags
+                XOR     R7, R7                  ; 0 means all good
+                CMP     0, R4                   ; disk image mode?
+                RBRA    _LI_FREAD_PM, !Z        ; no
+                MOVE    LOG_STR_LOADOK, R8      ; yes
                 SYSCALL(puts, 1)
+                RBRA    _LI_FREAD_RET, 1
+
+                ; ------------------------------------------------------------
+                ; Parse cartridge
+                ; ------------------------------------------------------------
+
+_LI_FREAD_PM    MOVE    LOG_STR_ROMOK, R8
+                SYSCALL(puts, 1)
+                MOVE    R0, R8                  ; R8: CRT/ROM device id
+                MOVE    R12, R9                 ; R9: CRT/ROM id
+                MOVE    HNDL_RM_FILES, R10      ; R10: file handle
+                ADD     R12, R10
+                MOVE    @R10, R10
+                RSUB    HANDLE_CRTROM_M, 1
+                MOVE    R8, R6                  ; R6: 0=ok, else error code
+                MOVE    R9, R7                  ; R7: error string: only valid
+                                                ; if correct device is active
+
+                CMP     0, R6                   ; in case of errors: redraw..
+                RSUB    FRAME_FULLSCR, !Z       ; ..the frame: del. prgrs bar
 
 _LI_FREAD_RET   MOVE    R6, @--SP               ; lift return codes over ...
                 MOVE    R7, @--SP               ; the "leave hump"
@@ -906,7 +1168,7 @@ _HDW_RET        SYSCALL(leave, 1)
 FLUSH_CACHE     SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: virtual drive number
-                MOVE    HANDLES_FILES, R1
+                MOVE    HNDL_VD_FILES, R1
                 ADD     R0, R1
                 MOVE    @R1, R1                 ; R1: image-file handle
 
@@ -1178,6 +1440,7 @@ _FATAL_END      MOVE    NEWLINE, R8
 ; Screen handling
 ; ----------------------------------------------------------------------------
 
+; Fill the whole screen with the main window
 FRAME_FULLSCR   SYSCALL(enter, 1)
                 RSUB    SCR$CLR, 1              ; clear screen                                
                 MOVE    SCR$OSM_M_X, R8         ; retrieve frame coordinates
@@ -1204,6 +1467,7 @@ FRAME_FULLSCR   SYSCALL(enter, 1)
 #include "selectfile.asm"
 #include "strings.asm"
 #include "vdrives.asm"
+#include "crts-and-roms.asm"
 #include "whs.asm"
 
 ; framework libraries

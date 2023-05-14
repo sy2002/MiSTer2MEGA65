@@ -43,6 +43,8 @@ OPTM_SEL_TLLSEL .EQU 3
 ; Hardcoded error messages for OPTM_CLBK_HALT
 ; ----------------------------------------------------------------------------
 
+OPTM_STR_SPACE  .ASCII_W " "
+
 OPTM_F_MENUSUB  .ASCII_P "menu.asm: One or more submenu is not\n"
                 .ASCII_P "specified correctly:\n"
                 .ASCII_W "Missing submenu-end-flag.\n"
@@ -52,6 +54,16 @@ OPTM_F_F2M      .ASCII_P "menu.asm: _OPTM_R_F2M:\n"
 OPTM_F_NOSEL    .ASCII_P "menu.asm: _OPTM_RUN_SM:\n"
                 .ASCII_P "Corrupt memory layout: No selectable menu\n"
                 .ASCII_W "item found.\n"
+OPTM_F_MENUIDX  .ASCII_P "menu.asm: OPTM_RUN:\n"
+                .ASCII_P "Corrupt memory layout or logic error:\n"
+                .ASCII_P "Menu index does not exist in currently\n"
+                .ASCII_W "active menu level.\n"
+
+OPTM_F_MSTRUCT  .ASCII_P "menu.asm: OPTM_RUN is not running.\n"
+                .ASCII_W "OPTM_STRUCT is invalid.\n"
+OPTM_F_MS_SELF  .EQU 0x0001 ; _OPTM_R_F2M_O
+OPTM_F_MS_SLCT  .EQU 0x0002 ; OPTM_SELECT
+OPTM_F_MS_SET   .EQU 0x0003 ; OPTM_SET
 
 ; ----------------------------------------------------------------------------
 ; Initialization record that is filled using OPTM_INIT
@@ -177,11 +189,17 @@ OPTM_INIT       INCRB
                 MOVE    R11, @R0
                 MOVE    OPTM_DY, R0
                 MOVE    R12, @R0
+                MOVE    OPTM_MENULEVEL, R0
+                MOVE    0, @R0
+                MOVE    OPTM_MAINSEL, R0
+                MOVE    0, @R0
                 MOVE    OPTM_CUR_SEL, R0
                 MOVE    0, @R0
                 MOVE    OPTM_SSMS, R0
                 MOVE    0, @R0
-                MOVE    OPTM_MENULEVEL, R0
+                MOVE    OPTM_TEMP, R0
+                MOVE    0, @R0
+                MOVE    OPTM_STRUCT, R0
                 MOVE    0, @R0
 
                 DECRB
@@ -344,9 +362,20 @@ _OPTM_HM_1A     CMP     '%', @R0                ; search for "%s"
                 RBRA    _OPTM_HM_2, !Z          ; no
                 ADD     1, R0                   ; skip character
 
-                ; respect (sub)menu structure: skip invisible items
+                ; respect (sub)menu structure: skip invisible items by
+                ; finding the next \n and then advancing behind it (see also
+                ; the next comment that starts with "per definition...")
                 CMP     @R1, 0x7FFF             ; item visible?
-                RBRA    _OPTM_HM_2, !N          ; no: skip printing
+                RBRA    _OPTM_HM_HS, N          ; yes: handle %s
+                MOVE    R0, R8                  ; search from behind the %s
+                MOVE    OPTM_NL, R9             ; and find \n
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; no \n found means EOS
+                RBRA    _OPTM_SHOW_0, Z
+                ADD     2, R10                  ; skip \n
+                CMP     0, @R10                 ; end of string?
+                RBRA    _OPTM_SHOW_0, Z         ; yes
+                RBRA    _OPTM_HM_0, 1           ; no: next iteration    
 
                 ; Extract from R7 (start of current string) to \n and provide
                 ; this string and the index to the callback function. This
@@ -356,7 +385,7 @@ _OPTM_HM_1A     CMP     '%', @R0                ; search for "%s"
                 ; not find a \n then this means there is an error in
                 ; config.vhd, so we kind of gracefully exit the %s handling
                 ; and continue with tagging the menu items
-                MOVE    R0, R8                  ; search from behind the %s
+_OPTM_HM_HS     MOVE    R0, R8                  ; search from behind the %s
                 MOVE    OPTM_NL, R9             ; and find \n
                 SYSCALL(strstr, 1)
                 CMP     0, R10                  ; no \n found means EOS
@@ -549,6 +578,8 @@ OPTM_RUN        SYSCALL(enter, 1)
                 RSUB    _OPTM_STRUCT, 1
                 SUB     1, SP                   ; reserve space for (SP+1)
                 MOVE    R9, @--SP               ; size of (sub)men at (SP+0)
+                MOVE    OPTM_STRUCT, R7         ; remember pointer to struct.
+                MOVE    SP, @R7
 
                 ; Main loop
 _OPTM_RUN_SEL   MOVE    SP, R8                  ; update (SP+1), i.e. update..
@@ -561,6 +592,7 @@ _OPTM_RUN_SEL   MOVE    SP, R8                  ; update (SP+1), i.e. update..
                 MOVE    OPTM_FP_SELECT, R7      ; select line
                 MOVE    R2, R8                  ; R8: selected item
                 RSUB    _OPTM_R_F2M, 1          ; convert R8 to screen coord.
+                RBRA    _OPTM_R_FATAL, C        ; failed? fatal!
                 MOVE    OPTM_SEL_SEL, R9
                 RSUB    _OPTM_CALL, 1
                 MOVE    OPTM_CUR_SEL, R8        ; remember for ext. routines..
@@ -612,6 +644,7 @@ _OPTM_KU_WA     MOVE    @R7, R7
 _OPTM_RUN_2     MOVE    OPTM_FP_SELECT, R7      ; unselect old item
                 MOVE    R3, R8
                 RSUB    _OPTM_R_F2M, 1          ; convert R8 to screen coord.
+                RBRA    _OPTM_R_FATAL, C        ; failed? fatal!                
                 MOVE    OPTM_SEL_STD, R9
                 RSUB    _OPTM_CALL, 1
                 MOVE    R2, R3                  ; remember current item as old
@@ -722,6 +755,7 @@ _OPTM_RUN_6C    MOVE    R8, R11                 ; R11: remember selection key
                 MOVE    @R10, R10
                 MOVE    R2, R8                  ; transform R2 from flat..
                 RSUB    _OPTM_R_F2M, 1          ; ..to relative to (sub)menu
+                RBRA    _OPTM_R_FATAL, C        ; failed? fatal!                
                 ADD     R8, R10
                 ADD     1, R10
                 MOVE    R11, @--SP              ; save R11
@@ -784,6 +818,7 @@ _OPTM_RUN_7     CMP     R4, R0                  ; R4 < R0 (size of structure)
 
                 MOVE    R10, R8                 ; transform flat lst itm pos..
                 RSUB    _OPTM_R_F2M, 1          ; ..into relative list pos..
+                RBRA    _OPTM_R_FATAL, C        ; failed? fatal!                
                 MOVE    OPTM_Y, R7              ; ..and then..
                 ADD     @R7, R8                 ; transform into screen coord
                 ADD     1, R8                   ; add 1 because of top frame
@@ -813,6 +848,7 @@ _OPTM_RUN_9     MOVE    OPTM_Y, R10
                 ADD     1, R10
                 MOVE    R2, R8                  ; transform R2 from flat..
                 RSUB    _OPTM_R_F2M, 1          ; ..coords to (sub)menu coords
+                RBRA    _OPTM_R_FATAL, C        ; failed? fatal!                
                 ADD     R8, R10
                 MOVE    OPTM_DATA, R8
                 MOVE    @R8, R8
@@ -862,7 +898,10 @@ _OPTM_RUN_14    MOVE    R6, R8                  ; R8: return selected group
                 RBRA    _OPTM_RUN_SEL, !Z       ; no: continue menu loop
                 MOVE    R2, R8                  ; yes: return selected item               
 
-_OPTM_RUN_RET   ADD     R0, SP                  ; restore SP / free memory
+_OPTM_RUN_RET   MOVE    OPTM_STRUCT, R7         ; important to reset to zero..
+                MOVE    0, @R7                  ; b/c it is also used as flag
+
+                ADD     R0, SP                  ; restore SP / free memory
                 ADD     3, SP
                 MOVE    R8, @--SP               ; carry R8 over the LEAVE bump
                 SYSCALL(leave, 1)
@@ -924,7 +963,109 @@ _OPTM_RUN_SM_4  ADD     R0, SP                  ; restore SP / free memory
                 MOVE    @SP++, R8               ; R8: selected menu item
                 RBRA    OPTM_RUN, 1             ; restart _OPTM_RUN
 
+                ; Menu index not found in currently active (sub)menu level
+_OPTM_R_FATAL   MOVE    OPTM_CLBK_FATAL, R7
+                MOVE    R8, R9
+                MOVE    OPTM_F_MENUIDX, R8
+                RBRA    _OPTM_CALL, 1           ; RBRA because of fatal
+
 _OPTM_RUN_SPCE  .ASCII_W " "
+
+; ----------------------------------------------------------------------------
+; OPTM_SELECT: Selects a menu item using the OPTM_SEL_* constants. Use this
+; instead of directly calling OPTM_FP_SELECT, since OPTM_FP_SELECT does not
+; do coordinate translation.
+;
+; Input:
+;  R8: Index of menu item / cursor position in flat coordinates
+;  R9: OPTM_SEL_* constant
+;
+; Output:
+;  R8: Unchanged: Position in flat coordinates
+;
+; Semantics of "index" / "cursor position" in R8: It is the position within
+; OPTM_ITEMS and OPTM_GROUPS (both from config.vhd), i.e. R8 considers the
+; menu to be a big flat list without submenus.
+; ----------------------------------------------------------------------------
+
+OPTM_SELECT     SYSCALL(enter, 1)
+
+                MOVE    OPTM_F_MS_SLCT, R9
+                RSUB    _OPTM_R_F2M_O, 1        ; convert R8 to screen coord.
+
+                ; Select menu item
+                MOVE    OPTM_FP_SELECT, R7      ; select line
+                MOVE    OPTM_SEL_SEL, R9        ; R8 contains screen coords.
+                RSUB    _OPTM_CALL, 1
+
+                SYSCALL(leave, 1)
+                RET
+
+; ----------------------------------------------------------------------------
+; OPTM_SET: Sets or unsets a menu item "from the outside", i.e. while
+; OPTM_RUN is running. If you call this function without OPTM_RUN beeing
+; active, then the system goes fatal.
+;
+; @TODO: Currently this only works for single-select menu items. We might want
+; to generalize this at a later stage.
+;
+; Input:
+;  R8: Index of menu item / cursor position in flat coordinates
+;  R9: 0=unset / 1=set
+;
+; Output:
+;  R8/R9: Unchanged
+;
+; Semantics of "index" / "cursor position" in R8: It is the position within
+; OPTM_ITEMS and OPTM_GROUPS (both from config.vhd), i.e. R8 considers the
+; menu to be a big flat list without submenus.
+; ----------------------------------------------------------------------------
+
+OPTM_SET        SYSCALL(enter, 1)
+
+                MOVE    R8, R0                  ; R0: menu index
+                MOVE    R9, R1                  ; R1: mode
+
+                ; Update menu data structure which is in flat coordinates
+                MOVE    OPTM_DATA, R8
+                MOVE    @R8, R8
+                ADD     OPTM_IR_STDSEL, R8
+                MOVE    @R8, R8
+                ADD     R0, R8                  ; R0 contains menu index
+                MOVE    R1, @R8                 ; re-set single-select flag
+
+                ; Transform the menu index from flat coordinates to
+                ; screen coordinates
+                MOVE    R0, R8
+                MOVE    OPTM_F_MS_SET, R9
+                RSUB    _OPTM_R_F2M_O, 1
+                RBRA    _OPTM_SET_R, C          ; idx outside curr. (sub)menu
+                MOVE    R8, R0
+
+                ; Have either the single-select character or a space
+                ; character in R8, so that SCR$PRINTSTRXY prints the
+                ; right character depending on R1 
+                MOVE    OPTM_STR_SPACE, R8      ; R8 = space (unset)
+                CMP     0, R1
+                RBRA    _OPTM_SET_2, Z
+
+                MOVE    OPTM_DATA, R8           ; R8: single-select char
+                MOVE    @R8, R8
+                MOVE    OPTM_IR_SEL, R8
+                MOVE    @R8, R8
+                ADD     2, R8
+
+_OPTM_SET_2     MOVE    OPTM_X, R9              ; R9: x-pos
+                MOVE    @R9, R9
+                ADD     1, R9                   ; x-pos on screen b/c frame
+                MOVE    OPTM_Y, R10             ; R10: y-pos
+                MOVE    @R10, R10
+                ADD     R0, R10                ; add menu index
+                ADD     1, R10                  ; y-pos on screen b/c frame
+                RSUB    SCR$PRINTSTRXY, 1
+                
+_OPTM_SET_R     SYSCALL(leave, 1)
+                RET
 
 ; ----------------------------------------------------------------------------
 ; Internal helper functions
@@ -1074,9 +1215,15 @@ _OPTM_STRUCT_12 ADD     1, R7                   ; next list element
 ;
 ; Input:  R8 as flat position
 ; Output: R8 as position relative to the currently active (sub)menu
+;         Carry=0 means: OK transformation worked
+;         Carry=1 means: Flat pos. not part of the currently active (sub)menu
 ;
 ; Helper subroutine for _OPTM_RUN that expects the stack to be set-up like
 ; described above. We need to add +1 to the SP because we are in a subroutine.
+;
+; CAUTION: If we ever refactor this and _OPTM_R_F2M leads to stack
+; modifications, for example by calling subroutines via RSUB or SYSCALL then
+; we also need to adjust _OPTM_R_F2M_O.
 _OPTM_R_F2M     INCRB
 
                 MOVE    SP, R0                  ; R0: size of current (sub)men
@@ -1087,6 +1234,10 @@ _OPTM_R_F2M     INCRB
                 MOVE    R8, R2                  ; R2: flat input position
                 XOR     R3, R3                  ; R3: relative output position
                 XOR     R4, R4                  ; R4: loop counter
+                MOVE    OPTM_DATA, R5           ; R5: flat menu: overall size
+                MOVE    @R5, R5
+                ADD     OPTM_IR_SIZE, R5
+                MOVE    @R5, R5
 
                 ; Check for corrupt memory layout: Is R8 (aka R2) larger than
                 ; the size of the current (sub)menu allows? We need to
@@ -1105,12 +1256,60 @@ _OPTM_R_F2M_1   MOVE    @R1++, R6               ; check bit 15
                 SHL     1, R6                   ; cur strct item=cur active?
                 RBRA    _OPTM_R_F2M_2, !C       ; no: next item
                 CMP     R4, R2                  ; flat position reached?
-                RBRA    _OPTM_R_F2M_R, Z        ; yes: return
+                RBRA    _OPTM_R_F2M_OK, Z       ; yes: return
                 ADD     1, R3                   ; increase rel. pos.
 _OPTM_R_F2M_2   ADD     1, R4                   ; increase abs. pos
-                RBRA    _OPTM_R_F2M_1, 1
+                CMP     R4, R5                  ; end of data structure?
+                RBRA    _OPTM_R_F2M_1, !Z       ; no: iterate
+                OR      0x0004, SR              ; yet: set carry and leave
+                RBRA    _OPTM_R_F2M_R, 1
 
+_OPTM_R_F2M_OK  AND     0xFFFB, SR              ; clear carry
 _OPTM_R_F2M_R   MOVE    R3, R8                  ; return relative output pos.
+
+                DECRB
+                RET
+
+; Call _OPTM_R_F2M "from the outside", i.e. the structure stored on the stack
+; will be used (OPTM_STRUCT) and also the existing stack will be protected
+; Input:  R8: menu index (flat coordinates), just like _OPTM_R_F2M
+;         R9: error code for potential fatal
+; Output: R8: screen coordinates, just like _OPTM_R_F2M
+;         R9: unchanged
+_OPTM_R_F2M_O   INCRB
+
+                MOVE    R8, R1                  ; R1: menu index / flat
+                MOVE    OPTM_STRUCT, R2         ; R2: pointer to menu struct.
+                MOVE    @R2, R2
+
+                ; check for valid OPTM_STRUCT
+                RBRA    _OPTM_R_F2M_O1, !Z      ; valid: continue
+                MOVE    OPTM_CLBK_FATAL, R7     ; invalid: fatal
+                MOVE    OPTM_F_MSTRUCT, R8      ; and R9 contains error code
+                RBRA    _OPTM_CALL, 1           ; RBRA because of fatal
+
+                ; check for valid stack: R2 needs to be larger than the
+                ; currrent stack pointer, because R2 was put on the stack
+                ; earlier and the stack pointer always decreases
+_OPTM_R_F2M_O1  CMP     R2, SP
+                RBRA    _OPTM_R_F2M_O2, N       ; yes: R2 > SP
+                MOVE    OPTM_CLBK_FATAL, R7     ; no: fatal
+                MOVE    OPTM_F_MSTRUCT, R8
+                MOVE    OPTM_F_MS_SELF, R9
+                RBRA    _OPTM_CALL, 1
+
+                ; We need to save the current return address on the stack
+                ; right before R2 because when setting the SP to R2, RSUB
+                ; will internally put the return address on the stack and
+                ; therefore overwrite something. After the call to _OPTM_R_F2M
+                ; we restore the stack
+_OPTM_R_F2M_O2  MOVE    R2, R7
+                MOVE    @--R7, @--SP
+                MOVE    SP, R0                  ; remember stack
+                MOVE    R2, SP                  ; setup stack like in OPTM_RUN
+                RSUB    _OPTM_R_F2M, 1          ; do the coord. transformation
+                MOVE    R0, SP                  ; restore stack
+                MOVE    @SP++, @R7              ; restore overwritten ret addr
 
                 DECRB
                 RET

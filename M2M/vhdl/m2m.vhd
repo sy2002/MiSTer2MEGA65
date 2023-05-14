@@ -3,7 +3,7 @@
 --
 -- Abstraction layer to simplify mega65.vhd
 --
--- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
@@ -12,81 +12,81 @@ use ieee.numeric_std.all;
 
 entity m2m is
 port (
-   CLK            : in  std_logic;                  -- 100 MHz clock
+   CLK              : in  std_logic;                  -- 100 MHz clock
 
    -- MAX10 FPGA (delivers reset)
-   max10_tx          : in std_logic;
-   max10_rx          : out std_logic;
-   max10_clkandsync  : out std_logic;
+   max10_tx         : in  std_logic;
+   max10_rx         : out std_logic;
+   max10_clkandsync : out std_logic;
 
    -- Serial communication (rxd, txd only; rts/cts are not available)
    -- 115.200 baud, 8-N-1
-   UART_RXD       : in  std_logic;                  -- receive data
-   UART_TXD       : out std_logic;                  -- send data
+   UART_RXD         : in  std_logic;                  -- receive data
+   UART_TXD         : out std_logic;                  -- send data
 
    -- VGA
-   VGA_RED        : out std_logic_vector(7 downto 0);
-   VGA_GREEN      : out std_logic_vector(7 downto 0);
-   VGA_BLUE       : out std_logic_vector(7 downto 0);
-   VGA_HS         : out std_logic;
-   VGA_VS         : out std_logic;
+   VGA_RED          : out std_logic_vector(7 downto 0);
+   VGA_GREEN        : out std_logic_vector(7 downto 0);
+   VGA_BLUE         : out std_logic_vector(7 downto 0);
+   VGA_HS           : out std_logic;
+   VGA_VS           : out std_logic;
 
    -- VDAC
-   vdac_clk       : out std_logic;
-   vdac_sync_n    : out std_logic;
-   vdac_blank_n   : out std_logic;
+   vdac_clk         : out std_logic;
+   vdac_sync_n      : out std_logic;
+   vdac_blank_n     : out std_logic;
 
    -- Digital Video (HDMI)
-   tmds_data_p    : out std_logic_vector(2 downto 0);
-   tmds_data_n    : out std_logic_vector(2 downto 0);
-   tmds_clk_p     : out std_logic;
-   tmds_clk_n     : out std_logic;
+   tmds_data_p      : out std_logic_vector(2 downto 0);
+   tmds_data_n      : out std_logic_vector(2 downto 0);
+   tmds_clk_p       : out std_logic;
+   tmds_clk_n       : out std_logic;
 
    -- MEGA65 smart keyboard controller
-   kb_io0         : out std_logic;                 -- clock to keyboard
-   kb_io1         : out std_logic;                 -- data output to keyboard
-   kb_io2         : in  std_logic;                 -- data input from keyboard
+   kb_io0           : out std_logic;                 -- clock to keyboard
+   kb_io1           : out std_logic;                 -- data output to keyboard
+   kb_io2           : in  std_logic;                 -- data input from keyboard
 
    -- SD Card (internal on bottom)
-   SD_RESET       : out std_logic;
-   SD_CLK         : out std_logic;
-   SD_MOSI        : out std_logic;
-   SD_MISO        : in  std_logic;
-   SD_CD          : in  std_logic;
+   SD_RESET         : out std_logic;
+   SD_CLK           : out std_logic;
+   SD_MOSI          : out std_logic;
+   SD_MISO          : in  std_logic;
+   SD_CD            : in  std_logic;
 
    -- SD Card (external on back)
-   SD2_RESET      : out std_logic;
-   SD2_CLK        : out std_logic;
-   SD2_MOSI       : out std_logic;
-   SD2_MISO       : in  std_logic;
-   SD2_CD         : in  std_logic;
+   SD2_RESET        : out std_logic;
+   SD2_CLK          : out std_logic;
+   SD2_MOSI         : out std_logic;
+   SD2_MISO         : in  std_logic;
+   SD2_CD           : in  std_logic;
 
    -- 3.5mm analog audio jack
-   pwm_l          : out std_logic;
-   pwm_r          : out std_logic;
+   pwm_l            : out std_logic;
+   pwm_r            : out std_logic;
 
    -- Joysticks and Paddles
-   joy_1_up_n     : in  std_logic;
-   joy_1_down_n   : in  std_logic;
-   joy_1_left_n   : in  std_logic;
-   joy_1_right_n  : in  std_logic;
-   joy_1_fire_n   : in  std_logic;
+   joy_1_up_n       : in  std_logic;
+   joy_1_down_n     : in  std_logic;
+   joy_1_left_n     : in  std_logic;
+   joy_1_right_n    : in  std_logic;
+   joy_1_fire_n     : in  std_logic;
 
-   joy_2_up_n     : in  std_logic;
-   joy_2_down_n   : in  std_logic;
-   joy_2_left_n   : in  std_logic;
-   joy_2_right_n  : in  std_logic;
-   joy_2_fire_n   : in  std_logic;
-   
-   paddle         : in std_logic_vector(3 downto 0);
-   paddle_drain   : out std_logic;
+   joy_2_up_n       : in  std_logic;
+   joy_2_down_n     : in  std_logic;
+   joy_2_left_n     : in  std_logic;
+   joy_2_right_n    : in  std_logic;
+   joy_2_fire_n     : in  std_logic;
+
+   paddle           : in  std_logic_vector(3 downto 0);
+   paddle_drain     : out std_logic;
 
    -- Built-in HyperRAM
-   hr_d           : inout std_logic_vector(7 downto 0);    -- Data/Address
-   hr_rwds        : inout std_logic;               -- RW Data strobe
-   hr_reset       : out std_logic;                 -- Active low RESET line to HyperRAM
-   hr_clk_p       : out std_logic;
-   hr_cs0         : out std_logic
+   hr_d             : inout std_logic_vector(7 downto 0);    -- Data/Address
+   hr_rwds          : inout std_logic;               -- RW Data strobe
+   hr_reset         : out std_logic;                 -- Active low RESET line to HyperRAM
+   hr_clk_p         : out std_logic;
+   hr_cs0           : out std_logic
 );
 end entity m2m;
 
@@ -96,6 +96,7 @@ signal main_clk    : std_logic;
 signal main_rst    : std_logic;
 signal reset_m2m_n : std_logic;
 signal qnice_clk   : std_logic;
+signal qnice_rst   : std_logic;
 
 --------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -156,6 +157,24 @@ signal main_pot2_x            : std_logic_vector(7 downto 0);
 signal main_pot2_y            : std_logic_vector(7 downto 0);
 
 ---------------------------------------------------------------------------------------------
+-- HyperRAM clock domain
+---------------------------------------------------------------------------------------------
+
+signal hr_clk                 : std_logic;
+signal hr_rst                 : std_logic;
+signal hr_core_write          : std_logic;
+signal hr_core_read           : std_logic;
+signal hr_core_address        : std_logic_vector(31 downto 0);
+signal hr_core_writedata      : std_logic_vector(15 downto 0);
+signal hr_core_byteenable     : std_logic_vector(1 downto 0);
+signal hr_core_burstcount     : std_logic_vector(7 downto 0);
+signal hr_core_readdata       : std_logic_vector(15 downto 0);
+signal hr_core_readdatavalid  : std_logic;
+signal hr_core_waitrequest    : std_logic;
+signal hr_low                 : std_logic;
+signal hr_high                : std_logic;
+
+---------------------------------------------------------------------------------------------
 -- qnice_clk
 ---------------------------------------------------------------------------------------------
 
@@ -163,6 +182,7 @@ signal main_pot2_y            : std_logic_vector(7 downto 0);
 signal qnice_dvi              : std_logic;
 signal qnice_video_mode       : natural range 0 to 3;
 signal qnice_scandoubler      : std_logic;
+signal qnice_csync            : std_logic;
 signal qnice_audio_mute       : std_logic;
 signal qnice_audio_filter     : std_logic;
 signal qnice_zoom_crop        : std_logic;
@@ -187,22 +207,7 @@ signal qnice_ramrom_data_o    : std_logic_vector(15 downto 0);
 signal qnice_ramrom_data_i    : std_logic_vector(15 downto 0);
 signal qnice_ramrom_ce        : std_logic;
 signal qnice_ramrom_we        : std_logic;
-
----------------------------------------------------------------------------------------------
--- hr_clk_o (HyperRAM clock provided by i_framework)
----------------------------------------------------------------------------------------------
-
-signal hr_clk                 : std_logic;
-signal hr_rst                 : std_logic;
-signal hr_write               : std_logic;
-signal hr_read                : std_logic;
-signal hr_address             : std_logic_vector(31 downto 0) := (others => '0');
-signal hr_writedata           : std_logic_vector(15 downto 0);
-signal hr_byteenable          : std_logic_vector(1 downto 0);
-signal hr_burstcount          : std_logic_vector(7 downto 0);
-signal hr_readdata            : std_logic_vector(15 downto 0);
-signal hr_readdatavalid       : std_logic;
-signal hr_waitrequest         : std_logic;
+signal qnice_ramrom_wait      : std_logic;
 
 begin
 
@@ -262,6 +267,7 @@ begin
 
       -- Connect to CORE
       qnice_clk_o             => qnice_clk,
+      qnice_rst_o             => qnice_rst,
       reset_m2m_n_o           => reset_m2m_n,
       main_clk_i              => main_clk,
       main_rst_i              => main_rst,
@@ -272,7 +278,7 @@ begin
       main_key_num_o          => main_key_num,
       main_key_pressed_n_o    => main_key_pressed_n,
       main_drive_led_i        => main_drive_led,
-      main_drive_led_col_i    => main_drive_led_col,      
+      main_drive_led_col_i    => main_drive_led_col,
       main_osm_control_m_o    => main_osm_control_m,
       main_qnice_gp_reg_o     => main_qnice_gp_reg,
       main_audio_l_i          => main_audio_l,
@@ -301,24 +307,27 @@ begin
       main_pot1_y_o           => main_pot1_y,
       main_pot2_x_o           => main_pot2_x,
       main_pot2_y_o           => main_pot2_y,
-      
+
       -- Provide HyperRAM to core (in HyperRAM clock domain)
       hr_clk_o                => hr_clk,
       hr_rst_o                => hr_rst,
-      hr_write_i              => hr_write, 
-      hr_read_i               => hr_read,
-      hr_address_i            => hr_address,
-      hr_writedata_i          => hr_writedata,
-      hr_byteenable_i         => hr_byteenable,
-      hr_burstcount_i         => hr_burstcount,
-      hr_readdata_o           => hr_readdata,
-      hr_readdatavalid_o      => hr_readdatavalid,
-      hr_waitrequest_o        => hr_waitrequest,
+      hr_core_write_i         => hr_core_write,
+      hr_core_read_i          => hr_core_read,
+      hr_core_address_i       => hr_core_address,
+      hr_core_writedata_i     => hr_core_writedata,
+      hr_core_byteenable_i    => hr_core_byteenable,
+      hr_core_burstcount_i    => hr_core_burstcount,
+      hr_core_readdata_o      => hr_core_readdata,
+      hr_core_readdatavalid_o => hr_core_readdatavalid,
+      hr_core_waitrequest_o   => hr_core_waitrequest,
+      hr_high_o               => hr_high,
+      hr_low_o                => hr_low,
 
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi,
       qnice_video_mode_i      => qnice_video_mode,
       qnice_scandoubler_i     => qnice_scandoubler,
+      qnice_csync_i           => qnice_csync,
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
@@ -333,7 +342,8 @@ begin
       qnice_ramrom_data_out_o => qnice_ramrom_data_o,
       qnice_ramrom_data_in_i  => qnice_ramrom_data_i,
       qnice_ramrom_ce_o       => qnice_ramrom_ce,
-      qnice_ramrom_we_o       => qnice_ramrom_we
+      qnice_ramrom_we_o       => qnice_ramrom_we,
+      qnice_ramrom_wait_i     => qnice_ramrom_wait
    ); -- i_framework
 
 
@@ -356,11 +366,13 @@ begin
 
          -- Provide QNICE clock to the core: for the vdrives as well as for RAMs and ROMs
          qnice_clk_i             => qnice_clk,
+         qnice_rst_i             => qnice_rst,
 
          -- Video and audio mode control
          qnice_dvi_o             => qnice_dvi,
          qnice_video_mode_o      => qnice_video_mode,
-         qnice_scandoubler_o     => qnice_scandoubler,         
+         qnice_scandoubler_o     => qnice_scandoubler,
+         qnice_csync_o           => qnice_csync,
          qnice_audio_mute_o      => qnice_audio_mute,
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,
@@ -375,7 +387,7 @@ begin
          qnice_osm_control_i     => qnice_osm_control_m,
 
          -- QNICE general purpose register
-         qnice_gp_reg_i          => qnice_gp_reg,         
+         qnice_gp_reg_i          => qnice_gp_reg,
 
          -- Core-specific devices
          qnice_dev_id_i          => qnice_ramrom_dev,
@@ -384,6 +396,7 @@ begin
          qnice_dev_data_o        => qnice_ramrom_data_i,
          qnice_dev_ce_i          => qnice_ramrom_ce,
          qnice_dev_we_i          => qnice_ramrom_we,
+         qnice_dev_wait_o        => qnice_ramrom_wait,
 
          --------------------------------------------------------------------------------------------------------
          -- Core Clock Domain
@@ -400,7 +413,7 @@ begin
          main_osm_control_i      => main_osm_control_m,
 
          -- QNICE general purpose register (in main clock domain)
-         main_qnice_gp_reg_i          => main_qnice_gp_reg,         
+         main_qnice_gp_reg_i     => main_qnice_gp_reg,
 
          -- Video output
          main_video_ce_o         => main_video_ce,
@@ -436,27 +449,29 @@ begin
          main_joy_2_left_n_i     => main_joy2_left_n,
          main_joy_2_right_n_i    => main_joy2_right_n,
          main_joy_2_fire_n_i     => main_joy2_fire_n,
-         
+
          main_pot1_x_i           => main_pot1_x,
          main_pot1_y_i           => main_pot1_y,
          main_pot2_x_i           => main_pot2_x,
          main_pot2_y_i           => main_pot2_y,
-         
+
          --------------------------------------------------------------------------------------------------------
-         -- Provide HyperRAM to core (in HyperRAM clock domain)
+         -- Provide support for external memory (Avalon Memory Map)
          --------------------------------------------------------------------------------------------------------
-      
+
          hr_clk_i                => hr_clk,
          hr_rst_i                => hr_rst,
-         hr_write_o              => hr_write, 
-         hr_read_o               => hr_read,
-         hr_address_o            => hr_address,
-         hr_writedata_o          => hr_writedata,
-         hr_byteenable_o         => hr_byteenable,
-         hr_burstcount_o         => hr_burstcount,
-         hr_readdata_i           => hr_readdata,
-         hr_readdatavalid_i      => hr_readdatavalid,
-         hr_waitrequest_i        => hr_waitrequest         
+         hr_core_write_o         => hr_core_write,
+         hr_core_read_o          => hr_core_read,
+         hr_core_address_o       => hr_core_address,
+         hr_core_writedata_o     => hr_core_writedata,
+         hr_core_byteenable_o    => hr_core_byteenable,
+         hr_core_burstcount_o    => hr_core_burstcount,
+         hr_core_readdata_i      => hr_core_readdata,
+         hr_core_readdatavalid_i => hr_core_readdatavalid,
+         hr_core_waitrequest_i   => hr_core_waitrequest,
+         hr_high_i               => hr_high,
+         hr_low_i                => hr_low
       ); -- CORE
 
 end architecture synthesis;
