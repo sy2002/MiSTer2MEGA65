@@ -30,7 +30,7 @@ constant QNICE_FIRMWARE_MONITOR   : string  := "../../../M2M/QNICE/monitor/monit
 constant QNICE_FIRMWARE_M2M       : string  := "../../../CORE/m2m-rom/m2m-rom.rom";         -- release
 
 -- Select firmware here
-constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_MONITOR;
+constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_M2M;
 
 ----------------------------------------------------------------------------------------------------------
 -- Clock Speed(s)
