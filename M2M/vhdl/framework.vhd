@@ -935,7 +935,7 @@ begin
       )
       port map (
          src_clk                => main_clk_i,
-         src_in(15 downto 0)    => main_qnice_keys_n,
+         src_in(15 downto  0)   => main_qnice_keys_n,
          src_in(31 downto 16)   => std_logic_vector(to_unsigned(main_vdmax, 16)),
          src_in(47 downto 32)   => std_logic_vector(to_unsigned(main_hdmax, 16)),
          dest_clk               => qnice_clk,
@@ -1285,8 +1285,8 @@ begin
          G_DATA_SIZE    => 16
       )
       port map (
-         clk_i                  => hr_clk_x1,
-         rst_i                  => hr_rst,
+         clk_i                 => hr_clk_x1,
+         rst_i                 => hr_rst,
          s_avm_write_i         => hr_dig_write         & hr_core_write_i         & hr_qnice_write,
          s_avm_read_i          => hr_dig_read          & hr_core_read_i          & hr_qnice_read,
          s_avm_address_i       => hr_dig_address       & hr_core_address_i       & hr_qnice_address,
@@ -1302,15 +1302,15 @@ begin
          s_avm_waitrequest_o(2)   => hr_dig_waitrequest,
          s_avm_waitrequest_o(1)   => hr_core_waitrequest_o,
          s_avm_waitrequest_o(0)   => hr_qnice_waitrequest,
-         m_avm_write_o          => hr_write,
-         m_avm_read_o           => hr_read,
-         m_avm_address_o        => hr_address,
-         m_avm_writedata_o      => hr_writedata,
-         m_avm_byteenable_o     => hr_byteenable,
-         m_avm_burstcount_o     => hr_burstcount,
-         m_avm_readdata_i       => hr_readdata,
-         m_avm_readdatavalid_i  => hr_readdatavalid,
-         m_avm_waitrequest_i    => hr_waitrequest
+         m_avm_write_o         => hr_write,
+         m_avm_read_o          => hr_read,
+         m_avm_address_o       => hr_address,
+         m_avm_writedata_o     => hr_writedata,
+         m_avm_byteenable_o    => hr_byteenable,
+         m_avm_burstcount_o    => hr_burstcount,
+         m_avm_readdata_i      => hr_readdata,
+         m_avm_readdatavalid_i => hr_readdatavalid,
+         m_avm_waitrequest_i   => hr_waitrequest
       ); -- i_avm_arbit_general
 
    ---------------------------------------------------------------------------------------------------------------

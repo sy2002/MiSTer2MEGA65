@@ -103,6 +103,27 @@ PREP_LOAD_IMAGE XOR     R8, R8                  ; no errors
                 RET
 
 ; ----------------------------------------------------------------------------
+; Core specific callback functions: Custom tasks
+; ----------------------------------------------------------------------------
+
+; PREP_START callback function:
+;
+; Called right before the core is being started. At this point, the core
+; is ready to run, settings are loaded (if the core uses settings) and the
+; core is still held in reset (if RESET_KEEP is on). So at this point in time,
+; you can execute tasks that change the run-state of the core.
+;
+; Input: None
+; Output:
+;   R8: 0=OK, else pointer to string with error message
+;   R9: 0=OK, else error code
+PREP_START      XOR     R8, R8                  ; no errors
+                XOR     R9, R9                  ; no errors
+                RET
+
+
+
+; ----------------------------------------------------------------------------
 ; Core specific callback functions: Custom messages
 ; ----------------------------------------------------------------------------
 

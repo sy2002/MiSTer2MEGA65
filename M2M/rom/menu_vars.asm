@@ -27,5 +27,8 @@ OPTM_DATA       .BLOCK 1
 ; single-select vs multi-select item flag
 OPTM_SSMS       .BLOCK 1
 
+; ptr to the _OPTM_STRUCT menu struct. (only valid while OPTM_RUN is running)
+OPTM_STRUCT     .BLOCK 1
+
 ; temporary variable
 OPTM_TEMP       .BLOCK 1

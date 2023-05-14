@@ -131,6 +131,10 @@ _VDI_RET        SYSCALL(leave, 1)
 ; Important: The mount status is for all drives, LSB=drive 0
 VD_MNT_ST_GET   INCRB
 
+                ; skip this function if there are no virtual drives at all
+                RSUB    VD_ACTIVE, 1
+                RBRA    _VDD_C0, !C
+
                 ; retrieve current mount status
                 MOVE    OPTM_MNT_STATUS, R0
                 MOVE    VD_DRV_MOUNT, R8
@@ -150,6 +154,11 @@ VD_MNT_ST_GET   INCRB
 
 ; Remember the current mount status
 VD_MNT_ST_SET   INCRB
+
+                ; skip this function if there are no virtual drives at all
+                RSUB    VD_ACTIVE, 1
+                RBRA    _VD_MNT_ST_SR, !C
+
                 MOVE    R8, R1
 
                 MOVE    OPTM_MNT_STATUS, R0
@@ -158,7 +167,7 @@ VD_MNT_ST_SET   INCRB
                 MOVE    R8, @R0
 
                 MOVE    R1, R8
-                DECRB
+_VD_MNT_ST_SR   DECRB
                 RET
 
 ; Check if the write cache of any virtual drive is different from the one
@@ -178,6 +187,7 @@ VD_DTY_ST_GET   INCRB
                 INCRB                           ; DECRB done in _VDDTY_GETINFO
                 MOVE    R8, R2                  ; R2: amount of vdrives
                 MOVE    SCRATCH_HEX, R5         ; R5: current status
+                MOVE    0, @R5                  ; clear scratch buffer
                 RSUB    _VDDTY_GETINFO, 1
                 MOVE    SCRATCH_HEX, R5         ; due to DECRB in subroutine
 

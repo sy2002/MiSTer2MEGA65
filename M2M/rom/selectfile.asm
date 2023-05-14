@@ -42,39 +42,11 @@ SELECT_FILE     SYSCALL(enter, 1)
                 MOVE    @R0, SP                 ; restore the own stack
 
                 ; Perform the SD card "stability" workaround (see shell.asm)
-                MOVE    SD_WAIT_DONE, R8        ; successfully waited before?
-                CMP     0, @R8
-                RBRA    _S_CONT_CHECK, !Z       ; yes
-
-                MOVE    SD_CYC_HI, R8           ; did we wait veeeery long?
-                MOVE    IO$CYC_HI, R9
-                MOVE    @R9, R9
-                SUB     @R8, R9
-                RBRA    _S_SD_WAITDONE, !Z      ; yes
-
-                MOVE    SD_CYC_MID, R8
-                MOVE    @R8, R8
-                MOVE    IO$CYC_MID, R9
-                MOVE    @R9, R10
-                SUB     R8, R10
-                MOVE    SD_WAIT, R11
-                CMP     R10, R11                ; less or equal wait time?
-                RBRA    _S_SD_WAITDONE, N       ; no: proceed with browser
-
-                RSUB    SCR$CLRINNER, 1         
+                RSUB    SCR$CLRINNER, 1
                 MOVE    STR_INITWAIT, R8
                 RSUB    SCR$PRINTSTR, 1         ; Show "Please wait"-message
-                MOVE    SD_CYC_MID, R8
-                MOVE    @R8, R8
-                MOVE    IO$CYC_MID, R9                
-_S_SD_WAIT      MOVE    @R9, R10
-                SUB     R8, R10
-                CMP     R10, R11
-                RBRA    _S_SD_WAIT, !N
+                RSUB    WAIT_FOR_SD, 1
                 RSUB    SCR$CLRINNER, 1
-
-_S_SD_WAITDONE  MOVE    SD_WAIT_DONE, R8        ; remember that we waited
-                MOVE    1, @R8                
 
                 ; if we already have run the browser before, then let us
                 ; continue where we left off
@@ -335,12 +307,13 @@ _IL_SCRL_DN     CMP     R5, R1                  ; all items already shown?
                 ; go back one page; if no then go back to the very first entry
 _IL_CUR_LEFT    MOVE    R5, R8                  ; R8: entries shown
                 SUB     R2, R8                  ; R2: max entries on screen
-                RBRA    _S_INPUT_LOOP, N        ; if < 0 then no scroll
+                RBRA    _IL_GOTO_TOP, N         ; if < 0 then no scroll
                 CMP     R8, R2                  ; R8 > max entries on screen?
                 RBRA    _IL_PAGE_DEFUP, N       ; yes: scroll one page up
                 MOVE    R8, R10                 ; no: move the residual up..
                 RBRA    _IL_PAGE_UP, !Z         ; .. if it is > 0
-                RBRA    _S_INPUT_LOOP, 1
+_IL_GOTO_TOP    XOR     R8, R8
+                RBRA    _IL_GOTO, 1             ; .. else go to the very top
 _IL_PAGE_DEFUP  MOVE    R2, R10                 ; R10: one page up
 _IL_PAGE_UP     MOVE    -1, R9                  ; R9: iterate backward
                 RBRA    _SCROLL, 1              ; scroll, then input loop
@@ -355,7 +328,7 @@ _IL_PAGE_UP     MOVE    -1, R9                  ; R9: iterate backward
                 ; difference
 _IL_CUR_RIGHT   MOVE    R1, R8                  ; R8: entries in current dir.
                 SUB     R5, R8                  ; R5: # of files already shown
-                RBRA    _S_INPUT_LOOP, Z        ; no more files: ignore key
+                RBRA    _IL_GOTO_BOTTOM, Z      ; no more files: ignore key
                 CMP     R8, R2                  ; R8 > max rows on screen?
                 RBRA    _IL_PAGE_DEFDN, N       ; yes: scroll one page down
                 MOVE    R8, R10                 ; R10: remaining elm. down
@@ -363,6 +336,14 @@ _IL_CUR_RIGHT   MOVE    R1, R8                  ; R8: entries in current dir.
 _IL_PAGE_DEFDN  MOVE    R2, R10                 ; R10: one page down
 _IL_PAGE_DN     MOVE    1, R9                   ; R9: iterate forward
                 RBRA    _SCROLL, 1              ; scroll, then input loop
+_IL_GOTO_BOTTOM CMP     R1, R2                  ; amt files <= max rows  scr?
+                RBRA    _IL_GOTO_BTTM2, N       ; no: select max rows - 1
+                MOVE    R1, R8                  ; max amount of files..
+                SUB     1, R8                   ; ..minus 1 b/c cntng from 0
+                RBRA    _IL_GOTO, 1
+_IL_GOTO_BTTM2  MOVE    R2, R8                  ; max rows on screen..
+                SUB     1, R8                   ; ..minus 1 b/c cntng from 0
+                RBRA    _IL_GOTO, 1
 
                 ; this code segment is used by all four scrolling modes:
                 ; up/down and page up/page down; it is meant to called via
@@ -391,6 +372,20 @@ _SCROLL_DO      ADD     R12, R6                 ; R6: abs. index; R12 signed
 _SCROLL_DO2     MOVE    R11, R3                 ; new visible head
                 ADD     R10, R5                 ; R10 more/less visible files
                 RBRA    _S_DRAW_DIRLIST, 1      ; redraw directory list
+
+                ; this code segment is used by page up/page down in case
+                ; the selection cursor needs to be moved to the very top
+                ; or the very bottom: target position is in R8
+                ; R4 is used throughout this whole routine as sel. curs. pos.
+_IL_GOTO        MOVE    R8, @--SP
+                MOVE    R4, R8                  ; deselect current entry
+                MOVE    M2M$SA_COL_STD, R9
+                RSUB    SELECT_LINE, 1
+                MOVE    @SP++, R4               ; select new entry
+                MOVE    R4, R8
+                MOVE    M2M$SA_COL_STD_INV, R9
+                RSUB    SELECT_LINE, 1
+                RBRA    _S_INPUT_LOOP, 1
 
                 ; browsing interrupted by Run/Stop:
                 ; remember where we are and exit

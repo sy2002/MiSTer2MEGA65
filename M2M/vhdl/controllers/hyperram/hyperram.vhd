@@ -90,9 +90,9 @@ begin
 
    gen_errata : if G_ERRATA_ISSI_D_FIX generate
 
-   --------------------------------------------------------
+      --------------------------------------------------------
       -- Instantiate workaround for errata in ISSI rev D dies
-   --------------------------------------------------------
+      --------------------------------------------------------
 
       i_hyperram_errata : entity work.hyperram_errata
          port map (

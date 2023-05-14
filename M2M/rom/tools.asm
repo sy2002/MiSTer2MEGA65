@@ -160,6 +160,98 @@ _M2M$RPL_S_RET  SYSCALL(leave, 1)
 _M2M$RPL_S_S    .ASCII_W "%s"
 
 ; ----------------------------------------------------------------------------
+; M2M$GET_SETTING
+; 
+; Returns the value of a setting. The setting index is the index into the
+; array "OPTM_GROUPS" in config.vhd counting from zero.
+;
+; Input:  R8: OPTM_GROUPS index
+; Output: R8: unchanged
+;         R9: value of the setting
+; ----------------------------------------------------------------------------
+
+M2M$GET_SETTING INCRB
+
+                MOVE    R10, R0
+                XOR     R10, R10                ; R10=0: get
+                RSUB    _M2M$GOSSTTNG, 1
+                MOVE    R0, R10
+
+                DECRB
+                RET
+
+; Helper function used by M2M$GET_SETTING and by M2M$SET_SETTING
+; R10=0: Get, otherwise set
+_M2M$GOSSTTNG   INCRB
+
+                MOVE    OPTM_ICOUNT, R0         ; R0: size of menu structure
+                MOVE    @R0, R0
+                CMP     R0, R8                  ; legal index?
+                RBRA    _M2M$GOSSTTNG_1, N      ; yes: proceed
+                MOVE    R8, R9                  ; no: fatal
+                CMP     0, R10                  ; get?
+                RBRA    _M2M$GOSSTTNG_0, Z      ; yes: output error fot get
+                MOVE    ERR_FATAL_TS, R8        ; no: output error for set
+                RBRA    FATAL, 1
+_M2M$GOSSTTNG_0 MOVE    ERR_FATAL_TG, R8
+                RBRA    FATAL, 1
+
+_M2M$GOSSTTNG_1 MOVE    R8, R1                  ; R1: M2M$CFM_ADDR
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     4, R1
+                MOVE    R8, R2                  ; R2: bit within M2M$CFM_DATA
+                AND     0x000F, R2
+
+                MOVE    M2M$CFM_ADDR, R3        ; set bank
+                MOVE    R1, @R3
+                MOVE    M2M$CFM_DATA, R4
+
+                CMP     0, R10                  ; get setting?
+                RBRA    _M2M$GOSSTTNG_S, !Z     ; no
+
+                ; Get setting
+                MOVE    @R4, R4                 ; yes: R4: contains the bit
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     R2, R4                  ; extract the bit
+                AND     0x0001, R4              ; only this bit is relevant
+                MOVE    R4, R9
+                RBRA    _M2M$GOSSTTNG_R, 1
+
+                ; Set setting
+_M2M$GOSSTTNG_S MOVE    1, R5                   ; R5: bit mask to set bit
+                AND     0xFFFD, SR              ; clear X
+                SHL     R2, R5
+                CMP     1, R9                   ; set or clear bit?
+                RBRA    _M2M$GOSSTTNG_C, !Z     ; clear!
+                OR      R5, @R4                 ; set bit
+                RBRA    _M2M$GOSSTTNG_R, 1
+_M2M$GOSSTTNG_C NOT     R5, R5                  ; invert bitmask and..
+                AND     R5, @R4                 ; ..clear bit
+
+_M2M$GOSSTTNG_R DECRB
+                RET
+
+; ----------------------------------------------------------------------------
+; M2M$SET_SETTING
+; 
+; Returns the value of a setting. The setting index is the index into the
+; array "OPTM_GROUPS" in config.vhd counting from zero.
+;
+; Input:  R8: OPTM_GROUPS index
+;         R9: value
+; Output: R8/R9: unchanged
+; ----------------------------------------------------------------------------
+
+M2M$SET_SETTING INCRB
+
+                MOVE    R10, R0
+                MOVE    1, R10                  ; R10=1: set
+                RSUB    _M2M$GOSSTTNG, 1
+                MOVE    R0, R10
+
+                DECRB
+                RET
+; ----------------------------------------------------------------------------
 ; WAIT1SEC
 ;   Waits about 1 second
 ; WAIT333MS
@@ -184,6 +276,40 @@ _W333MS_L2      SUB     1, R1
                 SUB     1, R0
                 RBRA    _W333MS_L1, !Z
                 DECRB
+                RET
+
+; ----------------------------------------------------------------------------
+; WAIT_FOR_SD
+;   Waits SD_WAIT cycles relative to the start of the Shell. This is used
+;   as a workaround to increase the SD card reading stability after power-on.
+;   The function waits only after power-on and hard resets, i.e. it respects
+;   the SD_WAIT_DONE variable.
+; ----------------------------------------------------------------------------
+
+WAIT_FOR_SD     SYSCALL(enter, 1)
+
+                MOVE    SD_WAIT_DONE, R8        ; successfully waited before?
+                CMP     0, @R8
+                RBRA    _WAITFSD_RET, !Z        ; yes
+
+                MOVE    SD_CYC_MID, R8          ; 32-bit addition to calculate
+                MOVE    @R8, R8                 ; ..the target cycles
+                MOVE    SD_CYC_HI, R9
+                MOVE    @R9, R9
+                ADD     SD_WAIT, R8
+                ADDC    0, R9
+                MOVE    IO$CYC_MID, R10
+                MOVE    IO$CYC_HI, R11
+_WAITFSD_1      CMP     @R11, R9
+                RBRA    _WAITFSD_2, N           ; wait until @R11 >= R9
+                RBRA    _WAITFSD_1, !Z
+_WAITFSD_2      CMP     @R10, R8
+                RBRA    _WAITFSD_2, !N          ; wait while @R10 <= R8
+
+                MOVE    SD_WAIT_DONE, R8        ; remember that we waited
+                MOVE    1, @R8
+
+_WAITFSD_RET    SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------

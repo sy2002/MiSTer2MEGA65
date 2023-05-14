@@ -238,7 +238,6 @@ M2M$CFG_WHS         .EQU 0x1000     ; Welcome & Help screens
 M2M$CFG_DIR_START   .EQU 0x0100     ; Start folder for file browser
 M2M$CFG_CFG_FILE    .EQU 0x0101     ; Config file for OSM persistence
 M2M$CFG_GENERAL     .EQU 0x0110     ; General configuration settings
-M2M$CFG_ROMS        .EQU 0x0200     ; Mandatory and optional ROMs
 
 M2M$CFG_OPTM_ITEMS  .EQU 0x0300     ; "Help" menu / Options menu items
 M2M$CFG_OPTM_GROUPS .EQU 0x0301     ; Menu groups
@@ -345,12 +344,17 @@ VD_CACHE_FLUSH_DE   .EQU 0x700F     ; delay in ms between VD_WR and FLUSH_ST
 
 ; sysinfo addresses (data is configured by the user in globals.vhd)
 CRTROM_MAN_NUM_A    .EQU 0x7000     ; amount of manually loadable CRTs/ROMs
-CRTROM_MAN_BUFFERS  .EQU 0x7100     ; array of records with buffer infos
+CRTROM_AUT_NUM_A    .EQU 0x7001     ; amount of automatically loadable ROMs
+CRTROM_MAN_BUFFERS  .EQU 0x7100     ; array of records: manually loadable
+CRTROM_AUT_BUFFERS  .EQU 0x7200     ; array of records: automatically loadable
+CRTROM_AUT_FILES    .EQU 0x7300     ; auto-load filesnames
 
 ; Type of byte streaming device for receiving the CRT/ROM data
 CRTROM_TYPE_DEVICE  .EQU 0x0000     ; any QNICE compatible device
 CRTROM_TYPE_HYPRAM  .EQU 0x0001     ; HyperRAM
 CRTROM_TYPE_SDRAM   .EQU 0x0002     ; @TODO/RESERVED for future R4 boards
+CRTROM_TYPE_MNDTRY  .EQU 0x0003     ; mandatory ROM
+CTRROM_TYPE_OPTNL   .EQU 0x0004     ; optional ROM
 
 ; Control and status registers of a CRT/ROM device
 CRTROM_CSR_4KWIN    .EQU 0xFFFF     ; 4K window in the device addr. space

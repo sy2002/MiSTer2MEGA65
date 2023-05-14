@@ -3,10 +3,10 @@
 ;
 ; Shell: User interface and core automation
 ;
-; The intention of the Shell is to provide a uniform user interface and core
-; automation for all MiSTer2MEGA65 projects.
+; The Shell provides a uniform user interface and core automation
+; for all MiSTer2MEGA65 projects.
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -51,12 +51,17 @@ START_SHELL     MOVE    LOG_M2M, R8
 
                 ; FAT32 subsystem: initialize SD card device handles for the
                 ; vdrive and CRT/ROM loader (HANDLE_DEV) and for the config
-                ; file (CONFIG_DEVH) and initialize the config file handle
+                ; file (CONFIG_DEVH) and initialize the config file and the
+                ; ROM auto-load filehandle.
+                ; It is important that these handles are initialized to zero
+                ; as parts of the code use this as a flag.
                 MOVE    HANDLE_DEV, R8
                 MOVE    0, @R8
                 MOVE    CONFIG_DEVH, R8
                 MOVE    0, @R8
                 MOVE    CONFIG_FILE, R8
+                MOVE    0, @R8
+                MOVE    CRTROM_AUT_FILE, R8
                 MOVE    0, @R8
 
                 ; initialize file browser persistence variables
@@ -105,6 +110,7 @@ START_SHELL     MOVE    LOG_M2M, R8
                 RSUB    CRTROM_INIT, 1          ; CRT/ROM loader system
                 RSUB    KEYB$INIT, 1            ; keyboard library
                 RSUB    HELP_MENU_INIT, 1       ; menu library
+                RSUB    CRTROM_AUTOLOAD, 1      ; auto-load ROMs
 
                 ; ------------------------------------------------------------
                 ; Reset management
@@ -126,8 +132,19 @@ START_SHELL     MOVE    LOG_M2M, R8
 
                 ; Show welcome screen at all?
                 RSUB    RP_WELCOME, 1
-                RBRA    START_CONNECT, !C
+                RBRA    PREP_CONNECT, !C
                 RSUB    SHOW_WELCOME, 1
+
+                ; At this point, the core is ready to run, settings are loaded
+                ; (if the core uses settings) and the core is still held in
+                ; reset (if RESET_KEEP is on). So at this point in time, the
+                ; user of the framework can execute tasks that change the
+                ; run-state of the core.
+PREP_CONNECT    RSUB    PREP_START, 1
+                CMP     0, R8
+                RBRA    START_CONNECT, Z        ; R8=0: ready to start core
+                RBRA    FATAL, 1                ; else fatal and R8/R9 are set
+                                                ; by PREP_START
 
                 ; Unreset (in case the core is still in reset at this point
                 ; due to RESET_KEEP in config.vhd) and connect keyboard and
@@ -351,7 +368,7 @@ _HM_SDMOUNTED2B MOVE    R9, R10                 ; menu index
                 AND     1, R9                   ; R9 contains mount status
 
                 MOVE    R10, R8                 ; menu index
-                RSUB    _HM_SETMENU, 1          ; see comment at _HM_MOUNTED
+                RSUB    OPTM_SET, 1             ; see comment at _HM_MOUNTED
                 RBRA    _HM_SDMOUNTED7, 1       ; return to OSM
 
                 ; Everything filtered, see CMSG_BROWSENOTHING in sysdef.asm
@@ -439,7 +456,7 @@ _HM_SDMOUNTED5  MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 MOVE    R5, R10                 ; R10: mode: vdrive or CRT/ROM
                 RSUB    LOAD_IMAGE, 1           ; copy disk img to mount buf.
                 CMP     0, R8                   ; everything OK?
-                RBRA    _HM_SDMOUNTED6, Z       ; yes
+                RBRA    _HM_SDMOUNTED6A, Z      ; yes
 
                 ; loading the disk image did not work
                 ; none of the errors that LOAD_IMAGE returns is fatal, so we
@@ -503,13 +520,13 @@ _HM_SDMOUNTED5A RSUB    HANDLE_IO, 1            ; wait for Space to be pressed
                 RSUB    SCR$CLRINNER, 1         ; next try
                 RBRA    _HM_SDMOUNTED2, 1
 
-_HM_SDMOUNTED6  MOVE    R9, R6                  ; R6: disk image type
+_HM_SDMOUNTED6A MOVE    R9, R6                  ; R6: disk image type
                 RSUB    SCR$OSM_OFF, 1          ; hide the big window
 
                 ; Step #5: Notify MiSTer using the "SD" protocol, if we
                 ; are in virtual drive mode, otherwise skip
                 CMP     0, R5                   ; vdrive mode?
-                RBRA    _HM_SDMOUNTED7, !Z      ; no
+                RBRA    _HM_SDMOUNTED6B, !Z     ; no
                 MOVE    R7, R8                  ; yes: R8: drive number
                 MOVE    HNDL_VD_FILES, R9
                 ADD     R7, R9
@@ -528,6 +545,24 @@ _HM_SDMOUNTED6  MOVE    R9, R6                  ; R6: disk image type
                 MOVE    R7, R8
                 SYSCALL(puthex, 1)
                 SYSCALL(crlf, 1)
+                RBRA    _HM_SDMOUNTED7, 1
+
+                ; We successfully loaded a manually loadable CRT/ROM and need
+                ; to ensure that the menu items stays selected. This
+                ; situation is similar to the one described in _HM_MOUNTED_S.
+_HM_SDMOUNTED6B MOVE    R7, R8
+                RSUB    CRTROM_M_GI, 1          ; convert rom id to menu idx
+                RBRA    _HM_SDMOUNTED6C, C      ; OK: continue
+                MOVE    ERR_FATAL_INST, R8      ; Not OK: fatal
+                MOVE    ERR_FATAL_INSTA, R9
+                RBRA    FATAL, 1
+_HM_SDMOUNTED6C MOVE    R9, R8                  ; R8: menu index
+                MOVE    1, R9                   ; R9=1: set menu item
+                RSUB    OPTM_SET, 1
+
+                ; Some CRT/ROM load actions are unmounting drives, so we need
+                ; to we need to check for that and act accordingly
+                RSUB    _OPTM_GK_MNT, 1
 
                 ; 6. Redraw and show the OSM
 _HM_SDMOUNTED7  RSUB    OPTM_SHOW, 1            
@@ -550,7 +585,7 @@ _HM_MOUNTED     MOVE    R7, R8
                 RBRA    _HM_MOUNTED_F, !C       ; unsuccessful? fatal!
                 MOVE    R9, R8                  ; OK! set menu index
                 MOVE    1, R9                   ; set as "mounted"
-                RSUB    _HM_SETMENU, 1
+                RSUB    OPTM_SET, 1
                 RBRA    _HM_SDMOUNTED7, 1       ; redraw menu and exit
 
                 ; unmount the whole drive?
@@ -591,55 +626,10 @@ _HM_MOUNTED_F   MOVE    ERR_FATAL_INST, R8
 
 _HM_MOUNTED_1   MOVE    R9, R8                  ; menu index
                 MOVE    1, R9                   ; set as "mounted"
-                RSUB    _HM_SETMENU, 1
+                RSUB    OPTM_SET, 1
                 RBRA    _HM_START_MOUNT, 1      ; show browser and mount
 
 _HM_RET         RSUB    VD_MNT_ST_SET, 1        ; remember mount status
-                SYSCALL(leave, 1)
-                RET
-
-; helper function that executes the menu and data structure modification
-; described above in the comment near _HM_MOUNTED
-; Input:
-;   R8: Index of menu item to change
-;   R9: 0=unset / 1=set
-;
-; @TODO: Refactor this, see also this file in the develop branch of the
-; C64 core: tests/README.md (section that starts with @@@-#-#). 
-; Also to-be-checked: Is the SCR$PRINTSTRXY necessary at all (and where is it
-; actually printing to in a "below-the-fold" situation).
-_HM_SETMENU     SYSCALL(enter, 1)
-
-                MOVE    R8, R0                  ; R0: menu index
-                MOVE    R9, R1                  ; R1: mode
-
-                MOVE    OPTM_DATA, R8
-                MOVE    @R8, R8
-                ADD     OPTM_IR_STDSEL, R8
-                MOVE    @R8, R8
-                ADD     R0, R8                  ; R0 contains menu index
-                MOVE    R0, R11                 ; save menu index
-                MOVE    R1, @R8                 ; re-set single-select flag
-
-                MOVE    SPACE, R8               ; R8 = space (unset)
-                CMP     0, R1
-                RBRA    _HM_SETMENU_1, Z
-
-                MOVE    OPTM_DATA, R8           ; R8: single-select char
-                MOVE    @R8, R8
-                MOVE    OPTM_IR_SEL, R8
-                MOVE    @R8, R8
-                ADD     2, R8
-
-_HM_SETMENU_1   MOVE    OPTM_X, R9              ; R9: x-pos
-                MOVE    @R9, R9
-                ADD     1, R9                   ; x-pos on screen b/c frame
-                MOVE    OPTM_Y, R10             ; R10: y-pos
-                MOVE    @R10, R10
-                ADD     R11, R10                ; add menu index
-                ADD     1, R10                  ; y-pos on screen b/c frame
-                RSUB    SCR$PRINTSTRXY, 1
-
                 SYSCALL(leave, 1)
                 RET
 

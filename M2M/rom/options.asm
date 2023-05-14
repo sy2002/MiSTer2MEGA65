@@ -346,24 +346,10 @@ _HLP_CA_1       MOVE    LOG_STR_CFG_ON, R8
                 ; RP_SYSTEM_START (gencfg.asm)
                 MOVE    M2M$CSR, R2
                 MOVE    M2M$CSR_RESET, @R2
-
-                ; wait SD_WAIT cycles
-                MOVE    SD_CYC_MID, R8          ; 32-bit addition to calculate
-                MOVE    @R8, R8                 ; ..the target cycles
-                MOVE    SD_CYC_HI, R9
-                MOVE    @R9, R9
-                ADD     SD_WAIT, R8
-                ADDC    0, R9
-                MOVE    IO$CYC_MID, R10
-                MOVE    IO$CYC_HI, R11
-_HLP_CA_2A      CMP     @R11, R9
-                RBRA    _HLP_CA_2B, N           ; wait until @R11 >= R9
-                RBRA    _HLP_CA_2A, !Z
-_HLP_CA_2B      CMP     @R10, R8
-                RBRA    _HLP_CA_2B, !N          ; wait while @R10 <= R8
+                RSUB    WAIT_FOR_SD, 1
 
                 ; Mount SD card
-_HLP_CA_3       MOVE    CONFIG_DEVH, R8         ; device handle
+                MOVE    CONFIG_DEVH, R8         ; device handle
                 MOVE    1, R9                   ; partition #1 hardcoded
                 SYSCALL(f32_mnt_sd, 1)
                 CMP     0, R9                   ; R9=error code; 0=OK
@@ -691,12 +677,35 @@ ROSM_SAVE       SYSCALL(enter, 1)
                 CMP     0, @R8
                 RBRA    _ROSMS_RET, Z
 
-                ; Iterate through the 16 windows of M2M$CFM_DATA to detect
+                ; If any write cache of any virtual drive is dirty then
+                ; we need to assume that the 512-byte hardware buffer is
+                ; currently in use by HANDLE_DEV. See also the comment about
+                ; us not following the QNICE best practice here and the
+                ; @TODO that we might want to refactor this in future.
+                RSUB    VD_ACTIVE, 1            ; any vdrives at all?
+                RBRA    _ROSMS_1, !C            ; no, so no danger of corruptn
+                MOVE    R8, R0                  ; R0: amount of vdrives
+                XOR     R8, R8                  ; vdrive id
+_ROSMS_0        MOVE    VD_CACHE_DIRTY, R9
+                RSUB    VD_DRV_READ, 1          ; get dirty flag for curr. drv
+                CMP     0, R8                   ; dirty?
+                RBRA    _ROSMS_NOWR, !Z         ; yes: do not save
+                ADD     1, R8                   ; no: check next vdrive
+                CMP     R0, R8                  ; done?
+                RBRA    _ROSMS_0, !Z            ; no: next iteration
+                RBRA    _ROSMS_1, 1             ; yes: detect changes & save
+
+_ROSMS_NOWR     MOVE    LOG_STR_CFG_NO, R8
+                SYSCALL(puts, 1)
+                RBRA    _ROSMS_RET, 1
+
+_ROSMS_1        ; Iterate through the 16 windows of M2M$CFM_DATA to detect
                 ; changes because we only save if there are changes
                 RSUB    ROSM_CHANGES, 1
                 RBRA    _ROSMS_RET, !C
 
-                ; Start at the beginning of the config file (R8: file handle)
+                ; Start at the beginning of the config file
+                MOVE    CONFIG_FILE, R8
                 XOR     R9, R9                  ; restart reading from byte 0
                 XOR     R10, R10
                 SYSCALL(f32_fseek, 1)
@@ -796,7 +805,7 @@ _ROSMS_RET      SYSCALL(leave, 1)
 ; Will be copied to the HEAP, together with the configuration data from
 ; config.vhd and then modified to point to the right addresses on the heap
 OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, OPT_PRINTSTR, SCR$PRINTSTRXY
-                .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
+                .DW     OPT_PRINTLINE, OPT_SELECT, OPT_MENU_GETKEY
                 .DW     OPTM_CB_SEL, OPTM_CB_SHOW, FATAL,
                 .DW     M2M$OPT_SEL_MULTI, 0    ; selection char + zero term.:
                 .DW     M2M$OPT_SEL_SINGLE, 0   ; multi- and single-select
@@ -894,7 +903,7 @@ _PRINTLN_L      MOVE    M2M$NC_SH, @R3++
 ; R9=1: select
 ; R9=2: print headline/title highlighted
 ; R9=3: select highlighted headline/title
-OPTM_SELECT     INCRB
+OPT_SELECT      INCRB
 
                 MOVE    OPTM_X, R0              ; R0: x start coordinate
                 MOVE    @R0, R0
@@ -959,6 +968,8 @@ OPT_MENU_GETKEY INCRB
 _OPTMGK_LOOP    RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
                 RSUB    VD_MNT_ST_GET, 1        ; did mount status change..
                 RSUB    _OPTM_GK_MNT, C         ; ..while OPTM is open?
+                RSUB    CRTROM_MLST_GET, 1      ; CRT/ROM ld status changed..
+                RSUB    _OPTM_GK_CRTROM, C      ; ..while OPTM is open?
                 RSUB    VD_DTY_ST_GET, 1        ; did cache status change..
                 RBRA    _OPTMGK_KEYSCAN, !C     ; ..while OPTM is open?
                 RSUB    OPTM_SHOW, 1            ; yes: redraw menu and..
@@ -1036,7 +1047,7 @@ _OPTM_GK_MNT_2  MOVE    R9, R8
                 RBRA    _OPTM_GK_MNT_3, 1
 _OPTM_GK_MNT_X1 MOVE    1, R9
 
-_OPTM_GK_MNT_3  RSUB    _HM_SETMENU, 1          ; set/unset menu item
+_OPTM_GK_MNT_3  RSUB    OPTM_SET, 1             ; set/unset menu item
                                                 ; (R8=menu item, R9=value)
 
                 ; update M2M$CFM_DATA accordingly:
@@ -1071,7 +1082,8 @@ _OPTM_GK_MNT_5  ADD     1, R0
 
                 ; a core-reset unmounts some or all drives: redraw menu to
                 ; make sure that the drives are not shown as mounted any more
-                RSUB    OPTM_SHOW, 1
+                ; (this routine is also used by _OPTM_GK_CRTROM)
+_OPTM_GK_MNT_S  RSUB    OPTM_SHOW, 1
 
                 ; re-show the currently selected item
                 MOVE    OPTM_CUR_SEL, R8
@@ -1080,6 +1092,37 @@ _OPTM_GK_MNT_5  ADD     1, R0
                 RSUB    OPTM_SELECT, 1
 
 _OPTM_GK_MNT_R  SYSCALL(leave, 1)
+                RET
+
+                ; This helper function is similar _OPTM_GK_MNT but it is
+                ; all about manually loadable CRTs/ROMs
+                ; R8: CRT/ROM ID of the manually loadable CRT/ROM which
+                ;     has a changed status
+                ; R9: new status of this very CRT/ROM
+_OPTM_GK_CRTROM SYSCALL(enter, 1)
+
+_OPTM_GK_CR_0   MOVE    R9, R0
+                RSUB    CRTROM_M_GI, 1          ; convert id into menu idx
+                RBRA    _OPTM_GK_CR_1, C        ; OK: continue
+                MOVE    ERR_FATAL_INST, R8      ; not OK: fatal
+                MOVE    ERR_FATAL_INSTB, R9
+                RBRA    FATAL, 1
+
+                ; change visual and register representation
+_OPTM_GK_CR_1   MOVE    R9, R8                  ; R8: menu index
+                MOVE    R0, R9                  ; R9: set/unset
+                RSUB    OPTM_SET, 1             ; visual representation
+                RSUB    M2M$SET_SETTING, 1      ; register representation
+
+                ; next iteration: one call of CRTROM_MLST_GET does not
+                ; capture all possible changes
+                RSUB    CRTROM_MLST_GET, 1
+                RBRA    _OPTM_GK_CR_0, C
+
+                ; redraw menu and then call SYSCALL(leave, 1) and RET
+                RBRA    _OPTM_GK_MNT_S, 1
+
+_OPTM_GK_CR_R   SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------

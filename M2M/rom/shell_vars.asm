@@ -70,6 +70,12 @@ HANDLE_FILE6    .BLOCK  FAT32$FDH_STRUCT_SIZE
 ; Remember configuration handling:
 ; * We are using a separate device handle because some logic around SD card
 ;   switching in shell.asm is tied to the status of HANDLE_DEV.
+;   Warning: This is not a best practice. If you want to leverage the
+;   automatic data corruption prevention built in to the FAT32 library of the
+;   monitor, then stick to one device handle per device. Since we are not
+;   following this best practice, we need to prevent data corruption by
+;   ourselves, for example see the ROSM_SAVE dirty check in options.asm.
+;   @TODO: We might want to re-factor the handling of device handles.
 ; * File-handle for config file (saving/loading OSM settings) is valid (i.e.
 ;   not null) when SAVE_SETTINGS (config.vhd) is true and when the file
 ;   specified by CFG_FILE (config.vhd) exists and has exactly the size of
@@ -155,3 +161,11 @@ CRTROM_MAN_MAX  .EQU   3                        ; max. amt. of. man. CRTS/ROMs
 CRTROM_MAN_LDF  .BLOCK CRTROM_MAN_MAX           ; flag: has been loaded
 CRTROM_MAN_DEV  .BLOCK CRTROM_MAN_MAX           ; byte streaming device ids
 CRTROM_MAN_4KS  .BLOCK CRTROM_MAN_MAX           ; 4K start address within dev.
+CRTROM_AUT_NUM  .BLOCK 1                        ; amount of automatic ROMSs
+CRTROM_AUT_MAX  .EQU   3                        ; max. amt. of. automatic ROMs
+CRTROM_AUT_LDF  .BLOCK CRTROM_AUT_MAX           ; flag: has been loaded
+CRTROM_AUT_DEV  .BLOCK CRTROM_AUT_MAX           ; byte streaming device ids
+CRTROM_AUT_4KS  .BLOCK CRTROM_AUT_MAX           ; 4K start address within dev.
+CRTROM_AUT_MOD  .BLOCK CRTROM_AUT_MAX           ; mode: mandatory or optional
+CRTROM_AUT_NAM  .BLOCK CRTROM_AUT_MAX           ; startpos of filenames
+CRTROM_AUT_FILE .BLOCK  FAT32$FDH_STRUCT_SIZE   ; file handle to autoload ROMs

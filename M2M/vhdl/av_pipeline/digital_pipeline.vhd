@@ -234,10 +234,10 @@ begin
          G_REGISTER_SRC => false
       )
       port map (
-         src_clk_i   => audio_clk_i,   -- Not used
+         src_clk_i                => audio_clk_i, -- Not used
          src_data_i(15 downto  0) => std_logic_vector(audio_left_i),
          src_data_i(31 downto 16) => std_logic_vector(audio_right_i),
-         dst_clk_i   => hdmi_clk_i,
+         dst_clk_i                => hdmi_clk_i,
          dst_data_o(15 downto  0) => hdmi_audio_left,
          dst_data_o(31 downto 16) => hdmi_audio_right
       ); -- i_cdc_stable
