@@ -457,7 +457,7 @@ _CRMTRY_OPTNL   SUB     1, R0                   ; next iteration
 ; Check if the current load status of any manually loadable CRT/ROM is
 ; different from the one we remembered.
 ;
-; Returns: Carry=1 if mount status is different (and in this case we remember
+; Returns: Carry=1 if load status is different (and in this case we remember
 ; automatically the new status), else Carry=0
 ;
 ; Important: This function is meant to be called repeatedly in case of
