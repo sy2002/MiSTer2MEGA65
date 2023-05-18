@@ -127,16 +127,18 @@ signal main_audio_l           : signed(15 downto 0);
 signal main_audio_r           : signed(15 downto 0);
 
 -- Video output from Core
-signal main_video_ce          : std_logic;
-signal main_video_ce_ovl      : std_logic;
-signal main_video_retro15kHz  : std_logic;
-signal main_video_red         : std_logic_vector(7 downto 0);
-signal main_video_green       : std_logic_vector(7 downto 0);
-signal main_video_blue        : std_logic_vector(7 downto 0);
-signal main_video_vs          : std_logic;
-signal main_video_hs          : std_logic;
-signal main_video_hblank      : std_logic;
-signal main_video_vblank      : std_logic;
+signal video_clk              : std_logic;
+signal video_rst              : std_logic;
+signal video_ce               : std_logic;
+signal video_ce_ovl           : std_logic;
+signal video_retro15kHz       : std_logic;
+signal video_red              : std_logic_vector(7 downto 0);
+signal video_green            : std_logic_vector(7 downto 0);
+signal video_blue             : std_logic_vector(7 downto 0);
+signal video_vs               : std_logic;
+signal video_hs               : std_logic;
+signal video_hblank           : std_logic;
+signal video_vblank           : std_logic;
 
 -- Joysticks and Paddles
 signal main_joy1_up_n         : std_logic;
@@ -283,16 +285,18 @@ begin
       main_qnice_gp_reg_o     => main_qnice_gp_reg,
       main_audio_l_i          => main_audio_l,
       main_audio_r_i          => main_audio_r,
-      main_video_ce_i         => main_video_ce,
-      main_video_ce_ovl_i     => main_video_ce_ovl,
-      main_video_retro15kHz_i => main_video_retro15kHz,
-      main_video_red_i        => main_video_red,
-      main_video_green_i      => main_video_green,
-      main_video_blue_i       => main_video_blue,
-      main_video_vs_i         => main_video_vs,
-      main_video_hs_i         => main_video_hs,
-      main_video_hblank_i     => main_video_hblank,
-      main_video_vblank_i     => main_video_vblank,
+      video_clk_i             => video_clk,
+      video_rst_i             => video_rst,
+      video_ce_i              => video_ce,
+      video_ce_ovl_i          => video_ce_ovl,
+      video_retro15kHz_i      => video_retro15kHz,
+      video_red_i             => video_red,
+      video_green_i           => video_green,
+      video_blue_i            => video_blue,
+      video_vs_i              => video_vs,
+      video_hs_i              => video_hs,
+      video_hblank_i          => video_hblank,
+      video_vblank_i          => video_vblank,
       main_joy1_up_n_o        => main_joy1_up_n,
       main_joy1_down_n_o      => main_joy1_down_n,
       main_joy1_left_n_o      => main_joy1_left_n,
@@ -416,16 +420,18 @@ begin
          main_qnice_gp_reg_i     => main_qnice_gp_reg,
 
          -- Video output
-         main_video_ce_o         => main_video_ce,
-         main_video_ce_ovl_o     => main_video_ce_ovl,
-         main_video_retro15kHz_o => main_video_retro15kHz,
-         main_video_red_o        => main_video_red,
-         main_video_green_o      => main_video_green,
-         main_video_blue_o       => main_video_blue,
-         main_video_vs_o         => main_video_vs,
-         main_video_hs_o         => main_video_hs,
-         main_video_hblank_o     => main_video_hblank,
-         main_video_vblank_o     => main_video_vblank,
+         video_clk_o             => video_clk,
+         video_rst_o             => video_rst,
+         video_ce_o              => video_ce,
+         video_ce_ovl_o          => video_ce_ovl,
+         video_retro15kHz_o      => video_retro15kHz,
+         video_red_o             => video_red,
+         video_green_o           => video_green,
+         video_blue_o            => video_blue,
+         video_vs_o              => video_vs,
+         video_hs_o              => video_hs,
+         video_hblank_o          => video_hblank,
+         video_vblank_o          => video_vblank,
 
          -- Audio output (Signed PCM)
          main_audio_left_o       => main_audio_l,

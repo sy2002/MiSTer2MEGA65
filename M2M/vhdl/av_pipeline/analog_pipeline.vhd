@@ -202,9 +202,9 @@ begin
       port map (
          vga_clk_i        => video_clk_i,
          vga_ce_i         => video_ce_ovl_i,
-         vga_red_i        => mix_r,
-         vga_green_i      => mix_g,
-         vga_blue_i       => mix_b,
+         vga_red_i        => vga_red,
+         vga_green_i      => vga_green,
+         vga_blue_i       => vga_blue,
          vga_hs_i         => vga_hs,
          vga_vs_i         => vga_vs,
          vga_de_i         => mix_vga_de,

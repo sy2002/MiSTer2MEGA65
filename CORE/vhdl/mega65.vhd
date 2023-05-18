@@ -77,16 +77,18 @@ port (
    main_pause_core_i       : in  std_logic;
 
    -- Video output
-   main_video_ce_o         : out std_logic;
-   main_video_ce_ovl_o     : out std_logic;
-   main_video_retro15kHz_o : out std_logic;
-   main_video_red_o        : out std_logic_vector(7 downto 0);
-   main_video_green_o      : out std_logic_vector(7 downto 0);
-   main_video_blue_o       : out std_logic_vector(7 downto 0);
-   main_video_vs_o         : out std_logic;
-   main_video_hs_o         : out std_logic;
-   main_video_hblank_o     : out std_logic;
-   main_video_vblank_o     : out std_logic;
+   video_clk_o             : out std_logic;
+   video_rst_o             : out std_logic;
+   video_ce_o              : out std_logic;
+   video_ce_ovl_o          : out std_logic;
+   video_retro15kHz_o      : out std_logic;
+   video_red_o             : out std_logic_vector(7 downto 0);
+   video_green_o           : out std_logic_vector(7 downto 0);
+   video_blue_o            : out std_logic_vector(7 downto 0);
+   video_vs_o              : out std_logic;
+   video_hs_o              : out std_logic;
+   video_hblank_o          : out std_logic;
+   video_vblank_o          : out std_logic;
 
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
@@ -189,8 +191,10 @@ begin
          main_rst_o        => main_rst         -- CORE's reset, synchronized
       ); -- clk_gen
 
-   main_clk_o <= main_clk;
-   main_rst_o <= main_rst;
+   main_clk_o  <= main_clk;
+   main_rst_o  <= main_rst;
+   video_clk_o <= main_clk;
+   video_rst_o <= main_rst;
 
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
@@ -211,16 +215,16 @@ begin
 
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
-         video_ce_o           => main_video_ce_o,
-         video_ce_ovl_o       => main_video_ce_ovl_o,
-         video_retro15kHz_o   => main_video_retro15kHz_o,
-         video_red_o          => main_video_red_o,
-         video_green_o        => main_video_green_o,
-         video_blue_o         => main_video_blue_o,
-         video_vs_o           => main_video_vs_o,
-         video_hs_o           => main_video_hs_o,
-         video_hblank_o       => main_video_hblank_o,
-         video_vblank_o       => main_video_vblank_o,
+         video_ce_o           => video_ce_o,
+         video_ce_ovl_o       => video_ce_ovl_o,
+         video_retro15kHz_o   => video_retro15kHz_o,
+         video_red_o          => video_red_o,
+         video_green_o        => video_green_o,
+         video_blue_o         => video_blue_o,
+         video_vs_o           => video_vs_o,
+         video_hs_o           => video_hs_o,
+         video_hblank_o       => video_hblank_o,
+         video_vblank_o       => video_vblank_o,
 
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_left_o,
