@@ -12,9 +12,9 @@ module csync
     output csync
 );
 
-assign csync = (csync_vs ^ csync_hs);
 
 reg csync_hs, csync_vs;
+assign csync = (csync_vs ^ csync_hs);
 always @(posedge clk) begin
     reg prev_hs;
     reg [15:0] h_cnt, line_len, hs_len;
