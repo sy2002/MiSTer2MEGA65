@@ -45,6 +45,7 @@ port (
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
+   qnice_retro15kHz_o      : out std_logic;
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
@@ -81,7 +82,6 @@ port (
    video_rst_o             : out std_logic;
    video_ce_o              : out std_logic;
    video_ce_ovl_o          : out std_logic;
-   video_retro15kHz_o      : out std_logic;
    video_red_o             : out std_logic_vector(7 downto 0);
    video_green_o           : out std_logic_vector(7 downto 0);
    video_blue_o            : out std_logic_vector(7 downto 0);
@@ -217,7 +217,6 @@ begin
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
          video_ce_o           => video_ce_o,
          video_ce_ovl_o       => video_ce_ovl_o,
-         video_retro15kHz_o   => video_retro15kHz_o,
          video_red_o          => video_red_o,
          video_green_o        => video_green_o,
          video_blue_o         => video_blue_o,
@@ -226,7 +225,7 @@ begin
          video_hblank_o       => video_hblank_o,
          video_vblank_o       => video_vblank_o,
 
-         -- Audio output (PCM format, signed values)
+         -- audio output (pcm format, signed values)
          audio_left_o         => main_audio_left_o,
          audio_right_o        => main_audio_right_o,
 
@@ -276,6 +275,7 @@ begin
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
+   qnice_retro15kHz_o         <= '0';
 
    -- ascal filters that are applied while processing the input
    -- 00 : Nearest Neighbour

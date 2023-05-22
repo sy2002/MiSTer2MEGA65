@@ -131,7 +131,6 @@ signal video_clk              : std_logic;
 signal video_rst              : std_logic;
 signal video_ce               : std_logic;
 signal video_ce_ovl           : std_logic;
-signal video_retro15kHz       : std_logic;
 signal video_red              : std_logic_vector(7 downto 0);
 signal video_green            : std_logic_vector(7 downto 0);
 signal video_blue             : std_logic_vector(7 downto 0);
@@ -191,6 +190,7 @@ signal qnice_zoom_crop        : std_logic;
 signal qnice_ascal_mode       : std_logic_vector(1 downto 0);
 signal qnice_ascal_polyphase  : std_logic;
 signal qnice_ascal_triplebuf  : std_logic;
+signal qnice_retro15kHz       : std_logic;
 
 -- flip joystick ports
 signal qnice_flip_joyports    : std_logic;
@@ -289,7 +289,6 @@ begin
       video_rst_i             => video_rst,
       video_ce_i              => video_ce,
       video_ce_ovl_i          => video_ce_ovl,
-      video_retro15kHz_i      => video_retro15kHz,
       video_red_i             => video_red,
       video_green_i           => video_green,
       video_blue_i            => video_blue,
@@ -335,6 +334,7 @@ begin
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
+      qnice_retro15kHz_i      => qnice_retro15kHz,
       qnice_ascal_mode_i      => qnice_ascal_mode,
       qnice_ascal_polyphase_i => qnice_ascal_polyphase,
       qnice_ascal_triplebuf_i => qnice_ascal_triplebuf,
@@ -383,6 +383,7 @@ begin
          qnice_ascal_mode_o      => qnice_ascal_mode,
          qnice_ascal_polyphase_o => qnice_ascal_polyphase,
          qnice_ascal_triplebuf_o => qnice_ascal_triplebuf,
+         qnice_retro15kHz_o      => qnice_retro15kHz,
 
          -- Flip joystick ports
          qnice_flip_joyports_o   => qnice_flip_joyports,
@@ -424,7 +425,6 @@ begin
          video_rst_o             => video_rst,
          video_ce_o              => video_ce,
          video_ce_ovl_o          => video_ce_ovl,
-         video_retro15kHz_o      => video_retro15kHz,
          video_red_o             => video_red,
          video_green_o           => video_green,
          video_blue_o            => video_blue,

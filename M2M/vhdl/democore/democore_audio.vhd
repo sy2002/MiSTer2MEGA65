@@ -35,6 +35,13 @@ architecture synthesis of democore_audio is
    signal x : signed(15 downto 0) := X"7C00";
    signal y : signed(15 downto 0) := X"0000";
 
+   signal x_d      : signed(15 downto 0);
+   signal x_dd     : signed(15 downto 0);
+   signal left_d   : signed(15 downto 0);
+   signal left_dd  : signed(15 downto 0);
+   signal right_d  : signed(15 downto 0);
+   signal right_dd : signed(15 downto 0);
+
    signal accum : std_logic_vector(15 downto 0) := X"0000";
    signal step  : std_logic := '0';
 
@@ -76,14 +83,25 @@ begin
 
    -- Control volume
    p_out : process (clk_i)
-      variable prod : signed(31 downto 0);
+      variable prod     : signed(31 downto 0);
    begin
       if rising_edge(clk_i) then
-         prod := x * signed(vol_left_i);
+
+         -- Pipeline stage 1 input to DSP
+         x_d     <= x;
+         left_d  <= signed(vol_left_i);
+         right_d <= signed(vol_right_i);
+         -- Pipeline stage 2 input to DSP
+         x_dd     <= x_d;
+         left_dd  <= left_d;
+         right_dd <= right_d;
+
+         prod := x_dd * left_dd;
          audio_left_o <= prod(27 downto 12);
 
-         prod := x * signed(vol_right_i);
+         prod := x_dd * right_dd;
          audio_right_o <= prod(27 downto 12);
+
       end if;
    end process p_out;
 

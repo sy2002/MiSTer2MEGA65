@@ -30,7 +30,6 @@ entity main is
       -- Video output
       video_ce_o              : out std_logic;
       video_ce_ovl_o          : out std_logic;
-      video_retro15kHz_o      : out std_logic;
       video_red_o             : out std_logic_vector(7 downto 0);
       video_green_o           : out std_logic_vector(7 downto 0);
       video_blue_o            : out std_logic_vector(7 downto 0);
@@ -117,7 +116,6 @@ begin
    -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
    video_ce_ovl_o <= video_ce_o;
-   video_retro15kHz_o <= '0';
 
    -- @TODO: Keyboard mapping and keyboard behavior
    -- Each core is treating the keyboard in a different way: Some need low-active "matrices", some

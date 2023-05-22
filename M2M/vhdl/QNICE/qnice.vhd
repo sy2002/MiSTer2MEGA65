@@ -555,7 +555,7 @@ begin
       if falling_edge(clk50_i) then
          -- Default values of all registers (reset)
          if reset_ctl = '1' then
-            reg_csr     <= x"0838";  -- By default the C64 core is running and the keyboard and the joysticks are active
+            reg_csr     <= x"0838";  -- By default the core is running and the keyboard and the joysticks are active
                                      -- Default: Auto select SD card: bit 6 = 0
                                      -- Default: internal card (bottom tray): bit 7 = 0
                                      -- Default: Auto-sync ascal settings = on: bit 11 aka ascal_usage = 1

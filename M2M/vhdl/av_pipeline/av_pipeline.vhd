@@ -31,76 +31,97 @@ entity av_pipeline is
    );
    port (
       -- From CORE
-      video_clk_i          : in  std_logic;
-      video_rst_i          : in  std_logic;
-      video_ce_i           : in  std_logic;
-      video_ce_ovl_i       : in  std_logic;
-      video_red_i          : in  std_logic_vector( 7 downto 0);
-      video_green_i        : in  std_logic_vector( 7 downto 0);
-      video_blue_i         : in  std_logic_vector( 7 downto 0);
-      video_vs_i           : in  std_logic;
-      video_hs_i           : in  std_logic;
-      video_hblank_i       : in  std_logic;
-      video_vblank_i       : in  std_logic;
-      audio_clk_i          : in  std_logic;
-      audio_rst_i          : in  std_logic;
-      audio_left_i         : in  std_logic_vector(15 downto 0);
-      audio_right_i        : in  std_logic_vector(15 downto 0);
+      video_clk_i            : in  std_logic;
+      video_rst_i            : in  std_logic;
+      video_ce_i             : in  std_logic;
+      video_ce_ovl_i         : in  std_logic;
+      video_red_i            : in  std_logic_vector( 7 downto 0);
+      video_green_i          : in  std_logic_vector( 7 downto 0);
+      video_blue_i           : in  std_logic_vector( 7 downto 0);
+      video_vs_i             : in  std_logic;
+      video_hs_i             : in  std_logic;
+      video_hblank_i         : in  std_logic;
+      video_vblank_i         : in  std_logic;
+      audio_clk_i            : in  std_logic; -- 30 MHz
+      audio_rst_i            : in  std_logic;
+      audio_left_i           : in  std_logic_vector(15 downto 0);
+      audio_right_i          : in  std_logic_vector(15 downto 0);
 
       -- From QNICE
-      qnice_clk_i          : in  std_logic;
-      qnice_rst_i          : in  std_logic;
-      qnice_retro15kHz_i   : in  std_logic;
-      qnice_scandoubler_i  : in  std_logic;
-      qnice_csync_i        : in  std_logic;
-      qnice_zoom_crop_i    : in  std_logic;
-      qnice_audio_filter_i : in  std_logic;
-      qnice_audio_mute_i   : in  std_logic;
+      qnice_clk_i            : in  std_logic;
+      qnice_rst_i            : in  std_logic;
+      qnice_osm_cfg_xy_i     : in  std_logic_vector(15 downto 0);
+      qnice_osm_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
+      qnice_osm_cfg_enable_i : in  std_logic;
+      qnice_retro15kHz_i     : in  std_logic;
+      qnice_scandoubler_i    : in  std_logic;
+      qnice_csync_i          : in  std_logic;
+      qnice_zoom_crop_i      : in  std_logic;
+      qnice_audio_filter_i   : in  std_logic;
+      qnice_audio_mute_i     : in  std_logic;
+      qnice_video_mode_i     : in  std_logic_vector( 1 downto 0);
+      qnice_dvi_i            : in  std_logic;
+      qnice_poly_clk_i       : in  std_logic;
+      qnice_poly_dw_i        : in  std_logic_vector( 9 downto 0);
+      qnice_poly_a_i         : in  std_logic_vector( 9 downto 0);
+      qnice_poly_wr_i        : in  std_logic;
+      qnice_ascal_mode_i     : in  std_logic_vector( 4 downto 0);
 
       -- To QNICE
-      qnice_x_vis_o        : out std_logic_vector(15 downto 0);
-      qnice_x_tot_o        : out std_logic_vector(15 downto 0);
-      qnice_y_vis_o        : out std_logic_vector(15 downto 0);
-      qnice_y_tot_o        : out std_logic_vector(15 downto 0);
-      qnice_h_freq_o       : out std_logic_vector(15 downto 0);
+      qnice_x_vis_o          : out std_logic_vector(15 downto 0);
+      qnice_x_tot_o          : out std_logic_vector(15 downto 0);
+      qnice_y_vis_o          : out std_logic_vector(15 downto 0);
+      qnice_y_tot_o          : out std_logic_vector(15 downto 0);
+      qnice_h_freq_o         : out std_logic_vector(15 downto 0);
+
+      -- QNICE interface for VRAM
+      qnice_address_i        : in  std_logic_vector(VRAM_ADDR_WIDTH-1 downto 0);
+      qnice_data_i           : in  std_logic_vector(15 downto 0);
+      qnice_wren_i           : in  std_logic;
+      qnice_byteenable_i     : in  std_logic_vector( 1 downto 0);
+      qnice_q_o              : out std_logic_vector(15 downto 0);
+
+      -- From SYS
+      sys_clk_i              : in  std_logic;
+      sys_pps_i              : in  std_logic;
 
       -- HyperRAM access for framebuffer
-      hr_clk_i             : in  std_logic;
-      hr_rst_i             : in  std_logic;
-      hr_write_o           : out std_logic;
-      hr_read_o            : out std_logic;
-      hr_address_o         : out std_logic_vector(31 downto 0);
-      hr_writedata_o       : out std_logic_vector(15 downto 0);
-      hr_byteenable_o      : out std_logic_vector( 1 downto 0);
-      hr_burstcount_o      : out std_logic_vector( 7 downto 0);
-      hr_readdata_i        : in  std_logic_vector(15 downto 0);
-      hr_readdatavalid_i   : in  std_logic;
-      hr_waitrequest_i     : in  std_logic;
-      hr_high_o            : out std_logic; -- Core is too fast
-      hr_low_o             : out std_logic; -- Core is too slow
+      hr_clk_i               : in  std_logic;
+      hr_rst_i               : in  std_logic;
+      hr_write_o             : out std_logic;
+      hr_read_o              : out std_logic;
+      hr_address_o           : out std_logic_vector(31 downto 0);
+      hr_writedata_o         : out std_logic_vector(15 downto 0);
+      hr_byteenable_o        : out std_logic_vector( 1 downto 0);
+      hr_burstcount_o        : out std_logic_vector( 7 downto 0);
+      hr_readdata_i          : in  std_logic_vector(15 downto 0);
+      hr_readdatavalid_i     : in  std_logic;
+      hr_waitrequest_i       : in  std_logic;
+      hr_high_o              : out std_logic; -- Core is too fast
+      hr_low_o               : out std_logic; -- Core is too slow
 
       -- I/O to VGA output
-      VGA_RED              : out std_logic_vector( 7 downto 0);
-      VGA_GREEN            : out std_logic_vector( 7 downto 0);
-      VGA_BLUE             : out std_logic_vector( 7 downto 0);
-      VGA_HS               : out std_logic;
-      VGA_VS               : out std_logic;
-      vdac_clk             : out std_logic;
-      vdac_sync_n          : out std_logic;
-      vdac_blank_n         : out std_logic;
+      VGA_RED                : out std_logic_vector( 7 downto 0);
+      VGA_GREEN              : out std_logic_vector( 7 downto 0);
+      VGA_BLUE               : out std_logic_vector( 7 downto 0);
+      VGA_HS                 : out std_logic;
+      VGA_VS                 : out std_logic;
+      vdac_clk               : out std_logic;
+      vdac_sync_n            : out std_logic;
+      vdac_blank_n           : out std_logic;
 
       -- I/O to 3.5mm analog audio jack
-      pwm_l                : out std_logic;
-      pwm_r                : out std_logic;
+      pwm_l                  : out std_logic;
+      pwm_r                  : out std_logic;
 
       -- I/O to Digital Video (HDMI)
-      hdmi_clk_i           : in  std_logic;
-      hdmi_rst_i           : in  std_logic;
-      tmds_clk_i           : in  std_logic;
-      tmds_data_p          : out std_logic_vector( 2 downto 0);
-      tmds_data_n          : out std_logic_vector( 2 downto 0);
-      tmds_clk_p           : out std_logic;
-      tmds_clk_n           : out std_logic
+      hdmi_clk_i             : in  std_logic;
+      hdmi_rst_i             : in  std_logic;
+      tmds_clk_i             : in  std_logic;
+      tmds_data_p_o          : out std_logic_vector( 2 downto 0);
+      tmds_data_n_o          : out std_logic_vector( 2 downto 0);
+      tmds_clk_p_o           : out std_logic;
+      tmds_clk_n_o           : out std_logic
    );
 end entity av_pipeline;
 
@@ -125,6 +146,9 @@ signal audio_mute             : std_logic;
 -- video_clk
 ---------------------------------------------------------------------------------------------
 signal video_retro15kHz       : std_logic;
+signal video_scandoubler      : std_logic;
+signal video_csync            : std_logic;
+signal video_zoom_crop        : std_logic;
 
 signal video_crop_ce          : std_logic;
 signal video_crop_red         : std_logic_vector(7 downto 0);
@@ -210,27 +234,47 @@ end component audio_out;
 
 begin
 
-   -- Clock domain crossing: QNICE to VGA QNICE-On-Screen-Display
+   ---------------------------------------------------------------------------------------------
+   -- Analog pipeline (VGA + audio out)
+   ---------------------------------------------------------------------------------------------
+
+   -- Clock domain crossing: QNICE to VIDEO
    i_qnice2video: xpm_cdc_array_single
       generic map (
-         WIDTH => 36
+         WIDTH => 37
       )
       port map (
          src_clk                => qnice_clk_i,
          src_in(15 downto 0)    => qnice_osm_cfg_xy_i,
          src_in(31 downto 16)   => qnice_osm_cfg_dxdy_i,
          src_in(32)             => qnice_osm_cfg_enable_i,
-         src_in(33)             => qnice_zoom_crop_i,
+         src_in(33)             => qnice_retro15kHz_i,
          src_in(34)             => qnice_scandoubler_i,
          src_in(35)             => qnice_csync_i,
+         src_in(36)             => qnice_zoom_crop_i,
          dest_clk               => video_clk_i,
          dest_out(15 downto 0)  => video_osm_cfg_xy,
          dest_out(31 downto 16) => video_osm_cfg_dxdy,
          dest_out(32)           => video_osm_cfg_enable,
-         dest_out(33)           => video_zoom_crop,
+         dest_out(33)           => video_retro15kHz,
          dest_out(34)           => video_scandoubler,
-         dest_out(35)           => video_csync
+         dest_out(35)           => video_csync,
+         dest_out(36)           => video_zoom_crop
       ); -- i_qnice2video
+
+   -- Clock domain crossing: QNICE to AUDIO
+   i_qnice2audio: xpm_cdc_array_single
+      generic map (
+         WIDTH => 2
+      )
+      port map (
+         src_clk     => qnice_clk_i,
+         src_in(0)   => qnice_audio_mute_i,
+         src_in(1)   => qnice_audio_filter_i,
+         dest_clk    => audio_clk_i,
+         dest_out(0) => audio_mute,
+         dest_out(1) => audio_filter
+      ); -- i_qnice2audio
 
 
    i_audio_out : audio_out
@@ -268,11 +312,11 @@ begin
 
    select_or_mute_audio : process(all)
    begin
-      if main_audio_mute = '1' then
+      if audio_mute = '1' then
          audio_left  <= (others => '0');
          audio_right <= (others => '0');
       else
-         if main_audio_filter = '0' then
+         if audio_filter = '0' then
             audio_left  <= audio_left_i;
             audio_right <= audio_right_i;
          else
@@ -281,6 +325,15 @@ begin
          end if;
       end if;
    end process select_or_mute_audio;
+
+   -- Clock domain crossing: Board clock domain (CLK) to video (video_clk_i)
+   i_sys2video : entity work.cdc_pulse
+      port map (
+         src_clk_i   => sys_clk_i,
+         src_pulse_i => sys_pps_i,
+         dst_clk_i   => video_clk_i,
+         dst_pulse_o => video_pps
+      ); -- i_sys2video
 
    i_video_counters : entity work.video_counters
       port map (
@@ -313,7 +366,6 @@ begin
          video_rst_i            => video_rst_i,
          video_ce_i             => video_ce_i,
          video_ce_ovl_i         => video_ce_ovl_i,
-         video_retro15kHz_i     => video_retro15kHz,
          video_red_i            => video_red_i,
          video_green_i          => video_green_i,
          video_blue_i           => video_blue_i,
@@ -321,17 +373,19 @@ begin
          video_vs_i             => video_vs_i,
          video_hblank_i         => video_hblank_i,
          video_vblank_i         => video_vblank_i,
-         audio_clk_i            => audio_clk_i, -- 30 MHz
+         audio_clk_i            => audio_clk_i,
          audio_rst_i            => audio_rst_i,
          audio_left_i           => signed(audio_left),
          audio_right_i          => signed(audio_right),
 
          -- Configure the scandoubler: 0=off/1=on
-         -- Make sure the signal is in the video_clk clock domain
-         video_scandoubler_i    => video_scandoubler_i,
+         video_scandoubler_i    => video_scandoubler,
 
          -- Configure composite sync: 0=off/1=on
-         video_csync_i          => video_csync_i,
+         video_csync_i          => video_csync,
+
+         -- Configure 15 kHz mode: 0=off/1=on
+         video_retro15kHz_i     => video_retro15kHz,
 
          -- Analog output (VGA and audio jack)
          vga_red_o              => vga_red,
@@ -346,16 +400,61 @@ begin
          pwm_r_o                => pwm_r,
 
          -- Connect to QNICE and Video RAM
-         video_osm_cfg_enable_i => video_osm_cfg_enable_i,
-         video_osm_cfg_xy_i     => video_osm_cfg_xy_i,
-         video_osm_cfg_dxdy_i   => video_osm_cfg_dxdy_i,
-         video_osm_vram_addr_o  => video_osm_vram_addr_o,
-         video_osm_vram_data_i  => video_osm_vram_data_i
+         video_osm_cfg_enable_i => video_osm_cfg_enable,
+         video_osm_cfg_xy_i     => video_osm_cfg_xy,
+         video_osm_cfg_dxdy_i   => video_osm_cfg_dxdy,
+         video_osm_vram_addr_o  => video_osm_vram_addr,
+         video_osm_vram_data_i  => video_osm_vram_data
       ); -- i_analog_pipeline
+
+   -- Clock domain crossing: VIDEO to QNICE
+   i_video2qnice: xpm_cdc_array_single
+      generic map (
+         WIDTH => 80
+      )
+      port map (
+         src_clk                => video_clk_i,
+         src_in(15 downto  0)   => video_x_vis,
+         src_in(31 downto 16)   => video_x_tot,
+         src_in(47 downto 32)   => video_y_vis,
+         src_in(63 downto 48)   => video_y_tot,
+         src_in(79 downto 64)   => video_h_freq,
+         dest_clk               => qnice_clk_i,
+         dest_out(15 downto  0) => qnice_x_vis_o,
+         dest_out(31 downto 16) => qnice_x_tot_o,
+         dest_out(47 downto 32) => qnice_y_vis_o,
+         dest_out(63 downto 48) => qnice_y_tot_o,
+         dest_out(79 downto 64) => qnice_h_freq_o
+      ); -- i_video2qnice
+
+
+   ---------------------------------------------------------------------------------------------
+   -- Digital pipeline (HDMI)
+   ---------------------------------------------------------------------------------------------
+
+   -- Clock domain crossing: QNICE to HDMI
+   i_qnice2hdmi: xpm_cdc_array_single
+      generic map (
+         WIDTH => 36
+      )
+      port map (
+         src_clk                => qnice_clk_i,
+         src_in(15 downto 0)    => qnice_osm_cfg_xy_i,
+         src_in(31 downto 16)   => qnice_osm_cfg_dxdy_i,
+         src_in(32)             => qnice_osm_cfg_enable_i,
+         src_in(34 downto 33)   => qnice_video_mode_i,
+         src_in(35)             => qnice_zoom_crop_i,
+         dest_clk               => hdmi_clk_i,
+         dest_out(15 downto 0)  => hdmi_osm_cfg_xy,
+         dest_out(31 downto 16) => hdmi_osm_cfg_dxdy,
+         dest_out(32)           => hdmi_osm_cfg_enable,
+         dest_out(34 downto 33) => hdmi_video_mode,
+         dest_out(35)           => hdmi_zoom_crop
+      ); -- i_qnice2hdmi
+
 
    i_crop : entity work.crop
       port map (
-         video_crop_mode_i => video_zoom_crop_i,
          video_clk_i       => video_clk_i,
          video_rst_i       => video_rst_i,
          video_ce_i        => video_ce_i,
@@ -366,6 +465,7 @@ begin
          video_vs_i        => video_vs_i,
          video_hblank_i    => video_hblank_i,
          video_vblank_i    => video_vblank_i,
+         video_crop_mode_i => video_zoom_crop,
          video_ce_o        => video_crop_ce,
          video_red_o       => video_crop_red,
          video_green_o     => video_crop_green,
@@ -399,10 +499,10 @@ begin
          video_vblank_i           => video_crop_vblank,
          video_hdmax_o            => video_hdmax,
          video_vdmax_o            => video_vdmax,
-         audio_clk_i              => audio_clk_i, -- 30 MHz
+         audio_clk_i              => audio_clk_i,
          audio_rst_i              => audio_rst_i,
-         audio_left_i             => audio_left_i,
-         audio_right_i            => audio_right_i,
+         audio_left_i             => signed(audio_left_i),
+         audio_right_i            => signed(audio_right_i),
 
          -- Digital output (HDMI)
          hdmi_clk_i               => hdmi_clk_i,
@@ -424,13 +524,13 @@ begin
          hdmi_osm_vram_data_i     => hdmi_osm_vram_data,
 
          -- QNICE connection to ascal's mode register
-         qnice_ascal_mode_i       => unsigned(qn_ascal_mode),
+         qnice_ascal_mode_i       => unsigned(qnice_ascal_mode_i),
 
          -- QNICE device for interacting with the Polyphase filter coefficients
-         qnice_poly_clk_i         => qnice_clk,
-         qnice_poly_dw_i          => unsigned(qnice_ramrom_data_out_o(9 downto 0)),
-         qnice_poly_a_i           => unsigned(qnice_ramrom_addr_o(6+3 downto 0)),
-         qnice_poly_wr_i          => qnice_poly_wr,
+         qnice_poly_clk_i         => qnice_clk_i,
+         qnice_poly_dw_i          => unsigned(qnice_poly_dw_i),
+         qnice_poly_a_i           => unsigned(qnice_poly_a_i),
+         qnice_poly_wr_i          => qnice_poly_wr_i,
 
          -- Connect to HyperRAM controller
          hr_clk_i                 => hr_clk_i,
@@ -460,6 +560,56 @@ begin
          high_o         => hr_high_o,       -- Core is too fast
          low_o          => hr_low_o         -- Core is too slow
       ); -- i_hdmi_flicker_free
+
+   ---------------------------------------------------------------------------------------------------------------
+   -- On-Screen-Menu video and attribute RAM: Dual-clock QNICE and VIDEO
+   ---------------------------------------------------------------------------------------------------------------
+
+   i_osm_vram_vga : entity work.dualport_2clk_ram_byteenable
+      generic map (
+         G_ADDR_WIDTH   => VRAM_ADDR_WIDTH,
+         G_DATA_WIDTH   => 16,
+         G_FALLING_A    => true  -- QNICE expects read/write to happen at the falling clock edge
+      )
+      port map
+      (
+         a_clk_i        => qnice_clk_i,
+         a_address_i    => qnice_address_i,
+         a_data_i       => qnice_data_i,
+         a_wren_i       => qnice_wren_i,
+         a_byteenable_i => qnice_byteenable_i,
+         a_q_o          => qnice_q_o,
+
+         b_clk_i        => video_clk_i,
+         b_address_i    => video_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
+         b_q_o          => video_osm_vram_data
+      ); -- i_osm_vram_vga
+
+
+   ---------------------------------------------------------------------------------------------------------------
+   -- On-Screen-Menu video and attribute RAM: Dual-clock QNICE and HDMI
+   ---------------------------------------------------------------------------------------------------------------
+
+   i_osm_vram_hdmi : entity work.dualport_2clk_ram_byteenable
+      generic map (
+         G_ADDR_WIDTH   => VRAM_ADDR_WIDTH,
+         G_DATA_WIDTH   => 16,
+         G_FALLING_A    => true  -- QNICE expects read/write to happen at the falling clock edge
+      )
+      port map
+      (
+         a_clk_i        => qnice_clk_i,
+         a_address_i    => qnice_address_i,
+         a_data_i       => qnice_data_i,
+         a_wren_i       => qnice_wren_i,
+         a_byteenable_i => qnice_byteenable_i,
+         a_q_o          => open, -- TBD
+
+         b_clk_i        => hdmi_clk_i,
+         b_address_i    => hdmi_osm_vram_addr(VRAM_ADDR_WIDTH-1 downto 0),
+         b_q_o          => hdmi_osm_vram_data
+      ); -- i_osm_vram_hdmi
+
 
 end architecture synthesis;
 

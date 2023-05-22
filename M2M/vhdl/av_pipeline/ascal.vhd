@@ -1132,7 +1132,7 @@ BEGIN
       i_iauto<='0';
       i_wreq<='0';
       i_wreq_mem<='0';
-      i_wr<='0';
+      --i_wr<='0';
       i_wdelay<=0;
       i_hburst<=0;
       i_hbcpt<=0;
@@ -1644,7 +1644,7 @@ BEGIN
       avl_readdataack<='0';
       avl_readack<='0';
       avl_read_i<='0';
-      avl_write_i<='0';
+      --avl_write_i<='0';
       avl_write_sync<='0';
       avl_write_sync2<='0';
       avl_write_pulse<='0';

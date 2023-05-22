@@ -295,7 +295,7 @@ begin
          O => audio_clk_o
       );
 
-   tmds_clk_bufgmux : BUFGMUX
+   tmds_clk_bufgmux : BUFGMUX_CTRL
       port map (
          S  => hdmi_clk_sel_i,
          I0 => tmds_720p_clk_mmcm,
@@ -303,7 +303,7 @@ begin
          O => tmds_clk_o
       );
 
-   hdmi_clk_bufgmux : BUFGMUX
+   hdmi_clk_bufgmux : BUFGMUX_CTRL
       port map (
          S  => hdmi_clk_sel_i,
          I0 => hdmi_720p_clk_mmcm,
