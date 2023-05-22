@@ -135,7 +135,9 @@ generate
 		);
 	end else begin
 		assign gamma_bus[21] = 0;
-		assign {R_gamma,G_gamma,B_gamma} = {R_in,G_in,B_in};
+		assign R_gamma = R_in;
+		assign G_gamma = G_in;
+		assign B_gamma = B_in;
 		assign {hs_g, vs_g, hb_g, vb_g} = {frz_hs, frz_vs, frz_hbl, frz_vbl};
 	end
 endgenerate
