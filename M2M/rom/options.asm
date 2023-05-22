@@ -1,4 +1,4 @@
-; ****************************************************************************
+    ; ****************************************************************************
 ; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
 ; Options menu / "Help" menu
@@ -1005,11 +1005,16 @@ _OPTM_GK_2A     CMP     M2M$KEY_RETURN, R8      ; Return (select)
 _OPTM_GK_2B     CMP     M2M$KEY_SPACE, R8       ; Space (alternative select)
                 RBRA    _OPTM_GK_3, !Z
                 MOVE    OPTM_KEY_SELALT, R8
-                RBRA    _OPTMGK_RET, 1           
+                RBRA    _OPTMGK_RET, 1
 
 _OPTM_GK_3      CMP     M2M$KEY_HELP, R8        ; Help (close menu)
-                RBRA    _OPTMGK_LOOP, !Z        ; other key: ignore
+                RBRA    _OPTM_GK_4, !Z
                 MOVE    OPTM_KEY_CLOSE, R8
+                RBRA    _OPTMGK_RET, 1
+
+_OPTM_GK_4      CMP     M2M$KEY_RUNSTOP, R8     ; Run/Stop (one menu level up)
+                RBRA    _OPTMGK_LOOP, !Z        ; other key: ignore
+                MOVE    OPTM_KEY_MENUUP, R8
 
 _OPTMGK_RET     DECRB
                 RET
