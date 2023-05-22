@@ -30,7 +30,7 @@ constant QNICE_FIRMWARE_MONITOR   : string  := "../../../M2M/QNICE/monitor/monit
 constant QNICE_FIRMWARE_M2M       : string  := "../../../CORE/m2m-rom/m2m-rom.rom";         -- release
 
 -- Select firmware here
-constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_MONITOR;
+constant QNICE_FIRMWARE           : string  := QNICE_FIRMWARE_M2M;
 
 ----------------------------------------------------------------------------------------------------------
 -- Clock Speed(s)
@@ -54,9 +54,12 @@ constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- a change here has de
 
 -- Rendering constants (in pixels)
 --    VGA_*   size of the core's target output post scandoubler
---    FONT_*  size of one OSM character
+--    If in doubt, use twice the values found in this link:
+--    https://mister-devel.github.io/MkDocs_MiSTer/advanced/nativeres/#arcade-core-default-native-resolutions
 constant VGA_DX               : natural := 720;
 constant VGA_DY               : natural := 576;
+
+--    FONT_*  size of one OSM character
 constant FONT_FILE            : string  := "../font/Anikki-16x16-m2m.rom";
 constant FONT_DX              : natural := 16;
 constant FONT_DY              : natural := 16;
@@ -103,6 +106,7 @@ constant C_VD_BUFFER          : vd_buf_array := (  C_DEV_DEMO_NOBUFFER,
 ----------------------------------------------------------------------------------------------------------
 
 type crtrom_buf_array is array(natural range<>) of std_logic_vector;
+constant ENDSTR : character := character'val(0);
 
 -- Cartridges and ROMs can be stored into QNICE devices, HyperRAM and SDRAM
 constant C_CRTROMTYPE_DEVICE     : std_logic_vector(15 downto 0) := x"0000";
@@ -139,9 +143,9 @@ constant C_CRTROMS_MAN           : crtrom_buf_array := ( x"EEEE", x"EEEE",
 --    C_CRTROMS_AUTO_NUM  is 0
 --    C_CRTROMS_AUTO      is (x"EEEE", x"EEEE", x"EEEE", x"EEEE", x"EEEE")
 -- How to pass the filenames of the ROMs to the framework:
--- C_CRTROMS_AUTO_NAMES is a concatenation of all filenames (see config.vhd's WHS_DATA for an example of how to concatenate)
+--    C_CRTROMS_AUTO_NAMES is a concatenation of all filenames (see config.vhd's WHS_DATA for an example of how to concatenate)
 --    The start addresses of the filename can be determined similarly to how it is done in config.vhd's HELP_x_START
---    using a concatenated addition and VHDL's string length operator.····
+--    using a concatenated addition and VHDL's string length operator.
 --    IMPORTANT: a) The framework is not doing any consistency or error check when it comes to C_CRTROMS_AUTO_NAMES, so you
 --                  need to be extra careful that the string itself plus the start position of the namex are correct.
 --               b) Don't forget to zero-terminate each of your substrings of C_CRTROMS_AUTO_NAMES by adding "& ENDSTR;"
@@ -149,8 +153,8 @@ constant C_CRTROMS_MAN           : crtrom_buf_array := ( x"EEEE", x"EEEE",
 
 -- M2M framework constants
 constant C_CRTROMS_AUTO_NUM      : natural := 0;                                       -- Amount of automatically loadable ROMs and carts, if more tha    n 3: also adjust CRTROM_MAN_MAX in M2M/rom/shell_vars.asm, Needs to be in sync with config.vhd. Maximum is 16
-constant C_CRTROMS_AUTO_NAMES    : string  := ".";
-constant C_CRTROMS_AUTO          : crtrom_buf_array := ( x"EEEE", x"EEEE", x"EEEE", x"EEEE", x"EEEE",
+constant C_CRTROMS_AUTO_NAMES    : string  := "" & ENDSTR;
+constant C_CRTROMS_AUTO          : crtrom_buf_array := ( x"EEEE", x"EEEE", x"EEEE", x"EEEE",
                                                          x"EEEE");                     -- Always finish the array using x"EEEE"
 
 ----------------------------------------------------------------------------------------------------------
