@@ -399,7 +399,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_Demo_A,                            -- Item A.3
                                              OPTM_G_Demo_A,                            -- Item A.4
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headline "Demo Headline B"
+                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Demo Headline B"
                                              OPTM_G_LINE,                              -- Line
 
                                              OPTM_G_SUBMENU,                           -- HDMI submenu block: START: "HDMI: %s"
@@ -414,13 +414,13 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                                                                        -- HDMI submenu block: END
 
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headline "Drives"
+                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Drives"
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_Drive_X + OPTM_G_MOUNT_DRV,        -- Drive X
                                              OPTM_G_Drive_Y + OPTM_G_MOUNT_DRV,        -- Drive Y
                                              OPTM_G_Drive_Z + OPTM_G_MOUNT_DRV,        -- Drive Z
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT,                              -- Headline "Another Headline"
+                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Another Headline"
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_CRT     + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
                                              OPTM_G_Zoom    + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
