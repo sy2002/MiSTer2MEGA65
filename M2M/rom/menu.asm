@@ -27,8 +27,9 @@ OPTM_SINGLESEL  .EQU 0x8000                     ; AND mask: single select item
 OPTM_KEY_UP     .EQU 1
 OPTM_KEY_DOWN   .EQU 2
 OPTM_KEY_SELECT .EQU 3                          ; normally this is Return
-OPTM_KEY_CLOSE  .EQU 4
+OPTM_KEY_CLOSE  .EQU 4                          ; normally this is Help
 OPTM_KEY_SELALT .EQU 5                          ; normally this is Space
+OPTM_KEY_MENUUP .EQU 6                          ; normally this is Run/Stop
 
 ; ----------------------------------------------------------------------------
 ; Action codes for the OPTM_FP_SELECT function
@@ -98,7 +99,7 @@ OPTM_FP_LINE    .EQU 4
 ; R9=3: select highlighted headline/title
 OPTM_FP_SELECT  .EQU 5
 
-; Waits until one of the four Option Menu keys is pressed
+; Waits until one of the six Option Menu keys is pressed
 ; and returns the OPTM_KEY_* code in R8
 OPTM_FP_GETKEY  .EQU 6
 
@@ -652,7 +653,7 @@ _OPTM_RUN_2     MOVE    OPTM_FP_SELECT, R7      ; unselect old item
 
                 ; Cursor down
 _OPTM_RUN_3     CMP     OPTM_KEY_DOWN, R8       ; key: down?
-                RBRA    _OPTM_RUN_5, !Z         ; no: check other key
+                RBRA    _OPTM_RUN_5A, !Z        ; no: check other key
 
 _OPTM_RUN_4     MOVE    R0, R7                  ; yes: wrap around at bottom?
                 SUB     1, R7
@@ -689,10 +690,21 @@ _OPTM_KD_WA     MOVE    @R7, R7
                 RBRA    _OPTM_RUN_4, 1          ; no: continue searching
 
                 ; Close menu key
-_OPTM_RUN_5     CMP     OPTM_KEY_CLOSE, R8      ; key: close?
-                RBRA    _OPTM_RUN_6A, !Z        ; no: check other key
-                MOVE    R2, R8                  ; return selected item
+_OPTM_RUN_5A    CMP     OPTM_KEY_CLOSE, R8      ; key: close?
+                RBRA    _OPTM_RUN_5C, !Z        ; no: check other key
+_OPTM_RUN_5B    MOVE    R2, R8                  ; return selected item
                 RBRA    _OPTM_RUN_RET, 1
+
+                ; One menu level up (i.e. as long as we only have one submenu
+                ; level this means: back to main menu) - or - close menu if
+                ; we are already in the main menu
+_OPTM_RUN_5C    CMP     OPTM_KEY_MENUUP, R8     ; key: menu up?
+                RBRA    _OPTM_RUN_6A, !Z        ; no: check other key
+                MOVE    OPTM_MENULEVEL, R7      ; already at main menu level?
+                CMP     0, @R7
+                RBRA    _OPTM_RUN_5B, Z         ; yes: close menu and return
+                MOVE    OPTM_MENULEVEL, R9      ; no: one menu level up
+                RBRA    _OPTM_RUN_SM_L, 1
 
                 ; Select key
 _OPTM_RUN_6A    CMP     OPTM_KEY_SELECT, R8     ; key: select?
@@ -928,7 +940,7 @@ _OPTM_RUN_SM    MOVE    OPTM_MENULEVEL, R9
                 RBRA    _OPTM_RUN_SM_1, Z       ; no: enter submenu
 
                 ; Leave submenu
-                MOVE    0, @R9                  ; 0=main menu
+_OPTM_RUN_SM_L  MOVE    0, @R9                  ; 0=main menu
                 MOVE    OPTM_MAINSEL, R8
                 MOVE    @R8, R2                 ; restore main menu selection
                 RBRA    _OPTM_RUN_SM_4, 1       ; execute level change
