@@ -12,6 +12,9 @@ CORE/m2m-rom/*.def
 CORE/m2m-rom/*.lis
 CORE/m2m-rom/*.out
 CORE/m2m-rom/*.rom
+CORE/m2m-rom/globals.asm
+CORE/m2m-rom/shell_fhandles.asm
+CORE/m2m-rom/shell_fh_ptrs.asm
 CORE/load_bitstream.sh
 CORE/make_qasm.sh
 M2M/rom/*.lis
