@@ -50,8 +50,6 @@ set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks main_clk]
 set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks main_clk]
 set_false_path   -to [get_clocks hdmi_720p_clk] -from [get_clocks main_clk]
-#set_false_path -from [get_clocks hdmi_576p_clk]   -to [get_clocks main_clk]
-#set_false_path   -to [get_clocks hdmi_576p_clk] -from [get_clocks main_clk]
 set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_720p_clk]
 set_false_path -from [get_clocks qnice_clk]       -to [get_clocks tmds_720p_clk]
 

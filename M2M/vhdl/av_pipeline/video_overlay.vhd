@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 entity video_overlay is
    generic  (
@@ -44,34 +45,34 @@ end entity video_overlay;
 
 architecture synthesis of video_overlay is
 
-   -- Delayed VGA signals
-   signal vga_ce_d       : std_logic;
-   signal vga_pix_x_d    : std_logic_vector(10 downto 0);
-   signal vga_pix_y_d    : std_logic_vector(10 downto 0);
-   signal vga_red_d      : std_logic_vector(7 downto 0);
-   signal vga_green_d    : std_logic_vector(7 downto 0);
-   signal vga_blue_d     : std_logic_vector(7 downto 0);
-   signal vga_hs_d       : std_logic;
-   signal vga_vs_d       : std_logic;
-   signal vga_de_d       : std_logic;
+   type stage_t is record
+      vga_ce      : std_logic;
+      vga_pix_x   : std_logic_vector(10 downto 0);
+      vga_pix_y   : std_logic_vector(10 downto 0);
+      vga_red     : std_logic_vector( 7 downto 0);
+      vga_green   : std_logic_vector( 7 downto 0);
+      vga_blue    : std_logic_vector( 7 downto 0);
+      vga_hs      : std_logic;
+      vga_vs      : std_logic;
+      vga_de      : std_logic;
+      vga_col     : integer range 0 to 2047;
+      vga_row     : integer range 0 to 2047;
+   end record stage_t;
 
-   signal vga_col_d      : integer range 0 to 2047;
-   signal vga_row_d      : integer range 0 to 2047;
+   signal stage1 : stage_t;
+   signal stage2 : stage_t;
+   signal stage3 : stage_t;
+   signal stage4 : stage_t;
+   signal stage5 : stage_t;
+   signal stage6 : stage_t;
 
-   signal vga_osm_on_dd  : std_logic;
-   signal vga_osm_rgb_dd : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
-   signal vga_red_dd     : std_logic_vector(7 downto 0);
-   signal vga_green_dd   : std_logic_vector(7 downto 0);
-   signal vga_blue_dd    : std_logic_vector(7 downto 0);
-   signal vga_hs_dd      : std_logic;
-   signal vga_vs_dd      : std_logic;
-   signal vga_de_dd      : std_logic;
-   signal vga_ce_dd      : std_logic;
+   signal stage5_vga_osm_on  : std_logic;
+   signal stage5_vga_osm_rgb : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
 
 begin
 
    -----------------------------------------------
-   -- Recover pixel counters
+   -- Stage 1 : Recover pixel counters
    -----------------------------------------------
 
    i_vga_recover_counters : entity work.vga_recover_counters
@@ -84,19 +85,21 @@ begin
          vga_hs_i    => vga_hs_i,
          vga_vs_i    => vga_vs_i,
          vga_de_i    => vga_de_i,
-         vga_ce_o    => vga_ce_d,
-         vga_pix_x_o => vga_pix_x_d,
-         vga_pix_y_o => vga_pix_y_d,
-         vga_red_o   => vga_red_d,
-         vga_green_o => vga_green_d,
-         vga_blue_o  => vga_blue_d,
-         vga_hs_o    => vga_hs_d,
-         vga_vs_o    => vga_vs_d,
-         vga_de_o    => vga_de_d
+         vga_ce_o    => stage1.vga_ce,
+         vga_pix_x_o => stage1.vga_pix_x,
+         vga_pix_y_o => stage1.vga_pix_y,
+         vga_red_o   => stage1.vga_red,
+         vga_green_o => stage1.vga_green,
+         vga_blue_o  => stage1.vga_blue,
+         vga_hs_o    => stage1.vga_hs,
+         vga_vs_o    => stage1.vga_vs,
+         vga_de_o    => stage1.vga_de
       ); -- i_vga_recover_counters
 
-   vga_col_d <= to_integer(unsigned(vga_pix_x_d)) - vga_cfg_shift_i;
-   vga_row_d <= to_integer(unsigned(vga_pix_y_d)) when vga_cfg_r15kHz_i = '0' else to_integer(unsigned(vga_pix_y_d))*2;
+   stage1.vga_col <= to_integer(stage1.vga_pix_x) - vga_cfg_shift_i;
+   stage1.vga_row <= to_integer(stage1.vga_pix_y) when vga_cfg_r15kHz_i = '0' else
+                     to_integer(stage1.vga_pix_y)*2;
+
 
    -----------------------------------------------
    -- Instantiate On-Screen-Menu generator
@@ -112,62 +115,76 @@ begin
       )
       port map (
          clk_i                => vga_clk_i,
-         vga_col_i            => vga_col_d,
-         vga_row_i            => vga_row_d,
+         vga_col_i            => stage1.vga_col,
+         vga_row_i            => stage1.vga_row,
          vga_osm_cfg_xy_i     => vga_cfg_xy_i,
          vga_osm_cfg_dxdy_i   => vga_cfg_dxdy_i,
          vga_osm_cfg_enable_i => vga_cfg_enable_i,
-         vga_osm_vram_addr_o  => vga_vram_addr_o,
-         vga_osm_vram_data_i  => vga_vram_data_i( 7 downto 0),
-         vga_osm_vram_attr_i  => vga_vram_data_i(15 downto 8),
-         vga_osm_on_o         => vga_osm_on_dd,
-         vga_osm_rgb_o        => vga_osm_rgb_dd
+         vga_osm_vram_addr_o  => vga_vram_addr_o,              -- Stage 2
+         vga_osm_vram_data_i  => vga_vram_data_i( 7 downto 0), -- Stage 3
+         vga_osm_vram_attr_i  => vga_vram_data_i(15 downto 8), -- Stage 3
+         vga_osm_on_o         => stage5_vga_osm_on,
+         vga_osm_rgb_o        => stage5_vga_osm_rgb
       ); -- i_vga_osm
 
 
    -- Clear video output outside visible screen.
-   -- This also delays the video stream to bring it in sync with the OSM overlay.
-   p_clear_invisible : process (vga_clk_i)
+   p_stage2 : process (vga_clk_i)
    begin
       if rising_edge(vga_clk_i) then
-         vga_red_dd   <= (others => '0');
-         vga_blue_dd  <= (others => '0');
-         vga_green_dd <= (others => '0');
-
-         if vga_de_d then
-            vga_red_dd   <= vga_red_d;
-            vga_green_dd <= vga_green_d;
-            vga_blue_dd  <= vga_blue_d;
+         stage2 <= stage1;
+         if not stage1.vga_de then
+            stage2.vga_red   <= (others => '0');
+            stage2.vga_blue  <= (others => '0');
+            stage2.vga_green <= (others => '0');
          end if;
-
-         vga_hs_dd <= vga_hs_d;
-         vga_vs_dd <= vga_vs_d;
-         vga_de_dd <= vga_de_d;
-         vga_ce_dd <= vga_ce_d;
       end if;
-   end process; -- p_clear_invisible
+   end process p_stage2;
 
-   p_output_registers : process (vga_clk_i)
+   -- Delay the video stream to bring it in sync with the OSM overlay.
+   p_stage3 : process (vga_clk_i)
    begin
       if rising_edge(vga_clk_i) then
-         -- Output from Core
-         vga_red_o   <= vga_red_dd;
-         vga_green_o <= vga_green_dd;
-         vga_blue_o  <= vga_blue_dd;
+         stage3 <= stage2;
+      end if;
+   end process p_stage3;
+
+   p_stage4 : process (vga_clk_i)
+   begin
+      if rising_edge(vga_clk_i) then
+         stage4 <= stage3;
+      end if;
+   end process p_stage4;
+
+   p_stage5 : process (vga_clk_i)
+   begin
+      if rising_edge(vga_clk_i) then
+         stage5 <= stage4;
+      end if;
+   end process p_stage5;
+
+   p_stage6 : process (vga_clk_i)
+   begin
+      if rising_edge(vga_clk_i) then
+         stage6 <= stage5;
 
          -- On-Screen Menu overlay
-         if vga_osm_on_dd = '1' then
-            vga_red_o   <= vga_osm_rgb_dd(23 downto 16);
-            vga_green_o <= vga_osm_rgb_dd(15 downto  8);
-            vga_blue_o  <= vga_osm_rgb_dd( 7 downto  0);
+         if stage5_vga_osm_on = '1' then
+            stage6.vga_red   <= stage5_vga_osm_rgb(23 downto 16);
+            stage6.vga_green <= stage5_vga_osm_rgb(15 downto  8);
+            stage6.vga_blue  <= stage5_vga_osm_rgb( 7 downto  0);
          end if;
 
-         vga_hs_o    <= vga_hs_dd;
-         vga_vs_o    <= vga_vs_dd;
-         vga_de_o    <= vga_de_dd;
-         vga_ce_o    <= vga_ce_dd;
       end if;
-   end process; -- p_output_registers
+   end process p_stage6;
+
+   vga_hs_o    <= stage6.vga_hs;
+   vga_vs_o    <= stage6.vga_vs;
+   vga_de_o    <= stage6.vga_de;
+   vga_ce_o    <= stage6.vga_ce;
+   vga_red_o   <= stage6.vga_red;
+   vga_green_o <= stage6.vga_green;
+   vga_blue_o  <= stage6.vga_blue;
 
 end architecture synthesis;
 
