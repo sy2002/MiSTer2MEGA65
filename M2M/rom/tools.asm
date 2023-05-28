@@ -234,8 +234,9 @@ _M2M$GOSSTTNG_R DECRB
 ; ----------------------------------------------------------------------------
 ; M2M$SET_SETTING
 ; 
-; Returns the value of a setting. The setting index is the index into the
-; array "OPTM_GROUPS" in config.vhd counting from zero.
+; Sets the value of a setting. The setting index is the index into the
+; array "OPTM_GROUPS" in config.vhd counting from zero. The OPTM_GROUPS index
+; is the index into the; array "OPTM_GROUPS" in config.vhd counting from zero.
 ;
 ; Input:  R8: OPTM_GROUPS index
 ;         R9: value
@@ -251,6 +252,44 @@ M2M$SET_SETTING INCRB
 
                 DECRB
                 RET
+
+; ----------------------------------------------------------------------------
+; M2M$FORCE_MENU
+; 
+; Use this function for example in the OSM_SEL_PRE callback function to force
+; a change of a menu item to a certain new value so that the currently visible
+; menu is updated as well as the internal QNICE register that is associated
+; to the menu.
+;
+; Input:  R8: OPTM_GROUPS index
+;         R9: value
+; Output: R8/R9: unchanged
+; ----------------------------------------------------------------------------
+
+M2M$FORCE_MENU  SYSCALL(enter, 1)
+
+                MOVE    0xFFFF, R10
+
+                ; change the QNICE register that is available
+                ; on the VHDL side of things
+                RSUB    M2M$SET_SETTING, 1
+
+                ; change the on-screen menu
+                RSUB    OPTM_SET, 1
+
+                ; R10 will only be changed by OPTM_SET if we are currently
+                ; changing a menu group item and still need to unset the
+                ; old menu group item within the QNICE register because in
+                ; a menu group only one item is allowed to be active at a time
+                CMP     0xFFFF, R10
+                RBRA    _M2M$FRCMN_RET, Z
+                MOVE    R10, R8                 ; R10: index of old item
+                XOR     R9, R9                  ; R9=0: unset
+                RSUB    M2M$SET_SETTING, 1
+
+_M2M$FRCMN_RET  SYSCALL(leave, 1)
+                RET   
+
 ; ----------------------------------------------------------------------------
 ; WAIT1SEC
 ;   Waits about 1 second

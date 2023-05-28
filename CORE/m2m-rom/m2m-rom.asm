@@ -123,7 +123,7 @@ PREP_START      INCRB
                 DECRB
                 RET
 
-; OSM_SELECTED callback function:
+; OSM_SEL_POST callback function:
 ;
 ; Called each time the user selects something in the on-screen-menu (OSM),
 ; and while the OSM is still visible. This means, that this callback function
@@ -144,7 +144,18 @@ PREP_START      INCRB
 ; Output:
 ;   R8: 0=OK, else pointer to string with error message
 ;   R9: 0=OK, else error code
-OSM_SELECTED    INCRB
+OSM_SEL_POST    INCRB
+                XOR     R8, R8
+                XOR     R9, R9
+                DECRB
+                RET
+
+; OSM_SEL_PRE callback function:
+;
+; Identical to the OSM_SEL_POST callback function (see above) but it is being
+; called before the functionality and semantics associated with a certain
+; menu item has been handled by the framework.
+OSM_SEL_PRE     INCRB
                 XOR     R8, R8
                 XOR     R9, R9
                 DECRB

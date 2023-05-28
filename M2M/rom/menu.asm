@@ -59,12 +59,23 @@ OPTM_F_MENUIDX  .ASCII_P "menu.asm: OPTM_RUN:\n"
                 .ASCII_P "Corrupt memory layout or logic error:\n"
                 .ASCII_P "Menu index does not exist in currently\n"
                 .ASCII_W "active menu level.\n"
+OPTM_F_MENUGRP  .ASCII_P "menu.asm: OPTM_SET\n"
+                .ASCII_P "Corrupt memory layout or structural error\n"
+                .ASCII_P "in current menu group (config.vhd):\n"
+                .ASCII_P "Did not find any menu group item that\n"
+                .ASCII_W "can be deselected. Only one item in group?\n"
+OPTM_F_MENUGRP2 .ASCII_P "menu.asm: OPTM_SET\n"
+                .ASCII_P "Unsetting (R9=0) is illegal for menu\n"
+                .ASCII_W "groups. One item always needs to be 1.\n"
+OPTM_F_MENUGRP3 .ASCII_P "menu.asm: OPTM_SET\n"
+                .ASCII_W "Logic bug or memory corruption in M2M.\n"
 
 OPTM_F_MSTRUCT  .ASCII_P "menu.asm: OPTM_RUN is not running.\n"
                 .ASCII_W "OPTM_STRUCT is invalid.\n"
 OPTM_F_MS_SELF  .EQU 0x0001 ; _OPTM_R_F2M_O
 OPTM_F_MS_SLCT  .EQU 0x0002 ; OPTM_SELECT
-OPTM_F_MS_SET   .EQU 0x0003 ; OPTM_SET
+OPTM_F_MS_SET1  .EQU 0x0003 ; OPTM_SET
+OPTM_F_MS_SET2  .EQU 0x0004 ; OPTM_SET
 
 ; ----------------------------------------------------------------------------
 ; Initialization record that is filled using OPTM_INIT
@@ -85,7 +96,8 @@ OPTM_FP_FRAME   .EQU 1
 ;    print the line otherwise it will skip the line
 OPTM_FP_PRINT   .EQU 2
 
-; Like OPTM_FP_PRINT but contains target x|y coords in R9|R10; R11: mask ptr
+; Like OPTM_FP_PRINT but contains target x|y coords in R9|R10
+; PRINTXY directly prints on the screen, without any mask array
 OPTM_FP_PRINTXY .EQU 3
 
 ; Draws a horizontal line/menu separator at the y-pos given in R8
@@ -285,7 +297,7 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 MOVE    @SP++, R0               ; R0: menu groups
                 MOVE    @R5++, R2               ; R2: amount of menu items
 
-                XOR     R1, R1                  ; R1: hilight itm; count frm 0
+                XOR     R1, R1                  ; R1: hilight itm count frm 0
                 XOR     R4, R4                  ; R4: skip counter
 
 _OPTM_TT_0      MOVE    @R0++, R3
@@ -902,6 +914,12 @@ _OPTM_RUN_13    ADD     1, R10                  ; increase absolute pos
 
 _OPTM_RUN_14    MOVE    R6, R8                  ; R8: return selected group
                                                 ; R9: return sel. item in grp
+                INCRB                           ; if we reach this code and..
+                MOVE    R8, R0                  ; ..it is a single-select..
+                AND     OPTM_SINGLESEL, R0      ; ..item then it is an active
+                RBRA    _OPTM_RUN_15, Z         ; ..item and therefore we set
+                MOVE    1, R9                   ; ..R9 to 1
+_OPTM_RUN_15    DECRB                
                 MOVE    R11, R10                ; R10: selection key
                 MOVE    OPTM_CLBK_SEL, R7       ; call callback
                 RSUB    _OPTM_CALL, 1
@@ -1018,15 +1036,15 @@ OPTM_SELECT     SYSCALL(enter, 1)
 ; OPTM_RUN is running. If you call this function without OPTM_RUN beeing
 ; active, then the system goes fatal.
 ;
-; @TODO: Currently this only works for single-select menu items. We might want
-; to generalize this at a later stage.
-;
 ; Input:
 ;  R8: Index of menu item / cursor position in flat coordinates
 ;  R9: 0=unset / 1=set
 ;
 ; Output:
 ;  R8/R9: Unchanged
+;  R10: Unchanged if the menu item was a single-select item and in case of the
+;       menu item was a menu group: index of menu item that was de-selected
+;       because within a group alway only one item can be selected
 ;
 ; Semantics of "index" / "cursor position" in R8: It is the position within
 ; OPTM_ITEMS and OPTM_GROUPS (both from config.vhd), i.e. R8 considers the
@@ -1037,46 +1055,160 @@ OPTM_SET        SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: menu index
                 MOVE    R9, R1                  ; R1: mode
+                MOVE    0xFFFF, R12             ; R12: flag means single-sel.
 
-                ; Update menu data structure which is in flat coordinates
-                MOVE    OPTM_DATA, R8
+                ; Find out if this is a single-select menu item
+                ; or a menu group: Store the result in R2 and remember
+                ; the menu group id (without flags) in R3
+                MOVE    OPTM_DATA, R2
+                MOVE    @R2, R2
+                ADD     OPTM_IR_GROUPS, R2
+                MOVE    @R2, R2
+                ADD     R0, R2
+                MOVE    @R2, R2
+                MOVE    R2, R3                  ; R3: men grp id w/o flags
+                AND     0x00FF, R3
+                AND     OPTM_SINGLESEL, R2      ; R2=0|1 0=singlesel, 1=multi
+                RBRA    _OPTM_SET_1A, Z
+                MOVE    1, R2
+
+                ; Update menu data structure which is in flat coordinates:
+                ; Step #1: Set new value
+                ; Step #2: In case of menu group: unset old value
+                ;
+                ; Step #1
+_OPTM_SET_1A    MOVE    OPTM_DATA, R8
                 MOVE    @R8, R8
                 ADD     OPTM_IR_STDSEL, R8
                 MOVE    @R8, R8
                 ADD     R0, R8                  ; R0 contains menu index
-                MOVE    R1, @R8                 ; re-set single-select flag
+                MOVE    R1, @R8                 ; set new value
+
+                ; Step #2: How to unset the old value:
+                ; a) Skip everything here in case we have a single-select item
+                ; b) Since the menu group items can be spread all over the
+                ;    menu: Iterate through the menu and set the one group item
+                ;    that belongs to the newly to be selected one (R3) to zero
+                ;    that is currently set but that is not the current one
+                ;    (R0). We can stop as soon as we have set one item
+                ;    to zero because there is only one item active at a time
+                ;    in any menu group
+                CMP     1, R2                   ; single-select?
+                RBRA    _OPTM_SET_S, Z          ; yes: skip unselect step
+
+                CMP     0, R9                   ; if menu grp then unsetting..
+                RBRA    _OPTM_SET_1B, !Z        ; ..is not allowed..
+                MOVE    OPTM_CLBK_FATAL, R7     ; ..so we go fatal
+                MOVE    OPTM_F_MENUGRP2, R8
+                XOR     R9, R9
+                RBRA    _OPTM_CALL, 1
+
+_OPTM_SET_1B    MOVE    OPTM_DATA, R4           ; R4: menu size
+                MOVE    @R4, R4
+                ADD     OPTM_IR_SIZE, R4
+                MOVE    @R4, R4
+                MOVE    OPTM_DATA, R5           ; R5: iterator through menu..
+                MOVE    @R5, R5                 ; ..groups
+                ADD     OPTM_IR_GROUPS, R5
+                MOVE    @R5, R5
+                XOR     R6, R6                  ; R6: counter
+                MOVE    OPTM_DATA, R7           ; R7: item selected?
+                MOVE    @R7, R7
+                ADD     OPTM_IR_STDSEL, R7
+                MOVE    @R7, R7
+
+_OPTM_SET_1C    CMP     R6, R0                  ; skip currently selected item
+                RBRA    _OPTM_SET_1D, Z
+                MOVE    @R5, R8
+                AND     0x00FF, R8              ; remove flags from men group
+                CMP     R8, R3                  ; current item belongs to R3?
+                RBRA    _OPTM_SET_1D, !Z        ; no
+                CMP     1, @R7                  ; is it selected?
+                RBRA    _OPTM_SET_1D, !Z        ; no
+
+                ; We now need to unselect the item at three "locations"
+                ; 1. Within the OPTM_IR_STDSEL memory structure
+                ; 2. Maybe somewhere else, so for this case return it in R10
+                ; 3. On screen (will be done in) _OPTM_SET_2
+                MOVE    0, @R7                  ; unselect in OPTM_IR_STDSEL
+                MOVE    R6, R12                 ; return index in R10 via R12
+                RBRA    _OPTM_SET_S, 1          ; leave loop and proceed
+
+_OPTM_SET_1D    ADD     1, R5                   ; next menu group item
+                ADD     1, R6                   ; increment counter
+                ADD     1, R7                   ; next "is-selected?" item
+                CMP     R6, R4                  ; done?
+                RBRA    _OPTM_SET_1C, !Z        ; no: iterate
+
+                MOVE    OPTM_CLBK_FATAL, R7
+                MOVE    OPTM_F_MENUGRP, R8      ; if we land here then somethg
+                MOVE    R3, R9                  ; went wrong: go fatal
+                RBRA    _OPTM_CALL, 1
 
                 ; Transform the menu index from flat coordinates to
                 ; screen coordinates
-                MOVE    R0, R8
-                MOVE    OPTM_F_MS_SET, R9
+_OPTM_SET_S     MOVE    R0, R8
+                MOVE    OPTM_F_MS_SET1, R9
                 RSUB    _OPTM_R_F2M_O, 1
                 RBRA    _OPTM_SET_R, C          ; idx outside curr. (sub)menu
                 MOVE    R8, R0
 
-                ; Have either the single-select character or a space
-                ; character in R8, so that SCR$PRINTSTRXY prints the
+                ; Have either the menu-select character or a space
+                ; character in R8, so that OPTM_FP_PRINTXY prints the
                 ; right character depending on R1 
+                MOVE    OPTM_FP_PRINTXY, R7
                 MOVE    OPTM_STR_SPACE, R8      ; R8 = space (unset)
                 CMP     0, R1
                 RBRA    _OPTM_SET_2, Z
 
-                MOVE    OPTM_DATA, R8           ; R8: single-select char
+                AND     0xFFFD, SR              ; clear X
+                SHL     1, R2                   ; R2 is now either 0 or 2
+                MOVE    OPTM_DATA, R8           ; R8: menu-select char
                 MOVE    @R8, R8
-                MOVE    OPTM_IR_SEL, R8
-                MOVE    @R8, R8
-                ADD     2, R8
+                ADD     OPTM_IR_SEL, R8
+                ADD     R2, R8
 
 _OPTM_SET_2     MOVE    OPTM_X, R9              ; R9: x-pos
                 MOVE    @R9, R9
                 ADD     1, R9                   ; x-pos on screen b/c frame
                 MOVE    OPTM_Y, R10             ; R10: y-pos
                 MOVE    @R10, R10
-                ADD     R0, R10                ; add menu index
+                ADD     R0, R10                 ; add menu index
                 ADD     1, R10                  ; y-pos on screen b/c frame
-                RSUB    SCR$PRINTSTRXY, 1
-                
-_OPTM_SET_R     SYSCALL(leave, 1)
+                RSUB    _OPTM_CALL, 1
+
+                CMP     0xFFFF, R12             ; single-select item?
+                RBRA    _OPTM_SET_R, Z          ; yes: skip
+
+                ; remove old selection of menu group on screen (step #2.b.3)
+                MOVE    R12, R8                 ; transform flat to scr coords
+                MOVE    OPTM_F_MS_SET2, R9
+                RSUB    _OPTM_R_F2M_O, 1
+                RBRA    _OPTM_SET_3, !C
+                MOVE    OPTM_CLBK_FATAL, R7     ; we must never land here
+                MOVE    OPTM_F_MENUGRP3, R8
+                MOVE    R12, R9
+                RBRA    _OPTM_CALL, 1
+_OPTM_SET_3     MOVE    OPTM_Y, R10
+                MOVE    @R10, R10
+                ADD     R8, R10                 ; flt to scr transf. coord
+                ADD     1, R10
+                MOVE    OPTM_STR_SPACE, R8
+                MOVE    OPTM_X, R9
+                MOVE    @R9, R9
+                ADD     1, R9
+                RSUB    _OPTM_CALL, 1
+_OPTM_SET_R     MOVE    R12, @--SP              ; bring R0 over "leave" "hump"
+                SYSCALL(leave, 1)
+
+                ; only change R10 in case of a menu group
+                INCRB
+                MOVE    @SP++, R0
+                CMP     0xFFFF, R0
+                RBRA    _OPTM_SET_RR, Z
+                MOVE    R0, R10
+_OPTM_SET_RR    DECRB
+
                 RET
 
 ; ----------------------------------------------------------------------------
