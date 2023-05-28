@@ -360,13 +360,24 @@ _HM_SDMOUNTED2G MOVE    ERR_FATAL_INST, R8
 
 _HM_SDMOUNTED2B MOVE    R9, R10                 ; menu index
 
+                CMP     1, R5                   ; CRT/ROM mode?
+                RBRA    _HM_SDMOUNTED2V, Z      ; yes
+
+                ; VDrive mode: check if drive is mounted: R9=1 means yes
                 MOVE    R7, R8
                 RSUB    VD_MOUNTED, 1           ; carry contains mount status
                 MOVE    SR, R9
                 SHR     2, R9
                 AND     1, R9                   ; R9 contains mount status
+                RBRA    _HM_SDMOUNTED2W, 1
 
-                MOVE    R10, R8                 ; menu index
+                ; CRT/ROM mode: check if ROM is loaded
+_HM_SDMOUNTED2V MOVE    CRTROM_MAN_LDF, R9
+                ADD     R7, R9                  ; R7: CRT/ROM number
+                MOVE    @R9, R9
+
+                ; set or unset VDRIVE or CRT/ROM menu item
+_HM_SDMOUNTED2W MOVE    R10, R8                 ; menu index
                 RSUB    OPTM_SET, 1             ; see comment at _HM_MOUNTED
                 RBRA    _HM_SDMOUNTED7, 1       ; return to OSM
 
