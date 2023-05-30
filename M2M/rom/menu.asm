@@ -344,11 +344,20 @@ _OPTM_TT_1B     ADD     1, R1                   ; next item to highlight
                 CMP     0, @R8
                 RBRA    _OPTM_SHOW_0, Z         ; no: skip
 
+                ; R12: Skip counter: Due to the current (sub)menu situation:
+                ; How many invisible elements do we have. We need this to
+                ; calculate the correct Y position for printing %s strings.
+                ; At this position of the code, we are at item #0, so we need
+                ; also to take account for this very element, as the upcoming
+                ; loop will not.
                 XOR     R12, R12                ; R12: skip counter
+                CMP     @R1, 0x7FFF             ; item currently visible?
+                RBRA    _OPTM_HM_START, N       ; yes: continue
+                ADD     1, R12                  ; no: invis.: incr. skip cnt.
 
                 ; loop through the string, char by char and interpret \n as
                 ; newline (i.e. increment the index of the menu item)
-                XOR     R5, R5                  ; R5 = index of menu item
+_OPTM_HM_START  XOR     R5, R5                  ; R5 = index of menu item
                 MOVE    R0, R7                  ; R7 = start of current str
 _OPTM_HM_0      CMP     0, @R0                  ; end of string reached?
                 RBRA    _OPTM_SHOW_0, Z         ; yes
