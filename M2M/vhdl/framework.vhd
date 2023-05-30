@@ -204,7 +204,8 @@ constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 constant C_SYS_DRIVES         : std_logic_vector(15 downto 0) := x"0000";
 constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
-constant C_CRTSANDROMS        : std_logic_vector(15 downto 0) := x"0020";
+constant C_SYS_CRTSANDROMS    : std_logic_vector(15 downto 0) := x"0020";
+constant C_SYS_CORE           : std_logic_vector(15 downto 0) := x"0030";
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -663,7 +664,7 @@ begin
                      end case;
 
                   -- Simulated cartridges and ROMs
-                  when C_CRTSANDROMS =>
+                  when C_SYS_CRTSANDROMS =>
                      if qnice_ramrom_addr_o(11 downto 0) = x"000" then
                         qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROMS_MAN_NUM, 16));
                      elsif qnice_ramrom_addr_o(11 downto 0) = x"001" then
@@ -689,39 +690,6 @@ begin
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
 
-                        -- CORE_X: Horizontal size of core display
-                        when X"003" => qnice_ramrom_data_in <= "0000" & qnice_hdmax;
-
-                        -- CORE_Y: Vertical size of core display
-                        when X"004" => qnice_ramrom_data_in <= "0000" & qnice_vdmax;
-
-                        -- CORE_H_PIXELS:
-                        when X"005" => qnice_ramrom_data_in <= "0000" & qnice_h_pixels;
-
-                        -- CORE_V_PIXELS:
-                        when X"006" => qnice_ramrom_data_in <= "0000" & qnice_v_pixels;
-
-                        -- CORE_H_PULSE:
-                        when X"007" => qnice_ramrom_data_in <= "0000" & qnice_h_pulse;
-
-                        -- CORE_H_BP:
-                        when X"008" => qnice_ramrom_data_in <= "0000" & qnice_h_bp;
-
-                        -- CORE_H_FP:
-                        when X"009" => qnice_ramrom_data_in <= "0000" & qnice_h_fp;
-
-                        -- CORE_V_PULSE:
-                        when X"00A" => qnice_ramrom_data_in <= "0000" & qnice_v_pulse;
-
-                        -- CORE_V_BP:
-                        when X"00B" => qnice_ramrom_data_in <= "0000" & qnice_v_bp;
-
-                        -- CORE_V_FP:
-                        when X"00C" => qnice_ramrom_data_in <= "0000" & qnice_v_fp;
-
-                        -- CORE_H_FREQ:
-                        when X"00D" => qnice_ramrom_data_in <= qnice_h_freq;
-
                         when others => null;
                      end case;
 
@@ -736,6 +704,45 @@ begin
 
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
+
+                        when others => null;
+                     end case;
+
+                  -- Info about the core
+                  when C_SYS_CORE =>
+                     case qnice_ramrom_addr_o(11 downto 0) is
+                        -- CORE_X: Horizontal size of core display
+                        when X"000" => qnice_ramrom_data_in <= "0000" & qnice_hdmax;
+
+                        -- CORE_Y: Vertical size of core display
+                        when X"001" => qnice_ramrom_data_in <= "0000" & qnice_vdmax;
+
+                        -- CORE_H_PIXELS:
+                        when X"002" => qnice_ramrom_data_in <= "0000" & qnice_h_pixels;
+
+                        -- CORE_V_PIXELS:
+                        when X"003" => qnice_ramrom_data_in <= "0000" & qnice_v_pixels;
+
+                        -- CORE_H_PULSE:
+                        when X"004" => qnice_ramrom_data_in <= "0000" & qnice_h_pulse;
+
+                        -- CORE_H_BP:
+                        when X"005" => qnice_ramrom_data_in <= "0000" & qnice_h_bp;
+
+                        -- CORE_H_FP:
+                        when X"006" => qnice_ramrom_data_in <= "0000" & qnice_h_fp;
+
+                        -- CORE_V_PULSE:
+                        when X"007" => qnice_ramrom_data_in <= "0000" & qnice_v_pulse;
+
+                        -- CORE_V_BP:
+                        when X"008" => qnice_ramrom_data_in <= "0000" & qnice_v_bp;
+
+                        -- CORE_V_FP:
+                        when X"009" => qnice_ramrom_data_in <= "0000" & qnice_v_fp;
+
+                        -- CORE_H_FREQ:
+                        when X"00A" => qnice_ramrom_data_in <= qnice_h_freq;
 
                         when others => null;
                      end case;
