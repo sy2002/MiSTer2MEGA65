@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 entity avm_memory is
    generic (
       G_ADDRESS_SIZE : integer; -- Number of bits
-      G_DATA_SIZE    : integer  -- Number of bits
+      G_DATA_SIZE    : integer; -- Number of bits
+      G_DEBUG_OUTPUT : boolean := false
    );
    port (
       clk_i               : in  std_logic;
@@ -48,7 +49,7 @@ begin
    avm_waitrequest_o <= '0' when unsigned(read_burstcount) = 0 else '1';
 
    p_mem : process (clk_i)
-      variable mem : mem_t;
+      variable mem : mem_t := (others => (others => '0'));
    begin
       if rising_edge(clk_i) then
          avm_readdatavalid_o <= '0';
@@ -57,8 +58,10 @@ begin
             write_address <= std_logic_vector(unsigned(mem_write_address) + 1);
             write_burstcount <= std_logic_vector(unsigned(mem_write_burstcount) - 1);
 
+            if G_DEBUG_OUTPUT then
             report "Writing 0x" & to_hstring(avm_writedata_i) & " to 0x" & to_hstring(mem_write_address) &
                    " with burstcount " & to_hstring(write_burstcount);
+            end if;
             for b in 0 to G_DATA_SIZE/8-1 loop
                if avm_byteenable_i(b) = '1' then
                   mem(to_integer(unsigned(mem_write_address)))(8*b+7 downto 8*b) := avm_writedata_i(8*b+7 downto 8*b);
@@ -73,8 +76,10 @@ begin
             avm_readdata_o <= mem(to_integer(unsigned(mem_read_address)));
             avm_readdatavalid_o <= '1';
 
+            if G_DEBUG_OUTPUT then
             report "Reading 0x" & to_hstring(mem(to_integer(unsigned(mem_read_address)))) & " from 0x" & to_hstring(mem_read_address) &
                    " with burstcount " & to_hstring(read_burstcount);
+            end if;
          end if;
 
          if rst_i = '1' then

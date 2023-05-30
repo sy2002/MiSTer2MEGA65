@@ -30,9 +30,9 @@ end entity vga_recover_counters;
 
 architecture synthesis of vga_recover_counters is
 
-   signal vga_pix_x : std_logic_vector(10 downto 0);
-   signal vga_pix_y : std_logic_vector(10 downto 0);
-   signal new_frame : std_logic;
+   signal vga_pix_x   : std_logic_vector(10 downto 0);
+   signal vga_pix_y   : std_logic_vector(10 downto 0);
+   signal new_frame   : std_logic;
    signal line_active : std_logic;
 
 begin
@@ -54,16 +54,16 @@ begin
             vga_de_o    <= vga_de_i;
 
             if vga_de_o = '1' or vga_de_i = '1' then
-            vga_pix_x <= std_logic_vector(unsigned(vga_pix_x) + 1);
-            if vga_de_o = '0' and vga_de_i = '1' then -- Detect rising edge of DE signal
-               vga_pix_x <= (others => '0');
+               vga_pix_x <= std_logic_vector(unsigned(vga_pix_x) + 1);
+               if vga_de_o = '0' and vga_de_i = '1' then -- Detect rising edge of DE signal
+                  vga_pix_x <= (others => '0');
                end if;
                line_active <= '1';
             end if;
 
             if vga_hs_o = '1' and vga_hs_i = '0' then -- Detect falling edge of HS signal
                if line_active = '1' then
-               vga_pix_y <= std_logic_vector(unsigned(vga_pix_y) + 1);
+                  vga_pix_y   <= std_logic_vector(unsigned(vga_pix_y) + 1);
                   line_active <= '0';
                end if;
 

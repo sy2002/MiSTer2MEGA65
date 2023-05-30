@@ -1,86 +1,168 @@
 ----------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework
 --
--- Debug module to provide information about video resolution
+-- Debug module to provide information about video resolution.
+-- The values provided are comparable to the video parameters
+-- in M2M/vhdl/av_pipeline/video_modes_pkg.vhd
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use ieee.numeric_std_unsigned.all;
+   use ieee.std_logic_1164.all;
+   use ieee.numeric_std.all;
+   use ieee.numeric_std_unsigned.all;
 
 entity video_counters is
-port (
-   video_clk_i    : in  std_logic;
-   video_rst_i    : in  std_logic;
-   video_ce_i     : in  std_logic;  -- Must be active high
-   video_vs_i     : in  std_logic;  -- Must be active high
-   video_hs_i     : in  std_logic;  -- Must be active high
-   video_hblank_i : in  std_logic;  -- Must be active high
-   video_vblank_i : in  std_logic;  -- Must be active high
-   video_pps_i    : in  std_logic;  -- Must be active high
-   video_x_vis_o  : out std_logic_vector(15 downto 0);
-   video_x_tot_o  : out std_logic_vector(15 downto 0);
-   video_y_vis_o  : out std_logic_vector(15 downto 0);
-   video_y_tot_o  : out std_logic_vector(15 downto 0);
-   video_h_freq_o : out std_logic_vector(15 downto 0)
-);
+   port (
+      clk_i      : in    std_logic;
+      rst_i      : in    std_logic;
+      ce_i       : in    std_logic;                     -- Must be active high
+      vs_i       : in    std_logic;                     -- Must be active high
+      hs_i       : in    std_logic;                     -- Must be active high
+      hblank_i   : in    std_logic;                     -- Must be active high
+      vblank_i   : in    std_logic;                     -- Must be active high
+      pps_i      : in    std_logic;                     -- Must be active high
+      h_pixels_o : out   std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+      v_pixels_o : out   std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+      h_pulse_o  : out   std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+      h_bp_o     : out   std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+      h_fp_o     : out   std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+      v_pulse_o  : out   std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+      v_bp_o     : out   std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+      v_fp_o     : out   std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+      h_freq_o   : out   std_logic_vector(15 downto 0)  -- horizontal sync frequency
+   );
 end entity video_counters;
 
 architecture synthesis of video_counters is
 
-   signal video_vs_d  : std_logic;
-   signal video_hs_d  : std_logic;
+   signal hblank_d  : std_logic;
+   signal hs_d      : std_logic;
+   signal h_count   : std_logic_vector(11 downto 0);
+   signal h_total   : std_logic_vector(11 downto 0);
+   signal h_rising  : std_logic_vector(11 downto 0);
+   signal h_falling : std_logic_vector(11 downto 0);
+   signal h_pixels  : std_logic_vector(11 downto 0);
+   signal h_lps     : std_logic_vector(15 downto 0);
+   signal h_freq    : std_logic_vector(15 downto 0);
 
-   signal video_x_vis  : std_logic_vector(15 downto 0);
-   signal video_x_tot  : std_logic_vector(15 downto 0);
-   signal video_y_vis  : std_logic_vector(15 downto 0);
-   signal video_y_tot  : std_logic_vector(15 downto 0);
-   signal video_h_freq : std_logic_vector(15 downto 0);
+   signal vblank_d  : std_logic;
+   signal vs_d      : std_logic;
+   signal v_count   : std_logic_vector(11 downto 0);
+   signal v_total   : std_logic_vector(11 downto 0);
+   signal v_rising  : std_logic_vector(11 downto 0);
+   signal v_falling : std_logic_vector(11 downto 0);
+   signal v_pixels  : std_logic_vector(11 downto 0);
+
+   signal pps_d     : std_logic;
+
+--   attribute mark_debug : string;
+--   attribute mark_debug of h_count   : signal is "true";
+--   attribute mark_debug of h_lps     : signal is "true";
+--   attribute mark_debug of v_count   : signal is "true";
+--   attribute mark_debug of hblank_i  : signal is "true";
+--   attribute mark_debug of vblank_i  : signal is "true";
+--   attribute mark_debug of hs_i      : signal is "true";
+--   attribute mark_debug of vs_i      : signal is "true";
+--   attribute mark_debug of pps_i     : signal is "true";
+--   attribute mark_debug of hblank_d  : signal is "true";
+--   attribute mark_debug of vblank_d  : signal is "true";
+--   attribute mark_debug of hs_d      : signal is "true";
+--   attribute mark_debug of vs_d      : signal is "true";
+--   attribute mark_debug of pps_d     : signal is "true";
+--
+--   attribute mark_debug of h_pixels  : signal is "true";
+--   attribute mark_debug of h_total   : signal is "true";
+--   attribute mark_debug of h_rising  : signal is "true";
+--   attribute mark_debug of h_falling : signal is "true";
+--   attribute mark_debug of h_freq    : signal is "true";
+--   attribute mark_debug of v_pixels  : signal is "true";
+--   attribute mark_debug of v_total   : signal is "true";
+--   attribute mark_debug of v_rising  : signal is "true";
+--   attribute mark_debug of v_falling : signal is "true";
 
 begin
 
-   process (video_clk_i)
+   count_proc : process (clk_i)
    begin
-      if rising_edge(video_clk_i) then
-         if video_ce_i = '1' then
-            video_vs_d <= video_vs_i;
-            video_hs_d <= video_hs_i;
+      if rising_edge(clk_i) then
+         if ce_i = '1' then
+            hblank_d <= hblank_i;
+            vblank_d <= vblank_i;
 
-            video_x_tot <= video_x_tot + 1;
-            if video_hblank_i = '0' then
-               video_x_vis <= video_x_vis + 1;
+            h_count <= h_count + 1;
+            if hblank_d = '1' and hblank_i = '0' then
+               v_count <= v_count + 1;
+               h_total <= h_count;
+               h_count <= X"001";
             end if;
 
-            if video_hs_d = '0' and video_hs_i = '1' then
-               video_x_vis_o <= video_x_vis;
-               video_x_tot_o <= video_x_tot + 1;
-               video_x_tot   <= (others => '0');
-               video_x_vis   <= (others => '0');
-               video_h_freq  <= video_h_freq + 1;
-
-               video_y_tot <= video_y_tot + 1;
-               if video_vblank_i = '0' then
-                  video_y_vis <= video_y_vis + 1;
-               end if;
-
-               if video_vs_d = '0' and video_vs_i = '1' then
-                  video_y_vis_o <= video_y_vis;
-                  video_y_tot_o <= video_y_tot + 1;
-                  video_y_vis   <= (others => '0');
-                  video_y_tot   <= (others => '0');
-               end if;
+            if vblank_d = '1' and vblank_i = '0' then
+               v_total <= v_count;
+               v_count <= X"000";
             end if;
-         end if;
-
-         if video_pps_i = '1' then
-            video_h_freq_o <= video_h_freq;
-            video_h_freq <= (others => '0');
          end if;
       end if;
-   end process;
+   end process count_proc;
+
+   stats_proc : process (clk_i)
+   begin
+      if rising_edge(clk_i) then
+         if pps_i = '1' then
+            pps_d <= pps_i;
+         end if;
+
+         if ce_i = '1' then
+            hs_d  <= hs_i;
+            vs_d  <= vs_i;
+
+            if hblank_d = '0' and hblank_i = '1' then
+               h_pixels <= h_count;
+            end if;
+            if vblank_d = '0' and vblank_i = '1' then
+               v_pixels <= v_count;
+            end if;
+
+            if hs_d = '0' and hs_i = '1' then
+               h_lps    <= h_lps + 1;
+               h_rising <= h_count;
+            end if;
+            if hs_d = '1' and hs_i = '0' then
+               h_falling <= h_count;
+            end if;
+
+            if vs_d = '0' and vs_i = '1' then
+               v_rising <= v_count;
+            end if;
+            if vs_d = '1' and vs_i = '0' then
+               v_falling <= v_count;
+            end if;
+
+            if pps_d = '1' then
+               pps_d  <= '0';
+               h_freq <= h_lps;
+               h_lps  <= (others => '0');
+            end if;
+         end if;
+      end if;
+   end process stats_proc;
+
+   reg_proc : process (clk_i)
+   begin
+      if rising_edge(clk_i) then
+         h_pixels_o <= h_pixels;
+         h_fp_o     <= h_rising - h_pixels;
+         h_pulse_o  <= h_falling - h_rising;
+         h_bp_o     <= h_total - h_falling;
+         h_freq_o   <= h_freq;
+
+         v_pixels_o <= v_pixels;
+         v_fp_o     <= v_rising - v_pixels;
+         v_pulse_o  <= v_falling - v_rising;
+         v_bp_o     <= v_total - v_falling;
+      end if;
+   end process reg_proc;
 
 end architecture synthesis;
 

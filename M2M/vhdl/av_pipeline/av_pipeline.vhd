@@ -68,11 +68,18 @@ entity av_pipeline is
       qnice_ascal_mode_i     : in  std_logic_vector( 4 downto 0);
 
       -- To QNICE
-      qnice_x_vis_o          : out std_logic_vector(15 downto 0);
-      qnice_x_tot_o          : out std_logic_vector(15 downto 0);
-      qnice_y_vis_o          : out std_logic_vector(15 downto 0);
-      qnice_y_tot_o          : out std_logic_vector(15 downto 0);
-      qnice_h_freq_o         : out std_logic_vector(15 downto 0);
+      qnice_hdmax_o          : out std_logic_vector(11 downto 0);
+      qnice_vdmax_o          : out std_logic_vector(11 downto 0);
+      qnice_h_pixels_o       : out std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+      qnice_v_pixels_o       : out std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+      qnice_h_pulse_o        : out std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+      qnice_h_bp_o           : out std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+      qnice_h_fp_o           : out std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+      qnice_v_pulse_o        : out std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+      qnice_v_bp_o           : out std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+      qnice_v_fp_o           : out std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+      qnice_h_freq_o         : out std_logic_vector(15 downto 0); -- horizontal sync frequency
+
 
       -- QNICE interface for VRAM
       qnice_address_i        : in  std_logic_vector(VRAM_ADDR_WIDTH-1 downto 0);
@@ -169,11 +176,15 @@ signal video_hdmax            : natural range 0 to 4095;
 signal video_vdmax            : natural range 0 to 4095;
 
 signal video_pps              : std_logic;
-signal video_x_vis            : std_logic_vector(15 downto 0);
-signal video_x_tot            : std_logic_vector(15 downto 0);
-signal video_y_vis            : std_logic_vector(15 downto 0);
-signal video_y_tot            : std_logic_vector(15 downto 0);
-signal video_h_freq           : std_logic_vector(15 downto 0);
+signal video_h_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+signal video_v_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+signal video_h_pulse          : std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+signal video_h_bp             : std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+signal video_h_fp             : std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+signal video_v_pulse          : std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+signal video_v_bp             : std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+signal video_v_fp             : std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+signal video_h_freq           : std_logic_vector(15 downto 0); -- horizontal sync frequency
 
 ---------------------------------------------------------------------------------------------
 -- hdmi_clk
@@ -337,19 +348,23 @@ begin
 
    i_video_counters : entity work.video_counters
       port map (
-         video_clk_i    => video_clk_i,
-         video_rst_i    => video_rst_i,
-         video_ce_i     => video_ce_i,
-         video_vs_i     => video_vs_i,
-         video_hs_i     => video_hs_i,
-         video_hblank_i => video_hblank_i,
-         video_vblank_i => video_vblank_i,
-         video_pps_i    => video_pps,
-         video_x_vis_o  => video_x_vis,
-         video_x_tot_o  => video_x_tot,
-         video_y_vis_o  => video_y_vis,
-         video_y_tot_o  => video_y_tot,
-         video_h_freq_o => video_h_freq
+         clk_i      => video_clk_i,
+         rst_i      => video_rst_i,
+         ce_i       => video_ce_i,
+         vs_i       => video_vs_i,
+         hs_i       => video_hs_i,
+         hblank_i   => video_hblank_i,
+         vblank_i   => video_vblank_i,
+         pps_i      => video_pps,
+         h_pixels_o => video_h_pixels,
+         v_pixels_o => video_v_pixels,
+         h_pulse_o  => video_h_pulse,
+         h_bp_o     => video_h_bp,
+         h_fp_o     => video_h_fp,
+         v_pulse_o  => video_v_pulse,
+         v_bp_o     => video_v_bp,
+         v_fp_o     => video_v_fp,
+         h_freq_o   => video_h_freq
       ); -- i_video_counters
 
    i_analog_pipeline : entity work.analog_pipeline
@@ -410,21 +425,33 @@ begin
    -- Clock domain crossing: VIDEO to QNICE
    i_video2qnice: xpm_cdc_array_single
       generic map (
-         WIDTH => 80
+         WIDTH => 136
       )
       port map (
-         src_clk                => video_clk_i,
-         src_in(15 downto  0)   => video_x_vis,
-         src_in(31 downto 16)   => video_x_tot,
-         src_in(47 downto 32)   => video_y_vis,
-         src_in(63 downto 48)   => video_y_tot,
-         src_in(79 downto 64)   => video_h_freq,
-         dest_clk               => qnice_clk_i,
-         dest_out(15 downto  0) => qnice_x_vis_o,
-         dest_out(31 downto 16) => qnice_x_tot_o,
-         dest_out(47 downto 32) => qnice_y_vis_o,
-         dest_out(63 downto 48) => qnice_y_tot_o,
-         dest_out(79 downto 64) => qnice_h_freq_o
+         src_clk                  => video_clk_i,
+         src_in( 11 downto   0)   => video_h_pixels,
+         src_in( 23 downto  12)   => video_v_pixels,
+         src_in( 35 downto  24)   => video_h_pulse,
+         src_in( 47 downto  36)   => video_h_bp,
+         src_in( 59 downto  48)   => video_h_fp,
+         src_in( 71 downto  60)   => video_v_pulse,
+         src_in( 83 downto  72)   => video_v_bp,
+         src_in( 95 downto  84)   => video_v_fp,
+         src_in(111 downto  96)   => video_h_freq,
+         src_in(123 downto 112)   => std_logic_vector(to_unsigned(video_hdmax+1, 12)),
+         src_in(135 downto 124)   => std_logic_vector(to_unsigned(video_vdmax+1, 12)),
+         dest_clk                 => qnice_clk_i,
+         dest_out( 11 downto   0) => qnice_h_pixels_o,
+         dest_out( 23 downto  12) => qnice_v_pixels_o,
+         dest_out( 35 downto  24) => qnice_h_pulse_o,
+         dest_out( 47 downto  36) => qnice_h_bp_o,
+         dest_out( 59 downto  48) => qnice_h_fp_o,
+         dest_out( 71 downto  60) => qnice_v_pulse_o,
+         dest_out( 83 downto  72) => qnice_v_bp_o,
+         dest_out( 95 downto  84) => qnice_v_fp_o,
+         dest_out(111 downto  96) => qnice_h_freq_o,
+         dest_out(123 downto 112) => qnice_hdmax_o,
+         dest_out(135 downto 124) => qnice_vdmax_o
       ); -- i_video2qnice
 
 

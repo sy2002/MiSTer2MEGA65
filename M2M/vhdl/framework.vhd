@@ -286,14 +286,19 @@ signal qnice_vram_attr_we     : std_logic;   -- Writing to bits 15-8
 signal qnice_osm_cfg_enable   : std_logic;
 signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
 signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
-signal qnice_hdmax            : std_logic_vector(15 downto 0);
-signal qnice_vdmax            : std_logic_vector(15 downto 0);
-signal qnice_x_vis            : std_logic_vector(15 downto 0);
-signal qnice_x_tot            : std_logic_vector(15 downto 0);
-signal qnice_y_vis            : std_logic_vector(15 downto 0);
-signal qnice_y_tot            : std_logic_vector(15 downto 0);
-signal qnice_h_freq           : std_logic_vector(15 downto 0);
+signal qnice_hdmax            : std_logic_vector(11 downto 0);
+signal qnice_vdmax            : std_logic_vector(11 downto 0);
 signal qnice_clk_sel          : std_logic;
+
+signal qnice_h_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+signal qnice_v_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
+signal qnice_h_pulse          : std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+signal qnice_h_bp             : std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+signal qnice_h_fp             : std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+signal qnice_v_pulse          : std_logic_vector(11 downto 0); -- horizontal sync pulse width in pixels
+signal qnice_v_bp             : std_logic_vector(11 downto 0); -- horizontal back porch width in pixels
+signal qnice_v_fp             : std_logic_vector(11 downto 0); -- horizontal front porch width in pixels
+signal qnice_h_freq           : std_logic_vector(15 downto 0); -- horizontal sync frequency
 
 -- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
 signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
@@ -685,25 +690,37 @@ begin
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
 
                         -- CORE_X: Horizontal size of core display
-                        when X"003" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_hdmax) + 1);
+                        when X"003" => qnice_ramrom_data_in <= "0000" & qnice_hdmax;
 
                         -- CORE_Y: Vertical size of core display
-                        when X"004" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_vdmax) + 1);
+                        when X"004" => qnice_ramrom_data_in <= "0000" & qnice_vdmax;
 
-                        -- CORE_X_VIS:
-                        when X"005" => qnice_ramrom_data_in <= qnice_x_vis;
+                        -- CORE_H_PIXELS:
+                        when X"005" => qnice_ramrom_data_in <= "0000" & qnice_h_pixels;
 
-                        -- CORE_X_TOT:
-                        when X"006" => qnice_ramrom_data_in <= qnice_x_tot;
+                        -- CORE_V_PIXELS:
+                        when X"006" => qnice_ramrom_data_in <= "0000" & qnice_v_pixels;
 
-                        -- CORE_Y_VIS:
-                        when X"007" => qnice_ramrom_data_in <= qnice_y_vis;
+                        -- CORE_H_PULSE:
+                        when X"007" => qnice_ramrom_data_in <= "0000" & qnice_h_pulse;
 
-                        -- CORE_Y_TOT:
-                        when X"008" => qnice_ramrom_data_in <= qnice_y_tot;
+                        -- CORE_H_BP:
+                        when X"008" => qnice_ramrom_data_in <= "0000" & qnice_h_bp;
+
+                        -- CORE_H_FP:
+                        when X"009" => qnice_ramrom_data_in <= "0000" & qnice_h_fp;
+
+                        -- CORE_V_PULSE:
+                        when X"00A" => qnice_ramrom_data_in <= "0000" & qnice_v_pulse;
+
+                        -- CORE_V_BP:
+                        when X"00B" => qnice_ramrom_data_in <= "0000" & qnice_v_bp;
+
+                        -- CORE_V_FP:
+                        when X"00C" => qnice_ramrom_data_in <= "0000" & qnice_v_fp;
 
                         -- CORE_H_FREQ:
-                        when X"009" => qnice_ramrom_data_in <= qnice_h_freq;
+                        when X"00D" => qnice_ramrom_data_in <= qnice_h_freq;
 
                         when others => null;
                      end case;
@@ -964,10 +981,16 @@ begin
          qnice_poly_a_i         => qnice_ramrom_addr_o(6+3 downto 0),
          qnice_poly_wr_i        => qnice_poly_wr,
          qnice_ascal_mode_i     => qnice_ascal_mode,
-         qnice_x_vis_o          => qnice_x_vis,
-         qnice_x_tot_o          => qnice_x_tot,
-         qnice_y_vis_o          => qnice_y_vis,
-         qnice_y_tot_o          => qnice_y_tot,
+         qnice_hdmax_o          => qnice_hdmax,
+         qnice_vdmax_o          => qnice_vdmax,
+         qnice_h_pixels_o       => qnice_h_pixels,
+         qnice_v_pixels_o       => qnice_v_pixels,
+         qnice_h_pulse_o        => qnice_h_pulse,
+         qnice_h_bp_o           => qnice_h_bp,
+         qnice_h_fp_o           => qnice_h_fp,
+         qnice_v_pulse_o        => qnice_v_pulse,
+         qnice_v_bp_o           => qnice_v_bp,
+         qnice_v_fp_o           => qnice_v_fp,
          qnice_h_freq_o         => qnice_h_freq,
          qnice_address_i        => qnice_ramrom_addr_o(VRAM_ADDR_WIDTH-1 downto 0),
          qnice_data_i           => qnice_ramrom_data_out_o(7 downto 0) & qnice_ramrom_data_out_o(7 downto 0),   -- 2 copies of the same data
