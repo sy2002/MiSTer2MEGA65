@@ -219,6 +219,7 @@ M2M$SYS_VDRIVES     .EQU 0x0000     ; vdrives constants (globals.vhd)
 M2M$SYS_VGA         .EQU 0x0010     ; gfx adaptor 0: VGA
 M2M$SYS_HDMI        .EQU 0x0011     ; gfx adaptor 1: HDMI
 M2M$SYS_CRTSANDROMS .EQU 0x0020     ; sim. CRTs. & ROMs (globals.vhd)
+M2M$SYS_CORE        .EQU 0x0030     ; info about the MiSTer core
 
 ; The following read-only registers are meant to be used by the QNICE
 ; firmware. They enable the ability to specify the hardware screen resolution
@@ -227,6 +228,21 @@ M2M$SYS_CRTSANDROMS .EQU 0x0020     ; sim. CRTs. & ROMs (globals.vhd)
 M2M$SYS_DXDY        .EQU 0x7000
 M2M$SHELL_M_XY      .EQU 0x7001     ; main screen: x|y start coordinates
 M2M$SHELL_M_DXDY    .EQU 0x7002     ; main screen: dx|dy width and height
+
+; M2M$SYS_CORE registers: measurement from ASCAL
+M2M$SYS_CORE_X      .EQU 0x7000     ; visible dx measurement from ASCAL
+M2M$SYS_CORE_Y      .EQU 0x7001     ; visible dy measurement from ASCAL
+
+; M2M$SYS_CORE registers: measurement from M2M component
+M2M$SYS_CORE_H_PXLS .EQU 0x7002     ; visible dx
+M2M$SYS_CORE_V_PXLS .EQU 0x7003     ; visible dy
+M2M$SYS_CORE_H_PLSE .EQU 0x7004     ; horizontal pulse
+M2M$SYS_CORE_H_BP   .EQU 0x7005     ; horizontal back porch
+M2M$SYS_CORE_H_FP   .EQU 0x7006     ; horizontal front porch
+M2M$SYS_CORE_V_PLSE .EQU 0x7007     ; vertical pulse
+M2M$SYS_CORE_V_BP   .EQU 0x7008     ; vertical back porch
+M2M$SYS_CORE_V_FP   .EQU 0x7009     ; vertical front porch
+M2M$SYS_CORE_H_FREQ .EQU 0x700A     ; horizontal frequency in Hz
 
 ; ----------------------------------------------------------------------------
 ; Static Shell configuration data (config.vhd): Selectors and addresses
@@ -238,6 +254,7 @@ M2M$CFG_WHS         .EQU 0x1000     ; Welcome & Help screens
 M2M$CFG_DIR_START   .EQU 0x0100     ; Start folder for file browser
 M2M$CFG_CFG_FILE    .EQU 0x0101     ; Config file for OSM persistence
 M2M$CFG_GENERAL     .EQU 0x0110     ; General configuration settings
+M2M$CFG_CORENAME    .EQU 0x0200     ; String: name and version of core
 
 M2M$CFG_OPTM_ITEMS  .EQU 0x0300     ; "Help" menu / Options menu items
 M2M$CFG_OPTM_GROUPS .EQU 0x0301     ; Menu groups
