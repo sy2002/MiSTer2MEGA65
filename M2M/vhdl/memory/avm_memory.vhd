@@ -59,8 +59,8 @@ begin
             write_burstcount <= std_logic_vector(unsigned(mem_write_burstcount) - 1);
 
             if G_DEBUG_OUTPUT then
-            report "Writing 0x" & to_hstring(avm_writedata_i) & " to 0x" & to_hstring(mem_write_address) &
-                   " with burstcount " & to_hstring(write_burstcount);
+               report "Writing 0x" & to_hstring(avm_writedata_i) & " to 0x" & to_hstring(mem_write_address) &
+                      " with burstcount " & to_hstring(write_burstcount);
             end if;
             for b in 0 to G_DATA_SIZE/8-1 loop
                if avm_byteenable_i(b) = '1' then
@@ -77,8 +77,8 @@ begin
             avm_readdatavalid_o <= '1';
 
             if G_DEBUG_OUTPUT then
-            report "Reading 0x" & to_hstring(mem(to_integer(unsigned(mem_read_address)))) & " from 0x" & to_hstring(mem_read_address) &
-                   " with burstcount " & to_hstring(read_burstcount);
+               report "Reading 0x" & to_hstring(mem(to_integer(unsigned(mem_read_address)))) & " from 0x" & to_hstring(mem_read_address) &
+                      " with burstcount " & to_hstring(read_burstcount);
             end if;
          end if;
 

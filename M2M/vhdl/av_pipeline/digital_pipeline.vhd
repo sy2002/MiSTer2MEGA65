@@ -39,7 +39,7 @@ entity digital_pipeline is
       video_vs_i               : in  std_logic;
       video_hblank_i           : in  std_logic;
       video_vblank_i           : in  std_logic;
-      audio_clk_i              : in  std_logic;
+      audio_clk_i              : in  std_logic;  -- 30 MHz
       audio_rst_i              : in  std_logic;
       audio_left_i             : in  signed(15 downto 0); -- Signed PCM format
       audio_right_i            : in  signed(15 downto 0); -- Signed PCM format
@@ -97,18 +97,14 @@ architecture synthesis of digital_pipeline is
    -- i_vga_to_hdmi would need to be adjusted, too
    constant HDMI_PCM_SAMPLING    : natural := 48_000;
 
-   constant pcm_acr_cnt_range    : integer := HDMI_PCM_SAMPLING / 1000;
+   constant AUDIO_PCM_ACR_CNT_RANGE : integer := HDMI_PCM_SAMPLING / 1000;
 
-   signal pcm_clken              : std_logic;                     -- 48 kHz (via clock divider)
-   signal pcm_acr                : std_logic;                     -- HDMI ACR packet strobe (frequency = 128fs/N e.g. 1kHz)
-   signal pcm_n                  : std_logic_vector(19 downto 0); -- HDMI ACR N value
-   signal pcm_cts                : std_logic_vector(19 downto 0); -- HDMI ACR CTS value
-
-   signal hdmi_audio_left        : std_logic_vector(15 downto 0); -- Signed PCM format
-   signal hdmi_audio_right       : std_logic_vector(15 downto 0); -- Signed PCM format
-
-   signal pcm_audio_counter      : integer := 0;
-   signal pcm_acr_counter        : integer range 0 to pcm_acr_cnt_range := 0;
+   signal audio_pcm_clken           : std_logic;                     -- 48 kHz (via clock divider)
+   signal audio_pcm_acr             : std_logic;                     -- HDMI ACR packet strobe (frequency = 128fs/N e.g. 1kHz)
+   signal audio_pcm_n               : std_logic_vector(19 downto 0); -- HDMI ACR N value
+   signal audio_pcm_cts             : std_logic_vector(19 downto 0); -- HDMI ACR CTS value
+   signal audio_pcm_audio_counter   : integer := 0;
+   signal audio_pcm_acr_counter     : integer range 0 to AUDIO_PCM_ACR_CNT_RANGE := 0;
 
    signal vs_hsync               : std_logic;
    signal vs_vsync               : std_logic;
@@ -223,60 +219,44 @@ begin
                 (G_VIDEO_MODE_VECTOR(3).V_PIXELS+G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = 3 else
                 hdmi_video_mode.V_PIXELS-1;
 
-   ---------------------------------------------------------------------------------------------
-   -- Digital output (HDMI) - Audio part
-   ---------------------------------------------------------------------------------------------
-
-   -- Sample audio data in HDMI clock domain
-   i_cdc_stable : entity work.cdc_stable
-      generic map (
-         G_DATA_SIZE    => 32,
-         G_REGISTER_SRC => false
-      )
-      port map (
-         src_clk_i                => audio_clk_i, -- Not used
-         src_data_i(15 downto  0) => std_logic_vector(audio_left_i),
-         src_data_i(31 downto 16) => std_logic_vector(audio_right_i),
-         dst_clk_i                => hdmi_clk_i,
-         dst_data_o(15 downto  0) => hdmi_audio_left,
-         dst_data_o(31 downto 16) => hdmi_audio_right
-      ); -- i_cdc_stable
-
-
-   -- Generate PCM sample rate (48 kHz)
-   i_clk_synthetic_enable : entity work.clk_synthetic_enable
-      port map (
-         clk_i       => hdmi_clk_i,
-         src_speed_i => hdmi_video_mode.CLK_KHZ * 1000,
-         dst_speed_i => HDMI_PCM_SAMPLING,
-         enable_o    => pcm_clken
-      ); -- i_clk_synthetic_enable
-
    -- Deprecated. Will be removed in future release
    -- The purpose is to right-shift the position of the OSM
    -- on the HDMI output. This will be removed when the
    -- M2M framework supports two different OSM VRAMs.
    hdmi_shift <= hdmi_video_mode.H_PIXELS - integer(G_VGA_DX);
 
+   ---------------------------------------------------------------------------------------------
+   -- Digital output (HDMI) - Audio part
+   ---------------------------------------------------------------------------------------------
+
+   -- Generate PCM sample rate (48 kHz)
+   i_clk_synthetic_enable : entity work.clk_synthetic_enable
+      port map (
+         clk_i       => audio_clk_i,
+         src_speed_i => 30_000_000,
+         dst_speed_i => HDMI_PCM_SAMPLING,
+         enable_o    => audio_pcm_clken
+      ); -- i_clk_synthetic_enable
+
    -- N and CTS values for HDMI Audio Clock Regeneration.
    -- depends on pixel clock and audio sample rate
-   pcm_n   <= std_logic_vector(to_unsigned((HDMI_PCM_SAMPLING * 128) / 1000, pcm_n'length)); -- 6144 is correct according to HDMI spec.
-   pcm_cts <= std_logic_vector(to_unsigned(hdmi_video_mode.CLK_KHZ, pcm_cts'length));
+   audio_pcm_n   <= std_logic_vector(to_unsigned((HDMI_PCM_SAMPLING * 128) / 1000, audio_pcm_n'length)); -- 6144 is correct according to HDMI spec.
+   audio_pcm_cts <= std_logic_vector(to_unsigned(hdmi_video_mode.CLK_KHZ, audio_pcm_cts'length));
 
    -- ACR packet rate should be 128fs/N = 1kHz
-   p_pcm_acr : process (hdmi_clk_i)
+   p_pcm_acr : process (audio_clk_i)
    begin
-      if rising_edge(hdmi_clk_i) then
-         if pcm_clken = '1' then
+      if rising_edge(audio_clk_i) then
+         if audio_pcm_clken = '1' then
             -- Generate 1KHz ACR pulse train from 48 kHz
-         if pcm_acr_counter /= (pcm_acr_cnt_range - 1) then
-            pcm_acr_counter <= pcm_acr_counter + 1;
-            pcm_acr <= '0';
-         else
-            pcm_acr <= '1';
-            pcm_acr_counter <= 0;
+            if audio_pcm_acr_counter /= (AUDIO_PCM_ACR_CNT_RANGE - 1) then
+               audio_pcm_acr_counter <= audio_pcm_acr_counter + 1;
+               audio_pcm_acr <= '0';
+            else
+               audio_pcm_acr <= '1';
+               audio_pcm_acr_counter <= 0;
+            end if;
          end if;
-      end if;
       end if;
    end process p_pcm_acr;
 
@@ -502,14 +482,14 @@ begin
          vga_b        => hdmi_osm_blue,
 
          -- PCM audio
-         pcm_clk      => hdmi_clk_i,
-         pcm_rst      => hdmi_rst_i,
-         pcm_clken    => pcm_clken,                           -- 1/256 = 48 kHz
-         pcm_l        => hdmi_audio_left,
-         pcm_r        => hdmi_audio_right,
-         pcm_acr      => pcm_acr,
-         pcm_n        => pcm_n,
-         pcm_cts      => pcm_cts,
+         pcm_clk      => audio_clk_i,
+         pcm_rst      => audio_rst_i,
+         pcm_clken    => audio_pcm_clken,                           -- 1/256 = 48 kHz
+         pcm_l        => std_logic_vector(audio_left_i),
+         pcm_r        => std_logic_vector(audio_right_i),
+         pcm_acr      => audio_pcm_acr,
+         pcm_n        => audio_pcm_n,
+         pcm_cts      => audio_pcm_cts,
 
          -- TMDS output (parallel)
          tmds         => hdmi_tmds
