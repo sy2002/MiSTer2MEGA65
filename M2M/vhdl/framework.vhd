@@ -204,7 +204,8 @@ constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 constant C_SYS_DRIVES         : std_logic_vector(15 downto 0) := x"0000";
 constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
-constant C_CRTSANDROMS        : std_logic_vector(15 downto 0) := x"0020";
+constant C_SYS_CRTSANDROMS    : std_logic_vector(15 downto 0) := x"0020";
+constant C_SYS_CORE           : std_logic_vector(15 downto 0) := x"0030";
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -658,7 +659,7 @@ begin
                      end case;
 
                   -- Simulated cartridges and ROMs
-                  when C_CRTSANDROMS =>
+                  when C_SYS_CRTSANDROMS =>
                      if qnice_ramrom_addr_o(11 downto 0) = x"000" then
                         qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROMS_MAN_NUM, 16));
                      elsif qnice_ramrom_addr_o(11 downto 0) = x"001" then
@@ -684,27 +685,6 @@ begin
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
 
-                        -- CORE_X: Horizontal size of core display
-                        when X"003" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_hdmax) + 1);
-
-                        -- CORE_Y: Vertical size of core display
-                        when X"004" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_vdmax) + 1);
-
-                        -- CORE_X_VIS:
-                        when X"005" => qnice_ramrom_data_in <= qnice_x_vis;
-
-                        -- CORE_X_TOT:
-                        when X"006" => qnice_ramrom_data_in <= qnice_x_tot;
-
-                        -- CORE_Y_VIS:
-                        when X"007" => qnice_ramrom_data_in <= qnice_y_vis;
-
-                        -- CORE_Y_TOT:
-                        when X"008" => qnice_ramrom_data_in <= qnice_y_tot;
-
-                        -- CORE_H_FREQ:
-                        when X"009" => qnice_ramrom_data_in <= qnice_h_freq;
-
                         when others => null;
                      end case;
 
@@ -719,6 +699,33 @@ begin
 
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
+
+                        when others => null;
+                     end case;
+                     
+                  -- Info about the core
+                  when C_SYS_CORE =>
+                     case qnice_ramrom_addr_o(11 downto 0) is
+                        -- CORE_X: Horizontal size of core display
+                        when X"000" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_hdmax) + 1);
+
+                        -- CORE_Y: Vertical size of core display
+                        when X"001" => qnice_ramrom_data_in <= std_logic_vector(unsigned(qnice_vdmax) + 1);
+
+                        -- CORE_X_VIS:
+                        when X"002" => qnice_ramrom_data_in <= qnice_x_vis;
+
+                        -- CORE_X_TOT:
+                        when X"003" => qnice_ramrom_data_in <= qnice_x_tot;
+
+                        -- CORE_Y_VIS:
+                        when X"004" => qnice_ramrom_data_in <= qnice_y_vis;
+
+                        -- CORE_Y_TOT:
+                        when X"005" => qnice_ramrom_data_in <= qnice_y_tot;
+
+                        -- CORE_H_FREQ:
+                        when X"006" => qnice_ramrom_data_in <= qnice_h_freq;
 
                         when others => null;
                      end case;
