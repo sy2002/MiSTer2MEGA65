@@ -157,12 +157,23 @@ _LOG_CRENFO_2   MOVE    LOG_CORE_VTIME, R8
                 MOVE    1000, R10
                 XOR     R11, R11
                 SYSCALL(divu32, 1)
+                CMP     0, R9
+                RBRA    _LOG_CRENFO_3, !Z
                 MOVE    3, R9
                 RSUB    _LOG_DECIMAL_D, 1
                 MOVE    LOG_CORE_MHZ, R8
                 SYSCALL(puts, 1)
+                RBRA    _LOG_CRENFO_4, 1
 
-                SYSCALL(crlf, 1)                ; 1 line betw. this & the rest
+                ; Output <n/a> in case of "overflow" in pixel rate calculation
+                ; @TODO: Actually, this is currently only a contraint when
+                ; it comes to the _LOG_DECIMAL_D function. So as soon as we
+                ; will work with retro cores that have such high pixel rates
+                ; we "just" need to write a smarter _LOG_DECIMAL_D function
+_LOG_CRENFO_3   MOVE    LOG_CORE_WRN2, R8
+                SYSCALL(puts, 1)
+
+_LOG_CRENFO_4   SYSCALL(crlf, 1)                ; 1 line betw. this & the rest
                 SYSCALL(leave, 1)
                 RET
 
