@@ -261,10 +261,17 @@ constant VD_ANTI_THRASHING_DELAY : natural := 2000;
 constant VD_ITERATION_SIZE       : natural := 100;
 
 --------------------------------------------------------------------------------------------------------------------
--- Load one or more mandatory or optional BIOS/ROMs  (Selectors 0x0200 .. 0x02FF)
+-- Name and version of the core  (Selector 0x0200)
 --------------------------------------------------------------------------------------------------------------------
 
--- !!! CAUTION: CURRENTLY NOT YET SUPPORTED BY THE FIRMWARE !!!
+-- !!! DO NOT TOUCH !!!
+constant SEL_CORENAME      : std_logic_vector(15 downto 0) := x"0200";
+
+-- START YOUR CONFIGURATION BELOW THIS LINE
+
+-- Currently this is only used in the debug console. Use the welcome screen and the
+-- help system to display the name and version of your core to the end user
+constant CORENAME          : string := "M2M DEMO CORE V1.0";
 
 --------------------------------------------------------------------------------------------------------------------
 -- "Help" menu / Options menu  (Selectors 0x0300 .. 0x0312): DO NOT TOUCH
@@ -538,6 +545,7 @@ begin
             when SEL_GENERAL           => data_o <= getGenConf(index);
             when SEL_DIR_START         => data_o <= str2data(DIR_START);
             when SEL_CFG_FILE          => data_o <= str2data(CFG_FILE);
+            when SEL_CORENAME          => data_o <= str2data(CORENAME);
             when SEL_OPTM_ITEMS        => data_o <= str2data(OPTM_ITEMS);
             when SEL_OPTM_MOUNT_STR    => data_o <= str2data(OPTM_S_MOUNT);
             when SEL_OPTM_CRTROM_STR   => data_o <= str2data(OPTM_S_CRTROM);

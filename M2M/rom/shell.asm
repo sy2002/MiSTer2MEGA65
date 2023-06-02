@@ -17,9 +17,10 @@
 ; not supposed to return to the caller.
 ; ----------------------------------------------------------------------------
      
-                ; log M2M message to serial terminal (not visible to end user)
-START_SHELL     MOVE    LOG_M2M, R8
+                ; log to serial terminal (not visible to end user)
+START_SHELL     MOVE    LOG_M2M, R8             ; M2M start message
                 SYSCALL(puts, 1)
+                RSUB    LOG_COREINFO, 1         ; see coreinfo.asm
 
                 ; ------------------------------------------------------------
                 ; More robust SD card reading
@@ -1471,13 +1472,14 @@ FRAME_FULLSCR   SYSCALL(enter, 1)
 
 ; "Outsourced" code from shell.asm, i.e. this code directly accesses the
 ; shell.asm environment incl. all variables
+#include "coreinfo.asm"
+#include "crts-and-roms.asm"
 #include "filters.asm"
 #include "gencfg.asm"
 #include "options.asm"
 #include "selectfile.asm"
 #include "strings.asm"
 #include "vdrives.asm"
-#include "crts-and-roms.asm"
 #include "whs.asm"
 
 ; framework libraries
