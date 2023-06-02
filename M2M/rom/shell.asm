@@ -20,7 +20,7 @@
                 ; log to serial terminal (not visible to end user)
 START_SHELL     MOVE    LOG_M2M, R8             ; M2M start message
                 SYSCALL(puts, 1)
-                RSUB    LOG_COREINFO, 1         ; see coreinfo.asm
+                RSUB    LOG_CORENAME, 1         ; core name from config.vhd
 
                 ; ------------------------------------------------------------
                 ; More robust SD card reading
@@ -158,6 +158,10 @@ START_CONNECT   RSUB    WAIT333MS, 1
                 AND     M2M$CSR_UN_RESET, @R0
                 OR      M2M$CSR_KBD_JOY, @R0
 
+                ; As soon as the core is un-reset and up and running:
+                ; Reset timer variables for the log timer
+                RSUB    LOG_PREP, 1
+
                 ; ------------------------------------------------------------
                 ; Main loop:
                 ;
@@ -179,6 +183,7 @@ MAIN_LOOP       RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
 
                 RSUB    CHECK_DEBUG, 1          ; (Run/Stop+Cursor Up) + Help
                 RSUB    HELP_MENU, 1            ; check/manage help menu
+                RSUB    LOG_COREINFO, 1         ; once: log core info
 
                 RBRA    MAIN_LOOP, 1
 

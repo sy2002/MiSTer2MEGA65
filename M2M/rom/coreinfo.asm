@@ -6,9 +6,9 @@
 ; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
-LOG_COREINFO    SYSCALL(enter, 1)
+; Log the core name from config.vhd
+LOG_CORENAME    SYSCALL(enter, 1)
 
-                ; CORENAME from config.vhd
                 MOVE    LOG_CORE, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$RAMROM_DEV, R8
@@ -19,6 +19,51 @@ LOG_COREINFO    SYSCALL(enter, 1)
                 SYSCALL(puts, 1)
                 SYSCALL(crlf, 1)
 
+                SYSCALL(leave, 1)
+                RET
+
+; Reset flag and timing variables
+LOG_PREP        INCRB
+
+                MOVE    LOG_HFREQ_FLAG, R0
+                MOVE    0, @R0
+
+                ; determine current system time
+                MOVE    LOG_CYC_MID, R0
+                MOVE    IO$CYC_MID, R7
+                MOVE    @R7, @R0                
+                MOVE    LOG_CYC_HI, R1
+                MOVE    IO$CYC_HI, R7
+                MOVE    @R7, @R1
+
+                ; add 2.5 seconds
+                ADD     LOG_HFREQ_WAIT, @R0
+                ADDC    0, @R1
+
+                DECRB
+                RET                
+
+; Log coreinfo 2.5 seconds after the core has started
+; This function is meant to be called inside the main loop
+LOG_COREINFO    SYSCALL(enter, 1)
+
+                ; If we already logged the info: skip this function
+                MOVE    LOG_HFREQ_FLAG, R0
+                CMP     1, @R0
+                RBRA    _LOG_CRENFO_R2, Z
+
+                ; Check if the 2.5 seconds are over
+                MOVE    LOG_CYC_HI, R1
+                MOVE    IO$CYC_HI, R7
+                CMP     @R7, @R1
+                RBRA    _LOG_CRENFO_S, N
+                MOVE    LOG_CYC_MID, R1
+                MOVE    IO$CYC_MID, R7
+                CMP     @R7, @R1
+                RBRA    _LOG_CRENFO_R2, !N
+
+_LOG_CRENFO_S   MOVE    1, @R0                  ; remember that log was shown
+
                 ; Set system info device to core infos
                 MOVE    M2M$RAMROM_DEV, R8
                 MOVE    M2M$SYS_INFO, @R8
@@ -27,6 +72,7 @@ LOG_COREINFO    SYSCALL(enter, 1)
 
                 ; DX|DY of the visible area of the core, measured by
                 ; ASCAL and by own counters in the M2M framework
+                SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_VA1, R8
                 SYSCALL(puts, 1)
                 MOVE    LOG_CORE_VA2, R8
@@ -163,7 +209,7 @@ _LOG_CRENFO_2   MOVE    LOG_CORE_VTIME, R8
                 RSUB    _LOG_DECIMAL_D, 1
                 MOVE    LOG_CORE_MHZ, R8
                 SYSCALL(puts, 1)
-                RBRA    _LOG_CRENFO_4, 1
+                RBRA    _LOG_CRENFO_R1, 1
 
                 ; Output <n/a> in case of "overflow" in pixel rate calculation
                 ; @TODO: Actually, this is currently only a contraint when
@@ -173,8 +219,8 @@ _LOG_CRENFO_2   MOVE    LOG_CORE_VTIME, R8
 _LOG_CRENFO_3   MOVE    LOG_CORE_WRN2, R8
                 SYSCALL(puts, 1)
 
-_LOG_CRENFO_4   SYSCALL(crlf, 1)                ; 1 line betw. this & the rest
-                SYSCALL(leave, 1)
+_LOG_CRENFO_R1  SYSCALL(crlf, 1)                ; 1 line betw. this & the rest
+_LOG_CRENFO_R2  SYSCALL(leave, 1)
                 RET
 
 ; Takes register address in R8 and logs the value as a decimal value

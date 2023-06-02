@@ -89,6 +89,12 @@ SD_CYC_MID      .BLOCK 1                        ; cycle counter for SD card..
 SD_CYC_HI       .BLOCK 1                        ; .."stability workaround"
 SD_WAIT_DONE    .BLOCK 1                        ; initial waiting done
 
+; waiting time until M2M$SYS_CORE_H_FREQ is ready to be read: 2.5 seconds
+LOG_HFREQ_WAIT  .EQU   0x0773                   ; 2.5 seconds @ 50 MHz
+LOG_HFREQ_FLAG  .BLOCK 1                        ; info has been logged
+LOG_CYC_MID     .BLOCK 1
+LOG_CYC_HI      .BLOCK 1
+
 ; file browser persistent status
 FB_HEAP         .BLOCK 1                        ; heap used by file browser
 FB_STACK        .BLOCK 1                        ; local stack used by browser
