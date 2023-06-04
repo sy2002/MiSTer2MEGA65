@@ -109,6 +109,8 @@ port (
    main_reset_core_o       : out std_logic;
    main_key_num_o          : out integer range 0 to 79;
    main_key_pressed_n_o    : out std_logic;
+   main_power_led_i        : in  std_logic;
+   main_power_led_col_i    : in  std_logic_vector(23 downto 0);
    main_drive_led_i        : in  std_logic;
    main_drive_led_col_i    : in  std_logic_vector(23 downto 0);
    main_osm_control_m_o    : out std_logic_vector(255 downto 0);
@@ -508,6 +510,8 @@ begin
          key_pressed_n_o      => main_key_pressed_n_o,
 
          -- control the drive led on the MEGA65 keyboard
+         power_led_i          => main_power_led_i,
+         power_led_col_i      => main_power_led_col_i,
          drive_led_i          => main_drive_led_i,
          drive_led_col_i      => main_drive_led_col_i,
 

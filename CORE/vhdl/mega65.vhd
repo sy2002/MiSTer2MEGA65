@@ -38,14 +38,14 @@ port (
    qnice_dvi_o             : out std_logic;              -- 0=HDMI (with sound), 1=DVI (no sound)
    qnice_video_mode_o      : out natural range 0 to 3;   -- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
    qnice_scandoubler_o     : out std_logic;              -- 0 = no scandoubler, 1 = scandoubler
-   qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
-   qnice_retro15kHz_o      : out std_logic;
+   qnice_retro15kHz_o      : out std_logic;              -- 0 = normal frequency, 1 = retro 15 kHz frequency
+   qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
@@ -97,6 +97,8 @@ port (
    -- M2M Keyboard interface (incl. drive led)
    main_kb_key_num_i       : in  integer range 0 to 79;  -- cycles through all MEGA65 keys
    main_kb_key_pressed_n_i : in  std_logic;              -- low active: debounced feedback: is kb_key_num_i pressed right now?
+   main_power_led_o        : out std_logic;
+   main_power_led_col_o    : out std_logic_vector(23 downto 0);
    main_drive_led_o        : out std_logic;
    main_drive_led_col_o    : out std_logic_vector(23 downto 0);
 
@@ -200,6 +202,10 @@ begin
    -- main_clk (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
 
+   -- MEGA65's power led: By default, it is on and glows green when the MEGA65 is powered on.
+   main_power_led_o     <= '1';
+   main_power_led_col_o <= x"00FF00";  -- 24-bit RGB value for the led
+
    -- main.vhd contains the actual MiSTer core
    i_main : entity work.main
       generic map (
@@ -275,7 +281,15 @@ begin
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
+   
+   -- These two signals are often used as a pair (i.e. both '1'), particularly when
+   -- you want to run old analog cathode ray tube monitors or TVs (via SCART)
+   -- If you want to provide your users a choice, then a good choice is:
+   --    "Standard VGA":                     qnice_retro15kHz_o=0 and qnice_csync_o=0
+   --    "Retro 15 kHz with HSync and VSync" qnice_retro15kHz_o=1 and qnice_csync_o=0
+   --    "Retro 15 kHz with CSync"           qnice_retro15kHz_o=1 and qnice_csync_o=1
    qnice_retro15kHz_o         <= '0';
+   qnice_csync_o              <= '0';
 
    -- ascal filters that are applied while processing the input
    -- 00 : Nearest Neighbour
@@ -349,7 +363,7 @@ begin
    -- b) You might want to change the drive led's color (just like the C64 core does) as long as
    --    the cache is dirty (i.e. as long as the write process is not finished, yet)
    main_drive_led_o     <= '0';
-   main_drive_led_col_o <= x"00FF00";
+   main_drive_led_col_o <= x"00FF00";  -- 24-bit RGB value for the led
 
    i_vdrives : entity work.vdrives
       generic map (

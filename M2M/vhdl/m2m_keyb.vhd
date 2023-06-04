@@ -41,7 +41,9 @@ entity m2m_keyb is
       key_num_o            : out integer range 0 to 79;        -- cycles through all keys with SCAN_FREQUENCY
       key_pressed_n_o      : out std_logic;                    -- low active: debounced feedback: is kb_key_num_o pressed right now?
 
-      -- control the drive led on the MEGA65 keyboard      
+      -- control the drive led on the MEGA65 keyboard
+      power_led_i          : in std_logic;
+      power_led_col_i      : in std_logic_vector(23 downto 0); -- RGB color of power led      
       drive_led_i          : in std_logic;
       drive_led_col_i      : in std_logic_vector(23 downto 0); -- RGB color of drive led
             
@@ -75,8 +77,8 @@ begin
        -- _steady means that the led stays on steadily
        -- _blinking means that the led is blinking
        -- The colors are specified as BGR (reverse RGB)
-       powerled_steady     => '1',           -- power led is always on
-       powerled_col        => x"00FF00",     -- power led is green
+       powerled_steady     => power_led_i,
+       powerled_col        => power_led_col_i(7 downto 0) & power_led_col_i(15 downto 8) & power_led_col_i(23 downto 16), -- RGB to BGR
        driveled_steady     => drive_led_i,
        driveled_blinking   => '0',   
        driveled_col        => drive_led_col_i(7 downto 0) & drive_led_col_i(15 downto 8) & drive_led_col_i(23 downto 16), -- RGB to BGR    
