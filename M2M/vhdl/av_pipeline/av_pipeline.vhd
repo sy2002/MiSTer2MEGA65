@@ -262,9 +262,6 @@ begin
    return tmp'length;
 end function first_nonzero_bit;
 
-   attribute mark_debug : string;
-   attribute mark_debug of qnice_osm_cfg_scaling_i : signal is "true";
-
 begin
 
    ---------------------------------------------------------------------------------------------
