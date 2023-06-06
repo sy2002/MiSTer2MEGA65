@@ -76,6 +76,9 @@ begin
             if vblank_d = '1' and vblank_i = '0' then
                v_total <= v_count;
                v_count <= X"000";
+               if hblank_d = '1' and hblank_i = '0' then
+                  v_total <= v_count + 1;
+               end if;
             end if;
          end if;
       end if;
@@ -97,6 +100,9 @@ begin
             end if;
             if vblank_d = '0' and vblank_i = '1' then
                v_pixels <= v_count;
+               if hblank_d = '1' and hblank_i = '0' then
+                  v_pixels <= v_count + 1;
+               end if;
             end if;
 
             if hs_d = '0' and hs_i = '1' then
