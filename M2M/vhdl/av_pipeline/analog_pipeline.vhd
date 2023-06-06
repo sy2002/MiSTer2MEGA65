@@ -12,61 +12,62 @@ use ieee.numeric_std.all;
 
 entity analog_pipeline is
    generic (
-      G_VGA_DX               : natural;                 -- Actual format of video from Core (in pixels).
-      G_VGA_DY               : natural;
-      G_FONT_FILE            : string;
-      G_FONT_DX              : natural;
-      G_FONT_DY              : natural
+      G_VGA_DX                : natural;                 -- Actual format of video from Core (in pixels).
+      G_VGA_DY                : natural;
+      G_FONT_FILE             : string;
+      G_FONT_DX               : natural;
+      G_FONT_DY               : natural
    );
    port (
       -- Input from Core (video and audio)
-      video_clk_i            : in  std_logic;
-      video_rst_i            : in  std_logic;
-      video_ce_i             : in  std_logic;
-      video_ce_ovl_i         : in  std_logic;           -- 2x the speed of video_ce_i
-      video_red_i            : in  std_logic_vector(7 downto 0);
-      video_green_i          : in  std_logic_vector(7 downto 0);
-      video_blue_i           : in  std_logic_vector(7 downto 0);
-      video_hs_i             : in  std_logic;
-      video_vs_i             : in  std_logic;
-      video_hblank_i         : in  std_logic;
-      video_vblank_i         : in  std_logic;
-      audio_clk_i            : in  std_logic;
-      audio_rst_i            : in  std_logic;
-      audio_left_i           : in  signed(15 downto 0); -- Signed PCM format
-      audio_right_i          : in  signed(15 downto 0); -- Signed PCM format
+      video_clk_i             : in  std_logic;
+      video_rst_i             : in  std_logic;
+      video_ce_i              : in  std_logic;
+      video_ce_ovl_i          : in  std_logic;           -- 2x the speed of video_ce_i
+      video_red_i             : in  std_logic_vector(7 downto 0);
+      video_green_i           : in  std_logic_vector(7 downto 0);
+      video_blue_i            : in  std_logic_vector(7 downto 0);
+      video_hs_i              : in  std_logic;
+      video_vs_i              : in  std_logic;
+      video_hblank_i          : in  std_logic;
+      video_vblank_i          : in  std_logic;
+      audio_clk_i             : in  std_logic;
+      audio_rst_i             : in  std_logic;
+      audio_left_i            : in  signed(15 downto 0); -- Signed PCM format
+      audio_right_i           : in  signed(15 downto 0); -- Signed PCM format
 
-      -- Configure the scandoubler: 0=off/1=on
+      -- Configure the scandoubler : 0=off/1=on
       -- Make sure the signal is in the video_clk clock domain
-      video_scandoubler_i    : in  std_logic;
+      video_scandoubler_i     : in  std_logic;
 
-      -- Composite sync: 0=off/1=on
-      video_csync_i          : in  std_logic;
+      -- Composite sync : 0=off/1=on
+      video_csync_i           : in  std_logic;
 
-      -- Is the input from the core in the retro 15 kHz analog RGB mode: 0=no/1=yes
-      -- (Hint: Scandoubler off does not automatically mean retro 15 kHz on.)
-      video_retro15kHz_i     : in  std_logic;
+      -- Is the input from the core in the retro 15 kHz analog RGB mode : 0=no/1=yes
+      -- (Hint : Scandoubler off does not automatically mean retro 15 kHz on.)
+      video_retro15kHz_i      : in  std_logic;
 
       -- Video output (VGA)
-      vga_red_o              : out std_logic_vector(7 downto 0);
-      vga_green_o            : out std_logic_vector(7 downto 0);
-      vga_blue_o             : out std_logic_vector(7 downto 0);
-      vga_hs_o               : out std_logic;
-      vga_vs_o               : out std_logic;
-      vdac_clk_o             : out std_logic;
-      vdac_syncn_o           : out std_logic;
-      vdac_blankn_o          : out std_logic;
+      vga_red_o               : out std_logic_vector(7 downto 0);
+      vga_green_o             : out std_logic_vector(7 downto 0);
+      vga_blue_o              : out std_logic_vector(7 downto 0);
+      vga_hs_o                : out std_logic;
+      vga_vs_o                : out std_logic;
+      vdac_clk_o              : out std_logic;
+      vdac_syncn_o            : out std_logic;
+      vdac_blankn_o           : out std_logic;
 
       -- Audio output (3.5 mm jack)
-      pwm_l_o                : out std_logic;
-      pwm_r_o                : out std_logic;
+      pwm_l_o                 : out std_logic;
+      pwm_r_o                 : out std_logic;
 
       -- Connect to QNICE and Video RAM
-      video_osm_cfg_enable_i : in  std_logic;
-      video_osm_cfg_xy_i     : in  std_logic_vector(15 downto 0);
-      video_osm_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
-      video_osm_vram_addr_o  : out std_logic_vector(15 downto 0);
-      video_osm_vram_data_i  : in  std_logic_vector(15 downto 0)
+      video_osm_cfg_scaling_i : in  natural range 0 to 8;
+      video_osm_cfg_enable_i  : in  std_logic;
+      video_osm_cfg_xy_i      : in  std_logic_vector(15 downto 0);
+      video_osm_cfg_dxdy_i    : in  std_logic_vector(15 downto 0);
+      video_osm_vram_addr_o   : out std_logic_vector(15 downto 0);
+      video_osm_vram_data_i   : in  std_logic_vector(15 downto 0)
    );
 end entity analog_pipeline;
 
@@ -193,35 +194,36 @@ begin
 
    i_video_overlay : entity work.video_overlay
       generic  map (
-         G_VGA_DX         => G_VGA_DX,
-         G_VGA_DY         => G_VGA_DY,
-         G_FONT_FILE      => G_FONT_FILE,
-         G_FONT_DX        => G_FONT_DX,
-         G_FONT_DY        => G_FONT_DY
+         G_VGA_DX          => G_VGA_DX,
+         G_VGA_DY          => G_VGA_DY,
+         G_FONT_FILE       => G_FONT_FILE,
+         G_FONT_DX         => G_FONT_DX,
+         G_FONT_DY         => G_FONT_DY
       )
       port map (
-         vga_clk_i        => video_clk_i,
-         vga_ce_i         => video_ce_ovl_i,
-         vga_red_i        => vga_red,
-         vga_green_i      => vga_green,
-         vga_blue_i       => vga_blue,
-         vga_hs_i         => vga_hs,
-         vga_vs_i         => vga_vs,
-         vga_de_i         => mix_vga_de,
-         vga_cfg_shift_i  => 0,
-         vga_cfg_enable_i => video_osm_cfg_enable_i,
-         vga_cfg_r15kHz_i => video_retro15kHz_i,
-         vga_cfg_xy_i     => video_osm_cfg_xy_i,
-         vga_cfg_dxdy_i   => video_osm_cfg_dxdy_i,
-         vga_vram_addr_o  => video_osm_vram_addr_o,
-         vga_vram_data_i  => video_osm_vram_data_i,
-         vga_ce_o         => open,
-         vga_red_o        => vga_red_ps,
-         vga_green_o      => vga_green_ps,
-         vga_blue_o       => vga_blue_ps,
-         vga_hs_o         => vga_hs_ps,
-         vga_vs_o         => vga_vs_ps,
-         vga_de_o         => open
+         vga_clk_i         => video_clk_i,
+         vga_ce_i          => video_ce_ovl_i,
+         vga_red_i         => vga_red,
+         vga_green_i       => vga_green,
+         vga_blue_i        => vga_blue,
+         vga_hs_i          => vga_hs,
+         vga_vs_i          => vga_vs,
+         vga_de_i          => mix_vga_de,
+         vga_cfg_scaling_i => video_osm_cfg_scaling_i,
+         vga_cfg_shift_i   => 0,
+         vga_cfg_enable_i  => video_osm_cfg_enable_i,
+         vga_cfg_r15kHz_i  => video_retro15kHz_i,
+         vga_cfg_xy_i      => video_osm_cfg_xy_i,
+         vga_cfg_dxdy_i    => video_osm_cfg_dxdy_i,
+         vga_vram_addr_o   => video_osm_vram_addr_o,
+         vga_vram_data_i   => video_osm_vram_data_i,
+         vga_ce_o          => open,
+         vga_red_o         => vga_red_ps,
+         vga_green_o       => vga_green_ps,
+         vga_blue_o        => vga_blue_ps,
+         vga_hs_o          => vga_hs_ps,
+         vga_vs_o          => vga_vs_ps,
+         vga_de_o          => open
       ); -- i_video_overlay_video
 
    i_csync : entity work.csync

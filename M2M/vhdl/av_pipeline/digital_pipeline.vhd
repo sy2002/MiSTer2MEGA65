@@ -57,6 +57,7 @@ entity digital_pipeline is
       hdmi_dvi_i               : in  std_logic;
       hdmi_video_mode_i        : in  natural range 0 to 3;
       hdmi_crop_mode_i         : in  std_logic;
+      hdmi_osm_cfg_scaling_i   : in  natural range 0 to 8;
       hdmi_osm_cfg_enable_i    : in  std_logic;
       hdmi_osm_cfg_xy_i        : in  std_logic_vector(15 downto 0);
       hdmi_osm_cfg_dxdy_i      : in  std_logic_vector(15 downto 0);
@@ -431,35 +432,36 @@ begin
 
    i_video_overlay : entity work.video_overlay
       generic  map (
-         G_VGA_DX         => G_VGA_DX,  -- TBD
-         G_VGA_DY         => G_VGA_DY,  -- TBD
-         G_FONT_FILE      => G_FONT_FILE,
-         G_FONT_DX        => G_FONT_DX,
-         G_FONT_DY        => G_FONT_DY
+         G_VGA_DX          => G_VGA_DX,  -- TBD
+         G_VGA_DY          => G_VGA_DY,  -- TBD
+         G_FONT_FILE       => G_FONT_FILE,
+         G_FONT_DX         => G_FONT_DX,
+         G_FONT_DY         => G_FONT_DY
       )
       port map (
-         vga_clk_i        => hdmi_clk_i,
-         vga_ce_i         => '1',
-         vga_red_i        => std_logic_vector(hdmi_red),
-         vga_green_i      => std_logic_vector(hdmi_green),
-         vga_blue_i       => std_logic_vector(hdmi_blue),
-         vga_hs_i         => hdmi_hs,
-         vga_vs_i         => hdmi_vs,
-         vga_de_i         => hdmi_de,
-         vga_cfg_shift_i  => hdmi_shift,
-         vga_cfg_enable_i => hdmi_osm_cfg_enable_i,
-         vga_cfg_r15kHz_i => '0',
-         vga_cfg_xy_i     => hdmi_osm_cfg_xy_i,
-         vga_cfg_dxdy_i   => hdmi_osm_cfg_dxdy_i,
-         vga_vram_addr_o  => hdmi_osm_vram_addr_o,
-         vga_vram_data_i  => hdmi_osm_vram_data_i,
-         vga_ce_o         => open,
-         vga_red_o        => hdmi_osm_red,
-         vga_green_o      => hdmi_osm_green,
-         vga_blue_o       => hdmi_osm_blue,
-         vga_hs_o         => hdmi_osm_hs,
-         vga_vs_o         => hdmi_osm_vs,
-         vga_de_o         => hdmi_osm_de
+         vga_clk_i         => hdmi_clk_i,
+         vga_ce_i          => '1',
+         vga_red_i         => std_logic_vector(hdmi_red),
+         vga_green_i       => std_logic_vector(hdmi_green),
+         vga_blue_i        => std_logic_vector(hdmi_blue),
+         vga_hs_i          => hdmi_hs,
+         vga_vs_i          => hdmi_vs,
+         vga_de_i          => hdmi_de,
+         vga_cfg_scaling_i => hdmi_osm_cfg_scaling_i,
+         vga_cfg_shift_i   => hdmi_shift,
+         vga_cfg_enable_i  => hdmi_osm_cfg_enable_i,
+         vga_cfg_r15kHz_i  => '0',
+         vga_cfg_xy_i      => hdmi_osm_cfg_xy_i,
+         vga_cfg_dxdy_i    => hdmi_osm_cfg_dxdy_i,
+         vga_vram_addr_o   => hdmi_osm_vram_addr_o,
+         vga_vram_data_i   => hdmi_osm_vram_data_i,
+         vga_ce_o          => open,
+         vga_red_o         => hdmi_osm_red,
+         vga_green_o       => hdmi_osm_green,
+         vga_blue_o        => hdmi_osm_blue,
+         vga_hs_o          => hdmi_osm_hs,
+         vga_vs_o          => hdmi_osm_vs,
+         vga_de_o          => hdmi_osm_de
       ); -- i_video_overlay
 
    i_vga_to_hdmi : entity work.vga_to_hdmi

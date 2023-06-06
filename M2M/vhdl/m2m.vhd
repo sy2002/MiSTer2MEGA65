@@ -193,6 +193,7 @@ signal qnice_ascal_mode       : std_logic_vector(1 downto 0);
 signal qnice_ascal_polyphase  : std_logic;
 signal qnice_ascal_triplebuf  : std_logic;
 signal qnice_retro15kHz       : std_logic;
+signal qnice_osm_cfg_scaling  : std_logic_vector(8 downto 0);
 
 -- flip joystick ports
 signal qnice_flip_joyports    : std_logic;
@@ -338,6 +339,7 @@ begin
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
+      qnice_osm_cfg_scaling_i => qnice_osm_cfg_scaling,
       qnice_retro15kHz_i      => qnice_retro15kHz,
       qnice_ascal_mode_i      => qnice_ascal_mode,
       qnice_ascal_polyphase_i => qnice_ascal_polyphase,
@@ -388,6 +390,7 @@ begin
          qnice_ascal_polyphase_o => qnice_ascal_polyphase,
          qnice_ascal_triplebuf_o => qnice_ascal_triplebuf,
          qnice_retro15kHz_o      => qnice_retro15kHz,
+         qnice_osm_cfg_scaling_o => qnice_osm_cfg_scaling,
 
          -- Flip joystick ports
          qnice_flip_joyports_o   => qnice_flip_joyports,

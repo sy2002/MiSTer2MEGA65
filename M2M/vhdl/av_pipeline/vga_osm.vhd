@@ -19,27 +19,28 @@ use ieee.numeric_std_unsigned.all;
 
 entity vga_osm is
    generic  (
-      G_VGA_DX             : natural;
-      G_VGA_DY             : natural;
-      G_FONT_FILE          : string;
-      G_FONT_DX            : natural;
-      G_FONT_DY            : natural
+      G_VGA_DX              : natural;
+      G_VGA_DY              : natural;
+      G_FONT_FILE           : string;
+      G_FONT_DX             : natural;
+      G_FONT_DY             : natural
    );
    port (
-      clk_i                : in  std_logic;
+      clk_i                 : in  std_logic;
 
-      vga_col_i            : in  integer range 0 to 2047;
-      vga_row_i            : in  integer range 0 to 2047;
+      vga_col_i             : in  integer range 0 to 2047;
+      vga_row_i             : in  integer range 0 to 2047;
 
-      vga_osm_cfg_enable_i : in  std_logic;
-      vga_osm_cfg_xy_i     : in  std_logic_vector(15 downto 0);
-      vga_osm_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
-      vga_osm_vram_addr_o  : out std_logic_vector(15 downto 0);
-      vga_osm_vram_data_i  : in  std_logic_vector(7 downto 0);
-      vga_osm_vram_attr_i  : in  std_logic_vector(7 downto 0);
+      vga_osm_cfg_scaling_i : in  integer range 0 to 8;
+      vga_osm_cfg_enable_i  : in  std_logic;
+      vga_osm_cfg_xy_i      : in  std_logic_vector(15 downto 0);
+      vga_osm_cfg_dxdy_i    : in  std_logic_vector(15 downto 0);
+      vga_osm_vram_addr_o   : out std_logic_vector(15 downto 0);
+      vga_osm_vram_data_i   : in  std_logic_vector(7 downto 0);
+      vga_osm_vram_attr_i   : in  std_logic_vector(7 downto 0);
 
-      vga_osm_on_o         : out std_logic;
-      vga_osm_rgb_o        : out std_logic_vector(23 downto 0)
+      vga_osm_on_o          : out std_logic;
+      vga_osm_rgb_o         : out std_logic_vector(23 downto 0)
    );
 end vga_osm;
 
@@ -63,6 +64,9 @@ architecture synthesis of vga_osm is
       vga_osm_rgb       : std_logic_vector(23 downto 0);
    end record stage_t;
 
+   signal vga_col       : integer range 0 to 2047;
+   signal vga_row       : integer range 0 to 2047;
+
    signal stage0 : stage_t;
    signal stage1 : stage_t;
    signal stage2 : stage_t;
@@ -70,6 +74,8 @@ architecture synthesis of vga_osm is
    signal stage4 : stage_t;
    signal stage2_vga_osm_font_addr : std_logic_vector(11 downto 0);
    signal stage3_vga_osm_font_data : std_logic_vector(15 downto 0);
+
+   signal vga_osm_cfg_scaling_d : integer range 0 to 8;
 
 begin
 
@@ -89,6 +95,24 @@ begin
       stage0.vga_osm_y2 <= vga_osm_y + to_integer(vga_osm_cfg_dxdy_i(7 downto 0));
    end process calc_boundaries;
 
+   -- This part implements the fractional scaling
+   -- It also makes sure there is no overflow.
+   process (all)
+   begin
+      -- Default is no scaling.
+      vga_col <= vga_col_i;
+      vga_row <= vga_row_i;
+
+      if vga_col_i < G_VGA_DX then
+         vga_col <= vga_col_i +
+                    (vga_osm_cfg_scaling_i * (vga_col_i - to_integer(vga_osm_cfg_dxdy_i(15 downto 8)) * G_FONT_DX / 2)) / 8;
+      end if;
+      if vga_row_i < G_VGA_DY then
+         vga_row <= vga_row_i +
+                    (vga_osm_cfg_scaling_i * (vga_row_i - to_integer(vga_osm_cfg_dxdy_i( 7 downto 0)) * G_FONT_DY / 2)) / 8;
+      end if;
+   end process;
+
 
    -----------
    -- Stage 1
@@ -97,11 +121,12 @@ begin
    p_stage1 : process (clk_i)
    begin
       if rising_edge(clk_i) then
+         vga_osm_cfg_scaling_d <= vga_osm_cfg_scaling_i;
          stage1 <= stage0;
-         stage1.vga_x_div_16 <= vga_col_i / G_FONT_DX;
-         stage1.vga_y_div_16 <= vga_row_i / G_FONT_DY;
-         stage1.vga_x_mod_16 <= vga_col_i mod G_FONT_DX;
-         stage1.vga_y_mod_16 <= vga_row_i mod G_FONT_DY;
+         stage1.vga_x_div_16 <= vga_col / G_FONT_DX;
+         stage1.vga_y_div_16 <= vga_row / G_FONT_DY;
+         stage1.vga_x_mod_16 <= vga_col mod G_FONT_DX;
+         stage1.vga_y_mod_16 <= vga_row mod G_FONT_DY;
       end if;
    end process p_stage1;
 

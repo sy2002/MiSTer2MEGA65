@@ -46,6 +46,7 @@ port (
    qnice_ascal_triplebuf_o : out std_logic;
    qnice_retro15kHz_o      : out std_logic;              -- 0 = normal frequency, 1 = retro 15 kHz frequency
    qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
+   qnice_osm_cfg_scaling_o : out std_logic_vector(8 downto 0);
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
@@ -290,6 +291,7 @@ begin
    --    "Retro 15 kHz with CSync"           qnice_retro15kHz_o=1 and qnice_csync_o=1
    qnice_retro15kHz_o         <= '0';
    qnice_csync_o              <= '0';
+   qnice_osm_cfg_scaling_o    <= (others => '1');
 
    -- ascal filters that are applied while processing the input
    -- 00 : Nearest Neighbour

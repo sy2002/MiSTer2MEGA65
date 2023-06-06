@@ -5,41 +5,42 @@ use ieee.numeric_std_unsigned.all;
 
 entity video_overlay is
    generic  (
-      G_VGA_DX         : natural;
-      G_VGA_DY         : natural;
-      G_FONT_FILE      : string;
-      G_FONT_DX        : natural;
-      G_FONT_DY        : natural
+      G_VGA_DX          : natural;
+      G_VGA_DY          : natural;
+      G_FONT_FILE       : string;
+      G_FONT_DX         : natural;
+      G_FONT_DY         : natural
    );
    port (
-      vga_clk_i        : in  std_logic;
+      vga_clk_i         : in  std_logic;
 
       -- VGA input
-      vga_ce_i         : in  std_logic;
-      vga_red_i        : in  std_logic_vector(7 downto 0);
-      vga_green_i      : in  std_logic_vector(7 downto 0);
-      vga_blue_i       : in  std_logic_vector(7 downto 0);
-      vga_hs_i         : in  std_logic;
-      vga_vs_i         : in  std_logic;
-      vga_de_i         : in  std_logic;
+      vga_ce_i          : in  std_logic;
+      vga_red_i         : in  std_logic_vector(7 downto 0);
+      vga_green_i       : in  std_logic_vector(7 downto 0);
+      vga_blue_i        : in  std_logic_vector(7 downto 0);
+      vga_hs_i          : in  std_logic;
+      vga_vs_i          : in  std_logic;
+      vga_de_i          : in  std_logic;
 
       -- QNICE
-      vga_cfg_shift_i  : in  natural;
-      vga_cfg_enable_i : in  std_logic;
-      vga_cfg_r15kHz_i : in  std_logic;
-      vga_cfg_xy_i     : in  std_logic_vector(15 downto 0);
-      vga_cfg_dxdy_i   : in  std_logic_vector(15 downto 0);
-      vga_vram_addr_o  : out std_logic_vector(15 downto 0);
-      vga_vram_data_i  : in  std_logic_vector(15 downto 0);
+      vga_cfg_scaling_i : in  natural range 0 to 8;
+      vga_cfg_shift_i   : in  natural;
+      vga_cfg_enable_i  : in  std_logic;
+      vga_cfg_r15kHz_i  : in  std_logic;
+      vga_cfg_xy_i      : in  std_logic_vector(15 downto 0);
+      vga_cfg_dxdy_i    : in  std_logic_vector(15 downto 0);
+      vga_vram_addr_o   : out std_logic_vector(15 downto 0);
+      vga_vram_data_i   : in  std_logic_vector(15 downto 0);
 
       -- VGA output
-      vga_ce_o         : out std_logic;
-      vga_red_o        : out std_logic_vector(7 downto 0);
-      vga_green_o      : out std_logic_vector(7 downto 0);
-      vga_blue_o       : out std_logic_vector(7 downto 0);
-      vga_hs_o         : out std_logic;
-      vga_vs_o         : out std_logic;
-      vga_de_o         : out std_logic
+      vga_ce_o          : out std_logic;
+      vga_red_o         : out std_logic_vector(7 downto 0);
+      vga_green_o       : out std_logic_vector(7 downto 0);
+      vga_blue_o        : out std_logic_vector(7 downto 0);
+      vga_hs_o          : out std_logic;
+      vga_vs_o          : out std_logic;
+      vga_de_o          : out std_logic
    );
 end entity video_overlay;
 
@@ -107,24 +108,25 @@ begin
 
    i_vga_osm : entity work.vga_osm
       generic map (
-         G_VGA_DX             => G_VGA_DX,
-         G_VGA_DY             => G_VGA_DY,
-         G_FONT_FILE          => G_FONT_FILE,
-         G_FONT_DX            => G_FONT_DX,
-         G_FONT_DY            => G_FONT_DY
+         G_VGA_DX              => G_VGA_DX,
+         G_VGA_DY              => G_VGA_DY,
+         G_FONT_FILE           => G_FONT_FILE,
+         G_FONT_DX             => G_FONT_DX,
+         G_FONT_DY             => G_FONT_DY
       )
       port map (
-         clk_i                => vga_clk_i,
-         vga_col_i            => stage1.vga_col,
-         vga_row_i            => stage1.vga_row,
-         vga_osm_cfg_xy_i     => vga_cfg_xy_i,
-         vga_osm_cfg_dxdy_i   => vga_cfg_dxdy_i,
-         vga_osm_cfg_enable_i => vga_cfg_enable_i,
-         vga_osm_vram_addr_o  => vga_vram_addr_o,              -- Stage 2
-         vga_osm_vram_data_i  => vga_vram_data_i( 7 downto 0), -- Stage 3
-         vga_osm_vram_attr_i  => vga_vram_data_i(15 downto 8), -- Stage 3
-         vga_osm_on_o         => stage5_vga_osm_on,
-         vga_osm_rgb_o        => stage5_vga_osm_rgb
+         clk_i                 => vga_clk_i,
+         vga_col_i             => stage1.vga_col,
+         vga_row_i             => stage1.vga_row,
+         vga_osm_cfg_scaling_i => vga_cfg_scaling_i,
+         vga_osm_cfg_xy_i      => vga_cfg_xy_i,
+         vga_osm_cfg_dxdy_i    => vga_cfg_dxdy_i,
+         vga_osm_cfg_enable_i  => vga_cfg_enable_i,
+         vga_osm_vram_addr_o   => vga_vram_addr_o,              -- Stage 2
+         vga_osm_vram_data_i   => vga_vram_data_i( 7 downto 0), -- Stage 3
+         vga_osm_vram_attr_i   => vga_vram_data_i(15 downto 8), -- Stage 3
+         vga_osm_on_o          => stage5_vga_osm_on,
+         vga_osm_rgb_o         => stage5_vga_osm_rgb
       ); -- i_vga_osm
 
 
