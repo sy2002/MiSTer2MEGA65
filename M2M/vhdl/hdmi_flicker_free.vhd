@@ -60,24 +60,6 @@ architecture synthesis of hdmi_flicker_free is
    signal dbg_sec1_cnt      : natural range 0 to C_HR_FREQ_HZ-1;
    signal dbg_sec1          : std_logic;
 
---   attribute mark_debug : string;
---   attribute mark_debug of hr_write_i        : signal is "true";
---   attribute mark_debug of hr_read_i         : signal is "true";
---   attribute mark_debug of hr_address_i      : signal is "true";
---   attribute mark_debug of high_o            : signal is "true";
---   attribute mark_debug of low_o             : signal is "true";
---   attribute mark_debug of last_core_address : signal is "true";
---   attribute mark_debug of last_hdmi_address : signal is "true";
---   attribute mark_debug of last_diff         : signal is "true";
---   attribute mark_debug of dbg_low_cnt       : signal is "true";
---   attribute mark_debug of dbg_high_cnt      : signal is "true";
---   attribute mark_debug of dbg_min_diff      : signal is "true";
---   attribute mark_debug of dbg_max_diff      : signal is "true";
---   attribute mark_debug of dbg_min_stored    : signal is "true";
---   attribute mark_debug of dbg_max_stored    : signal is "true";
---   attribute mark_debug of dbg_sec1_cnt      : signal is "true";
---   attribute mark_debug of dbg_sec1          : signal is "true";
-
 begin
 
    p_last_address : process (hr_clk_i)

@@ -57,31 +57,6 @@ architecture synthesis of video_counters is
 
    signal pps_d     : std_logic;
 
---   attribute mark_debug : string;
---   attribute mark_debug of h_count   : signal is "true";
---   attribute mark_debug of h_lps     : signal is "true";
---   attribute mark_debug of v_count   : signal is "true";
---   attribute mark_debug of hblank_i  : signal is "true";
---   attribute mark_debug of vblank_i  : signal is "true";
---   attribute mark_debug of hs_i      : signal is "true";
---   attribute mark_debug of vs_i      : signal is "true";
---   attribute mark_debug of pps_i     : signal is "true";
---   attribute mark_debug of hblank_d  : signal is "true";
---   attribute mark_debug of vblank_d  : signal is "true";
---   attribute mark_debug of hs_d      : signal is "true";
---   attribute mark_debug of vs_d      : signal is "true";
---   attribute mark_debug of pps_d     : signal is "true";
---
---   attribute mark_debug of h_pixels  : signal is "true";
---   attribute mark_debug of h_total   : signal is "true";
---   attribute mark_debug of h_rising  : signal is "true";
---   attribute mark_debug of h_falling : signal is "true";
---   attribute mark_debug of h_freq    : signal is "true";
---   attribute mark_debug of v_pixels  : signal is "true";
---   attribute mark_debug of v_total   : signal is "true";
---   attribute mark_debug of v_rising  : signal is "true";
---   attribute mark_debug of v_falling : signal is "true";
-
 begin
 
    count_proc : process (clk_i)
