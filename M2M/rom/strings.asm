@@ -137,11 +137,12 @@ STR_SPACE       .ASCII_W "Press Space to continue."
 ; Warnings
 ; ----------------------------------------------------------------------------
 
-WRN_MAXFILES    .ASCII_P "Warning: This directory contains more files\n"
-                .ASCII_P "than this core is able to load into memory.\n\n"
+WRN_MAXFILES    .ASCII_P "Warning: This directory contains more\n"
+                .ASCII_P "files than this core is able to load into\n"
+                .ASCII_P "memory.\n\n"
                 .ASCII_P "Split the files into multiple folders.\n\n"
-                .ASCII_P "If you continue by pressing SPACE,\n"
-                .ASCII_P "be aware that random files will be missing.\n\n"
+                .ASCII_P "If you continue by pressing SPACE, be\n"
+                .ASCII_P "aware that random files will be missing.\n\n"
                 .ASCII_W "Press SPACE to continue.\n"
 
 WRN_EMPTY_BRW   .ASCII_P "The root directory of the SD card contains\n"
@@ -178,12 +179,10 @@ ERR_F_MENUDRV   .ASCII_P "config.vhd: More menu items have the\n"
                 .ASCII_P "virtual drives configured in globals.vhd\n"
                 .ASCII_W "using C_VDNUM.\n"
 ERR_F_NO_S      .ASCII_W "M2M$RPL_S: No %s found in source string.\n"
-
 ERR_F_CR_M_CNT  .ASCII_P "globals.vhd: C_CRTROMS_MAN_NUM too large.\n"
                 .ASCII_W "Hint: CRTROM_MAN_MAX in make-rom.sh\n"
 ERR_F_CR_M_TYPE .ASCII_P "globals.vhd: C_CRTROMS_MAN: Illegal type\n"
                 .ASCII_W "or device id or 4k window.\n"
-
 ERR_F_CR_A_CNT  .ASCII_P "globals.vhd: C_CRTROMS_AUT_NUM too large.\n"
                 .ASCII_W "Hint: CRTROM_AUT_MAX in make-rom.sh\n"
 ERR_F_CR_A_TYPE .ASCII_P "globals.vhd: C_CRTROMS_AUT: Illegal type\n"
@@ -193,11 +192,6 @@ ERR_F_ATRMNMNT  .ASCII_P "This core needs to load one or more\n"
                 .ASCII_W "card can be mounted.\n"
 ERR_F_ATRMLOAD  .ASCII_P "\n\nFile not found or file read error.\n"
                 .ASCII_W "The core needs this ROM to start.\n\n"
-
-; ------------------------------------------------------------------|
-; @TODO: Adjust strings so that every string ends at the |
-; Only this guarantees that everything fits correctly on the screen
-
 ERR_MOUNT       .ASCII_W "Error: Cannot mount SD card!\nError code: "
 ERR_MOUNT_RET   .ASCII_W "\n\nPress Return to retry"
 ERR_BROWSE_UNKN .ASCII_W "SD Card:\nUnknown error while trying to browse.\n"
@@ -237,4 +231,3 @@ ERR_FATAL_INST8 .EQU 8  ; options.asm        _OPTM_CBS_I
 ERR_FATAL_INST9 .EQU 9  ; options.asm        _OPTM_CBS_I4
 ERR_FATAL_INSTA .EQU 10 ; shell.asm:         _HM_SDMOUNTED6B
 ERR_FATAL_INSTB .EQU 11 ; options.asm        _OPTM_GK_CRTROM
-
