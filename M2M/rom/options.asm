@@ -1611,7 +1611,7 @@ _OPTM_CBS_1     MOVE    VD_CACHE_DIRTY, R9
                 ADD     R0, R8
                 MOVE    2, @R8                  ; we use "2" instead of "1"
 
-                RBRA    _OPTM_CBS_RET, 1            
+                RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
 
                 ; Case #2b: Show name of disk image
                 ; the replacement string was placed at R0 by HANDLE_MOUNTING
@@ -1668,6 +1668,8 @@ _OPTM_CBS_4     MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 SUB     1, R8
                 ADD     R0, R8
                 MOVE    1, @R8
+
+                RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
 
                 ; ------------------------------------------------------------
                 ; Case (b-2): CRTs/ROMs
