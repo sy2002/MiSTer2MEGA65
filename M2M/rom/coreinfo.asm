@@ -25,6 +25,9 @@ LOG_CORENAME    SYSCALL(enter, 1)
 ; Reset flag and timing variables
 LOG_PREP        INCRB
 
+                MOVE    LOG_HEAP_SHOWN, R0
+                MOVE    0, @R0
+
                 MOVE    LOG_HFREQ_FLAG, R0
                 MOVE    0, @R0
 
@@ -78,20 +81,20 @@ _LOG_CRENFO_S   MOVE    1, @R0                  ; remember that log was shown
                 MOVE    LOG_CORE_VA2, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_X, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 MOVE    LOG_CORE_VA3, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_Y, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_VA4, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_H_PXLS, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 MOVE    LOG_CORE_VA3, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_V_PXLS, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
 
                 ; Warning in case ASCAL and M2M contradict
@@ -112,32 +115,32 @@ _LOG_CRENFO_2   MOVE    LOG_CORE_VTIME, R8
                 MOVE    LOG_CORE_H_PLSE, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_H_PLSE, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_H_FP , R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_H_FP, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_H_BP , R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_H_BP, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_V_PLSE, R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_V_PLSE, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_V_FP , R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_V_FP, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_V_BP , R8
                 SYSCALL(puts, 1)
                 MOVE    M2M$SYS_CORE_V_BP, R8
-                RSUB    _LOG_DECIMAL, 1
+                RSUB    _LOG_DECIMAL_R, 1
                 SYSCALL(crlf, 1)
                 MOVE    LOG_CORE_H_FREQ, R8
                 SYSCALL(puts, 1)
@@ -223,11 +226,159 @@ _LOG_CRENFO_R1  SYSCALL(crlf, 1)                ; 1 line betw. this & the rest
 _LOG_CRENFO_R2  SYSCALL(leave, 1)
                 RET
 
-; Takes register address in R8 and logs the value as a decimal value
+
+; LOG_HEAP1 and LOG_HEAP2 are called within the HELP_MENU routine. They output
+; the utilization of the menu heap and are therefore an indicator, if the
+; user of the framework should increase MENU_HEAP_SIZE.
+; They also conveniently output info about the general QNICE memory status
+;
+; LOG_HEAP 1: R9: Utilization of the menu heap
+; LOG_HEAP 2: 10: Utilization of the OPTM heap
+LOG_HEAP1       SYSCALL(enter, 1)
+
+                ; Skip if already shown
+                MOVE    LOG_HEAP_SHOWN, R0
+                CMP     1, @R0
+                RBRA    _LOG_HEAP1_RET, Z
+
+                ; Output the general QNICE memory status
+                MOVE    LOG_GEN_MEM1, R8
+                SYSCALL(puts, 1)
+#ifdef RELEASE
+                MOVE    VAR$STACK_START, R8
+#else
+                ; @TODO: If the address of VAR$STACK_START in
+                ; ../QNICE/monitor/variables.asm changes, then we need to
+                ; adjust this value, too
+                MOVE    0xFEEB, R8
+#endif
+                SUB     HEAP, R8
+                MOVE    R8, R2
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_MEM2A, R8
+                SYSCALL(puts, 1)
+                MOVE    HEAP_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_MEM2B, R8
+                SYSCALL(puts, 1)
+                MOVE    MENU_HEAP_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_MEM3, R8
+                SYSCALL(puts, 1)
+                MOVE    STACK_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_MEM4, R8
+                SYSCALL(puts, 1)
+                MOVE    STACK_SIZE, R8
+                SUB     B_STACK_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_MEM5, R8
+                SYSCALL(puts, 1)
+                MOVE    B_STACK_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_MEM6, R8
+                SYSCALL(puts, 1)
+                MOVE    R2, R8
+                SUB     HEAP_SIZE, R8
+                SUB     MENU_HEAP_SIZE, R8
+                SUB     STACK_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                MOVE    LOG_GEN_ROM, R8
+                SYSCALL(puts, 1)
+#ifdef RELEASE                
+                MOVE    M2M$RAMROM_DATA, R8
+                SUB     END_OF_ROM, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+#else
+                MOVE    LOG_GEN_ROM_NA, R8
+                SYSCALL(puts, 1)
+#endif                
+
+                ; Output OSM info
+                MOVE    LOG_OSM_HEAP1, R8
+                SYSCALL(puts, 1)
+                MOVE    LOG_OSM_HEAP2, R8
+                SYSCALL(puts, 1)
+                MOVE    MENU_HEAP_SIZE, R8
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+
+                ; output different logs for a standard situation where
+                ; the heap usage is smaller or equal to the heap size and
+                ; an overrun situation
+                CMP     R9, MENU_HEAP_SIZE
+                RBRA    _LOG_HEAP1_1, !N
+                MOVE    LOG_OSM_HEAP3B, R8
+                SYSCALL(puts, 1)
+                SUB     MENU_HEAP_SIZE, R9
+                MOVE    R9, R8
+                RBRA    _LOG_HEAP1_2, 1
+
+_LOG_HEAP1_1    MOVE    LOG_OSM_HEAP3A, R8
+                SYSCALL(puts, 1)
+                MOVE    MENU_HEAP_SIZE, R8
+                SUB     R9, R8
+
+_LOG_HEAP1_2    RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+
+_LOG_HEAP1_RET  SYSCALL(leave, 1)
+                RET
+
+
+LOG_HEAP2       SYSCALL(enter, 1)
+
+                ; Skip if already shown
+                MOVE    LOG_HEAP_SHOWN, R0
+                CMP     1, @R0
+                RBRA    _LOG_HEAP2_RET, Z
+
+                MOVE    LOG_OSM_HEAP4, R8
+                SYSCALL(puts, 1)
+                MOVE    OPTM_HEAP_SIZE, R8
+                MOVE    @R8, R8
+                MOVE    R8, R1
+                RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+
+                ; output different logs depending if we overrun or not
+                CMP     R10, R1
+                RBRA    _LOG_HEAP2_1, !N    
+                MOVE    LOG_OSM_HEAP5B, R8
+                SYSCALL(puts, 1)
+                SUB     R1, R10
+                MOVE    R10, R8            
+                RBRA    _LOG_HEAP2_2, 1
+
+_LOG_HEAP2_1    MOVE    LOG_OSM_HEAP5A, R8
+                SYSCALL(puts, 1)
+                MOVE    R1, R8
+                SUB     R10, R8
+
+_LOG_HEAP2_2    RSUB    _LOG_DECIMAL, 1
+                SYSCALL(crlf, 1)
+                SYSCALL(crlf, 1)
+
+                ; If we reach this point in the code, we have successfully
+                ; shown the log info
+                MOVE    1, @R0
+
+_LOG_HEAP2_RET  SYSCALL(leave, 1)
+                RET
+
+; Logs the value in R8  as a decimal value
 _LOG_DECIMAL    SYSCALL(enter, 1)
 
-                MOVE    @R8, R8                 ; low word of hex value
-                XOR     R9, R9                  ; high word of hex value
+                                                ; R8: low word of hex value
+                XOR     R9, R9                  ; R9: high word of hex value
                 SUB     11, SP                  ; memory for string
                 MOVE    SP, R10
                 SYSCALL(h2dstr, 1)              ; create decimal string
@@ -236,6 +387,15 @@ _LOG_DECIMAL    SYSCALL(enter, 1)
                 SYSCALL(puts, 1)
 
                 ADD     11, SP                  ; free memory on stack
+
+                SYSCALL(leave, 1)
+                RET
+
+; Takes register address in R8 and logs the value as a decimal value
+_LOG_DECIMAL_R  SYSCALL(enter, 1)
+
+                MOVE    @R8, R8
+                RSUB    _LOG_DECIMAL, 1
 
                 SYSCALL(leave, 1)
                 RET

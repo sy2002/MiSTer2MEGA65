@@ -132,6 +132,7 @@ _HLP_SSIC1      SUB     1, R4                   ; one less menu item to go
                 ADD     R10, R9
                 SUB     R8, R9
                 ADD     1, R9
+                RSUB    LOG_HEAP1, 1
                 CMP     R9, MENU_HEAP_SIZE      ; used heap > heap size?
                 RBRA    _HLP_HEAP1_OK, !N       ; no, all OK
 
@@ -139,7 +140,8 @@ _HLP_SSIC1      SUB     1, R4                   ; one less menu item to go
                 ; to hold the menu structure (unlikely, if nobody heavily 
                 ; modified this value from the default) or we have an error
                 ; that leads to heap corruption
-                MOVE    ERR_FATAL_HEAP1, R8     ; R9 contains the overrun
+                MOVE    ERR_FATAL_HEAP1, R8
+                SUB     MENU_HEAP_SIZE, R9      ; R9: overrun
                 RSUB    FATAL, 1
 
                 ; find space for OPTM_HEAP after the above-mentioned data
@@ -182,14 +184,17 @@ _HLP_HEAP1_OK   MOVE    MENU_HEAP_SIZE, R8
                 MOVE    OPTM_HEAP, R11
                 ADD     @R11, @R8
                 MOVE    SCR$OSM_O_DX, R8        ; VDRIVES_NUM + amt submen + 1
-                ADD     @R8, R10 
+                ADD     @R8, R10
+                RSUB    LOG_HEAP2, 1
                 MOVE    OPTM_HEAP_SIZE, R8
                 CMP     R10, @R8                ; demand > heap?
                 RBRA    _HLP_HEAP2_OK, !N       ; no, all OK
 
                 ; If we land here, we have a heap size problem or a bug.
                 ; See above at ERR_FATAL_HEAP1.
-                MOVE    ERR_FATAL_HEAP2, R8     ; R9 contains the overrun
+                MOVE    R10, R9                 ; R9 contains overrun
+                SUB     @R8, R9
+                MOVE    ERR_FATAL_HEAP2, R8
                 RSUB    FATAL, 1 
 
                 ; run the menu

@@ -95,6 +95,8 @@ LOG_HFREQ_FLAG  .BLOCK 1                        ; info has been logged
 LOG_CYC_MID     .BLOCK 1
 LOG_CYC_HI      .BLOCK 1
 
+LOG_HEAP_SHOWN  .BLOCK 1
+
 ; file browser persistent status
 FB_HEAP         .BLOCK 1                        ; heap used by file browser
 FB_STACK        .BLOCK 1                        ; local stack used by browser
