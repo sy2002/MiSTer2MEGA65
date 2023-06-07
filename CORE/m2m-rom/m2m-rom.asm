@@ -185,6 +185,9 @@ CUSTOM_MSG      XOR     R8, R8
 
 ; Add your core specific constants and strings here
 
+; This needs to be the last thing before the "Variables" sections starts
+END_OF_ROM      .DW 0
+
 ; ----------------------------------------------------------------------------
 ; Variables: Need to be located in RAM
 ; ----------------------------------------------------------------------------
