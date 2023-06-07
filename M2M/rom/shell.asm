@@ -929,10 +929,11 @@ HANDLE_IO       SYSCALL(enter, 1)
                 MOVE    R1, @R0                 ; remember new status
                 MOVE    1, @R2                  ; set "changed" flag
 
-                ; Loop through all VDRIVES and check for requests
+                ; Loop through all VDRIVES (if any) and check for requests
 _HANDLE_IO_0    XOR     R0, R0                  ; R0: number of virtual drive
                 MOVE    VDRIVES_NUM, R1
                 MOVE    @R1, R1                 ; R1: amount of vdrives
+                RBRA    _HANDLE_IO_RET, Z       ; skip, if no VDRIVES
 
                 ; read request pending?
 _HANDLE_IO_1    MOVE    R0, R8
@@ -984,7 +985,7 @@ _HANDLE_IO_NXT3 ADD     1, R0                   ; next drive
                 CMP     R0, R1                  ; done?
                 RBRA    _HANDLE_IO_3, !Z        ; no, continue
 
-                SYSCALL(leave, 1)
+_HANDLE_IO_RET  SYSCALL(leave, 1)
                 RET
 
 ; Handle read request from drive number in R8:
