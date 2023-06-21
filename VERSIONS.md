@@ -1,3 +1,8 @@
+Version 1.0.0 - June 21, 2023
+=============================
+
+Commodore 64 for MEGA65 version 5 is based on this version 1.0.0 of the MiSTer2MEGA65 framework.
+
 Version 0.9.1 - January 28, 2023
 ================================
 
