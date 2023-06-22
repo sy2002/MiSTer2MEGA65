@@ -32,11 +32,13 @@ begin
    process (src_clk_i)
    begin
       if rising_edge(src_clk_i) then
+         if src_valid_i = '1' then
          src_data(G_DATA_SIZE-1 downto 0) <= src_data_i;
-         src_data(G_DATA_SIZE) <= src_data(G_DATA_SIZE) xor src_valid_i;
+            src_data(G_DATA_SIZE) <= not src_data(G_DATA_SIZE);
+         end if;
 
          if src_rst_i = '1' then
-            src_data <= (others => '0');
+            src_data(G_DATA_SIZE) <= '0';
          end if;
       end if;
    end process;
