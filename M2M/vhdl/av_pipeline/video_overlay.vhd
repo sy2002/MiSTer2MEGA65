@@ -66,9 +66,12 @@ architecture synthesis of video_overlay is
    signal stage4 : stage_t;
    signal stage5 : stage_t;
    signal stage6 : stage_t;
+   signal stage7 : stage_t;
+   signal stage8 : stage_t;
+   signal stage9 : stage_t;
 
-   signal stage5_vga_osm_on  : std_logic;
-   signal stage5_vga_osm_rgb : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
+   signal stage8_vga_osm_on  : std_logic;
+   signal stage8_vga_osm_rgb : std_logic_vector(23 downto 0);   -- 23..0 = RGB, 8 bits each
 
 begin
 
@@ -122,11 +125,11 @@ begin
          vga_osm_cfg_xy_i      => vga_cfg_xy_i,
          vga_osm_cfg_dxdy_i    => vga_cfg_dxdy_i,
          vga_osm_cfg_enable_i  => vga_cfg_enable_i,
-         vga_osm_vram_addr_o   => vga_vram_addr_o,              -- Stage 2
-         vga_osm_vram_data_i   => vga_vram_data_i( 7 downto 0), -- Stage 3
-         vga_osm_vram_attr_i   => vga_vram_data_i(15 downto 8), -- Stage 3
-         vga_osm_on_o          => stage5_vga_osm_on,
-         vga_osm_rgb_o         => stage5_vga_osm_rgb
+         vga_osm_vram_addr_o   => vga_vram_addr_o,              -- Stage 5
+         vga_osm_vram_data_i   => vga_vram_data_i( 7 downto 0), -- Stage 6
+         vga_osm_vram_attr_i   => vga_vram_data_i(15 downto 8), -- Stage 6
+         vga_osm_on_o          => stage8_vga_osm_on,
+         vga_osm_rgb_o         => stage8_vga_osm_rgb
       ); -- i_vga_osm
 
 
@@ -144,49 +147,40 @@ begin
    end process p_stage2;
 
    -- Delay the video stream to bring it in sync with the OSM overlay.
-   p_stage3 : process (vga_clk_i)
+   p_stage345678 : process (vga_clk_i)
    begin
       if rising_edge(vga_clk_i) then
          stage3 <= stage2;
-      end if;
-   end process p_stage3;
-
-   p_stage4 : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
          stage4 <= stage3;
-      end if;
-   end process p_stage4;
-
-   p_stage5 : process (vga_clk_i)
-   begin
-      if rising_edge(vga_clk_i) then
          stage5 <= stage4;
+         stage6 <= stage5;
+         stage7 <= stage6;
+         stage8 <= stage7;
       end if;
-   end process p_stage5;
+   end process p_stage345678;
 
-   p_stage6 : process (vga_clk_i)
+   p_stage9 : process (vga_clk_i)
    begin
       if rising_edge(vga_clk_i) then
-         stage6 <= stage5;
+         stage9 <= stage5;
 
          -- On-Screen Menu overlay
-         if stage5_vga_osm_on = '1' then
-            stage6.vga_red   <= stage5_vga_osm_rgb(23 downto 16);
-            stage6.vga_green <= stage5_vga_osm_rgb(15 downto  8);
-            stage6.vga_blue  <= stage5_vga_osm_rgb( 7 downto  0);
+         if stage8_vga_osm_on = '1' then
+            stage9.vga_red   <= stage8_vga_osm_rgb(23 downto 16);
+            stage9.vga_green <= stage8_vga_osm_rgb(15 downto  8);
+            stage9.vga_blue  <= stage8_vga_osm_rgb( 7 downto  0);
          end if;
 
       end if;
-   end process p_stage6;
+   end process p_stage9;
 
-   vga_hs_o    <= stage6.vga_hs;
-   vga_vs_o    <= stage6.vga_vs;
-   vga_de_o    <= stage6.vga_de;
-   vga_ce_o    <= stage6.vga_ce;
-   vga_red_o   <= stage6.vga_red;
-   vga_green_o <= stage6.vga_green;
-   vga_blue_o  <= stage6.vga_blue;
+   vga_hs_o    <= stage9.vga_hs;
+   vga_vs_o    <= stage9.vga_vs;
+   vga_de_o    <= stage9.vga_de;
+   vga_ce_o    <= stage9.vga_ce;
+   vga_red_o   <= stage9.vga_red;
+   vga_green_o <= stage9.vga_green;
+   vga_blue_o  <= stage9.vga_blue;
 
 end architecture synthesis;
 
