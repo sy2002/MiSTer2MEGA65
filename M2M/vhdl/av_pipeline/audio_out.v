@@ -43,21 +43,21 @@ localparam FILTER_DIV = (CE_RATE/(AUDIO_RATE*32))-1;
 wire [31:0] real_ce = sample_rate ? {CE_RATE[30:0],1'b0} : CE_RATE[31:0];
 
 reg mclk_ce;
+reg [31:0] cnt1 = 0;
 always @(posedge clk) begin
-	reg [31:0] cnt;
 
 	mclk_ce = 0;
-	cnt = cnt + real_ce;
-	if(cnt >= CLK_RATE) begin
-		cnt = cnt - CLK_RATE;
+	cnt1 = cnt1 + real_ce;
+	if(cnt1 >= CLK_RATE) begin
+		cnt1 = cnt1 - CLK_RATE;
 		mclk_ce = 1;
 	end
 end
 
 reg sample_ce;
+reg [8:0] div = 0;
+reg [1:0] add = 0;
 always @(posedge clk) begin
-	reg [8:0] div = 0;
-	reg [1:0] add = 0;
 
 	div <= div + add;
 	if(!div) begin
@@ -69,13 +69,13 @@ always @(posedge clk) begin
 end
 
 reg flt_ce;
+reg [31:0] cnt2 = 0;
 always @(posedge clk) begin
-	reg [31:0] cnt = 0;
 
 	flt_ce = 0;
-	cnt = cnt + {flt_rate[30:0],1'b0};
-	if(cnt >= CLK_RATE) begin
-		cnt = cnt - CLK_RATE;
+	cnt2 = cnt2 + {flt_rate[30:0],1'b0};
+	if(cnt2 >= CLK_RATE) begin
+		cnt2 = cnt2 - CLK_RATE;
 		flt_ce = 1;
 	end
 end
@@ -94,8 +94,8 @@ end
 
 reg a_en1 = 0, a_en2 = 0;
 always @(posedge clk, posedge reset) begin
-	reg  [1:0] dly1 = 0;
-	reg [14:0] dly2 = 0;
+	reg  [1:0] dly1;
+	reg [14:0] dly2;
 
 	if(reset) begin
 		dly1 <= 0;
@@ -162,6 +162,7 @@ DC_blocker dcb_r
 );
 
 wire [15:0] audio_l_pre;
+wire [15:0] audio_r_pre;
 aud_mix_top audmix_l
 (
 	.clk(clk),
@@ -177,7 +178,6 @@ aud_mix_top audmix_l
 	.out(al)
 );
 
-wire [15:0] audio_r_pre;
 aud_mix_top audmix_r
 (
 	.clk(clk),
@@ -207,8 +207,8 @@ module aud_mix_top
 	input      [15:0] linux_audio,
 	input      [15:0] pre_in,
 
-	output reg [15:0] pre_out = 0,
-	output reg [15:0] out = 0
+	output reg [15:0] pre_out,
+	output reg [15:0] out
 );
 
 reg signed [16:0] a1, a2, a3, a4;

@@ -863,7 +863,7 @@ begin
    -- Clock domain crossing: QNICE to CORE
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 555
+         WIDTH => 550
       )
       port map (
          src_clk                    => qnice_clk,
@@ -873,17 +873,12 @@ begin
          src_in(3)                  => qnice_csr_joy1_on,
          src_in(4)                  => qnice_csr_joy2_on,
          src_in(5)                  => qnice_flip_joyports_i,
-         src_in(6)                  => '0',
-         src_in(7)                  => '0',
-         src_in(8)                  => '0',
-         src_in(264 downto 9)       => qnice_osm_control_m_o,
-         src_in(520 downto 265)     => qnice_gp_reg_o,
-         src_in(521)                => '0',
-         src_in(522)                => '0',
-         src_in(530 downto 523)     => std_logic_vector(qnice_pot1_x_n),
-         src_in(538 downto 531)     => std_logic_vector(qnice_pot1_y_n),
-         src_in(546 downto 539)     => std_logic_vector(qnice_pot2_x_n),
-         src_in(554 downto 547)     => std_logic_vector(qnice_pot2_y_n),
+         src_in(261 downto 6)       => qnice_osm_control_m_o,
+         src_in(517 downto 262)     => qnice_gp_reg_o,
+         src_in(525 downto 518)     => std_logic_vector(qnice_pot1_x_n),
+         src_in(533 downto 526)     => std_logic_vector(qnice_pot1_y_n),
+         src_in(541 downto 534)     => std_logic_vector(qnice_pot2_x_n),
+         src_in(549 downto 542)     => std_logic_vector(qnice_pot2_y_n),
          dest_clk                   => main_clk_i,
          dest_out(0)                => main_qnice_reset_o,
          dest_out(1)                => main_qnice_pause_o,
@@ -891,17 +886,12 @@ begin
          dest_out(3)                => main_csr_joy1_on,
          dest_out(4)                => main_csr_joy2_on,
          dest_out(5)                => main_flip_joyports,
-         dest_out(6)                => open,
-         dest_out(7)                => open,
-         dest_out(8)                => open,
-         dest_out(264 downto 9)     => main_osm_control_m_o,
-         dest_out(520 downto 265)   => main_qnice_gp_reg_o,
-         dest_out(521)              => open,
-         dest_out(522)              => open,
-         dest_out(530 downto 523)   => main_pot1_x_o,
-         dest_out(538 downto 531)   => main_pot1_y_o,
-         dest_out(546 downto 539)   => main_pot2_x_o,
-         dest_out(554 downto 547)   => main_pot2_y_o
+         dest_out(261 downto 6)     => main_osm_control_m_o,
+         dest_out(517 downto 262)   => main_qnice_gp_reg_o,
+         dest_out(525 downto 518)   => main_pot1_x_o,
+         dest_out(533 downto 526)   => main_pot1_y_o,
+         dest_out(541 downto 534)   => main_pot2_x_o,
+         dest_out(549 downto 542)   => main_pot2_y_o
       ); -- i_qnice2main
 
    -- Clock domain crossing: CORE to QNICE

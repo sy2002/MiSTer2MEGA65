@@ -20,7 +20,8 @@ module video_mixer
 #(
 	parameter LINE_LENGTH  = 768,
 	parameter HALF_DEPTH   = 0,
-	parameter GAMMA        = 0
+	parameter GAMMA        = 0,
+    localparam DWIDTH = HALF_DEPTH ? 3 : 7
 )
 (
 	input            CLK_VIDEO, // should be multiple by (ce_pix*4)
@@ -59,7 +60,6 @@ module video_mixer
 	output reg       VGA_DE
 );
 
-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
 localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
 localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
 

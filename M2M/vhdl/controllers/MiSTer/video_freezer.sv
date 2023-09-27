@@ -77,7 +77,7 @@ assign sync = sync_o;
 endmodule
 
 
-module sync_lock #(parameter WIDTH)
+module sync_lock #(parameter WIDTH=1)
 (
 	input   clk,
 

@@ -10,7 +10,11 @@
 
 // altera message_off 10030
 
-module Hq2x #(parameter LENGTH, parameter HALF_DEPTH)
+module Hq2x #(
+    parameter LENGTH     = 768,
+    parameter HALF_DEPTH = 0,
+    localparam DWIDTH = HALF_DEPTH ? 11 : 23
+)
 (
 	input             clk,
 
@@ -29,7 +33,6 @@ module Hq2x #(parameter LENGTH, parameter HALF_DEPTH)
 
 
 localparam AWIDTH = $clog2(LENGTH)-1;
-localparam DWIDTH = HALF_DEPTH ? 11 : 23;
 localparam DWIDTH1 = DWIDTH+1;
 
 (* romstyle = "MLAB" *) reg [5:0] hqTable[256];
@@ -54,11 +57,11 @@ initial begin
 	};
 end
 
+reg  [7:0] pattern, nextpatt;
 wire [5:0] hqrule = hqTable[nextpatt];
 
 reg [23:0] Prev0, Prev1, Prev2, Curr0, Curr1, Curr2, Next0, Next1, Next2;
 reg [23:0] A, B, D, F, G, H;
-reg  [7:0] pattern, nextpatt;
 reg  [1:0] cyc;
 
 reg  curbuf;
@@ -98,6 +101,7 @@ begin
 end
 endfunction
 
+reg [AWIDTH:0] offs;
 hq2x_in #(.LENGTH(LENGTH), .DWIDTH(DWIDTH)) hq2x_in
 (
 	.clk(clk),
@@ -145,7 +149,6 @@ end
 
 wire [DWIDTH:0] blend_result = HALF_DEPTH ? rgb2h(blend_result_pre) : blend_result_pre[DWIDTH:0];
 
-reg [AWIDTH:0] offs;
 always @(posedge clk) begin
 	reg old_reset_line;
 	reg old_reset_frame;
@@ -223,7 +226,11 @@ endmodule
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-module hq2x_in #(parameter LENGTH, parameter DWIDTH)
+module hq2x_in #(
+    parameter LENGTH = 768,
+    parameter DWIDTH = 23,
+    localparam AWIDTH = $clog2(LENGTH)-1
+)
 (
 	input            clk,
 
@@ -237,7 +244,6 @@ module hq2x_in #(parameter LENGTH, parameter DWIDTH)
 	input            wren
 );
 
-localparam AWIDTH = $clog2(LENGTH)-1;
 wire  [DWIDTH:0] out[2];
 assign q0 = out[rdbuf0];
 assign q1 = out[rdbuf1];
@@ -247,7 +253,11 @@ hq2x_buf #(.NUMWORDS(LENGTH), .AWIDTH(AWIDTH), .DWIDTH(DWIDTH)) buf1(clk,data,rd
 
 endmodule
 
-module hq2x_buf #(parameter NUMWORDS, parameter AWIDTH, parameter DWIDTH)
+module hq2x_buf #(
+    parameter NUMWORDS = 768,
+    parameter AWIDTH   = 9,
+    parameter DWIDTH   = 23
+)
 (
 	input                 clock,
 	input      [DWIDTH:0] data,

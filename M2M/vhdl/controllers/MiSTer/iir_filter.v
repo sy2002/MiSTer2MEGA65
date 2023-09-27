@@ -61,12 +61,17 @@ wire [23:0] vcoeff_y0 = use_params ? pcoeff_y0[23:0] : cy0;
 wire [23:0] vcoeff_y1 = use_params ? pcoeff_y1[23:0] : cy1;
 wire [23:0] vcoeff_y2 = use_params ? pcoeff_y2[23:0] : cy2;
 
+reg  [15:0] inp, inp_m;
 wire [59:0] inp_mul = $signed(inp) * $signed(vcoeff);
+
+reg         ch = 0;
+wire [39:0] tap0;
+wire [39:0] tap1;
+wire [39:0] tap2;
 
 wire [39:0] x = inp_mul[59:20];
 wire [39:0] y = x + tap0;
 
-wire [39:0] tap0;
 iir_filter_tap iir_tap_0
 (
 	.clk(clk),
@@ -81,7 +86,6 @@ iir_filter_tap iir_tap_0
 	.tap(tap0)
 );
 
-wire [39:0] tap1;
 iir_filter_tap iir_tap_1
 (
 	.clk(clk),
@@ -96,7 +100,6 @@ iir_filter_tap iir_tap_1
 	.tap(tap1)
 );
 
-wire [39:0] tap2;
 iir_filter_tap iir_tap_2
 (
 	.clk(clk),
@@ -113,9 +116,7 @@ iir_filter_tap iir_tap_2
 
 wire [15:0] y_clamp = (~y[39] & |y[38:35]) ? 16'h7FFF : (y[39] & ~&y[38:35]) ? 16'h8000 : y[35:20];
 
-reg        ch = 0;
 reg [15:0] out_l, out_r, out_m;
-reg [15:0] inp, inp_m;
 always @(posedge clk) if (ce) begin
 	if(!stereo) begin
 		ch    <= 0;
@@ -197,12 +198,12 @@ module DC_blocker
 	output [15:0] dout
 );
 
+reg  [39:0] x1, y;
 wire [39:0] x  = {din[15], din, 23'd0};
 wire [39:0] x0 = x - (sample_rate ? {{11{x[39]}}, x[39:11]} : {{10{x[39]}}, x[39:10]});
 wire [39:0] y1 = y - (sample_rate ? {{10{y[39]}}, y[39:10]} : {{09{y[39]}}, y[39:09]});
 wire [39:0] y0 = x0 - x1 + y1;
 
-reg  [39:0] x1, y;
 always @(posedge clk) if(ce) begin
 	x1 <= x0;
 	y  <= ^y0[39:38] ? {{2{y0[39]}},{38{y0[38]}}} : y0;
