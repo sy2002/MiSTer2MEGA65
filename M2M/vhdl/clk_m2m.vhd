@@ -15,6 +15,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library unisim;
+use unisim.vcomponents.all;
+
 library xpm;
 use xpm.vcomponents.all;
 
@@ -99,7 +102,7 @@ begin
          CLKOUT4_PHASE        => 0.000,
          DIVCLK_DIVIDE        => 1,
          REF_JITTER1          => 0.010,
-         STARTUP_WAIT         => FALSE
+         STARTUP_WAIT         => "FALSE"
       )
       port map (
          CLKFBIN             => qnice_fb_mmcm,
