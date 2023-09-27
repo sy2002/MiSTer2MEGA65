@@ -51,10 +51,14 @@ architecture synthesis of vga_osm is
    constant CHARS_DY               : integer := G_VGA_DY / G_FONT_DY;
 
    type stage_t is record
+      vga_col           : integer range 0 to 2047;
+      vga_row           : integer range 0 to 2047;
       vga_osm_x1        : integer range 0 to 127;
       vga_osm_x2        : integer range 0 to 127;
       vga_osm_y1        : integer range 0 to 127;
       vga_osm_y2        : integer range 0 to 127;
+      vga_col_delta     : integer range 0 to 2047;
+      vga_row_delta     : integer range 0 to 2047;
       vga_x_div_16      : integer range 0 to 127;
       vga_y_div_16      : integer range 0 to 127;
       vga_x_mod_16      : integer range 0 to 15;
@@ -64,9 +68,6 @@ architecture synthesis of vga_osm is
       vga_osm_rgb       : std_logic_vector(23 downto 0);
    end record stage_t;
 
-   signal vga_col       : integer range 0 to 2047;
-   signal vga_row       : integer range 0 to 2047;
-
    signal stage0 : stage_t;
    signal stage1 : stage_t;
    signal stage2 : stage_t;
@@ -75,43 +76,37 @@ architecture synthesis of vga_osm is
    signal stage2_vga_osm_font_addr : std_logic_vector(11 downto 0);
    signal stage3_vga_osm_font_data : std_logic_vector(15 downto 0);
 
-   signal vga_osm_cfg_scaling_d : integer range 0 to 8;
-
 begin
 
    -----------
    -- Stage 0
    -----------
 
-   calc_boundaries : process (all)
+   p_stage0 : process (all)
       variable vga_osm_x : integer range 0 to 127;
       variable vga_osm_y : integer range 0 to 127;
    begin
       vga_osm_x  := to_integer(vga_osm_cfg_xy_i(15 downto 8));
       vga_osm_y  := to_integer(vga_osm_cfg_xy_i(7 downto 0));
-      stage0.vga_osm_x1 <= vga_osm_x;
-      stage0.vga_osm_y1 <= vga_osm_y;
-      stage0.vga_osm_x2 <= vga_osm_x + to_integer(vga_osm_cfg_dxdy_i(15 downto 8));
-      stage0.vga_osm_y2 <= vga_osm_y + to_integer(vga_osm_cfg_dxdy_i(7 downto 0));
-   end process calc_boundaries;
+      stage0.vga_osm_x1    <= vga_osm_x;
+      stage0.vga_osm_y1    <= vga_osm_y;
+      stage0.vga_osm_x2    <= vga_osm_x + to_integer(vga_osm_cfg_dxdy_i(15 downto 8));
+      stage0.vga_osm_y2    <= vga_osm_y + to_integer(vga_osm_cfg_dxdy_i( 7 downto 0));
+      stage0.vga_col_delta <= vga_col_i - to_integer(vga_osm_cfg_dxdy_i(15 downto 8)) * G_FONT_DX / 2;
+      stage0.vga_row_delta <= vga_row_i - to_integer(vga_osm_cfg_dxdy_i( 7 downto 0)) * G_FONT_DY / 2;
 
-   -- This part implements the fractional scaling
-   -- It also makes sure there is no overflow.
-   process (all)
-   begin
+      -- This part implements the fractional scaling
+      -- It also makes sure there is no overflow.
       -- Default is no scaling.
-      vga_col <= vga_col_i;
-      vga_row <= vga_row_i;
-
+      stage0.vga_col <= vga_col_i;
+      stage0.vga_row <= vga_row_i;
       if vga_col_i < G_VGA_DX then
-         vga_col <= vga_col_i +
-                    (vga_osm_cfg_scaling_i * (vga_col_i - to_integer(vga_osm_cfg_dxdy_i(15 downto 8)) * G_FONT_DX / 2)) / 8;
+         stage0.vga_col <= vga_col_i + (vga_osm_cfg_scaling_i * stage0.vga_col_delta) / 8;
       end if;
       if vga_row_i < G_VGA_DY then
-         vga_row <= vga_row_i +
-                    (vga_osm_cfg_scaling_i * (vga_row_i - to_integer(vga_osm_cfg_dxdy_i( 7 downto 0)) * G_FONT_DY / 2)) / 8;
+         stage0.vga_row <= vga_row_i + (vga_osm_cfg_scaling_i * stage0.vga_row_delta) / 8;
       end if;
-   end process;
+   end process p_stage0;
 
 
    -----------
@@ -121,12 +116,11 @@ begin
    p_stage1 : process (clk_i)
    begin
       if rising_edge(clk_i) then
-         vga_osm_cfg_scaling_d <= vga_osm_cfg_scaling_i;
          stage1 <= stage0;
-         stage1.vga_x_div_16 <= vga_col / G_FONT_DX;
-         stage1.vga_y_div_16 <= vga_row / G_FONT_DY;
-         stage1.vga_x_mod_16 <= vga_col mod G_FONT_DX;
-         stage1.vga_y_mod_16 <= vga_row mod G_FONT_DY;
+         stage1.vga_x_div_16 <= stage0.vga_col / G_FONT_DX;
+         stage1.vga_y_div_16 <= stage0.vga_row / G_FONT_DY;
+         stage1.vga_x_mod_16 <= stage0.vga_col mod G_FONT_DX;
+         stage1.vga_y_mod_16 <= stage0.vga_row mod G_FONT_DY;
       end if;
    end process p_stage1;
 
