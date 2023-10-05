@@ -51,87 +51,60 @@ architecture synthesis of vga_osm is
    constant CHARS_DY               : integer := G_VGA_DY / G_FONT_DY;
 
    type stage_t is record
-      vga_osm_x1        : integer range 0 to 127;
-      vga_osm_x2        : integer range 0 to 127;
-      vga_osm_y1        : integer range 0 to 127;
-      vga_osm_y2        : integer range 0 to 127;
-      vga_x_div_16      : integer range 0 to 127;
-      vga_y_div_16      : integer range 0 to 127;
-      vga_x_mod_16      : integer range 0 to 15;
-      vga_y_mod_16      : integer range 0 to 15;
-      vga_osm_vram_attr : std_logic_vector( 7 downto 0);
-      vga_osm_on        : std_logic;
-      vga_osm_rgb       : std_logic_vector(23 downto 0);
+      vga_col             : integer range 0 to 2047;
+      vga_row             : integer range 0 to 2047;
+      vga_osm_cfg_scaling : integer range 0 to 8;
+      vga_osm_x1          : integer range 0 to 127;
+      vga_osm_x2          : integer range 0 to 127;
+      vga_osm_y1          : integer range 0 to 127;
+      vga_osm_y2          : integer range 0 to 127;
+      vga_col_delta       : integer range 0 to 2047;
+      vga_row_delta       : integer range 0 to 2047;
+      vga_x_div_16        : integer range 0 to 127;
+      vga_y_div_16        : integer range 0 to 127;
+      vga_x_mod_16        : integer range 0 to 15;
+      vga_y_mod_16        : integer range 0 to 15;
+      vga_osm_vram_addr   : std_logic_vector(15 downto 0);
+      vga_osm_vram_attr   : std_logic_vector( 7 downto 0);
+      vga_osm_on          : std_logic;
+      vga_osm_rgb         : std_logic_vector(23 downto 0);
    end record stage_t;
 
-   signal vga_col       : integer range 0 to 2047;
-   signal vga_row       : integer range 0 to 2047;
-
-   signal stage0 : stage_t;
    signal stage1 : stage_t;
    signal stage2 : stage_t;
    signal stage3 : stage_t;
    signal stage4 : stage_t;
-   signal stage2_vga_osm_font_addr : std_logic_vector(11 downto 0);
-   signal stage3_vga_osm_font_data : std_logic_vector(15 downto 0);
-
-   signal vga_osm_cfg_scaling_d : integer range 0 to 8;
+   signal stage5 : stage_t;
+   signal stage6 : stage_t;
+   signal stage7 : stage_t;
+   signal stage5_vga_osm_font_addr : std_logic_vector(11 downto 0);
+   signal stage5_vga_osm_vram_attr : std_logic_vector( 7 downto 0);
+   signal stage6_vga_osm_font_data : std_logic_vector(15 downto 0);
 
 begin
-
-   -----------
-   -- Stage 0
-   -----------
-
-   calc_boundaries : process (all)
-      variable vga_osm_x : integer range 0 to 127;
-      variable vga_osm_y : integer range 0 to 127;
-   begin
-      vga_osm_x  := to_integer(vga_osm_cfg_xy_i(15 downto 8));
-      vga_osm_y  := to_integer(vga_osm_cfg_xy_i(7 downto 0));
-      stage0.vga_osm_x1 <= vga_osm_x;
-      stage0.vga_osm_y1 <= vga_osm_y;
-      stage0.vga_osm_x2 <= vga_osm_x + to_integer(vga_osm_cfg_dxdy_i(15 downto 8));
-      stage0.vga_osm_y2 <= vga_osm_y + to_integer(vga_osm_cfg_dxdy_i(7 downto 0));
-   end process calc_boundaries;
-
-   -- This part implements the fractional scaling
-   -- It also makes sure there is no overflow.
-   process (all)
-   begin
-      -- Default is no scaling.
-      vga_col <= vga_col_i;
-      vga_row <= vga_row_i;
-
-      if vga_col_i < G_VGA_DX then
-         vga_col <= vga_col_i +
-                    (vga_osm_cfg_scaling_i * (vga_col_i - to_integer(vga_osm_cfg_dxdy_i(15 downto 8)) * G_FONT_DX / 2)) / 8;
-      end if;
-      if vga_row_i < G_VGA_DY then
-         vga_row <= vga_row_i +
-                    (vga_osm_cfg_scaling_i * (vga_row_i - to_integer(vga_osm_cfg_dxdy_i( 7 downto 0)) * G_FONT_DY / 2)) / 8;
-      end if;
-   end process;
-
 
    -----------
    -- Stage 1
    -----------
 
-   p_stage1 : process (clk_i)
+   p_stage1 : process (all)
+      variable vga_osm_x : integer range 0 to 127;
+      variable vga_osm_y : integer range 0 to 127;
    begin
       if rising_edge(clk_i) then
-         vga_osm_cfg_scaling_d <= vga_osm_cfg_scaling_i;
-         stage1 <= stage0;
-         stage1.vga_x_div_16 <= vga_col / G_FONT_DX;
-         stage1.vga_y_div_16 <= vga_row / G_FONT_DY;
-         stage1.vga_x_mod_16 <= vga_col mod G_FONT_DX;
-         stage1.vga_y_mod_16 <= vga_row mod G_FONT_DY;
+         vga_osm_x  := to_integer(vga_osm_cfg_xy_i(15 downto 8));
+         vga_osm_y  := to_integer(vga_osm_cfg_xy_i(7 downto 0));
+         stage1.vga_osm_x1          <= vga_osm_x;
+         stage1.vga_osm_y1          <= vga_osm_y;
+         stage1.vga_osm_x2          <= vga_osm_x + to_integer(vga_osm_cfg_dxdy_i(15 downto 8));
+         stage1.vga_osm_y2          <= vga_osm_y + to_integer(vga_osm_cfg_dxdy_i( 7 downto 0));
+         stage1.vga_col             <= vga_col_i;
+         stage1.vga_row             <= vga_row_i;
+         stage1.vga_col_delta       <= vga_col_i - to_integer(vga_osm_cfg_dxdy_i(15 downto 8)) * G_FONT_DX / 2;
+         stage1.vga_row_delta       <= vga_row_i - to_integer(vga_osm_cfg_dxdy_i( 7 downto 0)) * G_FONT_DY / 2;
+         stage1.vga_osm_cfg_scaling <= vga_osm_cfg_scaling_i;
       end if;
    end process p_stage1;
-
-   -- Read character and attribute from VRAM. Available in stage 2
-   vga_osm_vram_addr_o <= to_stdlogicvector(stage1.vga_y_div_16 * CHARS_DX + stage1.vga_x_div_16, 16);
 
 
    -----------
@@ -142,16 +115,70 @@ begin
    begin
       if rising_edge(clk_i) then
          stage2 <= stage1;
+         -- This part implements the fractional scaling
+         -- It also makes sure there is no overflow.
+         -- Default is no scaling.
+         if stage1.vga_col < G_VGA_DX then
+            stage2.vga_col <= stage1.vga_col + (stage1.vga_osm_cfg_scaling * stage1.vga_col_delta) / 8;
+         end if;
+         if stage1.vga_row < G_VGA_DY then
+            stage2.vga_row <= stage1.vga_row + (stage1.vga_osm_cfg_scaling * stage1.vga_row_delta) / 8;
+         end if;
       end if;
    end process p_stage2;
-
-   -- Read font data. Available in stage 3
-   stage2_vga_osm_font_addr <= to_stdlogicvector(to_integer(vga_osm_vram_data_i) * G_FONT_DY + stage2.vga_y_mod_16, 12);
 
 
    -----------
    -- Stage 3
    -----------
+
+   p_stage3 : process (clk_i)
+   begin
+      if rising_edge(clk_i) then
+         stage3 <= stage2;
+         stage3.vga_x_div_16 <= stage2.vga_col / G_FONT_DX;
+         stage3.vga_y_div_16 <= stage2.vga_row / G_FONT_DY;
+         stage3.vga_x_mod_16 <= stage2.vga_col mod G_FONT_DX;
+         stage3.vga_y_mod_16 <= stage2.vga_row mod G_FONT_DY;
+      end if;
+   end process p_stage3;
+
+
+   -----------
+   -- Stage 4
+   -----------
+
+   p_stage4 : process (clk_i)
+   begin
+      if rising_edge(clk_i) then
+         stage4 <= stage3;
+         stage4.vga_osm_vram_addr <= to_stdlogicvector(stage3.vga_y_div_16 * CHARS_DX + stage3.vga_x_div_16, 16);
+      end if;
+   end process p_stage4;
+
+
+   -----------
+   -- Stage 5
+   -----------
+
+   -- Read character and attribute from VRAM. Available in stage 5
+   vga_osm_vram_addr_o <= stage4.vga_osm_vram_addr;
+
+   p_stage5 : process (clk_i)
+   begin
+      if rising_edge(clk_i) then
+         stage5 <= stage4;
+      end if;
+   end process p_stage5;
+
+
+   -----------
+   -- Stage 6
+   -----------
+
+   -- Read font data. Available in stage 6
+   stage5_vga_osm_font_addr <= to_stdlogicvector(to_integer(vga_osm_vram_data_i) * G_FONT_DY + stage5.vga_y_mod_16, 12);
+   stage5_vga_osm_vram_attr <= vga_osm_vram_attr_i;
 
    -- 16x16 pixel font ROM
    font : entity work.dualport_2clk_ram
@@ -165,25 +192,25 @@ begin
       port map
       (
          clock_a      => clk_i,
-         address_a    => stage2_vga_osm_font_addr,
-         q_a          => stage3_vga_osm_font_data
+         address_a    => stage5_vga_osm_font_addr,
+         q_a          => stage6_vga_osm_font_data
       ); -- font
 
-   p_stage3 : process (clk_i)
+   p_stage6 : process (clk_i)
    begin
       if rising_edge(clk_i) then
-         stage3 <= stage2;
-         stage3.vga_osm_vram_attr <= vga_osm_vram_attr_i;
+         stage6 <= stage5;
+         stage6.vga_osm_vram_attr <= stage5_vga_osm_vram_attr;
       end if;
-   end process p_stage3;
+   end process p_stage6;
 
 
    -----------
-   -- Stage 4
+   -- Stage 7
    -----------
 
    -- render OSM: calculate the pixel that needs to be shown at the given position
-   p_stage4 : process (clk_i)
+   p_stage7 : process (clk_i)
 
       function attr2rgb(attr: in std_logic_vector(3 downto 0)) return std_logic_vector is
          variable r, g, b    : std_logic_vector(7 downto 0);
@@ -199,26 +226,26 @@ begin
    begin
       if rising_edge(clk_i) then
          -- if pixel is set in font (and take care of inverse on/off)
-         if stage3_vga_osm_font_data(15 - stage3.vga_x_mod_16) = not stage3.vga_osm_vram_attr(7) then
+         if stage6_vga_osm_font_data(15 - stage6.vga_x_mod_16) = not stage6.vga_osm_vram_attr(7) then
             -- foreground color
-            stage4.vga_osm_rgb <= attr2rgb(stage3.vga_osm_vram_attr(6) & stage3.vga_osm_vram_attr(2 downto 0));
+            stage7.vga_osm_rgb <= attr2rgb(stage6.vga_osm_vram_attr(6) & stage6.vga_osm_vram_attr(2 downto 0));
          else
             -- background color
-            stage4.vga_osm_rgb <= attr2rgb(stage3.vga_osm_vram_attr(6 downto 3));
+            stage7.vga_osm_rgb <= attr2rgb(stage6.vga_osm_vram_attr(6 downto 3));
          end if;
 
-         stage4.vga_osm_on <= '0';
-         if stage3.vga_x_div_16 >= stage3.vga_osm_x1 and stage3.vga_x_div_16 < stage3.vga_osm_x2 and
-            stage3.vga_y_div_16 >= stage3.vga_osm_y1 and stage3.vga_y_div_16 < stage3.vga_osm_y2
+         stage7.vga_osm_on <= '0';
+         if stage6.vga_x_div_16 >= stage6.vga_osm_x1 and stage6.vga_x_div_16 < stage6.vga_osm_x2 and
+            stage6.vga_y_div_16 >= stage6.vga_osm_y1 and stage6.vga_y_div_16 < stage6.vga_osm_y2
          then
-            stage4.vga_osm_on <= vga_osm_cfg_enable_i;
+            stage7.vga_osm_on <= vga_osm_cfg_enable_i;
          end if;
       end if;
-   end process p_stage4;
+   end process p_stage7;
 
 
-   vga_osm_rgb_o <= stage4.vga_osm_rgb;
-   vga_osm_on_o  <= stage4.vga_osm_on;
+   vga_osm_rgb_o <= stage7.vga_osm_rgb;
+   vga_osm_on_o  <= stage7.vga_osm_on;
 
 end architecture synthesis;
 
