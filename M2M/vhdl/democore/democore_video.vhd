@@ -11,7 +11,6 @@ entity democore_video is
    );
    port (
       clk_main_i     : in  std_logic;
-      reset_i        : in  std_logic;
 
       -- Ball's RGB color value
       ball_col_rgb_i : in  std_logic_vector(23 downto 0);

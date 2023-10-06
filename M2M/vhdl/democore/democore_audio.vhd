@@ -18,7 +18,6 @@ entity democore_audio is
    );
    port (
       clk_i         : in  std_logic;
-      rst_i         : in  std_logic;
 
       freq_i        : in  std_logic_vector(15 downto 0);
       vol_left_i    : in  std_logic_vector(15 downto 0);

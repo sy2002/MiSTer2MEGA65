@@ -78,7 +78,7 @@ begin
          clk_i          => clk_main_i,
          rst_i          => reset_i,
          paddle_speed_i => paddle_speed_i,
-         update_i       => update,
+         update_i       => update and not pause_i,
          player_start_i => not (keyboard_n_i(m65_space)     and joy_fire_n_i),
          player_left_i  => not (keyboard_n_i(m65_left_crsr) and joy_left_n_i),
          player_right_i => not (keyboard_n_i(m65_horz_crsr) and joy_right_n_i),
@@ -96,7 +96,6 @@ begin
       )
       port map (
          clk_main_i     => clk_main_i,
-         reset_i        => reset_i,
          ball_col_rgb_i => ball_col_rgb_i,
          ball_pos_x_i   => ball_pos_x,
          ball_pos_y_i   => ball_pos_y,
@@ -125,7 +124,6 @@ begin
       )
       port map (
          clk_i         => clk_main_i,
-         rst_i         => reset_i,
          freq_i        => audio_freq,
          vol_left_i    => audio_vol_left,
          vol_right_i   => audio_vol_right,
