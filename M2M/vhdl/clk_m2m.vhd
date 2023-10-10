@@ -70,7 +70,16 @@ signal hdmi_576p_locked   : std_logic;
 
 signal sys_counter        : natural range 0 to 99_999_999;
 
+-- Prevent Vivado from optimizing/renaming the signal hdmi_clk_sel_i
+-- A separate internal signal is needed, because the "keep" attribute
+-- does not work on ports, see Vivado Design Suite Properties Reference Guide (UG912).
+signal hdmi_clk_sel       : std_logic;
+attribute keep : string;
+attribute keep of hdmi_clk_sel : signal is "true";
+
 begin
+
+   hdmi_clk_sel <= hdmi_clk_sel_i;
 
    -------------------------------------------------------------------------------------
    -- Generate QNICE and HyperRAM clock
@@ -216,7 +225,7 @@ begin
 
    tmds_clk_bufgmux : BUFGMUX_CTRL
       port map (
-         S  => hdmi_clk_sel_i,
+         S  => hdmi_clk_sel,
          I0 => tmds_720p_clk_mmcm,
          I1 => tmds_576p_clk_mmcm,
          O  => tmds_clk_o
@@ -224,7 +233,7 @@ begin
 
    hdmi_clk_bufgmux : BUFGMUX_CTRL
       port map (
-         S  => hdmi_clk_sel_i,
+         S  => hdmi_clk_sel,
          I0 => hdmi_720p_clk_mmcm,
          I1 => hdmi_576p_clk_mmcm,
          O  => hdmi_clk_o

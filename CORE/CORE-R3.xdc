@@ -55,7 +55,7 @@ set_false_path -from [get_clocks qnice_clk]       -to [get_clocks tmds_720p_clk]
 
 ## Assume the HDMI output is 720p, which is the fastest clock.
 ## No need to do timing analysis on the slower HDMI clocks as well.
-set_case_analysis 0 [get_nets M2M/i_framework/i_clk_m2m/hdmi_clk_sel_i]
+set_case_analysis 0 [get_nets M2M/i_framework/i_clk_m2m/hdmi_clk_sel]
 
 ## The high level reset signals are slow enough so that we can afford a false path
 set_false_path -from [get_pins M2M/i_framework/i_reset_manager/reset_m2m_n_o_reg/C]
