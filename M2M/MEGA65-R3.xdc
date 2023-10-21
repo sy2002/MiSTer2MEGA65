@@ -1,6 +1,10 @@
-## Commodore 64 for MEGA65 (C64MEGA65)
+## NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
 ##
-## MEGA65 port done by MJoergen and sy2002 in 2023 and licensed under GPL v3
+## Signal mapping for CORE-R3
+##
+## This machine is based on EXACT GITHUB REPO NAME OF THE MiSTer REPO
+## Powered by MiSTer2MEGA65
+## MEGA65 port done by YOURNAME in YEAR and licensed under GPL v3
 
 ################################
 ## Pin to signal mapping
@@ -323,7 +327,7 @@ create_generated_clock -name tmds_720p_clk [get_pins i_hal_mega65_r3/i_framework
 create_generated_clock -name hdmi_720p_clk [get_pins i_hal_mega65_r3/i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT1]
 create_generated_clock -name tmds_576p_clk [get_pins i_hal_mega65_r3/i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT0]
 create_generated_clock -name hdmi_576p_clk [get_pins i_hal_mega65_r3/i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT1]
-create_generated_clock -name main_clk      [get_pins CORE/clk_gen/i_clk_c64_orig/CLKOUT0]
+create_generated_clock -name main_clk      [get_pins CORE/clk_gen/i_clk_main/CLKOUT0]
 
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins i_hal_mega65_r3/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins i_hal_mega65_r3/i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
