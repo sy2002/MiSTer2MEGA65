@@ -57,10 +57,6 @@ entity analog_pipeline is
       vdac_syncn_o            : out std_logic;
       vdac_blankn_o           : out std_logic;
 
-      -- Audio output (3.5 mm jack)
-      pwm_l_o                 : out std_logic;
-      pwm_r_o                 : out std_logic;
-
       -- Connect to QNICE and Video RAM
       video_osm_cfg_scaling_i : in  natural range 0 to 8;
       video_osm_cfg_enable_i  : in  std_logic;
@@ -124,23 +120,6 @@ architecture synthesis of analog_pipeline is
    end component video_mixer;
 
 begin
-
-   ---------------------------------------------------------------------------------------------
-   -- Audio output (3.5 mm jack)
-   ---------------------------------------------------------------------------------------------
-
-   -- Convert the C64's PCM output to pulse density modulation
-   i_pcm2pdm : entity work.pcm_to_pdm
-      port map
-      (
-         cpuclock         => audio_clk_i,
-         pcm_left         => audio_left_i,
-         pcm_right        => audio_right_i,
-         -- Pulse Density Modulation (PDM is supposed to sound better than PWM on MEGA65)
-         pdm_left         => pwm_l_o,
-         pdm_right        => pwm_r_o,
-         audio_mode       => '0'         -- 0=PDM, 1=PWM
-      ); -- i_pcm2pdm
 
    ---------------------------------------------------------------------------------------------
    -- Video output (VGA)

@@ -47,6 +47,7 @@ port (
    qnice_retro15kHz_o      : out std_logic;              -- 0 = normal frequency, 1 = retro 15 kHz frequency
    qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
    qnice_osm_cfg_scaling_o : out std_logic_vector(8 downto 0);
+   qnice_audio_test_o      : out std_logic;
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
@@ -143,7 +144,55 @@ port (
    hr_core_readdatavalid_i : in  std_logic;
    hr_core_waitrequest_i   : in  std_logic;
    hr_high_i               : in  std_logic;  -- Core is too fast
-   hr_low_i                : in  std_logic   -- Core is too slow
+   hr_low_i                : in  std_logic;  -- Core is too slow
+
+   --------------------------------------------------------------------
+   -- C64 specific ports that are not supported by the M2M framework
+   --------------------------------------------------------------------
+
+   -- CBM-488/IEC serial port
+   iec_reset_n_o           : out std_logic;
+   iec_atn_n_o             : out std_logic;
+   iec_clk_en_o            : out std_logic;
+   iec_clk_n_i             : in  std_logic;
+   iec_clk_n_o             : out std_logic;
+   iec_data_en_o           : out std_logic;
+   iec_data_n_i            : in  std_logic;
+   iec_data_n_o            : out std_logic;
+   iec_srq_en_o            : out std_logic;
+   iec_srq_n_i             : in  std_logic;
+   iec_srq_n_o             : out std_logic;
+
+   -- C64 Expansion Port (aka Cartridge Port) control lines
+   -- *_dir=1 means FPGA->Port, =0 means Port->FPGA
+   cart_ctrl_en_o          : out std_logic;
+   cart_ctrl_dir_o         : out std_logic;
+   cart_addr_en_o          : out std_logic;
+   cart_haddr_dir_o        : out std_logic;
+   cart_laddr_dir_o        : out std_logic;
+   cart_data_en_o          : out std_logic;
+   cart_data_dir_o         : out std_logic;
+
+   -- C64 Expansion Port (aka Cartridge Port)
+   cart_reset_o            : out std_logic;
+   cart_phi2_o             : out std_logic;
+   cart_dotclock_o         : out std_logic;
+
+   cart_nmi_i              : in  std_logic;
+   cart_irq_i              : in  std_logic;
+   cart_dma_i              : in  std_logic;
+   cart_exrom_i            : in  std_logic;
+   cart_game_i             : in  std_logic;
+
+   cart_ba_io              : inout std_logic;
+   cart_rw_io              : inout std_logic;
+   cart_roml_io            : inout std_logic;
+   cart_romh_io            : inout std_logic;
+   cart_io1_io             : inout std_logic;
+   cart_io2_io             : inout std_logic;
+
+   cart_d_io               : inout unsigned(7 downto 0);
+   cart_a_io               : inout unsigned(15 downto 0)
 );
 end entity MEGA65_Core;
 

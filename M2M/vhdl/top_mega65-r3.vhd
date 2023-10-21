@@ -1,112 +1,92 @@
 ----------------------------------------------------------------------------------
--- YOUR-PROJECT-NAME (GITHUB-REPO-SHORTNAME)
+-- Commodore 64 for MEGA65 (C64MEGA65)
 --
--- MEGA65 R5 main file that contains the whole machine
+-- MEGA65 R3 main file that contains the whole machine
 --
--- done by YOURNAME in YEAR and licensed under GPL v3
+-- based on C64_MiSTer by the MiSTer development team
+-- port done by MJoergen and sy2002 in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity mega65_r4 is
+entity mega65_r3 is
 port (
    -- Onboard crystal oscillator = 100 MHz
-   clk_i                   : in    std_logic;
+   clk_i              : in    std_logic;
 
-   -- Reset button on the side of the machine
-   reset_button_i          : in    std_logic;      -- Active high
+   -- MAX10 FPGA (delivers reset)
+   max10_tx_i         : in    std_logic;
+   max10_rx_o         : out   std_logic;
+   max10_clkandsync_o : out   std_logic;
 
    -- USB-RS232 Interface
-   uart_rxd_i              : in    std_logic;
-   uart_txd_o              : out   std_logic;
+   uart_rxd_i         : in    std_logic;
+   uart_txd_o         : out   std_logic;
 
-   -- VGA via VDAC. U3 = ADV7125BCPZ170
-   vga_red_o               : out   std_logic_vector(7 downto 0);
-   vga_green_o             : out   std_logic_vector(7 downto 0);
-   vga_blue_o              : out   std_logic_vector(7 downto 0);
-   vga_hs_o                : out   std_logic;
-   vga_vs_o                : out   std_logic;
-   vga_scl_io              : inout std_logic;
-   vga_sda_io              : inout std_logic;
-   vdac_clk_o              : out   std_logic;
-   vdac_sync_n_o           : out   std_logic;
-   vdac_blank_n_o          : out   std_logic;
-   vdac_psave_n_o          : out   std_logic;
+   -- VGA and VDAC
+   vga_red_o          : out   std_logic_vector(7 downto 0);
+   vga_green_o        : out   std_logic_vector(7 downto 0);
+   vga_blue_o         : out   std_logic_vector(7 downto 0);
+   vga_hs_o           : out   std_logic;
+   vga_vs_o           : out   std_logic;
+   vdac_clk_o         : out   std_logic;
+   vdac_sync_n_o      : out   std_logic;
+   vdac_blank_n_o     : out   std_logic;
 
    -- Digital Video (HDMI)
-   tmds_data_p_o           : out   std_logic_vector(2 downto 0);
-   tmds_data_n_o           : out   std_logic_vector(2 downto 0);
-   tmds_clk_p_o            : out   std_logic;
-   tmds_clk_n_o            : out   std_logic;
-   hdmi_hiz_o              : out   std_logic;
-   hdmi_enable_n_o         : out   std_logic;
-   hdmi_hpd_a_io           : inout std_logic;
-   hdmi_scl_io             : inout std_logic;
-   hdmi_sda_io             : inout std_logic;
+   tmds_data_p_o      : out   std_logic_vector(2 downto 0);
+   tmds_data_n_o      : out   std_logic_vector(2 downto 0);
+   tmds_clk_p_o       : out   std_logic;
+   tmds_clk_n_o       : out   std_logic;
+   ct_hpd_o           : out   std_logic := '1';          -- Needed for HDMI compliancy: Assert +5V according to section 4.2.7 of the specification version 1.4b
 
    -- MEGA65 smart keyboard controller
-   kb_io0_o                : out   std_logic;                 -- clock to keyboard
-   kb_io1_o                : out   std_logic;                 -- data output to keyboard
-   kb_io2_i                : in    std_logic;                 -- data input from keyboard
-   kb_jtagen_i             : in    std_logic;
-   kb_tck_i                : in    std_logic;
-   kb_tdi_i                : in    std_logic;
-   kb_tdo_i                : in    std_logic;
-   kb_tms_i                : in    std_logic;
+   kb_io0_o           : out   std_logic;                 -- clock to keyboard
+   kb_io1_o           : out   std_logic;                 -- data output to keyboard
+   kb_io2_i           : in    std_logic;                 -- data input from keyboard
 
-   -- SD card (external on back)
-   sd_reset_o              : out   std_logic;
-   sd_clk_o                : out   std_logic;
-   sd_mosi_o               : out   std_logic;
-   sd_miso_i               : in    std_logic;
-   sd_cd_i                 : in    std_logic;
-   sd_d1_i                 : in    std_logic;
-   sd_d2_i                 : in    std_logic;
+   -- SD Card (internal on bottom)
+   sd_reset_o         : out   std_logic;
+   sd_clk_o           : out   std_logic;
+   sd_mosi_o          : out   std_logic;
+   sd_miso_i          : in    std_logic;
+   sd_cd_i            : in    std_logic;
 
-   -- SD card (internal on bottom)
-   sd2_reset_o             : out   std_logic;
-   sd2_clk_o               : out   std_logic;
-   sd2_mosi_o              : out   std_logic;
-   sd2_miso_i              : in    std_logic;
-   sd2_cd_i                : in    std_logic;
-   sd2_d1_i                : in    std_logic;
-   sd2_d2_i                : in    std_logic;
-   sd2_wp_i                : in    std_logic;
+   -- SD Card (external on back)
+   sd2_reset_o        : out   std_logic;
+   sd2_clk_o          : out   std_logic;
+   sd2_mosi_o         : out   std_logic;
+   sd2_miso_i         : in    std_logic;
+   sd2_cd_i           : in    std_logic;
 
-   -- Audio DAC. U37 = AK4432VT
-   audio_mclk_o            : out   std_logic;   -- Master Clock Input Pin,       12.288 MHz
-   audio_bick_o            : out   std_logic;   -- Audio Serial Data Clock Pin,   3.072 MHz
-   audio_sdti_o            : out   std_logic;   -- Audio Serial Data Input Pin,  16-bit LSB justified
-   audio_lrclk_o           : out   std_logic;   -- Input Channel Clock Pin,      48.0 kHz
-   audio_pdn_n_o           : out   std_logic;   -- Power-Down & Reset Pin
-   audio_i2cfil_o          : out   std_logic;   -- I2C Interface Mode Select Pin
-   audio_scl_o             : out   std_logic;   -- Control Data Clock Input Pin
-   audio_sda_io            : inout std_logic;   -- Control Data Input/Output Pin
+   -- 3.5mm analog audio jack
+   pwm_l_o            : out   std_logic;
+   pwm_r_o            : out   std_logic;
 
    -- Joysticks and Paddles
-   fa_up_n_i               : in    std_logic;
-   fa_down_n_i             : in    std_logic;
-   fa_left_n_i             : in    std_logic;
-   fa_right_n_i            : in    std_logic;
-   fa_fire_n_i             : in    std_logic;
+   fa_up_n_i          : in    std_logic;
+   fa_down_n_i        : in    std_logic;
+   fa_left_n_i        : in    std_logic;
+   fa_right_n_i       : in    std_logic;
+   fa_fire_n_i        : in    std_logic;
 
-   fb_up_n_i               : in    std_logic;
-   fb_down_n_i             : in    std_logic;
-   fb_left_n_i             : in    std_logic;
-   fb_right_n_i            : in    std_logic;
-   fb_fire_n_i             : in    std_logic;
+   fb_up_n_i          : in    std_logic;
+   fb_down_n_i        : in    std_logic;
+   fb_left_n_i        : in    std_logic;
+   fb_right_n_i       : in    std_logic;
+   fb_fire_n_i        : in    std_logic;
 
-   paddle_i                : in    std_logic_vector(3 downto 0);
-   paddle_drain_o          : out   std_logic;
+   paddle_i           : in    std_logic_vector(3 downto 0);
+   paddle_drain_o     : out   std_logic;
 
    -- Built-in HyperRAM
-   hr_d_io                 : inout std_logic_vector(7 downto 0);
-   hr_rwds_io              : inout std_logic;
-   hr_reset_o              : out   std_logic;
-   hr_clk_p_o              : out   std_logic;
-   hr_cs0_o                : out   std_logic;
+   hr_d_io            : inout std_logic_vector(7 downto 0);
+   hr_rwds_io         : inout std_logic;
+   hr_reset_o         : out   std_logic;
+   hr_clk_p_o         : out   std_logic;
+   hr_cs0_o           : out   std_logic;
 
 
    --------------------------------------------------------------------
@@ -114,128 +94,52 @@ port (
    --------------------------------------------------------------------
 
    -- CBM-488/IEC serial port
-   iec_reset_n_o           : out   std_logic;
-   iec_atn_n_o             : out   std_logic;
-   iec_clk_en_o            : out   std_logic;
-   iec_clk_n_i             : in    std_logic;
-   iec_clk_n_o             : out   std_logic;
-   iec_data_en_o           : out   std_logic;
-   iec_data_n_i            : in    std_logic;
-   iec_data_n_o            : out   std_logic;
-   iec_srq_en_o            : out   std_logic;
-   iec_srq_n_i             : in    std_logic;
-   iec_srq_n_o             : out   std_logic;
+   iec_reset_n_o      : out   std_logic;
+   iec_atn_n_o        : out   std_logic;
+   iec_clk_en_o       : out   std_logic;
+   iec_clk_n_i        : in    std_logic;
+   iec_clk_n_o        : out   std_logic;
+   iec_data_en_o      : out   std_logic;
+   iec_data_n_i       : in    std_logic;
+   iec_data_n_o       : out   std_logic;
+   iec_srq_en_o       : out   std_logic;
+   iec_srq_n_i        : in    std_logic;
+   iec_srq_n_o        : out   std_logic;
 
    -- C64 Expansion Port (aka Cartridge Port) control lines
    -- *_dir=1 means FPGA->Port, =0 means Port->FPGA
-   cart_ctrl_en_o          : out   std_logic;
-   cart_ctrl_dir_o         : out   std_logic;
-   cart_addr_en_o          : out   std_logic;
-   cart_haddr_dir_o        : out   std_logic;
-   cart_laddr_dir_o        : out   std_logic;
-   cart_data_en_o          : out   std_logic;
-   cart_data_dir_o         : out   std_logic;
-   cart_reset_o            : out   std_logic;
-   cart_phi2_o             : out   std_logic;
-   cart_dotclock_o         : out   std_logic;
-   cart_nmi_i              : in    std_logic;
-   cart_irq_i              : in    std_logic;
-   cart_dma_i              : in    std_logic;
-   cart_exrom_io           : inout std_logic;
-   cart_game_io            : inout std_logic;
-   cart_ba_io              : inout std_logic;
-   cart_rw_io              : inout std_logic;
-   cart_roml_io            : inout std_logic;
-   cart_romh_io            : inout std_logic;
-   cart_io1_io             : inout std_logic;
-   cart_io2_io             : inout std_logic;
-   cart_d_io               : inout unsigned(7 downto 0);
-   cart_a_io               : inout unsigned(15 downto 0);
+   cart_ctrl_en_o     : out   std_logic;
+   cart_ctrl_dir_o    : out   std_logic;
+   cart_addr_en_o     : out   std_logic;
+   cart_haddr_dir_o   : out   std_logic;
+   cart_laddr_dir_o   : out   std_logic;
+   cart_data_en_o     : out   std_logic;
+   cart_data_dir_o    : out   std_logic;
 
+   -- C64 Expansion Port (aka Cartridge Port)
+   cart_reset_o       : out   std_logic;                  -- R3 board bug. Should be inout.
+   cart_phi2_o        : out   std_logic;
+   cart_dotclock_o    : out   std_logic;
 
-   -- DIP Switches
-   cpld_cfg_i              : in    std_logic_vector(3 downto 0);
+   cart_nmi_i         : in    std_logic;                  -- R3 board bug. Should be inout.
+   cart_irq_i         : in    std_logic;                  -- R3 board bug. Should be inout.
+   cart_dma_i         : in    std_logic;
+   cart_exrom_i       : in    std_logic;
+   cart_game_i        : in    std_logic;
 
-   -- Debug. Also used to control output to joystick ??
-   dbg_io                  : inout std_logic_vector(11 downto 0);
+   cart_ba_io         : inout std_logic;
+   cart_rw_io         : inout std_logic;
+   cart_roml_io       : inout std_logic;
+   cart_romh_io       : inout std_logic;
+   cart_io1_io        : inout std_logic;
+   cart_io2_io        : inout std_logic;
 
-   -- SMSC Ethernet PHY. U4 = KSZ8081RNDCA
-   eth_clock_o             : out   std_logic;
-   eth_led2_o              : out   std_logic;
-   eth_mdc_o               : out   std_logic;
-   eth_mdio_io             : inout std_logic;
-   eth_reset_o             : out   std_logic;
-   eth_rxd_i               : in    std_logic_vector(1 downto 0);
-   eth_rxdv_i              : in    std_logic;
-   eth_rxer_i              : in    std_logic;
-   eth_txd_o               : out   std_logic_vector(1 downto 0);
-   eth_txen_o              : out   std_logic;
-
-   -- FDC interface
-   f_density_o             : out   std_logic;
-   f_diskchanged_i         : in    std_logic;
-   f_index_i               : in    std_logic;
-   f_motora_o              : out   std_logic;
-   f_motorb_o              : out   std_logic;
-   f_rdata_i               : in    std_logic;
-   f_selecta_o             : out   std_logic;
-   f_selectb_o             : out   std_logic;
-   f_side1_o               : out   std_logic;
-   f_stepdir_o             : out   std_logic;
-   f_step_o                : out   std_logic;
-   f_track0_i              : in    std_logic;
-   f_wdata_o               : out   std_logic;
-   f_wgate_o               : out   std_logic;
-   f_writeprotect_i        : in    std_logic;
-
-   -- I2C bus for on-board peripherals
-   fpga_sda_io             : inout std_logic;
-   fpga_scl_io             : inout std_logic;
-   grove_sda_io            : inout std_logic;
-   grove_scl_io            : inout std_logic;
-
-   -- Joystick power supply
-   joystick_5v_disable_o   : out   std_logic;
-   joystick_5v_powergood_i : in    std_logic;
-
-   -- On board LEDs
-   led_g_n_o               : out   std_logic;
-   led_r_n_o               : out   std_logic;
-   led_o                   : out   std_logic;
-
-   -- Pmod Header
-   p1lo_io                 : inout std_logic_vector(3 downto 0);
-   p1hi_io                 : inout std_logic_vector(3 downto 0);
-   p2lo_io                 : inout std_logic_vector(3 downto 0);
-   p2hi_io                 : inout std_logic_vector(3 downto 0);
-   pmod1_en_o              : out   std_logic;
-   pmod1_flag_i            : in    std_logic;
-   pmod2_en_o              : out   std_logic;
-   pmod2_flag_i            : in    std_logic;
-
-   -- Quad SPI Flash. U5 = S25FL512SAGBHIS10
-   qspidb_io               : inout std_logic_vector(3 downto 0);
-   qspicsn_o               : out   std_logic;
-
-   -- Board revision
-   rev_bit_i               : in    std_logic_vector(3 downto 0);
-
-   -- SDRAM - 32M x 16 bit, 3.3V VCC. U44 = IS42S16320F-6BL
-   sdram_clk_o             : out   std_logic;
-   sdram_cke_o             : out   std_logic;
-   sdram_ras_n_o           : out   std_logic;
-   sdram_cas_n_o           : out   std_logic;
-   sdram_we_n_o            : out   std_logic;
-   sdram_cs_n_o            : out   std_logic;
-   sdram_ba_o              : out   std_logic_vector(1 downto 0);
-   sdram_a_o               : out   std_logic_vector(12 downto 0);
-   sdram_dqml_o            : out   std_logic;
-   sdram_dqmh_o            : out   std_logic;
-   sdram_dq_io             : inout std_logic_vector(15 downto 0)
+   cart_d_io          : inout unsigned(7 downto 0);
+   cart_a_io          : inout unsigned(15 downto 0)
 );
-end entity mega65_r4;
+end entity mega65_r3;
 
-architecture synthesis of mega65_r4 is
+architecture synthesis of mega65_r3 is
 
    signal main_clk    : std_logic;
    signal main_rst    : std_logic;
@@ -339,7 +243,6 @@ architecture synthesis of mega65_r4 is
    signal qnice_ascal_triplebuf  : std_logic;
    signal qnice_retro15kHz       : std_logic;
    signal qnice_osm_cfg_scaling  : std_logic_vector(8 downto 0);
-   signal qnice_audio_test       : std_logic;
 
    -- flip joystick ports
    signal qnice_flip_joyports    : std_logic;
@@ -363,14 +266,16 @@ architecture synthesis of mega65_r4 is
 begin
 
    ---------------------------------------------------------------------------------------------------------------
-   -- MiSTer2MEGA Hardware Abstraction Layer for the MEGA65 board revision R4
+   -- MiSTer2MEGA Hardware Abstraction Layer for the MEGA65 board revision R3
    ---------------------------------------------------------------------------------------------------------------
 
-   i_hal_mega65_r4 : entity work.hal_mega65_r4
+   i_hal_mega65_r3 : entity work.hal_mega65_r3
    port map (
       -- Connect to I/O ports
       clk_i                   => clk_i,
-      reset_button_i          => reset_button_i,
+      max10_tx_i              => max10_tx_i,
+      max10_rx_o              => max10_rx_o,
+      max10_clkandsync_o      => max10_clkandsync_o,
       uart_rxd_i              => uart_rxd_i,
       uart_txd_o              => uart_txd_o,
       vga_red_o               => vga_red_o,
@@ -388,24 +293,18 @@ begin
       kb_io0_o                => kb_io0_o,
       kb_io1_o                => kb_io1_o,
       kb_io2_i                => kb_io2_i,
-      sd_reset_o              => sd2_reset_o,
-      sd_clk_o                => sd2_clk_o,
-      sd_mosi_o               => sd2_mosi_o,
-      sd_miso_i               => sd2_miso_i,
-      sd_cd_i                 => sd2_cd_i,
-      sd2_reset_o             => sd_reset_o,
-      sd2_clk_o               => sd_clk_o,
-      sd2_mosi_o              => sd_mosi_o,
-      sd2_miso_i              => sd_miso_i,
-      sd2_cd_i                => sd_cd_i,
-      audio_mclk_o            => audio_mclk_o,
-      audio_bick_o            => audio_bick_o,
-      audio_sdti_o            => audio_sdti_o,
-      audio_lrclk_o           => audio_lrclk_o,
-      audio_pdn_n_o           => audio_pdn_n_o,
-      audio_i2cfil_o          => audio_i2cfil_o,
-      audio_scl_o             => audio_scl_o,
-      audio_sda_io            => audio_sda_io,
+      sd_reset_o              => sd_reset_o,
+      sd_clk_o                => sd_clk_o,
+      sd_mosi_o               => sd_mosi_o,
+      sd_miso_i               => sd_miso_i,
+      sd_cd_i                 => sd_cd_i,
+      sd2_reset_o             => sd2_reset_o,
+      sd2_clk_o               => sd2_clk_o,
+      sd2_mosi_o              => sd2_mosi_o,
+      sd2_miso_i              => sd2_miso_i,
+      sd2_cd_i                => sd2_cd_i,
+      pwm_l_o                 => pwm_l_o,
+      pwm_r_o                 => pwm_r_o,
       joy_1_up_n_i            => fa_up_n_i,
       joy_1_down_n_i          => fa_down_n_i,
       joy_1_left_n_i          => fa_left_n_i,
@@ -492,7 +391,6 @@ begin
       qnice_csync_i           => qnice_csync,
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
-      qnice_audio_test_i      => qnice_audio_test,
       qnice_zoom_crop_i       => qnice_zoom_crop,
       qnice_osm_cfg_scaling_i => qnice_osm_cfg_scaling,
       qnice_retro15kHz_i      => qnice_retro15kHz,
@@ -509,7 +407,7 @@ begin
       qnice_ramrom_ce_o       => qnice_ramrom_ce,
       qnice_ramrom_we_o       => qnice_ramrom_we,
       qnice_ramrom_wait_i     => qnice_ramrom_wait
-   ); -- i_hal_mega65_r4
+   ); -- i_hal_mega65_r3
 
 
    ---------------------------------------------------------------------------------------------------------------
@@ -546,7 +444,6 @@ begin
          qnice_ascal_triplebuf_o => qnice_ascal_triplebuf,
          qnice_retro15kHz_o      => qnice_retro15kHz,
          qnice_osm_cfg_scaling_o => qnice_osm_cfg_scaling,
-         qnice_audio_test_o      => qnice_audio_test,
 
          -- Flip joystick ports
          qnice_flip_joyports_o   => qnice_flip_joyports,
@@ -678,8 +575,8 @@ begin
          cart_nmi_i        => cart_nmi_i,
          cart_irq_i        => cart_irq_i,
          cart_dma_i        => cart_dma_i,
-         cart_exrom_i      => cart_exrom_io,
-         cart_game_i       => cart_game_io,
+         cart_exrom_i      => cart_exrom_i,
+         cart_game_i       => cart_game_i,
          cart_ba_io        => cart_ba_io,
          cart_rw_io        => cart_rw_io,
          cart_roml_io      => cart_roml_io,
@@ -689,61 +586,6 @@ begin
          cart_d_io         => cart_d_io,
          cart_a_io         => cart_a_io
       ); -- CORE
-
-   -- Safe default values
-   vga_scl_io            <= 'Z';
-   vga_sda_io            <= 'Z';
-   vdac_psave_n_o        <= '1';
-   hdmi_hiz_o            <= '0';
-   hdmi_enable_n_o       <= '0';
-   hdmi_hpd_a_io         <= 'Z';
-   hdmi_scl_io           <= 'Z';
-   hdmi_sda_io           <= 'Z';
-   dbg_io                <= (others => 'Z');
-   eth_clock_o           <= '0';
-   eth_led2_o            <= '0';
-   eth_mdc_o             <= '0';
-   eth_mdio_io           <= 'Z';
-   eth_reset_o           <= '1';
-   eth_txd_o             <= (others => '0');
-   eth_txen_o            <= '0';
-   f_density_o           <= '0';
-   f_motora_o            <= '0';
-   f_motorb_o            <= '0';
-   f_selecta_o           <= '0';
-   f_selectb_o           <= '0';
-   f_side1_o             <= '0';
-   f_stepdir_o           <= '0';
-   f_step_o              <= '0';
-   f_wdata_o             <= '0';
-   f_wgate_o             <= '0';
-   fpga_sda_io           <= 'Z';
-   fpga_scl_io           <= 'Z';
-   grove_sda_io          <= 'Z';
-   grove_scl_io          <= 'Z';
-   joystick_5v_disable_o <= '0';
-   led_g_n_o             <= '1'; -- Off
-   led_r_n_o             <= '1'; -- Off
-   led_o                 <= '0'; -- Off
-   p1lo_io               <= (others => 'Z');
-   p1hi_io               <= (others => 'Z');
-   p2lo_io               <= (others => 'Z');
-   p2hi_io               <= (others => 'Z');
-   pmod1_en_o            <= '0';
-   pmod2_en_o            <= '0';
-   qspidb_io             <= (others => 'Z');
-   qspicsn_o             <= '1';
-   sdram_clk_o           <= '0';
-   sdram_cke_o           <= '0';
-   sdram_ras_n_o         <= '1';
-   sdram_cas_n_o         <= '1';
-   sdram_we_n_o          <= '1';
-   sdram_cs_n_o          <= '1';
-   sdram_ba_o            <= (others => '0');
-   sdram_a_o             <= (others => '0');
-   sdram_dqml_o          <= '0';
-   sdram_dqmh_o          <= '0';
-   sdram_dq_io           <= (others => 'Z');
 
 end architecture synthesis;
 

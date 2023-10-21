@@ -118,10 +118,6 @@ entity av_pipeline is
       vdac_sync_n             : out std_logic;
       vdac_blank_n            : out std_logic;
 
-      -- I/O to 3.5mm analog audio jack
-      pwm_l                   : out std_logic;
-      pwm_r                   : out std_logic;
-
       -- I/O to Digital Video (HDMI)
       hdmi_clk_i              : in  std_logic;
       hdmi_rst_i              : in  std_logic;
@@ -432,8 +428,6 @@ begin
          vdac_clk_o              => vdac_clk,
          vdac_syncn_o            => vdac_sync_n,
          vdac_blankn_o           => vdac_blank_n,
-         pwm_l_o                 => pwm_l,
-         pwm_r_o                 => pwm_r,
 
          -- Connect to QNICE and Video RAM
          video_osm_cfg_scaling_i => first_nonzero_bit(video_osm_cfg_scaling),
