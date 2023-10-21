@@ -32,15 +32,15 @@ port (
    uart_rxd_i           : in std_logic;            -- receive data, 115.200 baud, 8-N-1, rxd, txd only; rts/cts are not available
    uart_txd_o           : out std_logic;           -- send data, ditto
 
-   -- SD Card (internal on bottom)
-   sd_reset_o           : out std_logic;           -- SD card interface via SPI
+   -- Micro SD Connector (external slot at back of the cover)
+   sd_reset_o           : out std_logic;
    sd_clk_o             : out std_logic;
    sd_mosi_o            : out std_logic;
    sd_miso_i            : in std_logic;
    sd_cd_i              : in std_logic;
 
-   -- SD Card (external on back)
-   sd2_reset_o          : out std_logic;           -- SD card interface via SPI
+   -- SD Connector (this is the slot at the bottom side of the case under the cover)
+   sd2_reset_o          : out std_logic;
    sd2_clk_o            : out std_logic;
    sd2_mosi_o           : out std_logic;
    sd2_miso_i           : in std_logic;
@@ -342,18 +342,18 @@ begin
          detected_ext_o       => sd_cd_ext,
 
          -- interface to bottom tray's SD card
-         sd_tray_detect_i     => sd_cd_i,
-         sd_tray_reset_o      => sd_reset_o,
-         sd_tray_clk_o        => sd_clk_o,
-         sd_tray_mosi_o       => sd_mosi_o,
-         sd_tray_miso_i       => sd_miso_i,
+         sd_tray_detect_i     => sd2_cd_i,
+         sd_tray_reset_o      => sd2_reset_o,
+         sd_tray_clk_o        => sd2_clk_o,
+         sd_tray_mosi_o       => sd2_mosi_o,
+         sd_tray_miso_i       => sd2_miso_i,
 
          -- interface to the SD card in the back slot
-         sd_back_detect_i     => sd2_cd_i,
-         sd_back_reset_o      => sd2_reset_o,
-         sd_back_clk_o        => sd2_clk_o,
-         sd_back_mosi_o       => sd2_mosi_o,
-         sd_back_miso_i       => sd2_miso_i,
+         sd_back_detect_i     => sd_cd_i,
+         sd_back_reset_o      => sd_reset_o,
+         sd_back_clk_o        => sd_clk_o,
+         sd_back_mosi_o       => sd_mosi_o,
+         sd_back_miso_i       => sd_miso_i,
 
          -- interface to the QNICE SD card controller
          ctrl_reset_o         => sd_mux_reset_ctrl,

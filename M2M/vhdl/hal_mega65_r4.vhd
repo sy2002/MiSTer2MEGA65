@@ -43,14 +43,14 @@ port (
    kb_io1_o                : out   std_logic;                 -- data output to keyboard
    kb_io2_i                : in    std_logic;                 -- data input from keyboard
 
-   -- SD Card (internal on bottom)
+   -- Micro SD Connector (external slot at back of the cover)
    sd_reset_o              : out   std_logic;
    sd_clk_o                : out   std_logic;
    sd_mosi_o               : out   std_logic;
    sd_miso_i               : in    std_logic;
    sd_cd_i                 : in    std_logic;
 
-   -- SD Card (external on back)
+   -- SD Connector (this is the slot at the bottom side of the case under the cover)
    sd2_reset_o             : out   std_logic;
    sd2_clk_o               : out   std_logic;
    sd2_mosi_o              : out   std_logic;
@@ -160,7 +160,6 @@ port (
    qnice_csync_i           : in    std_logic;
    qnice_audio_mute_i      : in    std_logic;
    qnice_audio_filter_i    : in    std_logic;
-   qnice_audio_test_i      : in    std_logic;
    qnice_zoom_crop_i       : in    std_logic;
    qnice_ascal_mode_i      : in    std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_i : in    std_logic;
@@ -196,7 +195,6 @@ begin
          audio_reset_i  => audio_reset,
          audio_left_i   => audio_left,
          audio_right_i  => audio_right,
-         audio_test_i   => qnice_audio_test_i, -- Set to 1 to output a simple sine wave @ 477 Hz.
          audio_mclk_o   => audio_mclk_o,
          audio_bick_o   => audio_bick_o,
          audio_sdti_o   => audio_sdti_o,

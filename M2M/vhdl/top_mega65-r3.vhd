@@ -25,12 +25,14 @@ port (
    uart_rxd_i         : in    std_logic;
    uart_txd_o         : out   std_logic;
 
-   -- VGA and VDAC
+   -- VGA via VDAC. U3 = ADV7125BCPZ170
    vga_red_o          : out   std_logic_vector(7 downto 0);
    vga_green_o        : out   std_logic_vector(7 downto 0);
    vga_blue_o         : out   std_logic_vector(7 downto 0);
    vga_hs_o           : out   std_logic;
    vga_vs_o           : out   std_logic;
+   vga_scl_io         : inout std_logic;
+   vga_sda_io         : inout std_logic;
    vdac_clk_o         : out   std_logic;
    vdac_sync_n_o      : out   std_logic;
    vdac_blank_n_o     : out   std_logic;
@@ -40,30 +42,52 @@ port (
    tmds_data_n_o      : out   std_logic_vector(2 downto 0);
    tmds_clk_p_o       : out   std_logic;
    tmds_clk_n_o       : out   std_logic;
-   ct_hpd_o           : out   std_logic := '1';          -- Needed for HDMI compliancy: Assert +5V according to section 4.2.7 of the specification version 1.4b
+   hdmi_ct_hpd_o      : out   std_logic := '1';          -- Needed for HDMI compliancy: Assert +5V according to section 4.2.7 of the specification version 1.4b
+   hdmi_hpd_i         : in    std_logic;
+   hdmi_scl_io        : inout std_logic;
+   hdmi_sda_io        : inout std_logic;
+   hdmi_ls_oe_o       : out   std_logic;
+   hdmi_cec_io        : inout std_logic;
 
    -- MEGA65 smart keyboard controller
    kb_io0_o           : out   std_logic;                 -- clock to keyboard
    kb_io1_o           : out   std_logic;                 -- data output to keyboard
    kb_io2_i           : in    std_logic;                 -- data input from keyboard
+   kb_jtagen_i        : in    std_logic;
+   kb_tck_i           : in    std_logic;
+   kb_tdi_i           : in    std_logic;
+   kb_tdo_i           : in    std_logic;
+   kb_tms_i           : in    std_logic;
 
-   -- SD Card (internal on bottom)
+   -- Micro SD Connector (external slot at back of the cover)
    sd_reset_o         : out   std_logic;
    sd_clk_o           : out   std_logic;
    sd_mosi_o          : out   std_logic;
    sd_miso_i          : in    std_logic;
    sd_cd_i            : in    std_logic;
+   sd_d1_i            : in    std_logic;
+   sd_d2_i            : in    std_logic;
 
-   -- SD Card (external on back)
+   -- SD Connector (this is the slot at the bottom side of the case under the cover)
    sd2_reset_o        : out   std_logic;
    sd2_clk_o          : out   std_logic;
    sd2_mosi_o         : out   std_logic;
    sd2_miso_i         : in    std_logic;
    sd2_cd_i           : in    std_logic;
+   sd2_wp_i           : in    std_logic;
+   sd2_d1_i           : in    std_logic;
+   sd2_d2_i           : in    std_logic;
 
    -- 3.5mm analog audio jack
    pwm_l_o            : out   std_logic;
    pwm_r_o            : out   std_logic;
+
+   -- Audio DAC. U37 = SSM2518CPZ-R7
+   audio_mclk_o       : out   std_logic;
+   audio_bick_o       : out   std_logic;
+   audio_sdti_o       : out   std_logic;
+   audio_lrclk_o      : out   std_logic;
+   audio_pdn_n_o      : out   std_logic;
 
    -- Joysticks and Paddles
    fa_up_n_i          : in    std_logic;
@@ -81,12 +105,60 @@ port (
    paddle_i           : in    std_logic_vector(3 downto 0);
    paddle_drain_o     : out   std_logic;
 
-   -- Built-in HyperRAM
+   -- HyperRAM. U29 = IS66WVH8M8BLL-100B1L
    hr_d_io            : inout std_logic_vector(7 downto 0);
    hr_rwds_io         : inout std_logic;
    hr_reset_o         : out   std_logic;
    hr_clk_p_o         : out   std_logic;
    hr_cs0_o           : out   std_logic;
+
+   -- SMSC Ethernet PHY. U4 = KSZ8081RNDCA
+   eth_clock_o        : out   std_logic;
+   eth_led2_o         : out   std_logic;
+   eth_mdc_o          : out   std_logic;
+   eth_mdio_io        : inout std_logic;
+   eth_reset_o        : out   std_logic;
+   eth_rxd_i          : in    std_logic_vector(1 downto 0);
+   eth_rxdv_i         : in    std_logic;
+   eth_rxer_i         : in    std_logic;
+   eth_txd_o          : out   std_logic_vector(1 downto 0);
+   eth_txen_o         : out   std_logic;
+
+   -- FDC interface
+   f_density_o        : out   std_logic;
+   f_diskchanged_i    : in    std_logic;
+   f_index_i          : in    std_logic;
+   f_motora_o         : out   std_logic;
+   f_motorb_o         : out   std_logic;
+   f_rdata_i          : in    std_logic;
+   f_selecta_o        : out   std_logic;
+   f_selectb_o        : out   std_logic;
+   f_side1_o          : out   std_logic;
+   f_stepdir_o        : out   std_logic;
+   f_step_o           : out   std_logic;
+   f_track0_i         : in    std_logic;
+   f_wdata_o          : out   std_logic;
+   f_wgate_o          : out   std_logic;
+   f_writeprotect_i   : in    std_logic;
+
+   -- I2C bus for on-board peripherals
+   fpga_sda_io        : inout std_logic;
+   fpga_scl_io        : inout std_logic;
+   grove_sda_io       : inout std_logic;
+   grove_scl_io       : inout std_logic;
+
+   -- On board LEDs
+   led_o              : out   std_logic;
+
+   -- Pmod Header
+   p1lo_io            : inout std_logic_vector(3 downto 0);
+   p1hi_io            : inout std_logic_vector(3 downto 0);
+   p2lo_io            : inout std_logic_vector(3 downto 0);
+   p2hi_io            : inout std_logic_vector(3 downto 0);
+
+   -- Quad SPI Flash. U5 = S25FL512SAGBHIS10
+   qspidb_io          : inout std_logic_vector(3 downto 0);
+   qspicsn_o          : out   std_logic;
 
 
    --------------------------------------------------------------------
@@ -586,6 +658,47 @@ begin
          cart_d_io         => cart_d_io,
          cart_a_io         => cart_a_io
       ); -- CORE
+
+   -- Safe default values
+   vga_scl_io    <= 'Z';
+   vga_sda_io    <= 'Z';
+   hdmi_scl_io   <= 'Z';
+   hdmi_sda_io   <= 'Z';
+   hdmi_ls_oe_o  <= '1';
+   hdmi_cec_io   <= 'Z';
+   audio_mclk_o  <= '0';
+   audio_bick_o  <= '0';
+   audio_sdti_o  <= '0';
+   audio_lrclk_o <= '0';
+   audio_pdn_n_o <= '0';
+   eth_clock_o   <= '0';
+   eth_led2_o    <= '0';
+   eth_mdc_o     <= '0';
+   eth_mdio_io   <= 'Z';
+   eth_reset_o   <= '1';
+   eth_txd_o     <= (others => '0');
+   eth_txen_o    <= '0';
+   f_density_o   <= '0';
+   f_motora_o    <= '0';
+   f_motorb_o    <= '0';
+   f_selecta_o   <= '0';
+   f_selectb_o   <= '0';
+   f_side1_o     <= '0';
+   f_stepdir_o   <= '0';
+   f_step_o      <= '0';
+   f_wdata_o     <= '0';
+   f_wgate_o     <= '0';
+   fpga_sda_io   <= 'Z';
+   fpga_scl_io   <= 'Z';
+   grove_sda_io  <= 'Z';
+   grove_scl_io  <= 'Z';
+   led_o         <= '0'; -- Off
+   p1lo_io       <= (others => 'Z');
+   p1hi_io       <= (others => 'Z');
+   p2lo_io       <= (others => 'Z');
+   p2hi_io       <= (others => 'Z');
+   qspidb_io     <= (others => 'Z');
+   qspicsn_o     <= '1';
 
 end architecture synthesis;
 

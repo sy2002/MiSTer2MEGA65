@@ -47,7 +47,6 @@ port (
    qnice_retro15kHz_o      : out std_logic;              -- 0 = normal frequency, 1 = retro 15 kHz frequency
    qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
    qnice_osm_cfg_scaling_o : out std_logic_vector(8 downto 0);
-   qnice_audio_test_o      : out std_logic;
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;

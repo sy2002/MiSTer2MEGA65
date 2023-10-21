@@ -47,9 +47,11 @@ set_property -dict {PACKAGE_PIN Y16  IOSTANDARD LVCMOS33} [get_ports {vga_red_o[
 set_property -dict {PACKAGE_PIN AB17 IOSTANDARD LVCMOS33} [get_ports {vga_red_o[5]}];           # R5
 set_property -dict {PACKAGE_PIN AA16 IOSTANDARD LVCMOS33} [get_ports {vga_red_o[6]}];           # R6
 set_property -dict {PACKAGE_PIN AB16 IOSTANDARD LVCMOS33} [get_ports {vga_red_o[7]}];           # R7
+set_property -dict {PACKAGE_PIN W15  IOSTANDARD LVCMOS33} [get_ports {vga_scl_io}];             # VGA_SCL
+set_property -dict {PACKAGE_PIN T15  IOSTANDARD LVCMOS33} [get_ports {vga_sda_io}];             # VGA_SDA
 set_property -dict {PACKAGE_PIN V14  IOSTANDARD LVCMOS33} [get_ports {vga_vs_o}];               # VSYNC
 
-# HDMI output
+# HDMI output. U10 = TPD12S016PWR
 set_property -dict {PACKAGE_PIN Y1   IOSTANDARD TMDS_33}  [get_ports {tmds_clk_n_o}];           # HDMI_TXC_N
 set_property -dict {PACKAGE_PIN W1   IOSTANDARD TMDS_33}  [get_ports {tmds_clk_p_o}];           # HDMI_TXC_P
 set_property -dict {PACKAGE_PIN AB1  IOSTANDARD TMDS_33}  [get_ports {tmds_data_n_o[0]}];       # HDMI_TX0_N
@@ -58,24 +60,48 @@ set_property -dict {PACKAGE_PIN AB5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_
 set_property -dict {PACKAGE_PIN AA1  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p_o[0]}];       # HDMI_TX0_P
 set_property -dict {PACKAGE_PIN AB3  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p_o[1]}];       # HDMI_TX1_P
 set_property -dict {PACKAGE_PIN AA5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p_o[2]}];       # HDMI_TX2_P
-set_property -dict {PACKAGE_PIN M15  IOSTANDARD LVCMOS33} [get_ports {ct_hpd_o}];               # CT_HPD
+set_property -dict {PACKAGE_PIN M15  IOSTANDARD LVCMOS33} [get_ports {hdmi_ct_hpd_o}];          # CT_HPD
+set_property -dict {PACKAGE_PIN Y8   IOSTANDARD LVCMOS33} [get_ports {hdmi_hpd_i}];             # HPD_A
+set_property -dict {PACKAGE_PIN AB7  IOSTANDARD LVCMOS33} [get_ports {hdmi_scl_io}];            # SCL_A
+set_property -dict {PACKAGE_PIN V9   IOSTANDARD LVCMOS33} [get_ports {hdmi_sda_io}];            # SDA_A
+set_property -dict {PACKAGE_PIN AB8  IOSTANDARD LVCMOS33} [get_ports {hdmi_ls_oe_o}];           # LS_OE
+set_property -dict {PACKAGE_PIN W9   IOSTANDARD LVCMOS33} [get_ports {hdmi_cec_io}];            # CEC_A
 
 # MEGA65 Keyboard
 set_property -dict {PACKAGE_PIN A14  IOSTANDARD LVCMOS33} [get_ports {kb_io0_o}];               # KB_IO1
 set_property -dict {PACKAGE_PIN A13  IOSTANDARD LVCMOS33} [get_ports {kb_io1_o}];               # KB_IO2
 set_property -dict {PACKAGE_PIN C13  IOSTANDARD LVCMOS33} [get_ports {kb_io2_i}];               # KB_IO3
+set_property -dict {PACKAGE_PIN B13  IOSTANDARD LVCMOS33} [get_ports {kb_jtagen_i}];            # KB_JTAGEN
+set_property -dict {PACKAGE_PIN E13  IOSTANDARD LVCMOS33} [get_ports {kb_tck_i}];               # KB_TCK
+set_property -dict {PACKAGE_PIN D15  IOSTANDARD LVCMOS33} [get_ports {kb_tdi_i}];               # KB_TDI
+set_property -dict {PACKAGE_PIN E14  IOSTANDARD LVCMOS33} [get_ports {kb_tdo_i}];               # KB_TDO
+set_property -dict {PACKAGE_PIN D14  IOSTANDARD LVCMOS33} [get_ports {kb_tms_i}];               # KB_TMS
 
-# SD cards
-set_property -dict {PACKAGE_PIN K1   IOSTANDARD LVCMOS33} [get_ports {sd2_cd_i}];               # SD_CD
-set_property -dict {PACKAGE_PIN G2   IOSTANDARD LVCMOS33} [get_ports {sd2_clk_o}];              # SD_CLK
-set_property -dict {PACKAGE_PIN H2   IOSTANDARD LVCMOS33} [get_ports {sd2_miso_i}];             # SD_D0
-set_property -dict {PACKAGE_PIN J2   IOSTANDARD LVCMOS33} [get_ports {sd2_mosi_o}];             # SD_CMD
-set_property -dict {PACKAGE_PIN K2   IOSTANDARD LVCMOS33} [get_ports {sd2_reset_o}];            # SD_D3
-set_property -dict {PACKAGE_PIN D17  IOSTANDARD LVCMOS33} [get_ports {sd_cd_i}];                # SD2_CD
-set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports {sd_clk_o}];               # SD2_CLK
-set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports {sd_miso_i}];              # SD2_D0
-set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports {sd_mosi_o}];              # SD2_CMD
-set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports {sd_reset_o}];             # SD2_D3
+# Micro SD Connector (external slot at back of the cover)
+set_property -dict {PACKAGE_PIN K1   IOSTANDARD LVCMOS33} [get_ports {sd_cd_i}];                # SD_CD
+set_property -dict {PACKAGE_PIN G2   IOSTANDARD LVCMOS33} [get_ports {sd_clk_o}];               # SD_CLK
+set_property -dict {PACKAGE_PIN H2   IOSTANDARD LVCMOS33} [get_ports {sd_miso_i}];              # SD_D0
+set_property -dict {PACKAGE_PIN J2   IOSTANDARD LVCMOS33} [get_ports {sd_mosi_o}];              # SD_CMD
+set_property -dict {PACKAGE_PIN K2   IOSTANDARD LVCMOS33} [get_ports {sd_reset_o}];             # SD_D3
+set_property -dict {PACKAGE_PIN H3   IOSTANDARD LVCMOS33} [get_ports {sd_d1_i}];                # SD_D1
+set_property -dict {PACKAGE_PIN J1   IOSTANDARD LVCMOS33} [get_ports {sd_d2_i}];                # SD_D2
+
+# SD Connector (this is the slot at the bottom side of the case under the cover)
+set_property -dict {PACKAGE_PIN D17  IOSTANDARD LVCMOS33} [get_ports {sd2_cd_i}];               # SD2_CD
+set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports {sd2_clk_o}];              # SD2_CLK
+set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports {sd2_miso_i}];             # SD2_D0
+set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports {sd2_mosi_o}];             # SD2_CMD
+set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports {sd2_reset_o}];            # SD2_D3
+set_property -dict {PACKAGE_PIN C17  IOSTANDARD LVCMOS33} [get_ports {sd2_wp_i}];               # SD2_WP
+set_property -dict {PACKAGE_PIN C18  IOSTANDARD LVCMOS33} [get_ports {sd2_d1_i}];               # SD2_D1
+set_property -dict {PACKAGE_PIN C19  IOSTANDARD LVCMOS33} [get_ports {sd2_d2_i}];               # SD2_D2
+
+# Audio DAC. U37 = SSM2518CPZ-R7
+set_property -dict {PACKAGE_PIN D16  IOSTANDARD LVCMOS33} [get_ports {audio_mclk_o}];           # AUDIO_MCLK
+set_property -dict {PACKAGE_PIN E19  IOSTANDARD LVCMOS33} [get_ports {audio_bick_o}];           # AUDIO_BCLK
+set_property -dict {PACKAGE_PIN E16  IOSTANDARD LVCMOS33} [get_ports {audio_sdti_o}];           # AUDIO_SDATA
+set_property -dict {PACKAGE_PIN F19  IOSTANDARD LVCMOS33} [get_ports {audio_lrclk_o}];          # AUDIO_LRCLK
+set_property -dict {PACKAGE_PIN F18  IOSTANDARD LVCMOS33} [get_ports {audio_pdn_n_o}];          # nSD_AUDIO
 
 # PWM audio
 set_property -dict {PACKAGE_PIN L6   IOSTANDARD LVCMOS33} [get_ports {pwm_l_o}];                # PWM_L
@@ -100,7 +126,7 @@ set_property -dict {PACKAGE_PIN G15  IOSTANDARD LVCMOS33} [get_ports {paddle_i[1
 set_property -dict {PACKAGE_PIN J14  IOSTANDARD LVCMOS33} [get_ports {paddle_i[2]}];            # CP2
 set_property -dict {PACKAGE_PIN J22  IOSTANDARD LVCMOS33} [get_ports {paddle_i[3]}];            # CP3
 
-# HyperRAM
+# HyperRAM. U29 = IS66WVH8M8BLL-100B1LI
 set_property -dict {PACKAGE_PIN D22  IOSTANDARD LVCMOS33} [get_ports {hr_clk_p_o}];             # H_CLK
 set_property -dict {PACKAGE_PIN C22  IOSTANDARD LVCMOS33} [get_ports {hr_cs0_o}];               # CS0
 set_property -dict {PACKAGE_PIN A21  IOSTANDARD LVCMOS33} [get_ports {hr_d_io[0]}];             # DQ0
@@ -181,6 +207,74 @@ set_property -dict {PACKAGE_PIN T18  IOSTANDARD LVCMOS33} [get_ports {cart_romh_
 set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports {cart_roml_io}];           # F_C64_ROML
 set_property -dict {PACKAGE_PIN R18  IOSTANDARD LVCMOS33} [get_ports {cart_rw_io}];             # F_C64_RW
 
+# SMSC Ethernet PHY. U4 = KSZ8081RNDCA
+set_property -dict {PACKAGE_PIN L4   IOSTANDARD LVCMOS33} [get_ports {eth_clock_o}];            # ETH_CLK
+set_property -dict {PACKAGE_PIN R14  IOSTANDARD LVCMOS33} [get_ports {eth_led2_o}];             # ETH_LED2
+set_property -dict {PACKAGE_PIN J6   IOSTANDARD LVCMOS33} [get_ports {eth_mdc_o}];              # ETH_MDC
+set_property -dict {PACKAGE_PIN L5   IOSTANDARD LVCMOS33} [get_ports {eth_mdio_io}];            # ETH_MDIO
+set_property -dict {PACKAGE_PIN K6   IOSTANDARD LVCMOS33} [get_ports {eth_reset_o}];            # ETH-RST
+set_property -dict {PACKAGE_PIN P4   IOSTANDARD LVCMOS33} [get_ports {eth_rxd_i[0]}];           # ETH_RX_D0
+set_property -dict {PACKAGE_PIN L1   IOSTANDARD LVCMOS33} [get_ports {eth_rxd_i[1]}];           # ETH_RX_D1
+set_property -dict {PACKAGE_PIN K4   IOSTANDARD LVCMOS33} [get_ports {eth_rxdv_i}];             # ETH_CRS_DV
+set_property -dict {PACKAGE_PIN M6   IOSTANDARD LVCMOS33} [get_ports {eth_rxer_i}];             # ETH_RXER
+set_property -dict {PACKAGE_PIN L3   IOSTANDARD LVCMOS33} [get_ports {eth_txd_o[0]}];           # ETH_TX_D0
+set_property -dict {PACKAGE_PIN K3   IOSTANDARD LVCMOS33} [get_ports {eth_txd_o[1]}];           # ETH_TX_D1
+set_property -dict {PACKAGE_PIN J4   IOSTANDARD LVCMOS33} [get_ports {eth_txen_o}];             # ETH_TX_EN
+set_property -dict {SLEW SLOW  DRIVE 4}                   [get_ports {eth_txd_o[*]}];
+set_property -dict {SLEW SLOW  DRIVE 4}                   [get_ports {eth_txen_o}];
+set_property -dict {SLEW FAST}                            [get_ports {eth_clock_o}];
+
+# FDC interface
+set_property -dict {PACKAGE_PIN P6   IOSTANDARD LVCMOS33} [get_ports {f_density_o}];            # F_REDWC
+set_property -dict {PACKAGE_PIN R1   IOSTANDARD LVCMOS33} [get_ports {f_diskchanged_i}];        # F_DSCKCHG
+set_property -dict {PACKAGE_PIN M2   IOSTANDARD LVCMOS33} [get_ports {f_index_i}];              # F_INDEX
+set_property -dict {PACKAGE_PIN M5   IOSTANDARD LVCMOS33} [get_ports {f_motora_o}];             # F_MOTEA
+set_property -dict {PACKAGE_PIN H15  IOSTANDARD LVCMOS33} [get_ports {f_motorb_o}];             # F_MOTEB
+set_property -dict {PACKAGE_PIN P1   IOSTANDARD LVCMOS33} [get_ports {f_rdata_i}];              # F_RDATA1
+set_property -dict {PACKAGE_PIN N5   IOSTANDARD LVCMOS33} [get_ports {f_selecta_o}];            # F_DRVSA
+set_property -dict {PACKAGE_PIN G17  IOSTANDARD LVCMOS33} [get_ports {f_selectb_o}];            # F_DRVSB
+set_property -dict {PACKAGE_PIN M1   IOSTANDARD LVCMOS33} [get_ports {f_side1_o}];              # F_SIDE1
+set_property -dict {PACKAGE_PIN P5   IOSTANDARD LVCMOS33} [get_ports {f_stepdir_o}];            # F_DIR
+set_property -dict {PACKAGE_PIN M3   IOSTANDARD LVCMOS33} [get_ports {f_step_o}];               # F_STEP
+set_property -dict {PACKAGE_PIN N2   IOSTANDARD LVCMOS33} [get_ports {f_track0_i}];             # F_TRCK0
+set_property -dict {PACKAGE_PIN N4   IOSTANDARD LVCMOS33} [get_ports {f_wdata_o}];              # F_WDATE
+set_property -dict {PACKAGE_PIN N3   IOSTANDARD LVCMOS33} [get_ports {f_wgate_o}];              # F_WGATE
+set_property -dict {PACKAGE_PIN P2   IOSTANDARD LVCMOS33} [get_ports {f_writeprotect_i}];       # F_WPT
+
+# I2C bus for on-board peripherals
+set_property -dict {PACKAGE_PIN A15  IOSTANDARD LVCMOS33} [get_ports {fpga_scl_io}];            # FPGA_SCL
+set_property -dict {PACKAGE_PIN A16  IOSTANDARD LVCMOS33} [get_ports {fpga_sda_io}];            # FPGA_SDA
+set_property -dict {PACKAGE_PIN G21  IOSTANDARD LVCMOS33} [get_ports {grove_scl_io}];           # Grove_SCL0
+set_property -dict {PACKAGE_PIN G22  IOSTANDARD LVCMOS33} [get_ports {grove_sda_io}];           # Grove_SDA0
+
+# On board LEDs
+set_property -dict {PACKAGE_PIN U22  IOSTANDARD LVCMOS33} [get_ports {led_o}];                  # ULED
+
+# Pmod Header
+set_property -dict {PACKAGE_PIN A18  IOSTANDARD LVCMOS33} [get_ports {p1hi_io[0]}];             # B16_L17_P
+set_property -dict {PACKAGE_PIN E1   IOSTANDARD LVCMOS33} [get_ports {p1hi_io[1]}];             # B35_L3_P
+set_property -dict {PACKAGE_PIN C2   IOSTANDARD LVCMOS33} [get_ports {p1hi_io[2]}];             # B35_L2_P
+set_property -dict {PACKAGE_PIN B1   IOSTANDARD LVCMOS33} [get_ports {p1hi_io[3]}];             # B35_L1_P
+set_property -dict {PACKAGE_PIN F1   IOSTANDARD LVCMOS33} [get_ports {p1lo_io[0]}];             # B35_L5_N
+set_property -dict {PACKAGE_PIN D1   IOSTANDARD LVCMOS33} [get_ports {p1lo_io[1]}];             # B35_L3_N
+set_property -dict {PACKAGE_PIN B2   IOSTANDARD LVCMOS33} [get_ports {p1lo_io[2]}];             # B35_L2_N
+set_property -dict {PACKAGE_PIN A1   IOSTANDARD LVCMOS33} [get_ports {p1lo_io[3]}];             # B35_L1_N
+set_property -dict {PACKAGE_PIN E2   IOSTANDARD LVCMOS33} [get_ports {p2hi_io[0]}];             # B35_L4_P
+set_property -dict {PACKAGE_PIN D2   IOSTANDARD LVCMOS33} [get_ports {p2hi_io[1]}];             # B35_L4_N
+set_property -dict {PACKAGE_PIN G4   IOSTANDARD LVCMOS33} [get_ports {p2hi_io[2]}];             # B35_L12_N
+set_property -dict {PACKAGE_PIN J5   IOSTANDARD LVCMOS33} [get_ports {p2hi_io[3]}];             # B35_L10_P
+set_property -dict {PACKAGE_PIN F3   IOSTANDARD LVCMOS33} [get_ports {p2lo_io[0]}];             # B35_L6_P
+set_property -dict {PACKAGE_PIN E3   IOSTANDARD LVCMOS33} [get_ports {p2lo_io[1]}];             # B35_L6_N
+set_property -dict {PACKAGE_PIN H4   IOSTANDARD LVCMOS33} [get_ports {p2lo_io[2]}];             # B35_L12_P
+set_property -dict {PACKAGE_PIN H5   IOSTANDARD LVCMOS33} [get_ports {p2lo_io[3]}];             # B35_L10_N
+
+# Quad SPI Flash. U5 = S25FL512SAGBHIS10
+set_property -dict {PACKAGE_PIN T19  IOSTANDARD LVCMOS33} [get_ports {qspicsn_o}];              # SPI-CS
+set_property -dict {PACKAGE_PIN P22  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[0]}];           # SPI-DQ0
+set_property -dict {PACKAGE_PIN R22  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[1]}];           # SPI-DQ1
+set_property -dict {PACKAGE_PIN P21  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[2]}];           # SPI-DQ2
+set_property -dict {PACKAGE_PIN R21  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[3]}];           # SPI-DQ3
+set_property -dict {PULLUP TRUE}                          [get_ports {qspidb_io[*]}];
 
 ################################
 ## PLACEMENT CONSTRAINTS
@@ -256,7 +350,7 @@ set_false_path -from [get_clocks qnice_clk]       -to [get_clocks tmds_720p_clk]
 
 ## Assume the HDMI output is 720p, which is the fastest clock.
 ## No need to do timing analysis on the slower HDMI clocks as well.
-set_case_analysis 0 [get_nets i_hal_mega65_r3/i_framework/i_clk_m2m/hdmi_clk_sel_i]
+set_case_analysis 0 [get_nets i_hal_mega65_r3/i_framework/i_clk_m2m/hdmi_clk_sel]
 
 ## The high level reset signals are slow enough so that we can afford a false path
 set_false_path -from [get_pins i_hal_mega65_r3/i_framework/i_reset_manager/reset_m2m_n_o_reg/C]

@@ -47,14 +47,14 @@ port (
    kb_io1_o                : out   std_logic;                 -- data output to keyboard
    kb_io2_i                : in    std_logic;                 -- data input from keyboard
 
-   -- SD Card (internal on bottom)
+   -- Micro SD Connector (external slot at back of the cover)
    sd_reset_o              : out   std_logic;
    sd_clk_o                : out   std_logic;
    sd_mosi_o               : out   std_logic;
    sd_miso_i               : in    std_logic;
    sd_cd_i                 : in    std_logic;
 
-   -- SD Card (external on back)
+   -- SD Connector (this is the slot at the bottom side of the case under the cover)
    sd2_reset_o             : out   std_logic;
    sd2_clk_o               : out   std_logic;
    sd2_mosi_o              : out   std_logic;
@@ -181,6 +181,11 @@ architecture synthesis of hal_mega65_r3 is
 
   signal reset_n : std_logic;
 
+   signal audio_clk   : std_logic;
+   signal audio_reset : std_logic;
+   signal audio_left  : signed(15 downto 0);
+   signal audio_right : signed(15 downto 0);
+
 begin
 
    -----------------------------------------------------------------------------------------
@@ -214,9 +219,9 @@ begin
    i_pcm2pdm : entity work.pcm_to_pdm
       port map
       (
-         cpuclock         => main_clk_i,
-         pcm_left         => main_audio_l_i,
-         pcm_right        => main_audio_r_i,
+         cpuclock         => audio_clk,
+         pcm_left         => audio_left,
+         pcm_right        => audio_right,
          -- Pulse Density Modulation (PDM is supposed to sound better than PWM on MEGA65)
          pdm_left         => pwm_l_o,
          pdm_right        => pwm_r_o,
@@ -334,6 +339,12 @@ begin
       hr_core_waitrequest_o   => hr_core_waitrequest_o,
       hr_high_o               => hr_high_o,
       hr_low_o                => hr_low_o,
+
+      -- Audio
+      audio_clk_o             => audio_clk,
+      audio_reset_o           => audio_reset,
+      audio_left_o            => audio_left,
+      audio_right_o           => audio_right,
 
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi_i,
