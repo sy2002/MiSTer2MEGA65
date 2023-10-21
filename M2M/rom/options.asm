@@ -344,13 +344,8 @@ _HLP_CA_1       MOVE    LOG_STR_CFG_ON, R8
                 ; specified by SD_WAIT (shell_vars.asm). This is a workaround
                 ; that allows us to mount more SD cards successfully.
                 ; 
-                ; While we wait: Keep the core in reset mode and switch the
-                ; keyboard and joystick off (due to the fact, that we MOVE
-                ; M2M$CSR_RESET instead or using OR). The "unreset" including
-                ; the activation of keyboard and joystick will be done in
-                ; RP_SYSTEM_START (gencfg.asm)
-                MOVE    M2M$CSR, R2
-                MOVE    M2M$CSR_RESET, @R2
+                ; While we wait: The core needs to be in reset mode. This is
+                ; the case, see also CSR_DEFAULT in M2M/vhdl/QNICE/qnice.vhd
                 RSUB    WAIT_FOR_SD, 1
 
                 ; Mount SD card

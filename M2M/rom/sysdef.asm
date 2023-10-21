@@ -286,7 +286,6 @@ M2M$SHELL_O_DY      .EQU 0x7001     ; Height of Help/Options menu
 
 ; M2M$CFG_GENERAL Addresses
 
-M2M$CFG_RP_KEEP     .EQU 0x7000     ; keep core at reset after machine reset
 M2M$CFG_RP_COUNTER  .EQU 0x7001     ; keep reset for a "QNICE loop while"
 M2M$CFG_RP_PAUSE    .EQU 0x7002     ; pause core when any OSD opens
 M2M$CFG_RP_WELCOME  .EQU 0x7003     ; show the welcome screen in general

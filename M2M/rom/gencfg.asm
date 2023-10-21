@@ -23,19 +23,12 @@ RP_SYSTEM_START INCRB
                 MOVE    M2M$RAMROM_4KWIN, R0    ; choose Reset/Pause handling
                 MOVE    M2M$CFG_GENERAL, @R0
 
-                ; If SAVE_SETTINGS (config.vhd) is true, then we are already
-                ; in a reset state at this moment while keyboard and joystick
-                ; are switched off.
-                MOVE    M2M$CFG_SAVEOSDCFG, R1
-                CMP     1, @R1
-                RBRA    _RP_SS_0, Z             ; skip reset
-
-                ; reset/keyb/joy OFF by default
-                MOVE    M2M$CSR, R7
-                MOVE    0, @R7
+                ; The QNICE CSR is in a sophisticated state when we arrive
+                ; here, and the core is in RESET state.
+                ; (See also CSR_DEFAULT in M2M/vhdl/QNICE/qnice.vhd)
 
                 ; handle keyboard and joystick settings
-_RP_SS_0        MOVE    M2M$CFG_RP_KB_RST, R1
+                MOVE    M2M$CFG_RP_KB_RST, R1
                 CMP     0, @R1
                 RBRA    _RP_JK_1, Z
                 OR      M2M$CSR_KBD, @R7        ; keyoard on
@@ -48,20 +41,11 @@ _RP_JK_2        MOVE    M2M$CFG_RP_J2_RST, R1
                 RBRA    _RP_JK_3, Z
                 OR      M2M$CSR_JOY2, @R7       ; joystick 2 on
 
-                ; default in QNICE CSR is reset = 0; shall we activate reset?
-_RP_JK_3        MOVE    M2M$CFG_RP_KEEP, R1
-                CMP     0, @R1                  ; keep in reset?
-                RBRA    _RP_SS_1, Z             ; no
-                OR      M2M$CSR_RESET, @R7      ; yes: reset state
-                RBRA    _RP_SS_3, 1             ; skip M2M$CFG_RP_COUNTER:
-                                                ; mutually exclusive
-
                 ; wait a certain amount of QNICE loops while keeping reset on
-_RP_SS_1        MOVE    M2M$CFG_RP_COUNTER, R1
+_RP_JK_3        MOVE    M2M$CFG_RP_COUNTER, R1
                 MOVE    @R1, R1
                 RBRA    _RP_SS_2, Z             ; counter is zero: skip
 
-                OR      M2M$CSR_RESET, @R7      ; set reset state
                 XOR     R2, R2
 _RP_SS_1_LOOP   CMP     R1, R2                  ; done?
                 RBRA    _RP_SS_2, Z             ; yes
@@ -70,7 +54,7 @@ _RP_SS_1_LOOP   CMP     R1, R2                  ; done?
 
 _RP_SS_2        AND     M2M$CSR_UN_RESET, @R7   ; delete reset state
 
-_RP_SS_3        RSUB    ASCAL_INIT, 1           ; handle ascal configuration
+                RSUB    ASCAL_INIT, 1           ; handle ascal configuration
                 DECRB
                 RET
 

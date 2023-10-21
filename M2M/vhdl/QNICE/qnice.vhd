@@ -92,6 +92,34 @@ end entity QNICE;
 
 architecture beh of QNICE is
 
+-- CSR defaults for power-on and after QNICE is being reset (see sysdef.asm for semantics):
+--
+-- Bit #0 = 1:
+--    Core is in RESET state until the M2M firmware "un-resets" the core according to the settings in
+--    config.vhd. This "being in RESET state from the very beginning on and staying for a while in it"
+--    is very important, because some cores do not cope well with a quickly "flickering"
+--    reset signal at power-on or after QNICE reset (e.g. the ZX Uno core is one of those).
+--
+--    If the CSR would not be in RESET state at power on, then the "flickering" would happen because
+--    the default-reset-off state would be set to ON in the firmware routine HELP_MENU_INIT (options.asm)
+--    and then this ON state would also quickly be set to OFF later in RP_SYSTEM_START (gencfg.asm) or a
+--    bit later in START_SHELL (shell.asm) leading to an ON (due to MMCM lock) then OFF (due to QNICE's
+--    CSR defaults) then ON (due to HELP_MENU_INIT) and then finally OFF.
+--    And HELP_MENU_INIT needs to assume (or make sure) that the core is in reset state because it needs
+--    to apply an SD card stability workaround that implies waiting for a while - and while we wait, the
+--    core needs to "wait" (be in reset state), too. Learn more in HELP_MENU_INIT (options.asm).
+--
+-- Bit #1 = 0: The core is not in a paused state
+-- Bit #2 = 0: No OSM is being shown
+-- Bit #3, #4, #5 = 1: The keyboard and the joysticks are active
+-- Bit #6 = 0: Auto select SD card (precedence for the SD card at the back)
+-- Bit #7 = 0: Ignored due to bit #6 being 0
+-- Bit #8, #9, #10: read-only, so we can leave them alone and "set" them to 0
+-- Bit #11 = 1: Auto-sync ascal settings ON
+-- Bit #12 to #15: reserved, set to 0
+constant CSR_DEFAULT             : std_logic_vector(15 downto 0) := x"0839";
+
+-- Amount of characters (horizontal and vertical) on the QNICE-controlled screen overlay
 constant CHARS_DX                : natural := G_VGA_DX / G_FONT_DX;
 constant CHARS_DY                : natural := G_VGA_DY / G_FONT_DY;
 
@@ -191,7 +219,7 @@ signal ramrom_4kwin_we           : std_logic;
 signal ramrom_4kwin_data_out     : std_logic_vector(15 downto 0);
 
 -- Internal registers
-signal reg_csr                   : std_logic_vector(15 downto 0);
+signal reg_csr                   : std_logic_vector(15 downto 0) := CSR_DEFAULT;
 signal reg_cfd_addr              : natural range 0 to 15;
 signal reg_cfm_addr              : natural range 0 to 15;
 signal reg_ramrom_4kwin          : natural range 0 to 65535;
@@ -555,11 +583,7 @@ begin
       if falling_edge(clk50_i) then
          -- Default values of all registers (reset)
          if reset_ctl = '1' then
-            reg_csr     <= x"0838";  -- By default the core is running and the keyboard and the joysticks are active
-                                     -- Default: Auto select SD card: bit 6 = 0
-                                     -- Default: internal card (bottom tray): bit 7 = 0
-                                     -- Default: Auto-sync ascal settings = on: bit 11 aka ascal_usage = 1
-
+            reg_csr      <= CSR_DEFAULT;
             ascal_mode_o <= "00000"; -- nearest neighbor scaler, no triple buffering
 
              -- OSM is fullscreen by default

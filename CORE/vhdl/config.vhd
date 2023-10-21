@@ -199,10 +199,7 @@ constant SEL_GENERAL       : std_logic_vector(15 downto 0) := x"0110";  -- !!! D
 
 -- START YOUR CONFIGURATION BELOW THIS LINE
 
--- keep the core in RESET state after the hardware starts up and after pressing the MEGA65's reset button
-constant RESET_KEEP        : boolean := false;
-
--- alternative to RESET_KEEP: keep the reset line active for this amount of "QNICE loops" (see shell.asm)
+-- at a minimum, keep the reset line active for this amount of "QNICE loops" (see gencfg.asm).
 -- "0" means: deactivate this feature
 constant RESET_COUNTER     : natural := 100;
 
@@ -487,7 +484,6 @@ addr_decode : process(clk_i, address_i)
    function getGenConf(index: natural) return std_logic_vector is
    begin
       case index is
-         when 0      => return bool2slv(RESET_KEEP);
          when 1      => return std_logic_vector(to_unsigned(RESET_COUNTER, 16));
          when 2      => return bool2slv(OPTM_PAUSE);
          when 3      => return bool2slv(WELCOME_ACTIVE);
