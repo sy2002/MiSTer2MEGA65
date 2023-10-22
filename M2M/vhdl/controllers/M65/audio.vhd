@@ -23,7 +23,6 @@ port (
    audio_reset_i  : in    std_logic;
    audio_left_i   : in    signed(15 downto 0);
    audio_right_i  : in    signed(15 downto 0);
-   audio_test_i   : in    std_logic;   -- Enable test tone
 
    -- Audio DAC. U37 = AK4432VT
    audio_mclk_o   : out   std_logic;   -- Master Clock Input Pin,       12.288 MHz = 256*48 kHz
@@ -44,11 +43,6 @@ architecture synthesis of audio is
    signal audio_12_clk        : std_logic;   -- 12.288 MHz
    signal audio_12_left       : std_logic_vector(15 downto 0); -- Signed
    signal audio_12_right      : std_logic_vector(15 downto 0); -- Signed
-   signal audio_12_test       : std_logic;
-   signal audio_12_test_left  : std_logic_vector(15 downto 0); -- Signed
-   signal audio_12_test_right : std_logic_vector(15 downto 0); -- Signed
-   signal audio_12_core_left  : std_logic_vector(15 downto 0); -- Signed
-   signal audio_12_core_right : std_logic_vector(15 downto 0); -- Signed
 
    signal fs_counter : integer range 0 to 255;
    signal i2s_data   : std_logic_vector(63 downto 0);
@@ -93,41 +87,16 @@ begin
    -- Clock domain crossing: AUDIO to AUDIO_12
    i_audio2audio12: entity work.cdc_stable
       generic map (
-         G_DATA_SIZE => 33
+         G_DATA_SIZE => 32
       )
       port map (
          src_clk_i                => audio_clk_i,
          src_data_i(15 downto  0) => std_logic_vector(audio_left_i),
          src_data_i(31 downto 16) => std_logic_vector(audio_right_i),
-         src_data_i(32)           => audio_test_i,
          dst_clk_i                => audio_12_clk,
-         dst_data_o(15 downto  0) => audio_12_core_left,
-         dst_data_o(31 downto 16) => audio_12_core_right,
-         dst_data_o(32)           => audio_12_test
+         dst_data_o(15 downto  0) => audio_12_left,
+         dst_data_o(31 downto 16) => audio_12_right
       ); -- i_audio2audio12
-
-
-   -------------------------------------------------------------
-   -- For debugging purposes it could be useful to generate
-   -- a simple test tone.  This generates approx 477 Hz
-   -- at maximum volume.
-   -------------------------------------------------------------
-
-   test_tone_proc : process (audio_12_clk)
-      variable x : signed(31 downto 0) := X"7FF00000";
-      variable y : signed(31 downto 0) := X"00000000";
-   begin
-      if rising_edge(audio_12_clk) then
-         -- Frequency generated will be 12.288 / (2*pi) / 4096 = 477.46 Hz.
-         x := x - y/4096;
-         y := y + x/4096;
-         audio_12_test_left  <= std_logic_vector(x(31 downto 16));
-         audio_12_test_right <= std_logic_vector(y(31 downto 16));
-      end if;
-   end process test_tone_proc;
-
-   audio_12_left  <= audio_12_test_left  when audio_test_i else audio_12_core_left;
-   audio_12_right <= audio_12_test_right when audio_test_i else audio_12_core_right;
 
 
    -------------------------------------------------------------

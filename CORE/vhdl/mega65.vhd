@@ -110,11 +110,23 @@ port (
    main_joy_1_right_n_i    : in  std_logic;
    main_joy_1_fire_n_i     : in  std_logic;
 
+   main_joy_1_up_n_o       : out std_logic;
+   main_joy_1_down_n_o     : out std_logic;
+   main_joy_1_left_n_o     : out std_logic;
+   main_joy_1_right_n_o    : out std_logic;
+   main_joy_1_fire_n_o     : out std_logic;
+
    main_joy_2_up_n_i       : in  std_logic;
    main_joy_2_down_n_i     : in  std_logic;
    main_joy_2_left_n_i     : in  std_logic;
    main_joy_2_right_n_i    : in  std_logic;
    main_joy_2_fire_n_i     : in  std_logic;
+
+   main_joy_2_up_n_o       : out std_logic;
+   main_joy_2_down_n_o     : out std_logic;
+   main_joy_2_left_n_o     : out std_logic;
+   main_joy_2_right_n_o    : out std_logic;
+   main_joy_2_fire_n_o     : out std_logic;
 
    main_pot1_x_i           : in  std_logic_vector(7 downto 0);
    main_pot1_y_i           : in  std_logic_vector(7 downto 0);
@@ -231,6 +243,18 @@ signal qnice_demo_vd_ce       : std_logic;
 signal qnice_demo_vd_we       : std_logic;
 
 begin
+
+   main_joy_1_up_n_o    <= '1';
+   main_joy_1_down_n_o  <= '1';
+   main_joy_1_left_n_o  <= '1';
+   main_joy_1_right_n_o <= '1';
+   main_joy_1_fire_n_o  <= '1';
+   main_joy_2_up_n_o    <= '1';
+   main_joy_2_down_n_o  <= '1';
+   main_joy_2_left_n_o  <= '1';
+   main_joy_2_right_n_o <= '1';
+   main_joy_2_fire_n_o  <= '1';
+
 
    -- MMCME2_ADV clock generators:
    --   @TODO YOURCORE:       54 MHz

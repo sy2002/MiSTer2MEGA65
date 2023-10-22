@@ -583,12 +583,22 @@ begin
          main_joy_1_left_n_i     => main_joy1_left_n,
          main_joy_1_right_n_i    => main_joy1_right_n,
          main_joy_1_fire_n_i     => main_joy1_fire_n,
+         main_joy_1_up_n_o       => open, -- Not connected on the R3 board
+         main_joy_1_down_n_o     => open, -- Not connected on the R3 board
+         main_joy_1_left_n_o     => open, -- Not connected on the R3 board
+         main_joy_1_right_n_o    => open, -- Not connected on the R3 board
+         main_joy_1_fire_n_o     => open, -- Not connected on the R3 board
 
          main_joy_2_up_n_i       => main_joy2_up_n,
          main_joy_2_down_n_i     => main_joy2_down_n,
          main_joy_2_left_n_i     => main_joy2_left_n,
          main_joy_2_right_n_i    => main_joy2_right_n,
          main_joy_2_fire_n_i     => main_joy2_fire_n,
+         main_joy_2_up_n_o       => open, -- Not connected on the R3 board
+         main_joy_2_down_n_o     => open, -- Not connected on the R3 board
+         main_joy_2_left_n_o     => open, -- Not connected on the R3 board
+         main_joy_2_right_n_o    => open, -- Not connected on the R3 board
+         main_joy_2_fire_n_o     => open, -- Not connected on the R3 board
 
          main_pot1_x_i           => main_pot1_x,
          main_pot1_y_i           => main_pot1_y,

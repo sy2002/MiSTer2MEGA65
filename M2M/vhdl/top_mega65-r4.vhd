@@ -35,16 +35,16 @@ port (
    vdac_blank_n_o          : out   std_logic;
    vdac_psave_n_o          : out   std_logic;
 
-   -- Digital Video (HDMI)
+   -- HDMI. U10 = PTN3363BSMP
    tmds_data_p_o           : out   std_logic_vector(2 downto 0);
    tmds_data_n_o           : out   std_logic_vector(2 downto 0);
    tmds_clk_p_o            : out   std_logic;
    tmds_clk_n_o            : out   std_logic;
-   hdmi_hiz_o              : out   std_logic;
-   hdmi_enable_n_o         : out   std_logic;
-   hdmi_hpd_a_io           : inout std_logic;
-   hdmi_scl_io             : inout std_logic;
-   hdmi_sda_io             : inout std_logic;
+   hdmi_hiz_en_o           : out   std_logic;   -- Connect to U10.HIZ_EN
+   hdmi_ls_oe_n_o          : out   std_logic;   -- Connect to U10.OE#
+   hdmi_hpd_i              : in    std_logic;   -- Connect to U10.HPD_SOURCE
+   hdmi_scl_io             : inout std_logic;   -- Connect to U10.SCL_SOURCE
+   hdmi_sda_io             : inout std_logic;   -- Connect to U10.SDA_SOURCE
 
    -- MEGA65 smart keyboard controller
    kb_io0_o                : out   std_logic;                 -- clock to keyboard
@@ -91,12 +91,25 @@ port (
    fa_left_n_i             : in    std_logic;
    fa_right_n_i            : in    std_logic;
    fa_fire_n_i             : in    std_logic;
-
+   fa_fire_n_o             : out   std_logic;   -- 0: Drive pin low (output). 1: Leave pin floating (input)
+   fa_up_n_o               : out   std_logic;
+   fa_left_n_o             : out   std_logic;
+   fa_down_n_o             : out   std_logic;
+   fa_right_n_o            : out   std_logic;
    fb_up_n_i               : in    std_logic;
    fb_down_n_i             : in    std_logic;
    fb_left_n_i             : in    std_logic;
    fb_right_n_i            : in    std_logic;
    fb_fire_n_i             : in    std_logic;
+   fb_up_n_o               : out   std_logic;
+   fb_down_n_o             : out   std_logic;
+   fb_fire_n_o             : out   std_logic;
+   fb_right_n_o            : out   std_logic;
+   fb_left_n_o             : out   std_logic;
+
+   -- Joystick power supply
+   joystick_5v_disable_o   : out   std_logic;  -- 1: Disable 5V power supply to joysticks
+   joystick_5v_powergood_i : in    std_logic;
 
    paddle_i                : in    std_logic_vector(3 downto 0);
    paddle_drain_o          : out   std_logic;
@@ -144,8 +157,8 @@ port (
    cart_nmi_i              : in    std_logic;                  -- R4 board bug. Should be inout.
    cart_irq_i              : in    std_logic;                  -- R4 board bug. Should be inout.
    cart_dma_i              : in    std_logic;
-   cart_exrom_io           : inout std_logic;
-   cart_game_io            : inout std_logic;
+   cart_exrom_i            : in    std_logic;
+   cart_game_i             : in    std_logic;
    cart_ba_io              : inout std_logic;
    cart_rw_io              : inout std_logic;
    cart_roml_io            : inout std_logic;
@@ -160,8 +173,9 @@ port (
    -- DIP Switches
    cpld_cfg_i              : in    std_logic_vector(3 downto 0);
 
-   -- Debug. Also used to control output to joystick ??
-   dbg_io                  : inout std_logic_vector(11 downto 0);
+   -- Debug.
+   dbg_io_10               : inout std_logic;
+   dbg_io_11               : inout std_logic;
 
    -- SMSC Ethernet PHY. U4 = KSZ8081RNDCA
    eth_clock_o             : out   std_logic;
@@ -197,10 +211,6 @@ port (
    fpga_scl_io             : inout std_logic;
    grove_sda_io            : inout std_logic;
    grove_scl_io            : inout std_logic;
-
-   -- Joystick power supply
-   joystick_5v_disable_o   : out   std_logic;
-   joystick_5v_powergood_i : in    std_logic;
 
    -- On board LEDs
    led_g_n_o               : out   std_logic;
@@ -291,17 +301,29 @@ architecture synthesis of mega65_r4 is
    signal video_vblank           : std_logic;
 
    -- Joysticks and Paddles
-   signal main_joy1_up_n         : std_logic;
-   signal main_joy1_down_n       : std_logic;
-   signal main_joy1_left_n       : std_logic;
-   signal main_joy1_right_n      : std_logic;
-   signal main_joy1_fire_n       : std_logic;
+   signal main_joy1_up_n_in      : std_logic;
+   signal main_joy1_down_n_in    : std_logic;
+   signal main_joy1_left_n_in    : std_logic;
+   signal main_joy1_right_n_in   : std_logic;
+   signal main_joy1_fire_n_in    : std_logic;
 
-   signal main_joy2_up_n         : std_logic;
-   signal main_joy2_down_n       : std_logic;
-   signal main_joy2_left_n       : std_logic;
-   signal main_joy2_right_n      : std_logic;
-   signal main_joy2_fire_n       : std_logic;
+   signal main_joy1_up_n_out     : std_logic;
+   signal main_joy1_down_n_out   : std_logic;
+   signal main_joy1_left_n_out   : std_logic;
+   signal main_joy1_right_n_out  : std_logic;
+   signal main_joy1_fire_n_out   : std_logic;
+
+   signal main_joy2_up_n_in      : std_logic;
+   signal main_joy2_down_n_in    : std_logic;
+   signal main_joy2_left_n_in    : std_logic;
+   signal main_joy2_right_n_in   : std_logic;
+   signal main_joy2_fire_n_in    : std_logic;
+
+   signal main_joy2_up_n_out     : std_logic;
+   signal main_joy2_down_n_out   : std_logic;
+   signal main_joy2_left_n_out   : std_logic;
+   signal main_joy2_right_n_out  : std_logic;
+   signal main_joy2_fire_n_out   : std_logic;
 
    signal main_pot1_x            : std_logic_vector(7 downto 0);
    signal main_pot1_y            : std_logic_vector(7 downto 0);
@@ -419,6 +441,16 @@ begin
       joy_2_left_n_i          => fb_left_n_i,
       joy_2_right_n_i         => fb_right_n_i,
       joy_2_fire_n_i          => fb_fire_n_i,
+      joy_1_up_n_o            => fa_up_n_o,
+      joy_1_down_n_o          => fa_down_n_o,
+      joy_1_left_n_o          => fa_left_n_o,
+      joy_1_right_n_o         => fa_right_n_o,
+      joy_1_fire_n_o          => fa_fire_n_o,
+      joy_2_up_n_o            => fb_up_n_o,
+      joy_2_down_n_o          => fb_down_n_o,
+      joy_2_left_n_o          => fb_left_n_o,
+      joy_2_right_n_o         => fb_right_n_o,
+      joy_2_fire_n_o          => fb_fire_n_o,
       paddle_i                => paddle_i,
       paddle_drain_o          => paddle_drain_o,
       hr_d_io                 => hr_d_io,
@@ -458,16 +490,26 @@ begin
       video_hs_i              => video_hs,
       video_hblank_i          => video_hblank,
       video_vblank_i          => video_vblank,
-      main_joy1_up_n_o        => main_joy1_up_n,
-      main_joy1_down_n_o      => main_joy1_down_n,
-      main_joy1_left_n_o      => main_joy1_left_n,
-      main_joy1_right_n_o     => main_joy1_right_n,
-      main_joy1_fire_n_o      => main_joy1_fire_n,
-      main_joy2_up_n_o        => main_joy2_up_n,
-      main_joy2_down_n_o      => main_joy2_down_n,
-      main_joy2_left_n_o      => main_joy2_left_n,
-      main_joy2_right_n_o     => main_joy2_right_n,
-      main_joy2_fire_n_o      => main_joy2_fire_n,
+      main_joy1_up_n_o        => main_joy1_up_n_in,
+      main_joy1_down_n_o      => main_joy1_down_n_in,
+      main_joy1_left_n_o      => main_joy1_left_n_in,
+      main_joy1_right_n_o     => main_joy1_right_n_in,
+      main_joy1_fire_n_o      => main_joy1_fire_n_in,
+      main_joy1_up_n_i        => main_joy1_up_n_out,
+      main_joy1_down_n_i      => main_joy1_down_n_out,
+      main_joy1_left_n_i      => main_joy1_left_n_out,
+      main_joy1_right_n_i     => main_joy1_right_n_out,
+      main_joy1_fire_n_i      => main_joy1_fire_n_out,
+      main_joy2_up_n_o        => main_joy2_up_n_in,
+      main_joy2_down_n_o      => main_joy2_down_n_in,
+      main_joy2_left_n_o      => main_joy2_left_n_in,
+      main_joy2_right_n_o     => main_joy2_right_n_in,
+      main_joy2_fire_n_o      => main_joy2_fire_n_in,
+      main_joy2_up_n_i        => main_joy2_up_n_out,
+      main_joy2_down_n_i      => main_joy2_down_n_out,
+      main_joy2_left_n_i      => main_joy2_left_n_out,
+      main_joy2_right_n_i     => main_joy2_right_n_out,
+      main_joy2_fire_n_i      => main_joy2_fire_n_out,
       main_pot1_x_o           => main_pot1_x,
       main_pot1_y_o           => main_pot1_y,
       main_pot2_x_o           => main_pot2_x,
@@ -610,17 +652,27 @@ begin
          main_drive_led_col_o    => main_drive_led_col,
 
          -- Joysticks input
-         main_joy_1_up_n_i       => main_joy1_up_n,
-         main_joy_1_down_n_i     => main_joy1_down_n,
-         main_joy_1_left_n_i     => main_joy1_left_n,
-         main_joy_1_right_n_i    => main_joy1_right_n,
-         main_joy_1_fire_n_i     => main_joy1_fire_n,
+         main_joy_1_up_n_i       => main_joy1_up_n_in,
+         main_joy_1_down_n_i     => main_joy1_down_n_in,
+         main_joy_1_left_n_i     => main_joy1_left_n_in,
+         main_joy_1_right_n_i    => main_joy1_right_n_in,
+         main_joy_1_fire_n_i     => main_joy1_fire_n_in,
+         main_joy_1_up_n_o       => main_joy1_up_n_out,
+         main_joy_1_down_n_o     => main_joy1_down_n_out,
+         main_joy_1_left_n_o     => main_joy1_left_n_out,
+         main_joy_1_right_n_o    => main_joy1_right_n_out,
+         main_joy_1_fire_n_o     => main_joy1_fire_n_out,
 
-         main_joy_2_up_n_i       => main_joy2_up_n,
-         main_joy_2_down_n_i     => main_joy2_down_n,
-         main_joy_2_left_n_i     => main_joy2_left_n,
-         main_joy_2_right_n_i    => main_joy2_right_n,
-         main_joy_2_fire_n_i     => main_joy2_fire_n,
+         main_joy_2_up_n_i       => main_joy2_up_n_in,
+         main_joy_2_down_n_i     => main_joy2_down_n_in,
+         main_joy_2_left_n_i     => main_joy2_left_n_in,
+         main_joy_2_right_n_i    => main_joy2_right_n_in,
+         main_joy_2_fire_n_i     => main_joy2_fire_n_in,
+         main_joy_2_up_n_o       => main_joy2_up_n_out,
+         main_joy_2_down_n_o     => main_joy2_down_n_out,
+         main_joy_2_left_n_o     => main_joy2_left_n_out,
+         main_joy_2_right_n_o    => main_joy2_right_n_out,
+         main_joy_2_fire_n_o     => main_joy2_fire_n_out,
 
          main_pot1_x_i           => main_pot1_x,
          main_pot1_y_i           => main_pot1_y,
@@ -679,8 +731,8 @@ begin
          cart_nmi_i        => cart_nmi_i,
          cart_irq_i        => cart_irq_i,
          cart_dma_i        => cart_dma_i,
-         cart_exrom_i      => cart_exrom_io,
-         cart_game_i       => cart_game_io,
+         cart_exrom_i      => cart_exrom_i,
+         cart_game_i       => cart_game_i,
          cart_ba_io        => cart_ba_io,
          cart_rw_io        => cart_rw_io,
          cart_roml_io      => cart_roml_io,
@@ -695,12 +747,13 @@ begin
    vga_scl_io            <= 'Z';
    vga_sda_io            <= 'Z';
    vdac_psave_n_o        <= '1';
-   hdmi_hiz_o            <= '0';
-   hdmi_enable_n_o       <= '0';
-   hdmi_hpd_a_io         <= 'Z';
+   hdmi_hiz_en_o         <= '0'; -- HDMI is 50 ohm terminated.
+   hdmi_ls_oe_n_o        <= '0'; -- Enable HDMI output
    hdmi_scl_io           <= 'Z';
    hdmi_sda_io           <= 'Z';
-   dbg_io                <= (others => 'Z');
+   dbg_io_10             <= 'Z';
+   dbg_io_11             <= 'Z';
+
    eth_clock_o           <= '0';
    eth_led2_o            <= '0';
    eth_mdc_o             <= '0';
@@ -722,7 +775,7 @@ begin
    fpga_scl_io           <= 'Z';
    grove_sda_io          <= 'Z';
    grove_scl_io          <= 'Z';
-   joystick_5v_disable_o <= '0';
+   joystick_5v_disable_o <= '0'; -- Enable 5V power supply to joysticks
    led_g_n_o             <= '1'; -- Off
    led_r_n_o             <= '1'; -- Off
    led_o                 <= '0'; -- Off

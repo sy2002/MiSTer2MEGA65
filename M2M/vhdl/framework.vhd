@@ -72,12 +72,22 @@ port (
    joy_1_left_n_i          : in    std_logic;
    joy_1_right_n_i         : in    std_logic;
    joy_1_fire_n_i          : in    std_logic;
+   joy_1_up_n_o            : out   std_logic;
+   joy_1_down_n_o          : out   std_logic;
+   joy_1_left_n_o          : out   std_logic;
+   joy_1_right_n_o         : out   std_logic;
+   joy_1_fire_n_o          : out   std_logic;
 
    joy_2_up_n_i            : in    std_logic;
    joy_2_down_n_i          : in    std_logic;
    joy_2_left_n_i          : in    std_logic;
    joy_2_right_n_i         : in    std_logic;
    joy_2_fire_n_i          : in    std_logic;
+   joy_2_up_n_o            : out   std_logic;
+   joy_2_down_n_o          : out   std_logic;
+   joy_2_left_n_o          : out   std_logic;
+   joy_2_right_n_o         : out   std_logic;
+   joy_2_fire_n_o          : out   std_logic;
 
    paddle_i                : in    std_logic_vector(3 downto 0);
    paddle_drain_o          : out   std_logic;
@@ -125,11 +135,21 @@ port (
    main_joy1_left_n_o      : out   std_logic;
    main_joy1_right_n_o     : out   std_logic;
    main_joy1_fire_n_o      : out   std_logic;
+   main_joy1_up_n_i        : in    std_logic;
+   main_joy1_down_n_i      : in    std_logic;
+   main_joy1_left_n_i      : in    std_logic;
+   main_joy1_right_n_i     : in    std_logic;
+   main_joy1_fire_n_i      : in    std_logic;
    main_joy2_up_n_o        : out   std_logic;
    main_joy2_down_n_o      : out   std_logic;
    main_joy2_left_n_o      : out   std_logic;
    main_joy2_right_n_o     : out   std_logic;
    main_joy2_fire_n_o      : out   std_logic;
+   main_joy2_up_n_i        : in    std_logic;
+   main_joy2_down_n_i      : in    std_logic;
+   main_joy2_left_n_i      : in    std_logic;
+   main_joy2_right_n_i     : in    std_logic;
+   main_joy2_fire_n_i      : in    std_logic;
    main_pot1_x_o           : out   std_logic_vector(7 downto 0);
    main_pot1_y_o           : out   std_logic_vector(7 downto 0);
    main_pot2_x_o           : out   std_logic_vector(7 downto 0);
@@ -477,6 +497,19 @@ begin
          dbnce_joy2_right_n   => main_joy2_right_n_o,
          dbnce_joy2_fire_n    => main_joy2_fire_n_o
       ); -- i_joy_debouncer
+
+   -- Joystick outputs from the core are connected directly
+   joy_1_up_n_o    <= main_joy1_up_n_i;
+   joy_1_down_n_o  <= main_joy1_down_n_i;
+   joy_1_left_n_o  <= main_joy1_left_n_i;
+   joy_1_right_n_o <= main_joy1_right_n_i;
+   joy_1_fire_n_o  <= main_joy1_fire_n_i;
+   joy_2_up_n_o    <= main_joy2_up_n_i;
+   joy_2_down_n_o  <= main_joy2_down_n_i;
+   joy_2_left_n_o  <= main_joy2_left_n_i;
+   joy_2_right_n_o <= main_joy2_right_n_i;
+   joy_2_fire_n_o  <= main_joy2_fire_n_i;
+
 
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    i_m2m_keyb : entity work.m2m_keyb

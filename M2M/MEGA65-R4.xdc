@@ -63,11 +63,11 @@ set_property -dict {PACKAGE_PIN AB5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_
 set_property -dict {PACKAGE_PIN AA1  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p_o[0]}];       # TX0_P
 set_property -dict {PACKAGE_PIN AB3  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p_o[1]}];       # TX1_P
 set_property -dict {PACKAGE_PIN AA5  IOSTANDARD TMDS_33}  [get_ports {tmds_data_p_o[2]}];       # TX2_P
-set_property -dict {PACKAGE_PIN M15  IOSTANDARD LVCMOS33} [get_ports {hdmi_hiz_o}];             # HIZ_EN
-set_property -dict {PACKAGE_PIN Y8   IOSTANDARD LVCMOS33} [get_ports {hdmi_hpd_a_io}];          # HPD_A
+set_property -dict {PACKAGE_PIN M15  IOSTANDARD LVCMOS33} [get_ports {hdmi_hiz_en_o}];          # HIZ_EN
+set_property -dict {PACKAGE_PIN Y8   IOSTANDARD LVCMOS33} [get_ports {hdmi_hpd_i}];             # HPD_A
 set_property -dict {PACKAGE_PIN AB7  IOSTANDARD LVCMOS33} [get_ports {hdmi_scl_io}];            # SCL_A
 set_property -dict {PACKAGE_PIN V9   IOSTANDARD LVCMOS33} [get_ports {hdmi_sda_io}];            # SDA_A
-set_property -dict {PACKAGE_PIN AB8  IOSTANDARD LVCMOS33} [get_ports {hdmi_enable_n_o}];        # LS_OE
+set_property -dict {PACKAGE_PIN AB8  IOSTANDARD LVCMOS33} [get_ports {hdmi_ls_oe_n_o}];         # LS_OE
 
 # MEGA65 Keyboard
 set_property -dict {PACKAGE_PIN A14  IOSTANDARD LVCMOS33} [get_ports {kb_io0_o}];               # KB_IO1
@@ -194,8 +194,8 @@ set_property -dict {PACKAGE_PIN W20  IOSTANDARD LVCMOS33} [get_ports {cart_d_io[
 set_property -dict {PACKAGE_PIN W21  IOSTANDARD LVCMOS33} [get_ports {cart_d_io[7]}];           # F_C64_D7
 set_property -dict {PACKAGE_PIN P15  IOSTANDARD LVCMOS33} [get_ports {cart_dma_i}];             # F_C64_DMA
 set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports {cart_dotclock_o}];        # F_C64_CLOCK
-set_property -dict {PACKAGE_PIN R19  IOSTANDARD LVCMOS33} [get_ports {cart_exrom_io}];          # F_C64_EXROM
-set_property -dict {PACKAGE_PIN W22  IOSTANDARD LVCMOS33} [get_ports {cart_game_io}];           #_F_C64_GAME
+set_property -dict {PACKAGE_PIN R19  IOSTANDARD LVCMOS33} [get_ports {cart_exrom_i}];           # F_C64_EXROM
+set_property -dict {PACKAGE_PIN W22  IOSTANDARD LVCMOS33} [get_ports {cart_game_i}];            #_F_C64_GAME
 set_property -dict {PACKAGE_PIN L18  IOSTANDARD LVCMOS33} [get_ports {cart_haddr_dir_o}];       # F_HADDR_DIR
 set_property -dict {PACKAGE_PIN N15  IOSTANDARD LVCMOS33} [get_ports {cart_io1_io}];            # F_C64_IO1
 set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports {cart_io2_io}];            # F_C64_IO2
@@ -216,18 +216,18 @@ set_property -dict {PACKAGE_PIN T16  IOSTANDARD LVCMOS33} [get_ports {cpld_cfg_i
 set_property -dict {PACKAGE_PIN U16  IOSTANDARD LVCMOS33} [get_ports {cpld_cfg_i[3]}];          # CPLD_CFG3
 
 # Debug. Also used to control output to joystick ??
-set_property -dict {PACKAGE_PIN J17  IOSTANDARD LVCMOS33} [get_ports {dbg_io[0]}];              # DBG0 = FA_FIRE_O
-set_property -dict {PACKAGE_PIN H14  IOSTANDARD LVCMOS33} [get_ports {dbg_io[10]}];             # DBG10
-set_property -dict {PACKAGE_PIN G13  IOSTANDARD LVCMOS33} [get_ports {dbg_io[11]}];             # DBG11
-set_property -dict {PACKAGE_PIN G16  IOSTANDARD LVCMOS33} [get_ports {dbg_io[1]}];              # DBG1 = FA_UP_O
-set_property -dict {PACKAGE_PIN K13  IOSTANDARD LVCMOS33} [get_ports {dbg_io[2]}];              # DBG2 = FA_LEFT_O
-set_property -dict {PACKAGE_PIN K14  IOSTANDARD LVCMOS33} [get_ports {dbg_io[3]}];              # DBG3 = FA_DOWN_O
-set_property -dict {PACKAGE_PIN N20  IOSTANDARD LVCMOS33} [get_ports {dbg_io[4]}];              # DBG4 = FB_UP_O
-set_property -dict {PACKAGE_PIN L16  IOSTANDARD LVCMOS33} [get_ports {dbg_io[5]}];              # DBG5 = FA_RIGHT_O
-set_property -dict {PACKAGE_PIN M18  IOSTANDARD LVCMOS33} [get_ports {dbg_io[6]}];              # DBG6 = FB_DOWN_O
-set_property -dict {PACKAGE_PIN N19  IOSTANDARD LVCMOS33} [get_ports {dbg_io[7]}];              # DBG7 = FB_FIRE_O
-set_property -dict {PACKAGE_PIN E18  IOSTANDARD LVCMOS33} [get_ports {dbg_io[8]}];              # DBG8 = FB_RIGHT_O
-set_property -dict {PACKAGE_PIN M17  IOSTANDARD LVCMOS33} [get_ports {dbg_io[9]}];              # DBG9 = FB_LEFT_O
+set_property -dict {PACKAGE_PIN J17  IOSTANDARD LVCMOS33} [get_ports {fa_fire_n_o}];            # DBG0 = FA_FIRE_O
+set_property -dict {PACKAGE_PIN G16  IOSTANDARD LVCMOS33} [get_ports {fa_up_n_o}];              # DBG1 = FA_UP_O
+set_property -dict {PACKAGE_PIN K13  IOSTANDARD LVCMOS33} [get_ports {fa_left_n_o}];            # DBG2 = FA_LEFT_O
+set_property -dict {PACKAGE_PIN K14  IOSTANDARD LVCMOS33} [get_ports {fa_down_n_o}];            # DBG3 = FA_DOWN_O
+set_property -dict {PACKAGE_PIN N20  IOSTANDARD LVCMOS33} [get_ports {fb_up_n_o}];              # DBG4 = FB_UP_O
+set_property -dict {PACKAGE_PIN L16  IOSTANDARD LVCMOS33} [get_ports {fa_right_n_o}];           # DBG5 = FA_RIGHT_O
+set_property -dict {PACKAGE_PIN M18  IOSTANDARD LVCMOS33} [get_ports {fb_down_n_o}];            # DBG6 = FB_DOWN_O
+set_property -dict {PACKAGE_PIN N19  IOSTANDARD LVCMOS33} [get_ports {fb_fire_n_o}];            # DBG7 = FB_FIRE_O
+set_property -dict {PACKAGE_PIN E18  IOSTANDARD LVCMOS33} [get_ports {fb_right_n_o}];           # DBG8 = FB_RIGHT_O
+set_property -dict {PACKAGE_PIN M17  IOSTANDARD LVCMOS33} [get_ports {fb_left_n_o}];            # DBG9 = FB_LEFT_O
+set_property -dict {PACKAGE_PIN H14  IOSTANDARD LVCMOS33} [get_ports {dbg_io_10}];              # DBG10
+set_property -dict {PACKAGE_PIN G13  IOSTANDARD LVCMOS33} [get_ports {dbg_io_11}];              # DBG11
 
 # SMSC Ethernet PHY. U4 = KSZ8081RNDCA
 set_property -dict {PACKAGE_PIN L4   IOSTANDARD LVCMOS33} [get_ports {eth_clock_o}];            # ETH_CLK
@@ -363,85 +363,21 @@ set_property -dict {PULLUP FALSE  SLEW FAST  DRIVE 16}    [get_ports {sdram_*}];
 
 # Place HyperRAM close to I/O pins
 create_pblock pblock_i_hyperram
-add_cells_to_pblock pblock_i_hyperram [get_cells [list i_hal_mega65_r4/i_framework/i_hyperram]]
+add_cells_to_pblock pblock_i_hyperram [get_cells [list */i_framework/i_hyperram]]
 resize_pblock pblock_i_hyperram -add {SLICE_X0Y200:SLICE_X7Y224}
 
 # Place Keyboard close to I/O pins
 create_pblock pblock_m65driver
-add_cells_to_pblock pblock_m65driver [get_cells [list i_hal_mega65_r4/i_framework/i_m2m_keyb/m65driver]]
+add_cells_to_pblock pblock_m65driver [get_cells [list */i_framework/i_m2m_keyb/m65driver]]
 resize_pblock pblock_m65driver -add {SLICE_X0Y225:SLICE_X7Y243}
 
 # Place SD card controller in the middle between the left and right FPGA boundary because the output ports are at the opposide edges
 create_pblock pblock_sdcard
-add_cells_to_pblock pblock_sdcard [get_cells [list i_hal_mega65_r4/i_framework/QNICE_SOC/sd_card]]
+add_cells_to_pblock pblock_sdcard [get_cells [list */i_framework/QNICE_SOC/sd_card]]
 resize_pblock pblock_sdcard -add {SLICE_X66Y178:SLICE_X99Y193}
 
 # Place phase-shifted VGA output registers near the actual output buffers
 create_pblock pblock_vga
-add_cells_to_pblock pblock_vga [get_cells [list i_hal_mega65_r4/i_framework/i_av_pipeline/i_analog_pipeline/VGA_OUT_PHASE_SHIFTED.*]]
+add_cells_to_pblock pblock_vga [get_cells [list */i_framework/i_av_pipeline/i_analog_pipeline/VGA_OUT_PHASE_SHIFTED.*]]
 resize_pblock pblock_vga -add SLICE_X0Y75:SLICE_X5Y99
-
-
-################################
-## TIMING CONSTRAINTS
-################################
-
-## System board clock (100 MHz)
-create_clock -period 10.000 -name clk [get_ports {clk_i}]
-
-## Name Autogenerated Clocks
-create_generated_clock -name qnice_clk     [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0]
-create_generated_clock -name hr_clk_x1     [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT1]
-create_generated_clock -name hr_clk_x2     [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT2]
-create_generated_clock -name hr_clk_x2_del [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT3]
-create_generated_clock -name audio_clk     [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT4]
-create_generated_clock -name tmds_720p_clk [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT0]
-create_generated_clock -name hdmi_720p_clk [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT1]
-create_generated_clock -name tmds_576p_clk [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT0]
-create_generated_clock -name hdmi_576p_clk [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT1]
-create_generated_clock -name main_clk      [get_pins CORE/clk_gen/i_clk_main/CLKOUT0]
-
-## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
-create_generated_clock -name sdcard_clk -source [get_pins i_hal_mega65_r4/i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins i_hal_mega65_r4/i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
-
-## Generic CDC
-set_max_delay 8 -datapath_only -from [get_clocks] -to [get_pins -hierarchical "*cdc_stable_gen.dst_*_d_reg[*]/D"]
-
-## QNICE's EAE combinatorial division networks take longer than the regular clock period, so we specify a multicycle path
-## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells -include_replicated {{i_hal_mega65_r4/i_framework/QNICE_SOC/eae_inst/op0_reg[*]} {i_hal_mega65_r4/i_framework/QNICE_SOC/eae_inst/op1_reg[*]}}] \
-   -to [get_cells -include_replicated {i_hal_mega65_r4/i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
-set_multicycle_path -from [get_cells -include_replicated {{i_hal_mega65_r4/i_framework/QNICE_SOC/eae_inst/op0_reg[*]} {i_hal_mega65_r4/i_framework/QNICE_SOC/eae_inst/op1_reg[*]}}] \
-   -to [get_cells -include_replicated {i_hal_mega65_r4/i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
-
-# Timing between the two system clocks, ascal.vhd, audio, HDMI and HyperRAM is asynchronous.
-set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks hdmi_720p_clk]
-set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks hdmi_720p_clk]
-set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks main_clk]
-set_false_path -from [get_clocks hdmi_720p_clk]   -to [get_clocks main_clk]
-set_false_path   -to [get_clocks hdmi_720p_clk] -from [get_clocks main_clk]
-set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_720p_clk]
-set_false_path -from [get_clocks qnice_clk]       -to [get_clocks tmds_720p_clk]
-
-## Assume the HDMI output is 720p, which is the fastest clock.
-## No need to do timing analysis on the slower HDMI clocks as well.
-set_case_analysis 0 [get_nets i_hal_mega65_r4/i_framework/i_clk_m2m/hdmi_clk_sel]
-
-## The high level reset signals are slow enough so that we can afford a false path
-set_false_path -from [get_pins i_hal_mega65_r4/i_framework/i_reset_manager/reset_m2m_n_o_reg/C]
-set_false_path -from [get_pins i_hal_mega65_r4/i_framework/i_reset_manager/reset_core_n_o_reg/C]
-
-
-################################
-## CONFIGURATION AND BITSTREAM PROPERTIES
-################################
-
-set_property CONFIG_VOLTAGE                  3.3   [current_design]
-set_property CFGBVS                          VCCO  [current_design]
-set_property BITSTREAM.GENERAL.COMPRESS      TRUE  [current_design]
-set_property BITSTREAM.CONFIG.CONFIGRATE     66    [current_design]
-set_property CONFIG_MODE                     SPIx4 [current_design]
-set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR YES   [current_design]
-set_property BITSTREAM.CONFIG.SPI_BUSWIDTH   4     [current_design]
 
