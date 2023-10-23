@@ -151,14 +151,14 @@ set_property -dict {PULLUP FALSE  SLEW FAST  DRIVE 16}    [get_ports {hr_rwds_io
 
 # CBM-488/IEC serial port
 set_property -dict {PACKAGE_PIN N17  IOSTANDARD LVCMOS33} [get_ports {iec_atn_n_o}];            # F_SER_ATN
-set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports {iec_clk_en_o}];           # F_SER_CLK_EN
+set_property -dict {PACKAGE_PIN AA21 IOSTANDARD LVCMOS33} [get_ports {iec_clk_en_o}];           # F_SER_CLK_EN. Active high
 set_property -dict {PACKAGE_PIN Y18  IOSTANDARD LVCMOS33} [get_ports {iec_clk_n_i}];            # F_SER_CLK_I
 set_property -dict {PACKAGE_PIN Y19  IOSTANDARD LVCMOS33} [get_ports {iec_clk_n_o}];            # F_SER_CLK_O
-set_property -dict {PACKAGE_PIN Y21  IOSTANDARD LVCMOS33} [get_ports {iec_data_en_o}];          # F_SER_DATA_EN
+set_property -dict {PACKAGE_PIN Y21  IOSTANDARD LVCMOS33} [get_ports {iec_data_en_o}];          # F_SER_DATA_EN. Active high
 set_property -dict {PACKAGE_PIN AB22 IOSTANDARD LVCMOS33} [get_ports {iec_data_n_i}];           # F_SER_DATA_I
 set_property -dict {PACKAGE_PIN Y22  IOSTANDARD LVCMOS33} [get_ports {iec_data_n_o}];           # F_SER_DATA_O
 set_property -dict {PACKAGE_PIN AB21 IOSTANDARD LVCMOS33} [get_ports {iec_reset_n_o}];          # F_SER_RESET
-set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports {iec_srq_en_o}];           # F_SER_SRQ_EN
+set_property -dict {PACKAGE_PIN AB20 IOSTANDARD LVCMOS33} [get_ports {iec_srq_en_o}];           # F_SER_SRQ_EN. Active high
 set_property -dict {PACKAGE_PIN AA18 IOSTANDARD LVCMOS33} [get_ports {iec_srq_n_i}];            # F_SER_SRQ_I
 set_property -dict {PACKAGE_PIN U20  IOSTANDARD LVCMOS33} [get_ports {iec_srq_n_o}];            # F_SER_SRQ_O
 set_property -dict {PULLUP TRUE}                          [get_ports {iec_clk_n_i}];

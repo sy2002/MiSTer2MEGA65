@@ -129,13 +129,13 @@ port (
    -- CBM-488/IEC serial port
    iec_reset_n_o           : out   std_logic;
    iec_atn_n_o             : out   std_logic;
-   iec_clk_en_o            : out   std_logic;
+   iec_clk_en_n_o          : out   std_logic;
    iec_clk_n_i             : in    std_logic;
    iec_clk_n_o             : out   std_logic;
-   iec_data_en_o           : out   std_logic;
+   iec_data_en_n_o         : out   std_logic;
    iec_data_n_i            : in    std_logic;
    iec_data_n_o            : out   std_logic;
-   iec_srq_en_o            : out   std_logic;
+   iec_srq_en_n_o          : out   std_logic;
    iec_srq_n_i             : in    std_logic;
    iec_srq_n_o             : out   std_logic;
 
@@ -329,6 +329,10 @@ architecture synthesis of mega65_r4 is
    signal main_pot1_y            : std_logic_vector(7 downto 0);
    signal main_pot2_x            : std_logic_vector(7 downto 0);
    signal main_pot2_y            : std_logic_vector(7 downto 0);
+
+   signal iec_clk_en             : std_logic;
+   signal iec_data_en            : std_logic;
+   signal iec_srq_en             : std_logic;
 
    ---------------------------------------------------------------------------------------------
    -- HyperRAM clock domain
@@ -704,13 +708,13 @@ begin
          -- CBM-488/IEC serial port
          iec_reset_n_o     => iec_reset_n_o,
          iec_atn_n_o       => iec_atn_n_o,
-         iec_clk_en_o      => iec_clk_en_o,
+         iec_clk_en_o      => iec_clk_en,
          iec_clk_n_i       => iec_clk_n_i,
          iec_clk_n_o       => iec_clk_n_o,
-         iec_data_en_o     => iec_data_en_o,
+         iec_data_en_o     => iec_data_en,
          iec_data_n_i      => iec_data_n_i,
          iec_data_n_o      => iec_data_n_o,
-         iec_srq_en_o      => iec_srq_en_o,
+         iec_srq_en_o      => iec_srq_en,
          iec_srq_n_i       => iec_srq_n_i,
          iec_srq_n_o       => iec_srq_n_o,
 
@@ -742,6 +746,10 @@ begin
          cart_d_io         => cart_d_io,
          cart_a_io         => cart_a_io
       ); -- CORE
+
+   iec_clk_en_n_o  <= not iec_clk_en;
+   iec_data_en_n_o <= not iec_data_en;
+   iec_srq_en_n_o  <= not iec_srq_en;
 
    -- Safe default values
    vga_scl_io            <= 'Z';

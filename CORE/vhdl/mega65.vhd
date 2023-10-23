@@ -78,6 +78,12 @@ port (
 
    main_pause_core_i       : in  std_logic;
 
+   -- On-Screen-Menu selections
+   main_osm_control_i      : in  std_logic_vector(255 downto 0);
+
+   -- QNICE general purpose register converted to main clock domain
+   main_qnice_gp_reg_i     : in  std_logic_vector(255 downto 0);
+
    -- Video output
    video_clk_o             : out std_logic;
    video_rst_o             : out std_logic;
@@ -109,19 +115,16 @@ port (
    main_joy_1_left_n_i     : in  std_logic;
    main_joy_1_right_n_i    : in  std_logic;
    main_joy_1_fire_n_i     : in  std_logic;
-
    main_joy_1_up_n_o       : out std_logic;
    main_joy_1_down_n_o     : out std_logic;
    main_joy_1_left_n_o     : out std_logic;
    main_joy_1_right_n_o    : out std_logic;
    main_joy_1_fire_n_o     : out std_logic;
-
    main_joy_2_up_n_i       : in  std_logic;
    main_joy_2_down_n_i     : in  std_logic;
    main_joy_2_left_n_i     : in  std_logic;
    main_joy_2_right_n_i    : in  std_logic;
    main_joy_2_fire_n_i     : in  std_logic;
-
    main_joy_2_up_n_o       : out std_logic;
    main_joy_2_down_n_o     : out std_logic;
    main_joy_2_left_n_o     : out std_logic;
@@ -132,12 +135,6 @@ port (
    main_pot1_y_i           : in  std_logic_vector(7 downto 0);
    main_pot2_x_i           : in  std_logic_vector(7 downto 0);
    main_pot2_y_i           : in  std_logic_vector(7 downto 0);
-
-   -- On-Screen-Menu selections
-   main_osm_control_i      : in  std_logic_vector(255 downto 0);
-
-   -- QNICE general purpose register converted to main clock domain
-   main_qnice_gp_reg_i     : in  std_logic_vector(255 downto 0);
 
    --------------------------------------------------------------------------------------------------------
    -- Provide HyperRAM to core (in HyperRAM clock domain)

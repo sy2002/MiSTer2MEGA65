@@ -58,8 +58,8 @@ architecture synthesis of vga_osm is
       vga_osm_x2          : integer range 0 to 127;
       vga_osm_y1          : integer range 0 to 127;
       vga_osm_y2          : integer range 0 to 127;
-      vga_col_delta       : integer range 0 to 2047;
-      vga_row_delta       : integer range 0 to 2047;
+      vga_col_delta       : integer range -2048 to 2047;
+      vga_row_delta       : integer range -2048 to 2047;
       vga_x_div_16        : integer range 0 to 127;
       vga_y_div_16        : integer range 0 to 127;
       vga_x_mod_16        : integer range 0 to 15;
@@ -87,7 +87,7 @@ begin
    -- Stage 1
    -----------
 
-   p_stage1 : process (all)
+   p_stage1 : process (clk_i)
       variable vga_osm_x : integer range 0 to 127;
       variable vga_osm_y : integer range 0 to 127;
    begin
