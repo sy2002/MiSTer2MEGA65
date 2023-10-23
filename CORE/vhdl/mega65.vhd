@@ -276,8 +276,9 @@ begin
    ---------------------------------------------------------------------------------------------
 
    -- MEGA65's power led: By default, it is on and glows green when the MEGA65 is powered on.
+   -- We switch it to blue when a long reset is detected and as long as the user keeps pressing the preset button
    main_power_led_o     <= '1';
-   main_power_led_col_o <= x"00FF00";  -- 24-bit RGB value for the led
+   main_power_led_col_o <= x"0000FF" when main_reset_m2m_i else x"00FF00";
 
    -- main.vhd contains the actual MiSTer core
    i_main : entity work.main
