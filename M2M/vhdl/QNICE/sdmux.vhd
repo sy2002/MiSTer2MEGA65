@@ -23,7 +23,7 @@ use ieee.numeric_std.all;
 entity sdmux is
    port (
       -- QNICE system interface
-      sysclk50Mhz_i     : in std_logic;   -- QNIEC system clock
+      sysclk50Mhz_i     : in std_logic;   -- QNICE system clock
       sysreset_i        : in std_logic;   -- QNICE system reset
       
       -- Configuration lines to control the behavior of the multiplexer

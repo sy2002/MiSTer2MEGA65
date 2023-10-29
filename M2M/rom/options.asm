@@ -222,12 +222,12 @@ _HLP_RESETPOS   MOVE    OPTM_START, R0
 
                 ; when the menu was exited via "Close" + Return, make sure
                 ; that the Return key press is not registered by the core
-                RSUB    WAIT333MS, 1
+_HLP_RET        RSUB    WAIT333MS, 1
 
                 ; Unpause (in case the core was at pause state due to
                 ; OPTM_PAUSE in config.vhd) and reactivate keyboard and
                 ; joysticks in case they were inactive
-_HLP_RET        MOVE    M2M$CSR, R0
+                MOVE    M2M$CSR, R0
                 AND     M2M$CSR_UN_PAUSE, @R0
                 OR      M2M$CSR_KBD_JOY, @R0
 
