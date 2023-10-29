@@ -312,7 +312,8 @@ _IL_CUR_LEFT    MOVE    R5, R8                  ; R8: entries shown
                 RBRA    _IL_PAGE_DEFUP, N       ; yes: scroll one page up
                 MOVE    R8, R10                 ; no: move the residual up..
                 RBRA    _IL_PAGE_UP, !Z         ; .. if it is > 0
-_IL_GOTO_TOP    XOR     R8, R8
+_IL_GOTO_TOP    XOR     R6, R6                  ; abs. index to the very top
+                XOR     R8, R8
                 RBRA    _IL_GOTO, 1             ; .. else go to the very top
 _IL_PAGE_DEFUP  MOVE    R2, R10                 ; R10: one page up
 _IL_PAGE_UP     MOVE    -1, R9                  ; R9: iterate backward
@@ -336,10 +337,11 @@ _IL_CUR_RIGHT   MOVE    R1, R8                  ; R8: entries in current dir.
 _IL_PAGE_DEFDN  MOVE    R2, R10                 ; R10: one page down
 _IL_PAGE_DN     MOVE    1, R9                   ; R9: iterate forward
                 RBRA    _SCROLL, 1              ; scroll, then input loop
-_IL_GOTO_BOTTOM CMP     R1, R2                  ; amt files <= max rows  scr?
+_IL_GOTO_BOTTOM MOVE    R1, R6                  ; update abs. index: amnt of..
+                SUB     1, R6                   ; ..files minus 1 is new index
+                CMP     R1, R2                  ; amt files <= max rows scr?
                 RBRA    _IL_GOTO_BTTM2, N       ; no: select max rows - 1
-                MOVE    R1, R8                  ; max amount of files..
-                SUB     1, R8                   ; ..minus 1 b/c cntng from 0
+                MOVE    R6, R8                  ; max amount of files..
                 RBRA    _IL_GOTO, 1
 _IL_GOTO_BTTM2  MOVE    R2, R8                  ; max rows on screen..
                 SUB     1, R8                   ; ..minus 1 b/c cntng from 0
