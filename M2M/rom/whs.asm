@@ -167,6 +167,8 @@ _WHS_SP_1       RSUB    HANDLE_IO, 1            ; IO continues to work
 
                 CMP     M2M$KEY_SPACE, R8       ; Space?
                 RBRA    _WHS_SP_RET, Z          ; yes: finish
+                CMP     M2M$KEY_RUNSTOP, R8     ; Run/Stop?
+                RBRA    _WHS_SP_RET, Z          ; yes: finish
 
                 CMP     M2M$KEY_LEFT, R8        ; Left = previous page
                 RBRA    _WHS_SP_2, !Z           ; no: check Right
