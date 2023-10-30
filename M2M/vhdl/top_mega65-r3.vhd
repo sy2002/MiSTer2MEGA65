@@ -37,7 +37,7 @@ port (
    vdac_sync_n_o      : out   std_logic;
    vdac_blank_n_o     : out   std_logic;
 
-   -- Digital Video (HDMI)
+   -- HDMI. U10 = TPD12S016PWR
    tmds_data_p_o      : out   std_logic_vector(2 downto 0);
    tmds_data_n_o      : out   std_logic_vector(2 downto 0);
    tmds_clk_p_o       : out   std_logic;
@@ -53,11 +53,11 @@ port (
    kb_io0_o           : out   std_logic;                 -- clock to keyboard
    kb_io1_o           : out   std_logic;                 -- data output to keyboard
    kb_io2_i           : in    std_logic;                 -- data input from keyboard
-   kb_jtagen_i        : in    std_logic;
-   kb_tck_i           : in    std_logic;
-   kb_tdi_i           : in    std_logic;
+   kb_tck_o           : out   std_logic;
    kb_tdo_i           : in    std_logic;
-   kb_tms_i           : in    std_logic;
+   kb_tms_o           : out   std_logic;
+   kb_tdi_o           : out   std_logic;
+   kb_jtagen_o        : out   std_logic;
 
    -- Micro SD Connector (external slot at back of the cover)
    sd_reset_o         : out   std_logic;
@@ -112,6 +112,46 @@ port (
    hr_clk_p_o         : out   std_logic;
    hr_cs0_o           : out   std_logic;
 
+   -- CBM-488/IEC serial port
+   iec_reset_n_o      : out   std_logic;
+   iec_atn_n_o        : out   std_logic;
+   iec_clk_en_o       : out   std_logic;
+   iec_clk_n_i        : in    std_logic;
+   iec_clk_n_o        : out   std_logic;
+   iec_data_en_o      : out   std_logic;
+   iec_data_n_i       : in    std_logic;
+   iec_data_n_o       : out   std_logic;
+   iec_srq_en_o       : out   std_logic;
+   iec_srq_n_i        : in    std_logic;
+   iec_srq_n_o        : out   std_logic;
+
+   -- C64 Expansion Port (aka Cartridge Port)
+   cart_phi2_o        : out   std_logic;
+   cart_dotclock_o    : out   std_logic;
+   cart_dma_i         : in    std_logic;
+   cart_reset_o       : out   std_logic;                  -- Output only on R3. Should be inout.
+   cart_game_i        : in    std_logic;                  -- Input only on R3. Should be inout.
+   cart_exrom_i       : in    std_logic;                  -- Input only on R3. Should be inout.
+   cart_nmi_i         : in    std_logic;                  -- Input only on R3. Should be inout.
+   cart_irq_i         : in    std_logic;                  -- Input only on R3. Should be inout.
+   cart_ctrl_en_o     : out   std_logic;
+   cart_ctrl_dir_o    : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
+   cart_ba_io         : inout std_logic;
+   cart_rw_io         : inout std_logic;
+   cart_io1_io        : inout std_logic;
+   cart_io2_io        : inout std_logic;
+   cart_romh_io       : inout std_logic;
+   cart_roml_io       : inout std_logic;
+   cart_addr_en_o     : out   std_logic;
+   cart_haddr_dir_o   : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
+   cart_laddr_dir_o   : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
+   cart_a_io          : inout unsigned(15 downto 0);
+   cart_data_en_o     : out   std_logic;
+   cart_data_dir_o    : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
+   cart_d_io          : inout unsigned(7 downto 0);
+
+   -- The remaining ports are not supported
+
    -- SMSC Ethernet PHY. U4 = KSZ8081RNDCA
    eth_clock_o        : out   std_logic;
    eth_led2_o         : out   std_logic;
@@ -141,9 +181,16 @@ port (
    f_wgate_o          : out   std_logic;
    f_writeprotect_i   : in    std_logic;
 
-   -- I2C bus for on-board peripherals
+   -- I2C bus for on-board peripherals:
+   -- U36. 24AA025E48T.   Address 0x50. 2K Serial EEPROM.
+   -- U37. SSM2518CPZ-R7. Address 0x34. Audio DAC
+   -- U38. ISL12020MIRZ.  Address 0x57. Real-Time Clock Module.
+   -- U38. ISL12020MIRZ.  Address 0x6F. SRAM.
+   -- U39. 24LC128.       Address 0x54. 128K CMOS Serial EEPROM.
    fpga_sda_io        : inout std_logic;
    fpga_scl_io        : inout std_logic;
+
+   -- Connected to J18
    grove_sda_io       : inout std_logic;
    grove_scl_io       : inout std_logic;
 
@@ -158,56 +205,7 @@ port (
 
    -- Quad SPI Flash. U5 = S25FL512SAGBHIS10
    qspidb_io          : inout std_logic_vector(3 downto 0);
-   qspicsn_o          : out   std_logic;
-
-
-   --------------------------------------------------------------------
-   -- C64 specific ports that are not supported by the M2M framework
-   --------------------------------------------------------------------
-
-   -- CBM-488/IEC serial port
-   iec_reset_n_o      : out   std_logic;
-   iec_atn_n_o        : out   std_logic;
-   iec_clk_en_o       : out   std_logic;
-   iec_clk_n_i        : in    std_logic;
-   iec_clk_n_o        : out   std_logic;
-   iec_data_en_o      : out   std_logic;
-   iec_data_n_i       : in    std_logic;
-   iec_data_n_o       : out   std_logic;
-   iec_srq_en_o       : out   std_logic;
-   iec_srq_n_i        : in    std_logic;
-   iec_srq_n_o        : out   std_logic;
-
-   -- C64 Expansion Port (aka Cartridge Port) control lines
-   -- *_dir=1 means FPGA->Port, =0 means Port->FPGA
-   cart_ctrl_en_o     : out   std_logic;
-   cart_ctrl_dir_o    : out   std_logic;
-   cart_addr_en_o     : out   std_logic;
-   cart_haddr_dir_o   : out   std_logic;
-   cart_laddr_dir_o   : out   std_logic;
-   cart_data_en_o     : out   std_logic;
-   cart_data_dir_o    : out   std_logic;
-
-   -- C64 Expansion Port (aka Cartridge Port)
-   cart_reset_o       : out   std_logic;                  -- R3 board bug. Should be inout.
-   cart_phi2_o        : out   std_logic;
-   cart_dotclock_o    : out   std_logic;
-
-   cart_nmi_i         : in    std_logic;                  -- R3 board bug. Should be inout.
-   cart_irq_i         : in    std_logic;                  -- R3 board bug. Should be inout.
-   cart_dma_i         : in    std_logic;
-   cart_exrom_i       : in    std_logic;
-   cart_game_i        : in    std_logic;
-
-   cart_ba_io         : inout std_logic;
-   cart_rw_io         : inout std_logic;
-   cart_roml_io       : inout std_logic;
-   cart_romh_io       : inout std_logic;
-   cart_io1_io        : inout std_logic;
-   cart_io2_io        : inout std_logic;
-
-   cart_d_io          : inout unsigned(7 downto 0);
-   cart_a_io          : inout unsigned(15 downto 0)
+   qspicsn_o          : out   std_logic
 );
 end entity mega65_r3;
 
@@ -280,6 +278,35 @@ architecture synthesis of mega65_r3 is
    signal main_pot2_x            : std_logic_vector(7 downto 0);
    signal main_pot2_y            : std_logic_vector(7 downto 0);
 
+   signal cart_en                : std_logic;
+   signal cart_roml_oe           : std_logic;
+   signal cart_roml_in           : std_logic;
+   signal cart_roml_out          : std_logic;
+   signal cart_romh_oe           : std_logic;
+   signal cart_romh_in           : std_logic;
+   signal cart_romh_out          : std_logic;
+   signal cart_ctrl_oe           : std_logic;
+   signal cart_ba_in             : std_logic;
+   signal cart_rw_in             : std_logic;
+   signal cart_io1_in            : std_logic;
+   signal cart_io2_in            : std_logic;
+   signal cart_ba_out            : std_logic;
+   signal cart_rw_out            : std_logic;
+   signal cart_io1_out           : std_logic;
+   signal cart_io2_out           : std_logic;
+   signal cart_addr_oe           : std_logic;
+   signal cart_a_in              : unsigned(15 downto 0);
+   signal cart_a_out             : unsigned(15 downto 0);
+   signal cart_data_oe           : std_logic;
+   signal cart_d_in              : unsigned(7 downto 0);
+   signal cart_d_out             : unsigned(7 downto 0);
+
+   signal reset_n                : std_logic;
+   signal audio_clk              : std_logic;
+   signal audio_reset            : std_logic;
+   signal audio_left             : signed(15 downto 0);
+   signal audio_right            : signed(15 downto 0);
+
    ---------------------------------------------------------------------------------------------
    -- HyperRAM clock domain
    ---------------------------------------------------------------------------------------------
@@ -329,25 +356,141 @@ architecture synthesis of mega65_r3 is
    -- ramrom_addr is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
    signal qnice_ramrom_dev       : std_logic_vector(15 downto 0);
    signal qnice_ramrom_addr      : std_logic_vector(27 downto 0);
-   signal qnice_ramrom_data_o    : std_logic_vector(15 downto 0);
-   signal qnice_ramrom_data_i    : std_logic_vector(15 downto 0);
+   signal qnice_ramrom_data_out  : std_logic_vector(15 downto 0);
+   signal qnice_ramrom_data_in   : std_logic_vector(15 downto 0);
    signal qnice_ramrom_ce        : std_logic;
    signal qnice_ramrom_we        : std_logic;
    signal qnice_ramrom_wait      : std_logic;
 
 begin
 
-   ---------------------------------------------------------------------------------------------------------------
-   -- MiSTer2MEGA Hardware Abstraction Layer for the MEGA65 board revision R3
-   ---------------------------------------------------------------------------------------------------------------
+   -----------------------------------------------------------------------------------------
+   -- MAX10 FPGA handling: extract reset signal
+   -----------------------------------------------------------------------------------------
 
-   i_hal_mega65_r3 : entity work.hal_mega65_r3
+   MAX10 : entity work.max10
+      port map (
+         pixelclock        => clk_i,
+         cpuclock          => clk_i,
+         led               => open,
+
+         max10_rx          => max10_rx_o,
+         max10_tx          => max10_tx_i,
+         max10_clkandsync  => max10_clkandsync_o,
+
+         max10_fpga_commit => open,
+         max10_fpga_date   => open,
+         reset_button      => reset_n,
+         dipsw             => open,
+         j21in             => open,
+         j21ddr            => (others => '0'),
+         j21out            => (others => '0')
+      );
+
+
+   ---------------------------------------------------------------------------------------------
+   -- Audio output (3.5 mm jack)
+   ---------------------------------------------------------------------------------------------
+
+   -- Convert the C64's PCM output to pulse density modulation
+   i_pcm2pdm : entity work.pcm_to_pdm
+      port map
+      (
+         cpuclock         => audio_clk,
+         pcm_left         => audio_left,
+         pcm_right        => audio_right,
+         -- Pulse Density Modulation (PDM is supposed to sound better than PWM on MEGA65)
+         pdm_left         => pwm_l_o,
+         pdm_right        => pwm_r_o,
+         audio_mode       => '0'         -- 0=PDM, 1=PWM
+      ); -- i_pcm2pdm
+
+
+   ---------------------------------------------------------------------------------------------
+   -- C64 Cartridge port
+   ---------------------------------------------------------------------------------------------
+
+   cart_roml_io     <= cart_roml_out when cart_ctrl_oe = '1' and cart_roml_oe = '1' else 'Z';
+   cart_romh_io     <= cart_romh_out when cart_ctrl_oe = '1' and cart_romh_oe = '1' else 'Z';
+   cart_roml_in     <= cart_roml_io;
+   cart_romh_in     <= cart_romh_io;
+   cart_ba_io       <= cart_ba_out   when cart_ctrl_oe = '1' else 'Z';
+   cart_rw_io       <= cart_rw_out   when cart_ctrl_oe = '1' else 'Z';
+   cart_io1_io      <= cart_io1_out  when cart_ctrl_oe = '1' else 'Z';
+   cart_io2_io      <= cart_io2_out  when cart_ctrl_oe = '1' else 'Z';
+   cart_ba_in       <= cart_ba_io;
+   cart_rw_in       <= cart_rw_io;
+   cart_io1_in      <= cart_io1_io;
+   cart_io2_in      <= cart_io2_io;
+   cart_ctrl_en_o   <= not cart_en;
+   cart_ctrl_dir_o  <= cart_ctrl_oe;
+
+   cart_d_io        <= cart_d_out    when cart_data_oe = '1' else (others => 'Z');
+   cart_d_in        <= cart_d_io;
+   cart_data_en_o   <= not cart_en;
+   cart_data_dir_o  <= cart_data_oe;
+
+   cart_a_io        <= cart_a_out    when cart_addr_oe = '1' else (others => 'Z');
+   cart_a_in        <= cart_a_io;
+   cart_addr_en_o   <= not cart_en;
+   cart_haddr_dir_o <= cart_addr_oe;
+   cart_laddr_dir_o <= cart_addr_oe;
+
+
+   ---------------------------------------------------------------------------------------------
+   -- Safe default values for ports not supported by the M2M framework
+   ---------------------------------------------------------------------------------------------
+
+   vga_scl_io    <= 'Z';
+   vga_sda_io    <= 'Z';
+   hdmi_scl_io   <= 'Z';
+   hdmi_sda_io   <= 'Z';
+   hdmi_ls_oe_o  <= '1';
+   hdmi_cec_io   <= 'Z';
+   audio_mclk_o  <= '0';
+   audio_bick_o  <= '0';
+   audio_sdti_o  <= '0';
+   audio_lrclk_o <= '0';
+   audio_pdn_n_o <= '0';
+   eth_clock_o   <= '0';
+   eth_led2_o    <= '0';
+   eth_mdc_o     <= '0';
+   eth_mdio_io   <= 'Z';
+   eth_reset_o   <= '1';
+   eth_txd_o     <= (others => '0');
+   eth_txen_o    <= '0';
+   f_density_o   <= '0';
+   f_motora_o    <= '0';
+   f_motorb_o    <= '0';
+   f_selecta_o   <= '0';
+   f_selectb_o   <= '0';
+   f_side1_o     <= '0';
+   f_stepdir_o   <= '0';
+   f_step_o      <= '0';
+   f_wdata_o     <= '0';
+   f_wgate_o     <= '0';
+   fpga_sda_io   <= 'Z';
+   fpga_scl_io   <= 'Z';
+   grove_sda_io  <= 'Z';
+   grove_scl_io  <= 'Z';
+   led_o         <= '0'; -- Off
+   p1lo_io       <= (others => 'Z');
+   p1hi_io       <= (others => 'Z');
+   p2lo_io       <= (others => 'Z');
+   p2hi_io       <= (others => 'Z');
+   qspidb_io     <= (others => 'Z');
+   qspicsn_o     <= '1';
+
+
+   -----------------------------------------------------------------------------------------
+   -- MiSTer2MEGA framework
+   -----------------------------------------------------------------------------------------
+
+   i_framework : entity work.framework
    port map (
       -- Connect to I/O ports
       clk_i                   => clk_i,
-      max10_tx_i              => max10_tx_i,
-      max10_rx_o              => max10_rx_o,
-      max10_clkandsync_o      => max10_clkandsync_o,
+      reset_n_i               => reset_n,
       uart_rxd_i              => uart_rxd_i,
       uart_txd_o              => uart_txd_o,
       vga_red_o               => vga_red_o,
@@ -375,18 +518,26 @@ begin
       sd2_mosi_o              => sd2_mosi_o,
       sd2_miso_i              => sd2_miso_i,
       sd2_cd_i                => sd2_cd_i,
-      pwm_l_o                 => pwm_l_o,
-      pwm_r_o                 => pwm_r_o,
       joy_1_up_n_i            => fa_up_n_i,
       joy_1_down_n_i          => fa_down_n_i,
       joy_1_left_n_i          => fa_left_n_i,
       joy_1_right_n_i         => fa_right_n_i,
       joy_1_fire_n_i          => fa_fire_n_i,
+      joy_1_up_n_o            => open,
+      joy_1_down_n_o          => open,
+      joy_1_left_n_o          => open,
+      joy_1_right_n_o         => open,
+      joy_1_fire_n_o          => open,
       joy_2_up_n_i            => fb_up_n_i,
       joy_2_down_n_i          => fb_down_n_i,
       joy_2_left_n_i          => fb_left_n_i,
       joy_2_right_n_i         => fb_right_n_i,
       joy_2_fire_n_i          => fb_fire_n_i,
+      joy_2_up_n_o            => open,
+      joy_2_down_n_o          => open,
+      joy_2_left_n_o          => open,
+      joy_2_right_n_o         => open,
+      joy_2_fire_n_o          => open,
       paddle_i                => paddle_i,
       paddle_drain_o          => paddle_drain_o,
       hr_d_io                 => hr_d_io,
@@ -431,11 +582,21 @@ begin
       main_joy1_left_n_o      => main_joy1_left_n,
       main_joy1_right_n_o     => main_joy1_right_n,
       main_joy1_fire_n_o      => main_joy1_fire_n,
+      main_joy1_up_n_i        => '1',
+      main_joy1_down_n_i      => '1',
+      main_joy1_left_n_i      => '1',
+      main_joy1_right_n_i     => '1',
+      main_joy1_fire_n_i      => '1',
       main_joy2_up_n_o        => main_joy2_up_n,
       main_joy2_down_n_o      => main_joy2_down_n,
       main_joy2_left_n_o      => main_joy2_left_n,
       main_joy2_right_n_o     => main_joy2_right_n,
       main_joy2_fire_n_o      => main_joy2_fire_n,
+      main_joy2_up_n_i        => '1',
+      main_joy2_down_n_i      => '1',
+      main_joy2_left_n_i      => '1',
+      main_joy2_right_n_i     => '1',
+      main_joy2_fire_n_i      => '1',
       main_pot1_x_o           => main_pot1_x,
       main_pot1_y_o           => main_pot1_y,
       main_pot2_x_o           => main_pot2_x,
@@ -456,6 +617,12 @@ begin
       hr_high_o               => hr_high,
       hr_low_o                => hr_low,
 
+      -- Audio
+      audio_clk_o             => audio_clk,
+      audio_reset_o           => audio_reset,
+      audio_left_o            => audio_left,
+      audio_right_o           => audio_right,
+
       -- Connect to QNICE
       qnice_dvi_i             => qnice_dvi,
       qnice_video_mode_i      => qnice_video_mode,
@@ -474,12 +641,12 @@ begin
       qnice_gp_reg_o          => qnice_gp_reg,
       qnice_ramrom_dev_o      => qnice_ramrom_dev,
       qnice_ramrom_addr_o     => qnice_ramrom_addr,
-      qnice_ramrom_data_out_o => qnice_ramrom_data_o,
-      qnice_ramrom_data_in_i  => qnice_ramrom_data_i,
+      qnice_ramrom_data_out_o => qnice_ramrom_data_out,
+      qnice_ramrom_data_in_i  => qnice_ramrom_data_in,
       qnice_ramrom_ce_o       => qnice_ramrom_ce,
       qnice_ramrom_we_o       => qnice_ramrom_we,
       qnice_ramrom_wait_i     => qnice_ramrom_wait
-   ); -- i_hal_mega65_r3
+   ); -- i_framework
 
 
    ---------------------------------------------------------------------------------------------------------------
@@ -487,6 +654,9 @@ begin
    ---------------------------------------------------------------------------------------------------------------
 
    CORE : entity work.MEGA65_Core
+      generic map (
+         G_BOARD => "MEGA65_R3"
+      )
       port map (
          CLK                     => clk_i,
          RESET_M2M_N             => reset_m2m_n,
@@ -529,8 +699,8 @@ begin
          -- Core-specific devices
          qnice_dev_id_i          => qnice_ramrom_dev,
          qnice_dev_addr_i        => qnice_ramrom_addr,
-         qnice_dev_data_i        => qnice_ramrom_data_o,
-         qnice_dev_data_o        => qnice_ramrom_data_i,
+         qnice_dev_data_i        => qnice_ramrom_data_out,
+         qnice_dev_data_o        => qnice_ramrom_data_in,
          qnice_dev_ce_i          => qnice_ramrom_ce,
          qnice_dev_we_i          => qnice_ramrom_we,
          qnice_dev_wait_o        => qnice_ramrom_wait,
@@ -640,75 +810,58 @@ begin
          iec_srq_n_i       => iec_srq_n_i,
          iec_srq_n_o       => iec_srq_n_o,
 
-         -- C64 Expansion Port (aka Cartridge Port) control lines
-         -- *_dir=1 means FPGA->Port, =0 means Port->FPGA
-         cart_ctrl_en_o    => cart_ctrl_en_o,
-         cart_ctrl_dir_o   => cart_ctrl_dir_o,
-         cart_addr_en_o    => cart_addr_en_o,
-         cart_haddr_dir_o  => cart_haddr_dir_o,
-         cart_laddr_dir_o  => cart_laddr_dir_o,
-         cart_data_en_o    => cart_data_en_o,
-         cart_data_dir_o   => cart_data_dir_o,
-
          -- C64 Expansion Port (aka Cartridge Port)
-         cart_reset_o      => cart_reset_o,
+         cart_en_o         => cart_en,      -- Enable port, active high
          cart_phi2_o       => cart_phi2_o,
          cart_dotclock_o   => cart_dotclock_o,
-         cart_nmi_i        => cart_nmi_i,
-         cart_irq_i        => cart_irq_i,
          cart_dma_i        => cart_dma_i,
-         cart_exrom_i      => cart_exrom_i,
+         --
+         cart_reset_oe_o   => open,         -- Not connected on the R3 board
+         cart_reset_i      => '1',          -- Not connected on the R3 board
+         cart_reset_o      => cart_reset_o,
+         --
+         cart_game_oe_o    => open,         -- Not connected on the R3 board
          cart_game_i       => cart_game_i,
-         cart_ba_io        => cart_ba_io,
-         cart_rw_io        => cart_rw_io,
-         cart_roml_io      => cart_roml_io,
-         cart_romh_io      => cart_romh_io,
-         cart_io1_io       => cart_io1_io,
-         cart_io2_io       => cart_io2_io,
-         cart_d_io         => cart_d_io,
-         cart_a_io         => cart_a_io
+         cart_game_o       => open,         -- Not connected on the R3 board
+         --
+         cart_exrom_oe_o   => open,         -- Not connected on the R3 board
+         cart_exrom_i      => cart_exrom_i,
+         cart_exrom_o      => open,         -- Not connected on the R3 board
+         --
+         cart_nmi_oe_o     => open,         -- Not connected on the R3 board
+         cart_nmi_i        => cart_nmi_i,
+         cart_nmi_o        => open,         -- Not connected on the R3 board
+         --
+         cart_irq_oe_o     => open,         -- Not connected on the R3 board
+         cart_irq_i        => cart_irq_i,
+         cart_irq_o        => open,         -- Not connected on the R3 board
+         --
+         cart_roml_oe_o    => cart_roml_oe,
+         cart_roml_i       => cart_roml_in,
+         cart_roml_o       => cart_roml_out,
+         --
+         cart_romh_oe_o    => cart_romh_oe,
+         cart_romh_i       => cart_romh_in,
+         cart_romh_o       => cart_romh_out,
+         --
+         cart_ctrl_oe_o    => cart_ctrl_oe, -- 0 : tristate (i.e. input), 1 : output
+         cart_ba_i         => cart_ba_in,
+         cart_rw_i         => cart_rw_in,
+         cart_io1_i        => cart_io1_in,
+         cart_io2_i        => cart_io2_in,
+         cart_ba_o         => cart_ba_out,
+         cart_rw_o         => cart_rw_out,
+         cart_io1_o        => cart_io1_out,
+         cart_io2_o        => cart_io2_out,
+         --
+         cart_data_oe_o    => cart_data_oe, -- 0 : tristate (i.e. input), 1 : output
+         cart_d_i          => cart_d_in,
+         cart_d_o          => cart_d_out,
+         --
+         cart_addr_oe_o    => cart_addr_oe, -- 0 : tristate (i.e. input), 1 : output
+         cart_a_i          => cart_a_in,
+         cart_a_o          => cart_a_out
       ); -- CORE
-
-   -- Safe default values
-   vga_scl_io    <= 'Z';
-   vga_sda_io    <= 'Z';
-   hdmi_scl_io   <= 'Z';
-   hdmi_sda_io   <= 'Z';
-   hdmi_ls_oe_o  <= '1';
-   hdmi_cec_io   <= 'Z';
-   audio_mclk_o  <= '0';
-   audio_bick_o  <= '0';
-   audio_sdti_o  <= '0';
-   audio_lrclk_o <= '0';
-   audio_pdn_n_o <= '0';
-   eth_clock_o   <= '0';
-   eth_led2_o    <= '0';
-   eth_mdc_o     <= '0';
-   eth_mdio_io   <= 'Z';
-   eth_reset_o   <= '1';
-   eth_txd_o     <= (others => '0');
-   eth_txen_o    <= '0';
-   f_density_o   <= '0';
-   f_motora_o    <= '0';
-   f_motorb_o    <= '0';
-   f_selecta_o   <= '0';
-   f_selectb_o   <= '0';
-   f_side1_o     <= '0';
-   f_stepdir_o   <= '0';
-   f_step_o      <= '0';
-   f_wdata_o     <= '0';
-   f_wgate_o     <= '0';
-   fpga_sda_io   <= 'Z';
-   fpga_scl_io   <= 'Z';
-   grove_sda_io  <= 'Z';
-   grove_scl_io  <= 'Z';
-   led_o         <= '0'; -- Off
-   p1lo_io       <= (others => 'Z');
-   p1hi_io       <= (others => 'Z');
-   p2lo_io       <= (others => 'Z');
-   p2hi_io       <= (others => 'Z');
-   qspidb_io     <= (others => 'Z');
-   qspicsn_o     <= '1';
 
 end architecture synthesis;
 

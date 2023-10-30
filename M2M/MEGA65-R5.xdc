@@ -1,6 +1,6 @@
 ## NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
 ##
-## Signal mapping for CORE-R4
+## Signal mapping for CORE-R5
 ##
 ## This machine is based on EXACT GITHUB REPO NAME OF THE MiSTer REPO
 ## Powered by MiSTer2MEGA65
@@ -167,19 +167,27 @@ set_property -dict {PULLUP TRUE}                          [get_ports {iec_data_n
 set_property -dict {PACKAGE_PIN V17  IOSTANDARD LVCMOS33} [get_ports {cart_phi2_o}];            # F_C64_O2
 set_property -dict {PACKAGE_PIN AA19 IOSTANDARD LVCMOS33} [get_ports {cart_dotclock_o}];        # F_C64_CLOCK
 set_property -dict {PACKAGE_PIN P15  IOSTANDARD LVCMOS33} [get_ports {cart_dma_i}];             # F_C64_DMA
-set_property -dict {PACKAGE_PIN N14  IOSTANDARD LVCMOS33} [get_ports {cart_reset_o}];           # F_C64_RESET
-set_property -dict {PACKAGE_PIN W22  IOSTANDARD LVCMOS33} [get_ports {cart_game_i}];            # F_C64_GAME
-set_property -dict {PACKAGE_PIN R19  IOSTANDARD LVCMOS33} [get_ports {cart_exrom_i}];           # F_C64_EXROM
-set_property -dict {PACKAGE_PIN W17  IOSTANDARD LVCMOS33} [get_ports {cart_nmi_i}];             # F_C64_NMI
-set_property -dict {PACKAGE_PIN P14  IOSTANDARD LVCMOS33} [get_ports {cart_irq_i}];             # F_C64_IRQ
+set_property -dict {PACKAGE_PIN T20  IOSTANDARD LVCMOS33} [get_ports {cart_reset_oe_n_o}];      # F_C64_RESET_EN
+set_property -dict {PACKAGE_PIN N14  IOSTANDARD LVCMOS33} [get_ports {cart_reset_io}];          # F_C64_RESET
+set_property -dict {PACKAGE_PIN L15  IOSTANDARD LVCMOS33} [get_ports {cart_game_oe_n_o}];       # F_C64_GAME_EN
+set_property -dict {PACKAGE_PIN W22  IOSTANDARD LVCMOS33} [get_ports {cart_game_io}];           #_F_C64_GAME
+set_property -dict {PACKAGE_PIN M16  IOSTANDARD LVCMOS33} [get_ports {cart_exrom_oe_n_o}];      # F_C64_EXROM_EN
+set_property -dict {PACKAGE_PIN R19  IOSTANDARD LVCMOS33} [get_ports {cart_exrom_io}];          # F_C64_EXROM
+set_property -dict {PACKAGE_PIN F20  IOSTANDARD LVCMOS33} [get_ports {cart_nmi_oe_n_o}];        # F_C64_NMI_EN
+set_property -dict {PACKAGE_PIN W17  IOSTANDARD LVCMOS33} [get_ports {cart_nmi_io}];            # F_C64_NMI
+set_property -dict {PACKAGE_PIN H14  IOSTANDARD LVCMOS33} [get_ports {cart_irq_oe_n_o}];        # F_C64_IRQ_EN
+set_property -dict {PACKAGE_PIN P14  IOSTANDARD LVCMOS33} [get_ports {cart_irq_io}];            # F_C64_IRQ
 set_property -dict {PACKAGE_PIN G18  IOSTANDARD LVCMOS33} [get_ports {cart_ctrl_en_o}];         # F_CTRL_EN
 set_property -dict {PACKAGE_PIN U17  IOSTANDARD LVCMOS33} [get_ports {cart_ctrl_dir_o}];        # F_CTRL_DIR
 set_property -dict {PACKAGE_PIN N13  IOSTANDARD LVCMOS33} [get_ports {cart_ba_io}];             # F_C64_BA
 set_property -dict {PACKAGE_PIN R18  IOSTANDARD LVCMOS33} [get_ports {cart_rw_io}];             # F_C64_RW
 set_property -dict {PACKAGE_PIN N15  IOSTANDARD LVCMOS33} [get_ports {cart_io1_io}];            # F_C64_IO1
 set_property -dict {PACKAGE_PIN AA20 IOSTANDARD LVCMOS33} [get_ports {cart_io2_io}];            # F_C64_IO2
+set_property -dict {PACKAGE_PIN T16  IOSTANDARD LVCMOS33} [get_ports {cart_romh_oe_n_o}];       # F_C64_ROMH_DIR
 set_property -dict {PACKAGE_PIN T18  IOSTANDARD LVCMOS33} [get_ports {cart_romh_io}];           # F_C64_ROMH
+set_property -dict {PACKAGE_PIN U16  IOSTANDARD LVCMOS33} [get_ports {cart_roml_oe_n_o}];       # F_C64_ROML_DIR
 set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports {cart_roml_io}];           # F_C64_ROML
+set_property -dict {PACKAGE_PIN T21  IOSTANDARD LVCMOS33} [get_ports {cart_en_o}];              # EXP_SLOT_EN
 set_property -dict {PACKAGE_PIN L19  IOSTANDARD LVCMOS33} [get_ports {cart_addr_en_o}];         # F_ADDR_EN
 set_property -dict {PACKAGE_PIN L18  IOSTANDARD LVCMOS33} [get_ports {cart_haddr_dir_o}];       # F_HADDR_DIR
 set_property -dict {PACKAGE_PIN L21  IOSTANDARD LVCMOS33} [get_ports {cart_laddr_dir_o}];       # F_LADDR_DIR
@@ -210,12 +218,12 @@ set_property -dict {PACKAGE_PIN V18  IOSTANDARD LVCMOS33} [get_ports {cart_d_io[
 set_property -dict {PACKAGE_PIN W20  IOSTANDARD LVCMOS33} [get_ports {cart_d_io[6]}];           # F_C64_D6
 set_property -dict {PACKAGE_PIN W21  IOSTANDARD LVCMOS33} [get_ports {cart_d_io[7]}];           # F_C64_D7
 
-
-# DIP Switches
-set_property -dict {PACKAGE_PIN N18  IOSTANDARD LVCMOS33} [get_ports {cpld_cfg_i[0]}];          # CPLD_CFG0
-set_property -dict {PACKAGE_PIN P19  IOSTANDARD LVCMOS33} [get_ports {cpld_cfg_i[1]}];          # CPLD_CFG1
-set_property -dict {PACKAGE_PIN T16  IOSTANDARD LVCMOS33} [get_ports {cpld_cfg_i[2]}];          # CPLD_CFG2
-set_property -dict {PACKAGE_PIN U16  IOSTANDARD LVCMOS33} [get_ports {cpld_cfg_i[3]}];          # CPLD_CFG3
+# I2C bus
+# U32 = PCA9655EMTTXG. Address 0x40. I/O expander.
+# U12 = MP8869SGL-Z.   Address 0x61. DC/DC Converter.
+# U14 = MP8869SGL-Z.   Address 0x67. DC/DC Converter.
+set_property -dict {PACKAGE_PIN N18  IOSTANDARD LVCMOS33} [get_ports {i2c_scl_io}];             # I2C_SCL
+set_property -dict {PACKAGE_PIN P19  IOSTANDARD LVCMOS33} [get_ports {i2c_sda_io}];             # I2C_SDA
 
 # Debug. Also used to control output to joystick ??
 set_property -dict {PACKAGE_PIN J17  IOSTANDARD LVCMOS33} [get_ports {fa_fire_n_o}];            # DBG0 = FA_FIRE_O
@@ -228,7 +236,6 @@ set_property -dict {PACKAGE_PIN M18  IOSTANDARD LVCMOS33} [get_ports {fb_down_n_
 set_property -dict {PACKAGE_PIN N19  IOSTANDARD LVCMOS33} [get_ports {fb_fire_n_o}];            # DBG7 = FB_FIRE_O
 set_property -dict {PACKAGE_PIN E18  IOSTANDARD LVCMOS33} [get_ports {fb_right_n_o}];           # DBG8 = FB_RIGHT_O
 set_property -dict {PACKAGE_PIN M17  IOSTANDARD LVCMOS33} [get_ports {fb_left_n_o}];            # DBG9 = FB_LEFT_O
-set_property -dict {PACKAGE_PIN H14  IOSTANDARD LVCMOS33} [get_ports {dbg_io_10}];              # DBG10
 set_property -dict {PACKAGE_PIN G13  IOSTANDARD LVCMOS33} [get_ports {dbg_io_11}];              # DBG11
 
 # SMSC Ethernet PHY. U4 = KSZ8081RNDCA
@@ -314,12 +321,6 @@ set_property -dict {PACKAGE_PIN R22  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[
 set_property -dict {PACKAGE_PIN P21  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[2]}];           # SPI-DQ2
 set_property -dict {PACKAGE_PIN R21  IOSTANDARD LVCMOS33} [get_ports {qspidb_io[3]}];           # SPI-DQ3
 set_property -dict {PULLUP TRUE}                          [get_ports {qspidb_io[*]}];
-
-# Board revision
-set_property -dict {PACKAGE_PIN L15  IOSTANDARD LVCMOS33} [get_ports {rev_bit_i[0]}];           # REV_BIT0
-set_property -dict {PACKAGE_PIN M16  IOSTANDARD LVCMOS33} [get_ports {rev_bit_i[1]}];           # REV_BIT1
-set_property -dict {PACKAGE_PIN F20  IOSTANDARD LVCMOS33} [get_ports {rev_bit_i[2]}];           # REV_BIT2
-set_property -dict {PACKAGE_PIN T21  IOSTANDARD LVCMOS33} [get_ports {rev_bit_i[3]}];           # REV_BIT3
 
 # SDRAM - 32M x 16 bit, 3.3V VCC. U44 = IS42S16320F-6BL
 set_property -dict {PACKAGE_PIN T4   IOSTANDARD LVCMOS33} [get_ports {sdram_a_o[0]}];           # SDRAM_A0

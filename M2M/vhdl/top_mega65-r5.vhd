@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Commodore 64 for MEGA65 (C64MEGA65)
 --
--- MEGA65 R4 main file that contains the whole machine
+-- MEGA65 R5 main file that contains the whole machine
 --
 -- based on C64_MiSTer by the MiSTer development team
 -- port done by MJoergen and sy2002 in 2023 and licensed under GPL v3
@@ -11,7 +11,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity mega65_r4 is
+entity mega65_r5 is
 port (
    -- Onboard crystal oscillator = 100 MHz
    clk_i                   : in    std_logic;
@@ -141,19 +141,27 @@ port (
    cart_phi2_o             : out   std_logic;
    cart_dotclock_o         : out   std_logic;
    cart_dma_i              : in    std_logic;
-   cart_reset_o            : out   std_logic;                  -- Output only on R4. Should be inout.
-   cart_game_i             : in    std_logic;                  -- Input only on R4. Should be inout.
-   cart_exrom_i            : in    std_logic;                  -- Input only on R4. Should be inout.
-   cart_nmi_i              : in    std_logic;                  -- Input only on R4. Should be inout.
-   cart_irq_i              : in    std_logic;                  -- Input only on R4. Should be inout.
+   cart_reset_oe_n_o       : out   std_logic;
+   cart_reset_io           : inout std_logic;
+   cart_game_oe_n_o        : out   std_logic;
+   cart_game_io            : inout std_logic;
+   cart_exrom_oe_n_o       : out   std_logic;
+   cart_exrom_io           : inout std_logic;
+   cart_nmi_oe_n_o         : out   std_logic;
+   cart_nmi_io             : inout std_logic;
+   cart_irq_oe_n_o         : out   std_logic;
+   cart_irq_io             : inout std_logic;
    cart_ctrl_en_o          : out   std_logic;
    cart_ctrl_dir_o         : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
    cart_ba_io              : inout std_logic;
    cart_rw_io              : inout std_logic;
    cart_io1_io             : inout std_logic;
    cart_io2_io             : inout std_logic;
+   cart_romh_oe_n_o        : out   std_logic;
    cart_romh_io            : inout std_logic;
+   cart_roml_oe_n_o        : out   std_logic;
    cart_roml_io            : inout std_logic;
+   cart_en_o               : out   std_logic;
    cart_addr_en_o          : out   std_logic;
    cart_haddr_dir_o        : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
    cart_laddr_dir_o        : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
@@ -223,15 +231,16 @@ port (
    qspidb_io               : inout std_logic_vector(3 downto 0);
    qspicsn_o               : out   std_logic;
 
-   -- DIP Switches
-   cpld_cfg_i              : in    std_logic_vector(3 downto 0);
+
+   -- I2C bus
+   -- U32 = PCA9655EMTTXG. Address 0x40. I/O expander.
+   -- U12 = MP8869SGL-Z.   Address 0x61. DC/DC Converter.
+   -- U14 = MP8869SGL-Z.   Address 0x67. DC/DC Converter.
+   i2c_scl_io              : inout std_logic;
+   i2c_sda_io              : inout std_logic;
 
    -- Debug.
-   dbg_io_10               : inout std_logic;
    dbg_io_11               : inout std_logic;
-
-   -- Board revision
-   rev_bit_i               : in    std_logic_vector(3 downto 0);
 
    -- SDRAM - 32M x 16 bit, 3.3V VCC. U44 = IS42S16320F-6BL
    sdram_clk_o             : out   std_logic;
@@ -246,9 +255,9 @@ port (
    sdram_dqmh_o            : out   std_logic;
    sdram_dq_io             : inout std_logic_vector(15 downto 0)
 );
-end entity mega65_r4;
+end entity mega65_r5;
 
-architecture synthesis of mega65_r4 is
+architecture synthesis of mega65_r5 is
 
    signal main_clk    : std_logic;
    signal main_rst    : std_logic;
@@ -334,6 +343,21 @@ architecture synthesis of mega65_r4 is
    signal iec_srq_en             : std_logic;
 
    signal cart_en                : std_logic;
+   signal cart_reset_oe          : std_logic;
+   signal cart_reset_in          : std_logic;
+   signal cart_reset_out         : std_logic;
+   signal cart_game_oe           : std_logic;
+   signal cart_game_in           : std_logic;
+   signal cart_game_out          : std_logic;
+   signal cart_exrom_oe          : std_logic;
+   signal cart_exrom_in          : std_logic;
+   signal cart_exrom_out         : std_logic;
+   signal cart_nmi_oe            : std_logic;
+   signal cart_nmi_in            : std_logic;
+   signal cart_nmi_out           : std_logic;
+   signal cart_irq_oe            : std_logic;
+   signal cart_irq_in            : std_logic;
+   signal cart_irq_out           : std_logic;
    signal cart_roml_oe           : std_logic;
    signal cart_roml_in           : std_logic;
    signal cart_roml_out          : std_logic;
@@ -435,40 +459,60 @@ begin
          audio_sda_io   => audio_sda_io
       ); -- i_audio
 
+
    ---------------------------------------------------------------------------------------------
    -- C64 Cartridge port
    ---------------------------------------------------------------------------------------------
 
-   cart_roml_io     <= cart_roml_out when cart_ctrl_oe = '1' and cart_roml_oe = '1' else 'Z';
-   cart_romh_io     <= cart_romh_out when cart_ctrl_oe = '1' and cart_romh_oe = '1' else 'Z';
-   cart_roml_in     <= cart_roml_io;
-   cart_romh_in     <= cart_romh_io;
-   cart_ba_io       <= cart_ba_out   when cart_ctrl_oe = '1' else 'Z';
-   cart_rw_io       <= cart_rw_out   when cart_ctrl_oe = '1' else 'Z';
-   cart_io1_io      <= cart_io1_out  when cart_ctrl_oe = '1' else 'Z';
-   cart_io2_io      <= cart_io2_out  when cart_ctrl_oe = '1' else 'Z';
-   cart_ba_in       <= cart_ba_io;
-   cart_rw_in       <= cart_rw_io;
-   cart_io1_in      <= cart_io1_io;
-   cart_io2_in      <= cart_io2_io;
-   cart_ctrl_en_o   <= not cart_en;
-   cart_ctrl_dir_o  <= cart_ctrl_oe;
+   cart_en_o         <= cart_en;
+   cart_reset_io     <= cart_reset_out when cart_reset_oe = '1' else 'Z';
+   cart_game_io      <= cart_game_out  when cart_game_oe  = '1' else 'Z';
+   cart_exrom_io     <= cart_exrom_out when cart_exrom_oe = '1' else 'Z';
+   cart_nmi_io       <= cart_nmi_out   when cart_nmi_oe   = '1' else 'Z';
+   cart_irq_io       <= cart_irq_out   when cart_irq_oe   = '1' else 'Z';
+   cart_roml_io      <= cart_roml_out  when cart_roml_oe  = '1' else 'Z';
+   cart_romh_io      <= cart_romh_out  when cart_romh_oe  = '1' else 'Z';
+   cart_reset_in     <= cart_reset_io;
+   cart_game_in      <= cart_game_io;
+   cart_exrom_in     <= cart_exrom_io;
+   cart_nmi_in       <= cart_nmi_io;
+   cart_irq_in       <= cart_irq_io;
+   cart_roml_in      <= cart_roml_io;
+   cart_romh_in      <= cart_romh_io;
+   cart_reset_oe_n_o <= not cart_reset_oe;
+   cart_game_oe_n_o  <= not cart_game_oe;
+   cart_exrom_oe_n_o <= not cart_exrom_oe;
+   cart_nmi_oe_n_o   <= not cart_nmi_oe;
+   cart_irq_oe_n_o   <= not cart_irq_oe;
+   cart_roml_oe_n_o  <= not cart_roml_oe;
+   cart_romh_oe_n_o  <= not cart_romh_oe;
 
-   cart_d_io        <= cart_d_out    when cart_data_oe = '1' else (others => 'Z');
-   cart_d_in        <= cart_d_io;
-   cart_data_en_o   <= not cart_en;
-   cart_data_dir_o  <= cart_data_oe;
+   cart_ba_io        <= cart_ba_out   when cart_ctrl_oe = '1' else 'Z';
+   cart_rw_io        <= cart_rw_out   when cart_ctrl_oe = '1' else 'Z';
+   cart_io1_io       <= cart_io1_out  when cart_ctrl_oe = '1' else 'Z';
+   cart_io2_io       <= cart_io2_out  when cart_ctrl_oe = '1' else 'Z';
+   cart_ba_in        <= cart_ba_io;
+   cart_rw_in        <= cart_rw_io;
+   cart_io1_in       <= cart_io1_io;
+   cart_io2_in       <= cart_io2_io;
+   cart_ctrl_en_o    <= cart_en;
+   cart_ctrl_dir_o   <= cart_ctrl_oe;
 
-   cart_a_io        <= cart_a_out    when cart_addr_oe = '1' else (others => 'Z');
-   cart_a_in        <= cart_a_io;
-   cart_addr_en_o   <= not cart_en;
-   cart_haddr_dir_o <= cart_addr_oe;
-   cart_laddr_dir_o <= cart_addr_oe;
+   cart_d_io         <= cart_d_out    when cart_data_oe = '1' else (others => 'Z');
+   cart_d_in         <= cart_d_io;
+   cart_data_en_o    <= cart_en;
+   cart_data_dir_o   <= cart_data_oe;
+
+   cart_a_io         <= cart_a_out    when cart_addr_oe = '1' else (others => 'Z');
+   cart_a_in         <= cart_a_io;
+   cart_addr_en_o    <= cart_en;
+   cart_haddr_dir_o  <= cart_addr_oe;
+   cart_laddr_dir_o  <= cart_addr_oe;
 
 
-   iec_clk_en_n_o   <= not iec_clk_en;
-   iec_data_en_n_o  <= not iec_data_en;
-   iec_srq_en_n_o   <= not iec_srq_en;
+   iec_clk_en_n_o    <= not iec_clk_en;
+   iec_data_en_n_o   <= not iec_data_en;
+   iec_srq_en_n_o    <= not iec_srq_en;
 
 
    ---------------------------------------------------------------------------------------------
@@ -482,7 +526,6 @@ begin
    hdmi_ls_oe_n_o        <= '0'; -- Enable HDMI output
    hdmi_scl_io           <= 'Z';
    hdmi_sda_io           <= 'Z';
-   dbg_io_10             <= 'Z';
    dbg_io_11             <= 'Z';
 
    eth_clock_o           <= '0';
@@ -704,7 +747,7 @@ begin
 
    CORE : entity work.MEGA65_Core
       generic map (
-         G_BOARD => "MEGA65_R4"
+         G_BOARD => "MEGA65_R5"
       )
       port map (
          CLK                     => clk_i,
@@ -847,69 +890,69 @@ begin
          --------------------------------------------------------------------
 
          -- CBM-488/IEC serial port
-         iec_reset_n_o     => iec_reset_n_o,
-         iec_atn_n_o       => iec_atn_n_o,
-         iec_clk_en_o      => iec_clk_en,
-         iec_clk_n_i       => iec_clk_n_i,
-         iec_clk_n_o       => iec_clk_n_o,
-         iec_data_en_o     => iec_data_en,
-         iec_data_n_i      => iec_data_n_i,
-         iec_data_n_o      => iec_data_n_o,
-         iec_srq_en_o      => iec_srq_en,
-         iec_srq_n_i       => iec_srq_n_i,
-         iec_srq_n_o       => iec_srq_n_o,
+         iec_reset_n_o           => iec_reset_n_o,
+         iec_atn_n_o             => iec_atn_n_o,
+         iec_clk_en_o            => iec_clk_en,
+         iec_clk_n_i             => iec_clk_n_i,
+         iec_clk_n_o             => iec_clk_n_o,
+         iec_data_en_o           => iec_data_en,
+         iec_data_n_i            => iec_data_n_i,
+         iec_data_n_o            => iec_data_n_o,
+         iec_srq_en_o            => iec_srq_en,
+         iec_srq_n_i             => iec_srq_n_i,
+         iec_srq_n_o             => iec_srq_n_o,
 
          -- C64 Expansion Port (aka Cartridge Port)
-         cart_en_o         => cart_en, -- Enable port, active high
-         cart_phi2_o       => cart_phi2_o,
-         cart_dotclock_o   => cart_dotclock_o,
-         cart_dma_i        => cart_dma_i,
+         cart_en_o               => cart_en,      -- Enable port, active high
+         cart_phi2_o             => cart_phi2_o,
+         cart_dotclock_o         => cart_dotclock_o,
+         cart_dma_i              => cart_dma_i,
          --
-         cart_reset_oe_o   => open,         -- Not connected on the R4 board
-         cart_reset_i      => '1',          -- Not connected on the R4 board
-         cart_reset_o      => cart_reset_o,
+         cart_reset_oe_o         => cart_reset_oe,
+         cart_reset_i            => cart_reset_in,
+         cart_reset_o            => cart_reset_out,
          --
-         cart_game_oe_o    => open,         -- Not connected on the R4 board
-         cart_game_i       => cart_game_i,
-         cart_game_o       => open,         -- Not connected on the R4 board
+         cart_game_oe_o          => cart_game_oe,
+         cart_game_i             => cart_game_in,
+         cart_game_o             => cart_game_out,
          --
-         cart_exrom_oe_o   => open,         -- Not connected on the R4 board
-         cart_exrom_i      => cart_exrom_i,
-         cart_exrom_o      => open,         -- Not connected on the R4 board
+         cart_exrom_oe_o         => cart_exrom_oe,
+         cart_exrom_i            => cart_exrom_in,
+         cart_exrom_o            => cart_exrom_out,
          --
-         cart_nmi_oe_o     => open,         -- Not connected on the R4 board
-         cart_nmi_i        => cart_nmi_i,
-         cart_nmi_o        => open,         -- Not connected on the R4 board
+         cart_nmi_oe_o           => cart_nmi_oe,
+         cart_nmi_i              => cart_nmi_in,
+         cart_nmi_o              => cart_nmi_out,
          --
-         cart_irq_oe_o     => open,         -- Not connected on the R4 board
-         cart_irq_i        => cart_irq_i,
-         cart_irq_o        => open,         -- Not connected on the R4 board
+         cart_irq_oe_o           => cart_irq_oe,
+         cart_irq_i              => cart_irq_in,
+         cart_irq_o              => cart_irq_out,
          --
-         cart_roml_oe_o    => cart_roml_oe,
-         cart_roml_i       => cart_roml_in,
-         cart_roml_o       => cart_roml_out,
+         cart_roml_oe_o          => cart_roml_oe,
+         cart_roml_i             => cart_roml_in,
+         cart_roml_o             => cart_roml_out,
          --
-         cart_romh_oe_o    => cart_romh_oe,
-         cart_romh_i       => cart_romh_in,
-         cart_romh_o       => cart_romh_out,
+         cart_romh_oe_o          => cart_romh_oe,
+         cart_romh_i             => cart_romh_in,
+         cart_romh_o             => cart_romh_out,
          --
-         cart_ctrl_oe_o    => cart_ctrl_oe, -- 0 : tristate (i.e. input), 1 : output
-         cart_ba_i         => cart_ba_in,
-         cart_rw_i         => cart_rw_in,
-         cart_io1_i        => cart_io1_in,
-         cart_io2_i        => cart_io2_in,
-         cart_ba_o         => cart_ba_out,
-         cart_rw_o         => cart_rw_out,
-         cart_io1_o        => cart_io1_out,
-         cart_io2_o        => cart_io2_out,
+         cart_ctrl_oe_o          => cart_ctrl_oe, -- 0 : tristate (i.e. input), 1 : output
+         cart_ba_i               => cart_ba_in,
+         cart_rw_i               => cart_rw_in,
+         cart_io1_i              => cart_io1_in,
+         cart_io2_i              => cart_io2_in,
+         cart_ba_o               => cart_ba_out,
+         cart_rw_o               => cart_rw_out,
+         cart_io1_o              => cart_io1_out,
+         cart_io2_o              => cart_io2_out,
          --
-         cart_data_oe_o    => cart_data_oe, -- 0 : tristate (i.e. input), 1 : output
-         cart_d_i          => cart_d_in,
-         cart_d_o          => cart_d_out,
+         cart_data_oe_o          => cart_data_oe, -- 0 : tristate (i.e. input), 1 : output
+         cart_d_i                => cart_d_in,
+         cart_d_o                => cart_d_out,
          --
-         cart_addr_oe_o    => cart_addr_oe, -- 0 : tristate (i.e. input), 1 : output
-         cart_a_i          => cart_a_in,
-         cart_a_o          => cart_a_out
+         cart_addr_oe_o          => cart_addr_oe, -- 0 : tristate (i.e. input), 1 : output
+         cart_a_i                => cart_a_in,
+         cart_a_o                => cart_a_out
       ); -- CORE
 
 end architecture synthesis;
