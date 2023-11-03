@@ -102,7 +102,6 @@ port (
    -- Connect to CORE
    qnice_clk_o             : out   std_logic;
    qnice_rst_o             : out   std_logic;
-   reset_m2m_n_o           : out   std_logic;
    main_clk_i              : in    std_logic;
    main_rst_i              : in    std_logic;
    main_qnice_reset_o      : out   std_logic;
@@ -210,8 +209,13 @@ architecture synthesis of framework is
 -- Constants
 ---------------------------------------------------------------------------------------------
 
--- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
-constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 3) := (C_HDMI_720p_50, C_HDMI_720p_60, C_HDMI_576p_50, C_HDMI_576p_50);
+constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 5) := (
+   C_HDMI_720p_50,       -- HDMI 1280x720   @ 50 Hz
+   C_HDMI_720p_60,       -- 1280x720        @ 60 Hz
+   C_HDMI_576p_50,       -- PAL 576p in 4:3 @ 50 Hz
+   C_HDMI_576p_50,       -- PAL 576p in 5:4 @ 50 Hz
+   C_HDMI_640x480p_60,   -- HDMI 640x480    @ 60 Hz
+   C_HDMI_720x480p_60);  -- HDMI 720x480    @ 60 Hz
 
 -- Devices: MiSTer2MEGA framework
 constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
@@ -250,8 +254,8 @@ signal hdmi_rst               : std_logic;
 -- Reset Control
 ---------------------------------------------------------------------------------------------
 
-signal reset_n_dbnce          : std_logic;
 signal reset_core_n           : std_logic;
+signal reset_m2m_n            : std_logic;
 
 --------------------------------------------------------------------------------------------
 -- main_clk_i (MiSTer core's clock)
@@ -309,7 +313,7 @@ signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
 signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
 signal qnice_hdmax            : std_logic_vector(11 downto 0);
 signal qnice_vdmax            : std_logic_vector(11 downto 0);
-signal qnice_clk_sel          : std_logic;
+signal qnice_clk_sel          : std_logic_vector( 1 downto 0);
 
 signal qnice_h_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
 signal qnice_v_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
@@ -400,32 +404,15 @@ begin
    qnice_clk_o <= qnice_clk;
    qnice_rst_o <= qnice_rst;
 
-   -- 20 ms stable time for the reset button
-   i_reset_debouncer : entity work.debounce
-      generic map (
-         initial     => '1',
-         clk_freq    => BOARD_CLK_SPEED,
-         stable_time => 20
-      )
-      port map (
-         clk     => clk_i,
-         reset_n => '1',
-         button  => reset_n_i,
-         result  => reset_n_dbnce
-      ); -- i_reset_debouncer
-
 
    ---------------------------------------------------------------------------------------------------------------
    -- Generate clocks and reset signals
    ---------------------------------------------------------------------------------------------------------------
 
-   -- video modes 0 and 1 needs hdmi_clk_sel_i to be '0', 2 and 3 to be '1'
-   qnice_clk_sel <= '1' when qnice_video_mode_i >= 2 else '0';
-
    i_clk_m2m : entity work.clk_m2m
       port map (
          sys_clk_i       => clk_i,
-         sys_rstn_i      => reset_m2m_n_o,      -- reset everything
+         sys_rstn_i      => reset_m2m_n,        -- reset everything
          core_rstn_i     => reset_core_n,       -- reset only the core (means the HyperRAM needs to be reset, too)
          qnice_clk_o     => qnice_clk,
          qnice_rst_o     => qnice_rst,
@@ -433,14 +420,28 @@ begin
          hr_clk_x2_o     => hr_clk_x2,
          hr_clk_x2_del_o => hr_clk_x2_del,
          hr_rst_o        => hr_rst,
-         hdmi_clk_sel_i  => qnice_clk_sel,
-         tmds_clk_o      => tmds_clk,
-         hdmi_clk_o      => hdmi_clk,
-         hdmi_rst_o      => hdmi_rst,
          audio_clk_o     => audio_clk,
          audio_rst_o     => audio_rst,
          sys_pps_o       => sys_pps
       ); -- i_clk_m2m
+
+
+   qnice_clk_sel <= VIDEO_MODE_VECTOR(qnice_video_mode_i).CLK_SEL;
+
+   -- reconfigurable MMCM: 25.2MHz, 27MHz, 74.25MHz or 148.5MHz
+   i_video_out_clock : entity work.video_out_clock
+      generic map (
+         fref    => 100.0 -- Clock speed in MHz of the input clk_i
+      )
+      port map (
+         rsti    => not reset_m2m_n,
+         clki    => clk_i,
+         sel     => qnice_clk_sel,
+         rsto    => hdmi_rst,
+         clko    => hdmi_clk,
+         clko_x5 => tmds_clk
+      ); -- i_video_out_clock
+
 
    ---------------------------------------------------------------------------------------------------------------
    -- Board Clock Domain: clk_i
@@ -452,8 +453,8 @@ begin
       )
       port map (
          CLK            => clk_i,
-         RESET_N        => reset_n_dbnce,
-         reset_m2m_n_o  => reset_m2m_n_o,
+         RESET_N        => reset_n_i,
+         reset_m2m_n_o  => reset_m2m_n,
          reset_core_n_o => reset_core_n
       ); -- i_reset_manager
 
@@ -930,7 +931,7 @@ begin
       )
       port map (
          src_clk                 => clk_i,
-         src_in(0)               => not reset_m2m_n_o,
+         src_in(0)               => not reset_m2m_n,
          src_in(1)               => not reset_core_n,
          dest_clk                => main_clk_i,
          dest_out(0)             => main_reset_m2m_o,
@@ -967,6 +968,7 @@ begin
          G_FONT_DY               => FONT_DY
       )
       port map (
+         -- Input from Core
          video_clk_i             => video_clk_i,
          video_rst_i             => video_rst_i,
          video_ce_i              => video_ce_i,
@@ -1032,6 +1034,7 @@ begin
          hr_waitrequest_i        => hr_dig_waitrequest,
          hr_high_o               => hr_high_o,
          hr_low_o                => hr_low_o,
+         -- Output to MEGA65 board
          VGA_RED                 => vga_red_o,
          VGA_GREEN               => vga_green_o,
          VGA_BLUE                => vga_blue_o,
@@ -1040,6 +1043,10 @@ begin
          vdac_clk                => vdac_clk_o,
          vdac_sync_n             => vdac_sync_n_o,
          vdac_blank_n            => vdac_blank_n_o,
+         audio_clk_o             => audio_clk_o,
+         audio_reset_o           => audio_reset_o,
+         audio_left_o            => audio_left_o,
+         audio_right_o           => audio_right_o,
          hdmi_clk_i              => hdmi_clk,
          hdmi_rst_i              => hdmi_rst,
          tmds_clk_i              => tmds_clk,
@@ -1158,11 +1165,6 @@ begin
    hr_d_io    <= hr_dq_out   when hr_dq_oe   = '1' else (others => 'Z');
    hr_rwds_in <= hr_rwds_io;
    hr_dq_in   <= hr_d_io;
-
-   audio_clk_o   <= audio_clk;
-   audio_reset_o <= audio_rst;
-   audio_left_o  <= signed(audio_left);
-   audio_right_o <= signed(audio_right);
 
 end architecture synthesis;
 

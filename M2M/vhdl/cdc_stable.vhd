@@ -14,7 +14,7 @@ entity cdc_stable is
     G_REGISTER_SRC : boolean := false  -- Add register to input data
   );
   port (
-    src_clk_i  : in    std_logic;
+    src_clk_i  : in    std_logic := '0';
     src_data_i : in    std_logic_vector(G_DATA_SIZE - 1 downto 0);
     dst_clk_i  : in    std_logic;
     dst_data_o : out   std_logic_vector(G_DATA_SIZE - 1 downto 0)

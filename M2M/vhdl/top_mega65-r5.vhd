@@ -261,7 +261,6 @@ architecture synthesis of mega65_r5 is
 
    signal main_clk    : std_logic;
    signal main_rst    : std_logic;
-   signal reset_m2m_n : std_logic;
    signal qnice_clk   : std_logic;
    signal qnice_rst   : std_logic;
 
@@ -641,7 +640,6 @@ begin
       -- Connect to CORE
       qnice_clk_o             => qnice_clk,
       qnice_rst_o             => qnice_rst,
-      reset_m2m_n_o           => reset_m2m_n,
       main_clk_i              => main_clk,
       main_rst_i              => main_rst,
       main_qnice_reset_o      => main_qnice_reset,
@@ -751,7 +749,6 @@ begin
       )
       port map (
          CLK                     => clk_i,
-         RESET_M2M_N             => reset_m2m_n,
 
          -- Share clock and reset with the framework
          main_clk_o              => main_clk,            -- CORE's 54 MHz clock

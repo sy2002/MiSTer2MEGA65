@@ -197,28 +197,28 @@ begin
                 (G_VIDEO_MODE_VECTOR(1).H_PIXELS-G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3)/2   when hdmi_video_mode_i = 1 else
                 0                                                                         when hdmi_video_mode_i = 2 else
                 0                                                                         when hdmi_video_mode_i = 3 else
-                0;
+                0; -- Not used
 
    hdmi_hmax <= hdmi_video_mode.H_PIXELS-1                                                when hdmi_crop_mode_i = '1' else
                 (G_VIDEO_MODE_VECTOR(0).H_PIXELS+G_VIDEO_MODE_VECTOR(0).V_PIXELS*4/3)/2-1 when hdmi_video_mode_i = 0 else
                 (G_VIDEO_MODE_VECTOR(1).H_PIXELS+G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3)/2-1 when hdmi_video_mode_i = 1 else
                 hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 2 else
                 hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 3 else
-                0;
+                hdmi_video_mode.H_PIXELS-1; -- Not used
 
    hdmi_vmin <= 0                                                                         when hdmi_crop_mode_i = '1' else
                 0                                                                         when hdmi_video_mode_i = 0 else
                 0                                                                         when hdmi_video_mode_i = 1 else
                 0                                                                         when hdmi_video_mode_i = 2 else
                 (G_VIDEO_MODE_VECTOR(3).V_PIXELS-G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = 3 else
-                0;
+                0; -- Not used
 
    hdmi_vmax <= hdmi_video_mode.V_PIXELS-1                                                when hdmi_crop_mode_i = '1' else
                 hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 0 else
                 hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 1 else
                 hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 2 else
                 (G_VIDEO_MODE_VECTOR(3).V_PIXELS+G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = 3 else
-                hdmi_video_mode.V_PIXELS-1;
+                hdmi_video_mode.V_PIXELS-1; -- Not used
 
    -- Deprecated. Will be removed in future release
    -- The purpose is to right-shift the position of the OSM
@@ -265,7 +265,7 @@ begin
    -- Digital output (HDMI) - Video part
    ---------------------------------------------------------------------------------------------
 
-   reset_na <= not (video_rst_i or hdmi_rst_i or hr_rst_i);
+   reset_na <= not (video_rst_i or hr_rst_i);
 
    i_ascal : entity work.ascal
       generic map (
@@ -289,7 +289,7 @@ begin
          IHRES     => 1024,         -- Maximum horizontal input resolution. (Also here no parameter for vertical.)
          N_DW      => C_AVM_DATA_SIZE,
          N_AW      => C_AVM_ADDRESS_SIZE,
-         N_BURST   => 256           -- 256 bytes per burst
+         N_BURST   => 128           -- 128 bytes per burst
       )
       port map (
          -- Input video

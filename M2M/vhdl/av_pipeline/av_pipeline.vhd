@@ -108,7 +108,7 @@ entity av_pipeline is
       hr_high_o               : out std_logic; -- Core is too fast
       hr_low_o                : out std_logic; -- Core is too slow
 
-      -- I/O to VGA output
+      -- I/O to Analog output (VGA + 3.5mm audio jack)
       VGA_RED                 : out std_logic_vector( 7 downto 0);
       VGA_GREEN               : out std_logic_vector( 7 downto 0);
       VGA_BLUE                : out std_logic_vector( 7 downto 0);
@@ -117,8 +117,12 @@ entity av_pipeline is
       vdac_clk                : out std_logic;
       vdac_sync_n             : out std_logic;
       vdac_blank_n            : out std_logic;
+      audio_clk_o             : out std_logic;
+      audio_reset_o           : out std_logic;
+      audio_left_o            : out signed(15 downto 0);
+      audio_right_o           : out signed(15 downto 0);
 
-      -- I/O to Digital Video (HDMI)
+      -- I/O to Digital output (HDMI)
       hdmi_clk_i              : in  std_logic;
       hdmi_rst_i              : in  std_logic;
       tmds_clk_i              : in  std_logic;
@@ -546,8 +550,8 @@ begin
          video_vdmax_o            => video_vdmax,
          audio_clk_i              => audio_clk_i,
          audio_rst_i              => audio_rst_i,
-         audio_left_i             => signed(audio_left_i),
-         audio_right_i            => signed(audio_right_i),
+         audio_left_i             => signed(audio_left),
+         audio_right_i            => signed(audio_right),
 
          -- Digital output (HDMI)
          hdmi_clk_i               => hdmi_clk_i,
@@ -656,6 +660,11 @@ begin
          b_q_o          => hdmi_osm_vram_data
       ); -- i_osm_vram_hdmi
 
+
+   audio_clk_o   <= audio_clk_i;
+   audio_reset_o <= audio_rst_i;
+   audio_left_o  <= signed(audio_left);
+   audio_right_o <= signed(audio_right);
 
 end architecture synthesis;
 

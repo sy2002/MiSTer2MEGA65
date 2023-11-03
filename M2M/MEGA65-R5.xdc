@@ -1,10 +1,6 @@
-## NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
+## MiSTer2MEGA framework pin mapping
 ##
-## Signal mapping for CORE-R5
-##
-## This machine is based on EXACT GITHUB REPO NAME OF THE MiSTer REPO
-## Powered by MiSTer2MEGA65
-## MEGA65 port done by YOURNAME in YEAR and licensed under GPL v3
+## Done by MJoergen and sy2002 in 2023 and licensed under GPL v3
 
 ################################
 ## Pin to signal mapping

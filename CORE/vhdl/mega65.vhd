@@ -22,13 +22,6 @@ generic (
    G_BOARD : string                                         -- Which platform are we running on.
 );
 port (
-   CLK                     : in  std_logic;              -- 100 MHz clock
-   RESET_M2M_N             : in  std_logic;              -- Debounced system reset in system clock domain
-
-   -- Share clock and reset with the framework
-   main_clk_o              : out std_logic;              -- CORE's 54 MHz clock
-   main_rst_o              : out std_logic;              -- CORE's reset, synchronized
-
    --------------------------------------------------------------------------------------------------------
    -- QNICE Clock Domain
    --------------------------------------------------------------------------------------------------------
@@ -39,7 +32,12 @@ port (
 
    -- Video and audio mode control
    qnice_dvi_o             : out std_logic;              -- 0=HDMI (with sound), 1=DVI (no sound)
-   qnice_video_mode_o      : out natural range 0 to 3;   -- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
+   qnice_video_mode_o      : out natural range 0 to 3;      -- HDMI 1280x720 @ 50 Hz resolution = mode 0,
+                                                            -- HDMI 1280x720 @ 60 Hz resolution = mode 1,
+                                                            -- PAL 576p in 4:3 and 5:4 are modes 2 and 3
+                                                            -- HDMI 640x480  @ 60 Hz = mode 4
+                                                            -- HDMI 720x480  @ 60 Hz = mode 5
+   qnice_osm_cfg_scaling_o : out std_logic_vector(8 downto 0);
    qnice_scandoubler_o     : out std_logic;              -- 0 = no scandoubler, 1 = scandoubler
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
@@ -49,7 +47,6 @@ port (
    qnice_ascal_triplebuf_o : out std_logic;
    qnice_retro15kHz_o      : out std_logic;              -- 0 = normal frequency, 1 = retro 15 kHz frequency
    qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
-   qnice_osm_cfg_scaling_o : out std_logic_vector(8 downto 0);
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
@@ -70,8 +67,48 @@ port (
    qnice_dev_wait_o        : out std_logic;
 
    --------------------------------------------------------------------------------------------------------
+   -- HyperRAM Clock Domain
+   --------------------------------------------------------------------------------------------------------
+
+   hr_clk_i                : in  std_logic;
+   hr_rst_i                : in  std_logic;
+   hr_core_write_o         : out std_logic;
+   hr_core_read_o          : out std_logic;
+   hr_core_address_o       : out std_logic_vector(31 downto 0);
+   hr_core_writedata_o     : out std_logic_vector(15 downto 0);
+   hr_core_byteenable_o    : out std_logic_vector( 1 downto 0);
+   hr_core_burstcount_o    : out std_logic_vector( 7 downto 0);
+   hr_core_readdata_i      : in  std_logic_vector(15 downto 0);
+   hr_core_readdatavalid_i : in  std_logic;
+   hr_core_waitrequest_i   : in  std_logic;
+   hr_high_i               : in  std_logic;  -- Core is too fast
+   hr_low_i                : in  std_logic;  -- Core is too slow
+
+   --------------------------------------------------------------------------------------------------------
+   -- Video Clock Domain
+   --------------------------------------------------------------------------------------------------------
+
+   video_clk_o             : out std_logic;
+   video_rst_o             : out std_logic;
+   video_ce_o              : out std_logic;
+   video_ce_ovl_o          : out std_logic;
+   video_red_o             : out std_logic_vector(7 downto 0);
+   video_green_o           : out std_logic_vector(7 downto 0);
+   video_blue_o            : out std_logic_vector(7 downto 0);
+   video_vs_o              : out std_logic;
+   video_hs_o              : out std_logic;
+   video_hblank_o          : out std_logic;
+   video_vblank_o          : out std_logic;
+
+   --------------------------------------------------------------------------------------------------------
    -- Core Clock Domain
    --------------------------------------------------------------------------------------------------------
+
+   CLK                     : in  std_logic;              -- 100 MHz clock
+
+   -- Share clock and reset with the framework
+   main_clk_o              : out std_logic;              -- CORE's 54 MHz clock
+   main_rst_o              : out std_logic;              -- CORE's reset, synchronized
 
    -- M2M's reset manager provides 2 signals:
    --    m2m:   Reset the whole machine: Core and Framework
@@ -87,24 +124,11 @@ port (
    -- QNICE general purpose register converted to main clock domain
    main_qnice_gp_reg_i     : in  std_logic_vector(255 downto 0);
 
-   -- Video output
-   video_clk_o             : out std_logic;
-   video_rst_o             : out std_logic;
-   video_ce_o              : out std_logic;
-   video_ce_ovl_o          : out std_logic;
-   video_red_o             : out std_logic_vector(7 downto 0);
-   video_green_o           : out std_logic_vector(7 downto 0);
-   video_blue_o            : out std_logic_vector(7 downto 0);
-   video_vs_o              : out std_logic;
-   video_hs_o              : out std_logic;
-   video_hblank_o          : out std_logic;
-   video_vblank_o          : out std_logic;
-
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
    main_audio_right_o      : out signed(15 downto 0);
 
-   -- M2M Keyboard interface (incl. drive led)
+   -- M2M Keyboard interface (incl. power led and drive led)
    main_kb_key_num_i       : in  integer range 0 to 79;  -- cycles through all MEGA65 keys
    main_kb_key_pressed_n_i : in  std_logic;              -- low active: debounced feedback: is kb_key_num_i pressed right now?
    main_power_led_o        : out std_logic;
@@ -112,7 +136,7 @@ port (
    main_drive_led_o        : out std_logic;
    main_drive_led_col_o    : out std_logic_vector(23 downto 0);
 
-   -- Joysticks input
+   -- Joysticks and paddles input
    main_joy_1_up_n_i       : in  std_logic;
    main_joy_1_down_n_i     : in  std_logic;
    main_joy_1_left_n_i     : in  std_logic;
@@ -138,28 +162,6 @@ port (
    main_pot1_y_i           : in  std_logic_vector(7 downto 0);
    main_pot2_x_i           : in  std_logic_vector(7 downto 0);
    main_pot2_y_i           : in  std_logic_vector(7 downto 0);
-
-   --------------------------------------------------------------------------------------------------------
-   -- Provide HyperRAM to core (in HyperRAM clock domain)
-   --------------------------------------------------------------------------------------------------------
-
-   hr_clk_i                : in  std_logic;
-   hr_rst_i                : in  std_logic;
-   hr_core_write_o         : out std_logic := '0';
-   hr_core_read_o          : out std_logic := '0';
-   hr_core_address_o       : out std_logic_vector(31 downto 0) := (others => '0');
-   hr_core_writedata_o     : out std_logic_vector(15 downto 0) := (others => '0');
-   hr_core_byteenable_o    : out std_logic_vector( 1 downto 0) := (others => '0');
-   hr_core_burstcount_o    : out std_logic_vector( 7 downto 0) := (others => '0');
-   hr_core_readdata_i      : in  std_logic_vector(15 downto 0);
-   hr_core_readdatavalid_i : in  std_logic;
-   hr_core_waitrequest_i   : in  std_logic;
-   hr_high_i               : in  std_logic;  -- Core is too fast
-   hr_low_i                : in  std_logic;  -- Core is too slow
-
-   --------------------------------------------------------------------
-   -- C64 specific ports that are not supported by the M2M framework
-   --------------------------------------------------------------------
 
    -- CBM-488/IEC serial port
    iec_reset_n_o           : out std_logic;
@@ -255,6 +257,13 @@ signal qnice_demo_vd_we       : std_logic;
 
 begin
 
+   hr_core_write_o      <= '0';
+   hr_core_read_o       <= '0';
+   hr_core_address_o    <= (others => '0');
+   hr_core_writedata_o  <= (others => '0');
+   hr_core_byteenable_o <= (others => '0');
+   hr_core_burstcount_o <= (others => '0');
+
    -- Tristate all expansion port drivers that we can directly control
    -- @TODO: As soon as we support modules that can act as busmaster, we need to become more flexible here
    cart_ctrl_oe_o       <= '0';
@@ -304,7 +313,6 @@ begin
    clk_gen : entity work.clk
       port map (
          sys_clk_i         => CLK,             -- expects 100 MHz
-         sys_rstn_i        => RESET_M2M_N,     -- Asynchronous, asserted low
          main_clk_o        => main_clk,        -- CORE's 54 MHz clock
          main_rst_o        => main_rst         -- CORE's reset, synchronized
       ); -- clk_gen

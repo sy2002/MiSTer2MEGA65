@@ -17,10 +17,8 @@ create_generated_clock -name hr_clk_x1     [get_pins i_framework/i_clk_m2m/i_clk
 create_generated_clock -name hr_clk_x2     [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT2]
 create_generated_clock -name hr_clk_x2_del [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT3]
 create_generated_clock -name audio_clk     [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT4]
-create_generated_clock -name tmds_720p_clk [get_pins i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT0]
-create_generated_clock -name hdmi_720p_clk [get_pins i_framework/i_clk_m2m/i_clk_hdmi_720p/CLKOUT1]
-create_generated_clock -name tmds_576p_clk [get_pins i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT0]
-create_generated_clock -name hdmi_576p_clk [get_pins i_framework/i_clk_m2m/i_clk_hdmi_576p/CLKOUT1]
+create_generated_clock -name tmds_clk      [get_pins i_framework/i_video_out_clock/MMCM/CLKOUT0]
+create_generated_clock -name hdmi_clk      [get_pins i_framework/i_video_out_clock/MMCM/CLKOUT1]
 
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
@@ -43,17 +41,14 @@ set_multicycle_path -from [get_cells -include_replicated {{i_framework/QNICE_SOC
 # avl_* : This is the video buffer, i.e. the HyperRAM clock domain.
 # However, we can not refer directly to the Core clock domain here, so instead we make
 # some indirect references.
-set_false_path -from [get_clocks hr_clk_x1]       -to [get_clocks hdmi_720p_clk]
-set_false_path   -to [get_clocks hr_clk_x1]     -from [get_clocks hdmi_720p_clk]
-set_false_path   -through [get_pins i_framework/i_av_pipeline/i_digital_pipeline/i_ascal/reset_na]
-set_false_path -from [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/C"] -to [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/D"]
-set_false_path -from [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/C"] -to [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/D"]
-set_false_path -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"] -to [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/D"]
-set_false_path -from [get_clocks qnice_clk]       -to [get_clocks hdmi_720p_clk]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/C"] -to [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/D"]
 
-## Assume the HDMI output is 720p, which is the fastest clock.
-## No need to do timing analysis on the slower HDMI clocks as well.
-set_case_analysis 0 [get_nets i_framework/i_clk_m2m/hdmi_clk_sel]
+set_false_path -from [get_clocks qnice_clk] -to [get_clocks hdmi_clk]
+set_false_path   -through [get_pins i_framework/i_av_pipeline/i_digital_pipeline/i_ascal/reset_na]
 
 ## The high level reset signals are slow enough so that we can afford a false path
 set_false_path -from [get_pins i_framework/i_reset_manager/reset_m2m_n_o_reg/C]

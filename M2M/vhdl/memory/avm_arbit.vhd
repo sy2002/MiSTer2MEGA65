@@ -5,6 +5,12 @@ use ieee.numeric_std_unsigned.all;
 
 -- This arbitrates fairly between two Masters connected to a single Slave
 
+-- This file is copied from https://github.com/MJoergen/Avalon
+-- It is a highly optimized arbiter, designed to minimize waiting
+-- time when switching between the two Masters.
+-- It works in round-robin fashion, so whenever one Master has finished a
+-- transaction, the other Master is granted access.
+
 entity avm_arbit is
    generic (
       G_FREQ_HZ       : integer := 100_000_000;  -- 100 MHz
@@ -66,6 +72,7 @@ architecture synthesis of avm_arbit is
 
    signal burstcount : std_logic_vector(7 downto 0);
 
+   -- Debug counters. Not connected anywhere.
    signal cnt                 : integer range 0 to G_FREQ_HZ-1;
    signal cnt_s0_active_grant : integer range 0 to G_FREQ_HZ-1;
    signal cnt_s1_active_grant : integer range 0 to G_FREQ_HZ-1;
@@ -78,6 +85,9 @@ architecture synthesis of avm_arbit is
 
 begin
 
+   -- Debug statistics to measure performance. Only used in simulation.
+   -- Will automatically be optimized away during synthesis
+   -- because the registers are not used anywhere.
    p_cnt : process (clk_i)
    begin
       if rising_edge(clk_i) then
@@ -121,6 +131,7 @@ begin
       end if;
    end process p_cnt;
 
+   -- Validation check that the two Masters are not granted access at the same time.
    assert not (s0_active_grant and s1_active_grant);
 
    s0_avm_waitrequest_o <= m_avm_waitrequest_i or not s0_active_grant;
@@ -129,34 +140,7 @@ begin
    s0_active_req <= s0_avm_write_i or s0_avm_read_i;
    s1_active_req <= s1_avm_write_i or s1_avm_read_i;
 
-   p_last : process (all)
-   begin
-      s0_last <= '0';
-      s1_last <= '0';
-
-      if s0_active_grant = '1' then
-         if burstcount = X"00" or (burstcount = X"01" and s0_avm_readdatavalid_o = '1') or (burstcount = X"01" and s0_avm_write_i = '1') then
-            if s0_active_req = '0' or
-               (burstcount = X"01" and s0_avm_readdatavalid_o = '1' and s0_avm_waitrequest_o = '1') or
-               (burstcount = X"01" and s0_avm_write_i = '1' and s0_avm_waitrequest_o = '0') or
-               (s0_avm_write_i = '1' and s0_avm_waitrequest_o = '0' and s0_avm_burstcount_i = X"01") then
-               s0_last <= '1';
-            end if;
-         end if;
-      end if;
-
-      if s1_active_grant = '1' then
-         if burstcount = X"00" or (burstcount = X"01" and s1_avm_readdatavalid_o = '1') or (burstcount = X"01" and s1_avm_write_i = '1') then
-            if s1_active_req = '0' or
-               (burstcount = X"01" and s1_avm_readdatavalid_o = '1' and s1_avm_waitrequest_o = '1') or
-               (burstcount = X"01" and s1_avm_write_i = '1' and s1_avm_waitrequest_o = '0') or
-               (s1_avm_write_i = '1' and s1_avm_waitrequest_o = '0' and s1_avm_burstcount_i = X"01") then
-               s1_last <= '1';
-            end if;
-         end if;
-      end if;
-   end process p_last;
-
+   -- Determine remaining length of current transaction.
    p_burstcount : process (clk_i)
    begin
       if rising_edge(clk_i) then
@@ -183,8 +167,41 @@ begin
       end if;
    end process p_burstcount;
 
-   active_grants <= s1_active_grant & s0_active_grant;
+   -- Determine whether the current access is finished and no new transaction has begun.
+   p_last : process (all)
+   begin
+      s0_last <= '0';
+      s1_last <= '0';
 
+      if s0_active_grant = '1' then
+         if burstcount = X"00" or (burstcount = X"01" and s0_avm_readdatavalid_o = '1')
+                               or (burstcount = X"01" and s0_avm_write_i = '1') then
+            if s0_active_req = '0'
+               or (burstcount = X"01"  and s0_avm_readdatavalid_o = '1' and s0_avm_waitrequest_o = '1')
+               or (burstcount = X"01"          and s0_avm_write_i = '1' and s0_avm_waitrequest_o = '0')
+               or (s0_avm_burstcount_i = X"01" and s0_avm_write_i = '1' and s0_avm_waitrequest_o = '0')
+            then
+               s0_last <= '1';
+            end if;
+         end if;
+      end if;
+
+      if s1_active_grant = '1' then
+         if burstcount = X"00" or (burstcount = X"01" and s1_avm_readdatavalid_o = '1')
+                               or (burstcount = X"01" and s1_avm_write_i = '1') then
+            if s1_active_req = '0'
+               or (burstcount = X"01"  and s1_avm_readdatavalid_o = '1' and s1_avm_waitrequest_o = '1')
+               or (burstcount = X"01"          and s1_avm_write_i = '1' and s1_avm_waitrequest_o = '0')
+               or (s1_avm_burstcount_i = X"01" and s1_avm_write_i = '1' and s1_avm_waitrequest_o = '0')
+            then
+               s1_last <= '1';
+            end if;
+         end if;
+      end if;
+   end process p_last;
+
+   -- Determine who to grant access next.
+   active_grants <= s1_active_grant & s0_active_grant;
    p_grant : process (clk_i)
    begin
       if rising_edge(clk_i) then
@@ -245,6 +262,7 @@ begin
       end if;
    end process p_grant;
 
+   -- Generate output signals combinatorially
    m_avm_write_o      <= s0_avm_write_i and s0_active_grant when last_grant = '0' else
                          s1_avm_write_i and s1_active_grant;
    m_avm_read_o       <= s0_avm_read_i and s0_active_grant  when last_grant = '0' else
