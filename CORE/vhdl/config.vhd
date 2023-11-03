@@ -358,6 +358,11 @@ constant OPTM_ITEMS        : string :=
    " 720p 60 Hz 16:9\n"     &
    " 576p 50 Hz 4:3\n"      &
    " 576p 50 Hz 5:4\n"      &
+   " 640x480 60 Hz\n"       &
+   " 720x480 60 Hz\n"       &
+   " 640x480 59.94 Hz\n"    &
+   " 720x480 59.94 Hz\n"    &
+   " 720p 59.94 Hz\n"       &
    "\n"                     &
    " Back to main menu\n"   &
 

@@ -60,7 +60,7 @@ entity av_pipeline is
       qnice_zoom_crop_i       : in  std_logic;
       qnice_audio_filter_i    : in  std_logic;
       qnice_audio_mute_i      : in  std_logic;
-      qnice_video_mode_i      : in  std_logic_vector( 1 downto 0);
+      qnice_video_mode_i      : in  std_logic_vector( 3 downto 0);
       qnice_dvi_i             : in  std_logic;
       qnice_poly_clk_i        : in  std_logic;
       qnice_poly_dw_i         : in  std_logic_vector( 9 downto 0);
@@ -200,7 +200,7 @@ signal hdmi_osm_cfg_dxdy      : std_logic_vector(15 downto 0);
 signal hdmi_osm_vram_addr     : std_logic_vector(15 downto 0);
 signal hdmi_osm_vram_data     : std_logic_vector(15 downto 0);
 
-signal hdmi_video_mode        : std_logic_vector(1 downto 0);
+signal hdmi_video_mode        : std_logic_vector(3 downto 0);
 signal hdmi_zoom_crop         : std_logic;
 
 -- QNICE On Screen Menu selections
@@ -482,23 +482,23 @@ begin
    -- Clock domain crossing: QNICE to HDMI
    i_qnice2hdmi: xpm_cdc_array_single
       generic map (
-         WIDTH => 45
+         WIDTH => 47
       )
       port map (
          src_clk                => qnice_clk_i,
          src_in(15 downto 0)    => qnice_osm_cfg_xy_i,
          src_in(31 downto 16)   => qnice_osm_cfg_dxdy_i,
          src_in(32)             => qnice_osm_cfg_enable_i,
-         src_in(34 downto 33)   => qnice_video_mode_i,
-         src_in(35)             => qnice_zoom_crop_i,
-         src_in(44 downto 36)   => qnice_osm_cfg_scaling_i,
+         src_in(36 downto 33)   => qnice_video_mode_i,
+         src_in(37)             => qnice_zoom_crop_i,
+         src_in(46 downto 38)   => qnice_osm_cfg_scaling_i,
          dest_clk               => hdmi_clk_i,
          dest_out(15 downto 0)  => hdmi_osm_cfg_xy,
          dest_out(31 downto 16) => hdmi_osm_cfg_dxdy,
          dest_out(32)           => hdmi_osm_cfg_enable,
-         dest_out(34 downto 33) => hdmi_video_mode,
-         dest_out(35)           => hdmi_zoom_crop,
-         dest_out(44 downto 36) => hdmi_osm_cfg_scaling
+         dest_out(36 downto 33) => hdmi_video_mode,
+         dest_out(37)           => hdmi_zoom_crop,
+         dest_out(46 downto 38) => hdmi_osm_cfg_scaling
       ); -- i_qnice2hdmi
 
 

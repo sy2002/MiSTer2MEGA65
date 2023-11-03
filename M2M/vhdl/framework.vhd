@@ -177,7 +177,7 @@ port (
 
    -- QNICE control signals
    qnice_dvi_i             : in    std_logic;
-   qnice_video_mode_i      : in    natural range 0 to 3;
+   qnice_video_mode_i      : in    natural range 0 to 8;
    qnice_osm_cfg_scaling_i : in    std_logic_vector(8 downto 0);
    qnice_retro15kHz_i      : in    std_logic;
    qnice_scandoubler_i     : in    std_logic;
@@ -209,13 +209,16 @@ architecture synthesis of framework is
 -- Constants
 ---------------------------------------------------------------------------------------------
 
-constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 5) := (
-   C_HDMI_720p_50,       -- HDMI 1280x720   @ 50 Hz
-   C_HDMI_720p_60,       -- 1280x720        @ 60 Hz
-   C_HDMI_576p_50,       -- PAL 576p in 4:3 @ 50 Hz
-   C_HDMI_576p_50,       -- PAL 576p in 5:4 @ 50 Hz
-   C_HDMI_640x480p_60,   -- HDMI 640x480    @ 60 Hz
-   C_HDMI_720x480p_60);  -- HDMI 720x480    @ 60 Hz
+constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 8) := (
+   C_HDMI_720p_50,        -- HDMI 1280x720   @ 50 Hz
+   C_HDMI_720p_60,        -- 1280x720        @ 60 Hz
+   C_HDMI_576p_50,        -- PAL 576p in 4:3 @ 50 Hz
+   C_HDMI_576p_50,        -- PAL 576p in 5:4 @ 50 Hz
+   C_HDMI_640x480p_60,    -- HDMI 640x480    @ 60 Hz
+   C_HDMI_720x480p_60,    -- HDMI 720x480    @ 60 Hz
+   C_HDMI_640x480p_5994,  -- HDMI 640x480    @ 59.94 Hz
+   C_HDMI_720x480p_5994,  -- HDMI 720x480    @ 59.94 Hz
+   C_HDMI_720p_5994);     -- HDMI 1280x720   @ 59.94 Hz
 
 -- Devices: MiSTer2MEGA framework
 constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
@@ -313,7 +316,7 @@ signal qnice_osm_cfg_xy       : std_logic_vector(15 downto 0);
 signal qnice_osm_cfg_dxdy     : std_logic_vector(15 downto 0);
 signal qnice_hdmax            : std_logic_vector(11 downto 0);
 signal qnice_vdmax            : std_logic_vector(11 downto 0);
-signal qnice_clk_sel          : std_logic_vector( 1 downto 0);
+signal qnice_clk_sel          : std_logic_vector( 2 downto 0);
 
 signal qnice_h_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
 signal qnice_v_pixels         : std_logic_vector(11 downto 0); -- horizontal visible display width in pixels
@@ -996,7 +999,7 @@ begin
          qnice_zoom_crop_i       => qnice_zoom_crop_i,
          qnice_audio_filter_i    => qnice_audio_filter_i,
          qnice_audio_mute_i      => qnice_audio_mute_i,
-         qnice_video_mode_i      => std_logic_vector(to_unsigned(qnice_video_mode_i, 2)),
+         qnice_video_mode_i      => std_logic_vector(to_unsigned(qnice_video_mode_i, 4)),
          qnice_dvi_i             => qnice_dvi_i,
          qnice_poly_clk_i        => qnice_clk,
          qnice_poly_dw_i         => qnice_ramrom_data_out_o(9 downto 0),
