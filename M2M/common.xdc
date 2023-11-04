@@ -23,6 +23,11 @@ create_generated_clock -name hdmi_clk      [get_pins i_framework/i_video_out_clo
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
+## The following constraints are needed by M2M/vhdl/controllers/HDMI/video_out_clock.vhd
+create_generated_clock -name div_clk -source [get_ports {clk_i}] -divide_by 2 [get_pins i_framework/i_video_out_clock/clki_div_reg/Q]
+set_false_path -through [get_pins i_framework/i_video_out_clock/U_BUFG_1/S1]
+set_case_analysis 1 [get_pins i_framework/i_video_out_clock/clk_mux_reg/Q]
+
 ## Generic CDC
 set_max_delay 8 -datapath_only -from [get_clocks] -to [get_pins -hierarchical "*cdc_stable_gen.dst_*_d_reg[*]/D"]
 
