@@ -16,6 +16,12 @@
 --------------------------------------------------------------------------------
 
 -- Modified by MFJ in October 2023
+-- When programming the MMCM, the "locked" signal is de-asserted and the clock output is
+-- invalid and contains glitches. Usually, the system is held in reset until "locked"
+-- is asserted again. Instead, we here switch over to a "backup" clock of 50 MHz
+-- until the MMCM is ready. This switch-over is done using a glitch-free clock
+-- multiplexer, but since the latter is stateful, the switch-over has to be timed
+-- carefully, so that the active clock is always valid.
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -65,9 +71,12 @@ architecture synth of video_out_clock is
   signal clko_b       : std_logic;                     -- buffered pixel clock
   signal clko_u_x5    : std_logic;                     -- unbuffered serializer clock
 
+  signal clki_div     : std_logic;                     -- Input clock divided by 2
+
   signal cfg_tbl_addr : std_logic_vector(7 downto 0);  -- 8 x 32 entries
   signal cfg_tbl_data : std_logic_vector(39 downto 0); -- 8 bit address + 16 bit write data + 16 bit read mask
 
+  signal cfg_cnt      : std_logic_vector(1 downto 0);  -- Delay reset
   signal cfg_rst      : std_logic;                     -- DRP reset
   signal cfg_daddr    : std_logic_vector(6 downto 0);  -- DRP register address
   signal cfg_den      : std_logic;                     -- DRP enable (pulse)
@@ -78,6 +87,7 @@ architecture synth of video_out_clock is
 
   type   cfg_state_t is (                              -- state machine states
     idle,                                              -- waiting for fsel change
+    reset_wait,                                        -- put MMCM into reset
     reset,                                             -- put MMCM into reset
     tbl,                                               -- get first/next table value
     rd,                                                -- start read
@@ -87,6 +97,8 @@ architecture synth of video_out_clock is
     lock_wait                                          -- wait for reconfig to complete
   );
   signal cfg_state    : cfg_state_t;
+  signal clk_mux      : std_logic;
+
 
 begin
 
@@ -301,6 +313,14 @@ begin
           if '0' & sel /= sel_prev                         -- frequency selection has changed (or initial startup)
              or locked_s = '0'                             -- lock lost
              then
+            clk_mux   <= '0';                              -- Switch to alternate clock
+            cfg_cnt   <= "11";
+            cfg_state <= RESET_WAIT;
+          end if;
+        when RESET_WAIT =>                                 -- Wait for clock switching to take effect
+          if cfg_cnt /= "00" then
+            cfg_cnt <= std_logic_vector(unsigned(cfg_cnt) - 1);
+          else
             rsto_req  <= '1';
             cfg_rst   <= '1';
             cfg_state <= RESET;
@@ -339,6 +359,7 @@ begin
           if locked_s = '1' then                           -- all done
             cfg_state <= IDLE;
             rsto_req  <= '0';
+            clk_mux   <= '1';                              -- Switch to new clock
           end if;
       end case;
 
@@ -484,10 +505,21 @@ begin
       o => clko_x5
     );
 
-  U_BUFG_1: component bufg
+  p_clki_div : process (clki)
+  begin
+     if rising_edge(clki) then
+        clki_div <= not clki_div;
+     end if;
+  end process p_clki_div;
+
+  -- Force clock to '0' when MMCM is not locked. This avoids
+  -- any glitches during reconfiguration
+  U_BUFG_1: component bufgmux_ctrl
     port map (
-      i => clko_u,
-      o => clko_b
+      s  => clk_mux,
+      i0 => clki_div,
+      i1 => clko_u,
+      o  => clko_b
     );
 
   U_BUFG_F: component bufg
