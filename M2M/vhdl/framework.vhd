@@ -399,6 +399,9 @@ signal hr_dq_in               : std_logic_vector(7 downto 0);
 signal hr_dq_out              : std_logic_vector(7 downto 0);
 signal hr_dq_oe               : std_logic;   -- Output enable for DQ
 
+signal qnice_pps              : std_logic;
+signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
+
 begin
 
    hr_clk_o    <= hr_clk_x1;
@@ -444,6 +447,24 @@ begin
          clko    => hdmi_clk,
          clko_x5 => tmds_clk
       ); -- i_video_out_clock
+
+
+   -- Determine HDMI clock frequency
+   i_sys2hdmi : entity work.cdc_pulse
+     port map (
+       src_clk_i   => clk_i,
+       src_pulse_i => sys_pps,
+       dst_clk_i   => qnice_clk,
+       dst_pulse_o => qnice_pps
+     );
+
+   i_clock_counter : entity work.clock_counter
+   port map (
+      clk_i     => qnice_clk,
+      pps_i     => qnice_pps,
+      cnt_o     => qnice_hdmi_clk_freq,
+      mon_clk_i => hdmi_clk
+   );
 
 
    ---------------------------------------------------------------------------------------------------------------
@@ -731,6 +752,8 @@ begin
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
 
+                        when X"003" => qnice_ramrom_data_in <= qnice_hdmi_clk_freq(15 downto 0);
+                        when X"004" => qnice_ramrom_data_in <= "0000" & qnice_hdmi_clk_freq(27 downto 16);
                         when others => null;
                      end case;
 
