@@ -189,6 +189,9 @@ begin
    assert G_VIDEO_MODE_VECTOR(1).H_PIXELS >= G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3;
    assert G_VIDEO_MODE_VECTOR(2).H_PIXELS <= G_VIDEO_MODE_VECTOR(2).V_PIXELS*4/3;
    assert G_VIDEO_MODE_VECTOR(3).H_PIXELS <= G_VIDEO_MODE_VECTOR(3).V_PIXELS*4/3;
+   assert G_VIDEO_MODE_VECTOR(4).H_PIXELS <= G_VIDEO_MODE_VECTOR(4).V_PIXELS*4/3;
+   assert G_VIDEO_MODE_VECTOR(5).H_PIXELS <= G_VIDEO_MODE_VECTOR(5).V_PIXELS*4/3;
+   assert G_VIDEO_MODE_VECTOR(6).H_PIXELS <= G_VIDEO_MODE_VECTOR(6).V_PIXELS*4/3;
 
    -- In HDMI 4:3 mode, ignore crop (zoom-in).
    -- We are using constants here to avoid that large networks are synthesized.
@@ -197,6 +200,9 @@ begin
                 (G_VIDEO_MODE_VECTOR(1).H_PIXELS-G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3)/2   when hdmi_video_mode_i = 1 else
                 0                                                                         when hdmi_video_mode_i = 2 else
                 0                                                                         when hdmi_video_mode_i = 3 else
+                0                                                                         when hdmi_video_mode_i = 4 else
+                0                                                                         when hdmi_video_mode_i = 5 else
+                0                                                                         when hdmi_video_mode_i = 6 else
                 0; -- Not used
 
    hdmi_hmax <= hdmi_video_mode.H_PIXELS-1                                                when hdmi_crop_mode_i = '1' else
@@ -204,6 +210,9 @@ begin
                 (G_VIDEO_MODE_VECTOR(1).H_PIXELS+G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3)/2-1 when hdmi_video_mode_i = 1 else
                 hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 2 else
                 hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 3 else
+                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 4 else
+                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 5 else
+                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = 6 else
                 hdmi_video_mode.H_PIXELS-1; -- Not used
 
    hdmi_vmin <= 0                                                                         when hdmi_crop_mode_i = '1' else
@@ -211,6 +220,9 @@ begin
                 0                                                                         when hdmi_video_mode_i = 1 else
                 0                                                                         when hdmi_video_mode_i = 2 else
                 (G_VIDEO_MODE_VECTOR(3).V_PIXELS-G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = 3 else
+                0                                                                         when hdmi_video_mode_i = 4 else
+                0                                                                         when hdmi_video_mode_i = 5 else
+                0                                                                         when hdmi_video_mode_i = 6 else
                 0; -- Not used
 
    hdmi_vmax <= hdmi_video_mode.V_PIXELS-1                                                when hdmi_crop_mode_i = '1' else
@@ -218,6 +230,9 @@ begin
                 hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 1 else
                 hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 2 else
                 (G_VIDEO_MODE_VECTOR(3).V_PIXELS+G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = 3 else
+                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 4 else
+                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 5 else
+                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = 6 else
                 hdmi_video_mode.V_PIXELS-1; -- Not used
 
    -- Deprecated. Will be removed in future release

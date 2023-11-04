@@ -177,7 +177,7 @@ port (
 
    -- QNICE control signals
    qnice_dvi_i             : in    std_logic;
-   qnice_video_mode_i      : in    natural range 0 to 9;
+   qnice_video_mode_i      : in    natural range 0 to 6;
    qnice_osm_cfg_scaling_i : in    std_logic_vector(8 downto 0);
    qnice_retro15kHz_i      : in    std_logic;
    qnice_scandoubler_i     : in    std_logic;
@@ -209,16 +209,13 @@ architecture synthesis of framework is
 -- Constants
 ---------------------------------------------------------------------------------------------
 
-constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 9) := (
+constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 6) := (
    C_HDMI_720p_50,        -- HDMI 1280x720   @ 50 Hz
    C_HDMI_720p_60,        -- 1280x720        @ 60 Hz
    C_HDMI_576p_50,        -- PAL 576p in 4:3 @ 50 Hz
    C_HDMI_576p_50,        -- PAL 576p in 5:4 @ 50 Hz
    C_HDMI_640x480p_60,    -- HDMI 640x480    @ 60 Hz
-   C_HDMI_720x480p_60,    -- HDMI 720x480    @ 60 Hz
-   C_HDMI_640x480p_5994,  -- HDMI 640x480    @ 59.94 Hz
    C_HDMI_720x480p_5994,  -- HDMI 720x480    @ 59.94 Hz
-   C_HDMI_720p_5994,      -- HDMI 1280x720   @ 59.94 Hz
    C_SVGA_800_600_60);    -- SVGA 800x600    @ 60 Hz
 
 -- Devices: MiSTer2MEGA framework

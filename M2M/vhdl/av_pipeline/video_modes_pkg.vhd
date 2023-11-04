@@ -101,25 +101,6 @@ package video_modes_pkg is
    -- 59.94 Hz modes
    --------------------------------------------------------
 
-   -- HDMI 480p @ 59.94 Hz (640x480)
-   constant C_HDMI_640x480p_5994 : video_modes_t := (
-      CLK_KHZ     => 25175,      -- 25.175 MHz
-      CLK_SEL     => "100",
-      CEA_CTA_VIC => 1,
-      ASPECT      => "01",       -- apsect ratio: 01=4:3, 10=16:9
-      PIXEL_REP   => '0',        -- no pixel repetition
-      H_PIXELS    => 640,        -- horizontal display width in pixels
-      V_PIXELS    => 480,        -- vertical display width in rows
-      H_FP        => 16,         -- horizontal front porch width in pixels
-      H_PULSE     => 96,         -- horizontal sync pulse width in pixels
-      H_BP        => 48,         -- horizontal back porch width in pixels
-      V_FP        => 10,         -- vertical front porch width in rows
-      V_PULSE     => 2,          -- vertical sync pulse width in rows
-      V_BP        => 33,         -- vertical back porch width in rows
-      H_POL       => '0',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-      V_POL       => '0'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
-   );
-
    -- HDMI 480p @ 59.94 Hz (720x480)
    constant C_HDMI_720x480p_5994 : video_modes_t := (
       CLK_KHZ     => 27000,      -- 27.000 MHz
@@ -135,26 +116,6 @@ package video_modes_pkg is
       V_FP        => 9,          -- vertical front porch width in rows
       V_PULSE     => 6,          -- vertical sync pulse width in rows
       V_BP        => 30,         -- vertical back porch width in rows
-      H_POL       => '0',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-      V_POL       => '0'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
-   );
-
-   -- HDMI 720p @ 59.94 Hz (1280x720)
-   -- Taken from section 4.3 in the document CEA-861-D
-   constant C_HDMI_720p_5994 : video_modes_t := (
-      CLK_KHZ     => 74176,      -- 74.176 MHz
-      CLK_SEL     => "110",
-      CEA_CTA_VIC => 4,          -- CEA/CTA VIC: 1280x720p, 60 Hz, 16:9
-      ASPECT      => "10",       -- apsect ratio: 01=4:3, 10=16:9
-      PIXEL_REP   => '0',        -- no pixel repetition
-      H_PIXELS    => 1280,       -- horizontal display width in pixels
-      V_PIXELS    => 720,        -- vertical display width in rows
-      H_FP        => 110,        -- horizontal front porch width in pixels
-      H_PULSE     => 40,         -- horizontal sync pulse width in pixels
-      H_BP        => 220,        -- horizontal back porch width in pixels
-      V_FP        => 5,          -- vertical front porch width in rows
-      V_PULSE     => 5,          -- vertical sync pulse width in rows
-      V_BP        => 20,         -- vertical back porch width in rows
       H_POL       => '0',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
       V_POL       => '0'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
@@ -179,25 +140,6 @@ package video_modes_pkg is
       V_FP        => 10,         -- vertical front porch width in rows
       V_PULSE     => 2,          -- vertical sync pulse width in rows
       V_BP        => 33,         -- vertical back porch width in rows
-      H_POL       => '0',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-      V_POL       => '0'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
-   );
-
-   -- HDMI 480p @ 60 Hz (720x480)
-   constant C_HDMI_720x480p_60 : video_modes_t := (
-      CLK_KHZ     => 27027,      -- 27.027 MHz
-      CLK_SEL     => "101",
-      CEA_CTA_VIC => 2,
-      ASPECT      => "01",       -- apsect ratio: 01=4:3, 10=16:9
-      PIXEL_REP   => '0',        -- no pixel repetition
-      H_PIXELS    => 720,        -- horizontal display width in pixels
-      V_PIXELS    => 480,        -- vertical display width in rows
-      H_FP        => 16,         -- horizontal front porch width in pixels
-      H_PULSE     => 62,         -- horizontal sync pulse width in pixels
-      H_BP        => 60,         -- horizontal back porch width in pixels
-      V_FP        => 9,          -- vertical front porch width in rows
-      V_PULSE     => 6,          -- vertical sync pulse width in rows
-      V_BP        => 30,         -- vertical back porch width in rows
       H_POL       => '0',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
       V_POL       => '0'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );

@@ -329,7 +329,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal writ
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 38;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 35;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -359,10 +359,7 @@ constant OPTM_ITEMS        : string :=
    " 576p 50 Hz 4:3\n"      &
    " 576p 50 Hz 5:4\n"      &
    " 640x480 60 Hz\n"       &
-   " 720x480 60 Hz\n"       &
-   " 640x480 59.94 Hz\n"    &
    " 720x480 59.94 Hz\n"    &
-   " 720p 59.94 Hz\n"       &
    " 600p 60 Hz\n"          &
    "\n"                     &
    " Back to main menu\n"   &
@@ -420,10 +417,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 4:3
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 5:4
                                              OPTM_G_HDMI,                              -- 640x480 60 Hz
-                                             OPTM_G_HDMI,                              -- 720x480 60 Hz
-                                             OPTM_G_HDMI,                              -- 640x480 59.94 Hz
                                              OPTM_G_HDMI,                              -- 720x480 59.94 Hz
-                                             OPTM_G_HDMI,                              -- 720p 59.94 Hz
                                              OPTM_G_HDMI,                              -- 600p 60 Hz
                                              OPTM_G_LINE,                              -- open
                                              OPTM_G_CLOSE + OPTM_G_SUBMENU,            -- Close submenu / back to main menu
