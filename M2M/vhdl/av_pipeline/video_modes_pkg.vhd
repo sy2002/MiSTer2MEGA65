@@ -227,7 +227,7 @@ package video_modes_pkg is
    -- CAUTION: CTA/CTV VIC does not officially support SVGA 800x600; there are some monitors, where it works, though
    constant C_SVGA_800_600_60 : video_modes_t := (
       CLK_KHZ     => 40000,      -- 40.000 MHz
-      CLK_SEL     => "111",      -- TODO: The file video_out_clock.vhd must be updated to support this frequency
+      CLK_SEL     => "111",
       CEA_CTA_VIC => 65,         -- SVGA is not an official mode; "65" taken from here: https://www.raspberrypi.org/documentation/configuration/config-txt/video.md
       ASPECT      => "01",       -- aspect ratio: 01=4:3, 10=16:9: "01" for SVGA
       PIXEL_REP   => '0',        -- no pixel repetition

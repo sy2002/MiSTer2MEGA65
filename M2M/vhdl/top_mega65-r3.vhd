@@ -330,7 +330,7 @@ architecture synthesis of mega65_r3 is
 
    -- Video and audio mode control
    signal qnice_dvi              : std_logic;
-   signal qnice_video_mode       : natural range 0 to 8;
+   signal qnice_video_mode       : natural range 0 to 9;
    signal qnice_scandoubler      : std_logic;
    signal qnice_csync            : std_logic;
    signal qnice_audio_mute       : std_logic;

@@ -117,7 +117,12 @@ begin
       -- values below pasted in from video_out_clk.xls
       if fref = 100.0 then
         case '0' & addr is
-          -- 25.200 MHz
+          -- Desired frequency = 25.200 MHz
+          -- CLKFBOUT_MULT_F   = 31.500
+          -- DIVCLK_DIVIDE     = 5
+          -- CLKOUT0_DIVIDE_F  = 5.000
+          -- CLKOUT1_DIVIDE    = 25
+          -- Actual frequency  = 25.200 MHz
           when x"00" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"01" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"02" => data := x"08" & x"1083" & x"1000";  -- CLKOUT0 Register 1
@@ -142,7 +147,12 @@ begin
           when x"15" => data := x"4E" & x"0900" & x"66FF";  -- Filter Register 1
           when x"16" => data := x"CF" & x"1000" & x"666F";  -- Filter Register 2
 
-          -- 27.000 MHz
+          -- Desired frequency = 27.000 MHz
+          -- CLKFBOUT_MULT_F   = 47.250
+          -- DIVCLK_DIVIDE     = 5
+          -- CLKOUT0_DIVIDE_F  = 7.000
+          -- CLKOUT1_DIVIDE    = 35
+          -- Actual frequency  = 74.250 MHz
           when x"20" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"21" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"22" => data := x"08" & x"10C4" & x"1000";  -- CLKOUT0 Register 1
@@ -167,7 +177,12 @@ begin
           when x"35" => data := x"4E" & x"1900" & x"66FF";  -- Filter Register 1
           when x"36" => data := x"CF" & x"0100" & x"666F";  -- Filter Register 2
 
-          -- 74.250 MHz
+          -- Desired frequency = 74.250 MHz
+          -- CLKFBOUT_MULT_F   = 37.125
+          -- DIVCLK_DIVIDE     = 5
+          -- CLKOUT0_DIVIDE_F  = 2.000
+          -- CLKOUT1_DIVIDE    = 10
+          -- Actual frequency  = 74.250 MHz
           when x"40" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"41" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"42" => data := x"08" & x"1041" & x"1000";  -- CLKOUT0 Register 1
@@ -192,7 +207,12 @@ begin
           when x"55" => data := x"4E" & x"0900" & x"66FF";  -- Filter Register 1
           when x"56" => data := x"CF" & x"1000" & x"666F";  -- Filter Register 2
 
-          -- 148.500 MHz
+          -- Desired frequency = 148.500 MHz
+          -- CLKFBOUT_MULT_F   = 37.125
+          -- DIVCLK_DIVIDE     = 5
+          -- CLKOUT0_DIVIDE_F  = 1.000
+          -- CLKOUT1_DIVIDE    = 5
+          -- Actual frequency  = 148.500 MHz
           when x"60" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"61" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"62" => data := x"08" & x"1041" & x"1000";  -- CLKOUT0 Register 1
@@ -217,7 +237,12 @@ begin
           when x"75" => data := x"4E" & x"0900" & x"66FF";  -- Filter Register 1
           when x"76" => data := x"CF" & x"1000" & x"666F";  -- Filter Register 2
 
-          -- 25.175 MHz
+          -- Desired frequency = 25.175 MHz
+          -- CLKFBOUT_MULT_F   = 17.625
+          -- DIVCLK_DIVIDE     = 2
+          -- CLKOUT0_DIVIDE_F  = 7.000
+          -- CLKOUT1_DIVIDE    = 35
+          -- Actual frequency  = 25.179 MHz
           when x"80" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"81" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"82" => data := x"08" & x"10C4" & x"1000";  -- CLKOUT0 Register 1
@@ -242,7 +267,12 @@ begin
           when x"95" => data := x"4E" & x"9900" & x"66FF";  -- Filter Register 1
           when x"96" => data := x"CF" & x"1100" & x"666F";  -- Filter Register 2
 
-          -- 27.027 MHz
+          -- Desired frequency = 27.027 MHz
+          -- CLKFBOUT_MULT_F   = 21.625
+          -- DIVCLK_DIVIDE     = 2
+          -- CLKOUT0_DIVIDE_F  = 8.000
+          -- CLKOUT1_DIVIDE    = 40
+          -- Actual frequency  = 27.031 MHz
           when x"A0" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"A1" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"A2" => data := x"08" & x"1104" & x"1000";  -- CLKOUT0 Register 1
@@ -267,7 +297,12 @@ begin
           when x"B5" => data := x"4E" & x"9000" & x"66FF";  -- Filter Register 1
           when x"B6" => data := x"CF" & x"0100" & x"666F";  -- Filter Register 2
 
-          -- 74.176 MHz
+          -- Desired frequency = 74.176 MHz
+          -- CLKFBOUT_MULT_F   = 22.250
+          -- DIVCLK_DIVIDE     = 3
+          -- CLKOUT0_DIVIDE_F  = 2.000
+          -- CLKOUT1_DIVIDE    = 10
+          -- Actual frequency  = 74.167 MHz
           when x"C0" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
           when x"C1" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
           when x"C2" => data := x"08" & x"1041" & x"1000";  -- CLKOUT0 Register 1
@@ -291,6 +326,36 @@ begin
           when x"D4" => data := x"28" & x"FFFF" & x"0000";  -- Power Register
           when x"D5" => data := x"4E" & x"1100" & x"66FF";  -- Filter Register 1
           when x"D6" => data := x"CF" & x"9000" & x"666F";  -- Filter Register 2
+
+          -- Desired frequency = 40.000 MHz
+          -- CLKFBOUT_MULT_F   = 10
+          -- DIVCLK_DIVIDE     = 1
+          -- CLKOUT0_DIVIDE_F  = 5.000
+          -- CLKOUT1_DIVIDE    = 25
+          -- Actual frequency  = 40.000 MHz
+          when x"E0" => data := x"06" & x"1145" & x"1000";  -- CLKOUT5 Register 1
+          when x"E1" => data := x"07" & x"0000" & x"8000";  -- CLKOUT5 Register 2
+          when x"E2" => data := x"08" & x"1083" & x"1000";  -- CLKOUT0 Register 1
+          when x"E3" => data := x"09" & x"0080" & x"8000";  -- CLKOUT0 Register 2
+          when x"E4" => data := x"0A" & x"130D" & x"1000";  -- CLKOUT1 Register 1
+          when x"E5" => data := x"0B" & x"0080" & x"8000";  -- CLKOUT1 Register 2
+          when x"E6" => data := x"0C" & x"1145" & x"1000";  -- CLKOUT2 Register 1
+          when x"E7" => data := x"0D" & x"0000" & x"8000";  -- CLKOUT2 Register 2
+          when x"E8" => data := x"0E" & x"1145" & x"1000";  -- CLKOUT3 Register 1
+          when x"E9" => data := x"0F" & x"0000" & x"8000";  -- CLKOUT3 Register 2
+          when x"EA" => data := x"10" & x"1145" & x"1000";  -- CLKOUT4 Register 1
+          when x"EB" => data := x"11" & x"0000" & x"8000";  -- CLKOUT4 Register 2
+          when x"EC" => data := x"12" & x"1145" & x"1000";  -- CLKOUT6 Register 1
+          when x"ED" => data := x"13" & x"0000" & x"8000";  -- CLKOUT6 Register 2
+          when x"EE" => data := x"14" & x"1145" & x"1000";  -- CLKFBOUT Register 1
+          when x"EF" => data := x"15" & x"0000" & x"8000";  -- CLKFBOUT Register 2
+          when x"F0" => data := x"16" & x"1041" & x"C000";  -- DIVCLK Register
+          when x"F1" => data := x"18" & x"01E8" & x"FC00";  -- Lock Register 1
+          when x"F2" => data := x"19" & x"7001" & x"8000";  -- Lock Register 2
+          when x"F3" => data := x"1A" & x"71E9" & x"8000";  -- Lock Register 3
+          when x"F4" => data := x"28" & x"FFFF" & x"0000";  -- Power Register
+          when x"F5" => data := x"4E" & x"9900" & x"66FF";  -- Filter Register 1
+          when x"F6" => data := x"CF" & x"1100" & x"666F";  -- Filter Register 2
 
           when others => data := (others => '0');
         end case;
