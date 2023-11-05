@@ -23,6 +23,16 @@
 -- multiplexer, but since the latter is stateful, the switch-over has to be timed
 -- carefully, so that the active clock is always valid.
 
+-- To generate the entries in these tables:
+-- 1. Download the MMCM and PLL Dynamic Reconfiguration Application Note (XAPP888)
+--    reference files.
+-- 2. Use the Vivado Clock Wizard to generate the values of CLKFBOUT_MULT_F,
+--    DIVCLK_DIVIDE, CLKOUT0_DIVIDE_F, and CLKOUT1_DIVIDE. Note them down on a piece of paper.
+-- 3. Start Vivado, and run the xapp888 setup file: MMCME2_DRP/top_mmcme2.tcl
+-- 4. Use the spreadsheet https://github.com/amb5l/tyto2/blob/main/src/common/video/xilinx_7series/video_out_clock.xls
+--    type in the Clock Wizard values, and generate the tcl command.
+-- 5. In Vivado, run the tcl command. This outputs the values for the table below.
+
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;

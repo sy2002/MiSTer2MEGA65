@@ -55,7 +55,7 @@ entity digital_pipeline is
 
       -- Connect to QNICE and Video RAM
       hdmi_dvi_i               : in  std_logic;
-      hdmi_video_mode_i        : in  natural range 0 to 8;
+      hdmi_video_mode_i        : in  natural range 0 to 6;
       hdmi_crop_mode_i         : in  std_logic;
       hdmi_osm_cfg_scaling_i   : in  natural range 0 to 8;
       hdmi_osm_cfg_enable_i    : in  std_logic;
