@@ -11,11 +11,7 @@ entity avm_stats is
       -- Avalon Memory Map
       avm_write_i         : in  std_logic;
       avm_read_i          : in  std_logic;
-      avm_address_i       : in  std_logic_vector(31 downto 0); -- Ignored
-      avm_writedata_i     : in  std_logic_vector(15 downto 0); -- Ignored
-      avm_byteenable_i    : in  std_logic_vector(1 downto 0);  -- Ignored
       avm_burstcount_i    : in  std_logic_vector(7 downto 0);
-      avm_readdata_i      : in  std_logic_vector(15 downto 0); -- Ignored
       avm_readdatavalid_i : in  std_logic;
       avm_waitrequest_i   : in  std_logic;
 
@@ -29,13 +25,14 @@ end entity avm_stats;
 
 architecture synthesis of avm_stats is
 
-   signal burstcount  : std_logic_vector(7 downto 0);
-   signal stats_idle  : std_logic_vector(27 downto 0);
-   signal stats_wait  : std_logic_vector(27 downto 0);
-   signal stats_write : std_logic_vector(27 downto 0);
-   signal stats_read  : std_logic_vector(27 downto 0);
+   signal wr_burstcount : std_logic_vector(7 downto 0);
+   signal rd_burstcount : std_logic_vector(7 downto 0);
+   signal stats_idle    : std_logic_vector(27 downto 0);
+   signal stats_wait    : std_logic_vector(27 downto 0);
+   signal stats_write   : std_logic_vector(27 downto 0);
+   signal stats_read    : std_logic_vector(27 downto 0);
 
-   type t_state is (IDLE_ST, WRITING_ST, READING_ST);
+   type t_state is (IDLE_ST, WRITING_ST, READING_ST, READING_AND_WRITING_ST);
    signal state : t_state := IDLE_ST;
 
 begin
@@ -47,12 +44,12 @@ begin
             when IDLE_ST =>
                if avm_write_i = '1' and avm_waitrequest_i = '0' then
                   stats_write <= stats_write + 1;
-                  if avm_burstcount_i > 0 then
-                     burstcount <= avm_burstcount_i - 1;
+                  if avm_burstcount_i > 1 then
+                     wr_burstcount <= avm_burstcount_i - 1;
                      state <= WRITING_ST;
                   end if;
                elsif avm_read_i = '1' and avm_waitrequest_i = '0' then
-                  burstcount  <= avm_burstcount_i;
+                  rd_burstcount  <= avm_burstcount_i;
                   stats_read <= stats_read + 1;
                   state <= READING_ST;
                elsif (avm_write_i = '1' or avm_read_i = '1') and avm_waitrequest_i = '1' then
@@ -64,8 +61,8 @@ begin
             when WRITING_ST =>
                stats_write <= stats_write + 1;
                if avm_write_i = '1' and avm_waitrequest_i = '0' then
-                  burstcount <= burstcount - 1;
-                  if burstcount = 1 then
+                  wr_burstcount <= wr_burstcount - 1;
+                  if wr_burstcount = 1 then
                      state <= IDLE_ST;
                   end if;
                end if;
@@ -73,9 +70,35 @@ begin
             when READING_ST =>
                stats_read <= stats_read + 1;
                if avm_readdatavalid_i = '1' then
-                  burstcount <= burstcount - 1;
-                  if burstcount = 1 then
+                  rd_burstcount <= rd_burstcount - 1;
+                  if rd_burstcount = 1 then
                      state <= IDLE_ST;
+                  end if;
+               end if;
+               if avm_write_i = '1' and avm_waitrequest_i = '0' then
+                  stats_write <= stats_write + 1;
+                  if avm_burstcount_i > 1 then
+                     wr_burstcount <= avm_burstcount_i - 1;
+                     state <= READING_AND_WRITING_ST;
+                     if avm_readdatavalid_i = '1' and rd_burstcount = 1 then
+                        state <= WRITING_ST;
+                     end if;
+                  end if;
+               end if;
+
+            when READING_AND_WRITING_ST =>
+               stats_read <= stats_read + 1;
+               if avm_readdatavalid_i = '1' then
+                  rd_burstcount <= rd_burstcount - 1;
+                  if rd_burstcount = 1 then
+                     state <= WRITING_ST;
+                  end if;
+               end if;
+               if avm_write_i = '1' and avm_waitrequest_i = '0' then
+                  stats_write <= stats_write + 1;
+                  wr_burstcount <= wr_burstcount - 1;
+                  if wr_burstcount = 1 then
+                     state <= READING_ST;
                   end if;
                end if;
 
@@ -98,7 +121,9 @@ begin
          end if;
 
          if rst_i = '1' then
-            burstcount <= X"00";
+            state <= IDLE_ST;
+            wr_burstcount <= X"00";
+            rd_burstcount <= X"00";
          end if;
       end if;
    end process p_stats;
