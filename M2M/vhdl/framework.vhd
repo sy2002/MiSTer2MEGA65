@@ -353,6 +353,14 @@ signal qnice_avm_readdata      : std_logic_vector(15 downto 0);
 signal qnice_avm_readdatavalid : std_logic;
 signal qnice_avm_waitrequest   : std_logic;
 
+signal qnice_stats_idle        : std_logic_vector(27 downto 0);
+signal qnice_stats_wait        : std_logic_vector(27 downto 0);
+signal qnice_stats_write       : std_logic_vector(27 downto 0);
+signal qnice_stats_read        : std_logic_vector(27 downto 0);
+
+signal qnice_pps              : std_logic;
+signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
+
 ---------------------------------------------------------------------------------------------
 -- HyperRAM
 ---------------------------------------------------------------------------------------------
@@ -397,8 +405,11 @@ signal hr_dq_in               : std_logic_vector(7 downto 0);
 signal hr_dq_out              : std_logic_vector(7 downto 0);
 signal hr_dq_oe               : std_logic;   -- Output enable for DQ
 
-signal qnice_pps              : std_logic;
-signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
+signal hr_pps                 : std_logic;
+signal hr_stats_idle          : std_logic_vector(27 downto 0);
+signal hr_stats_wait          : std_logic_vector(27 downto 0);
+signal hr_stats_write         : std_logic_vector(27 downto 0);
+signal hr_stats_read          : std_logic_vector(27 downto 0);
 
 begin
 
@@ -750,8 +761,19 @@ begin
                         -- SHELL_M_DXDY: Use full screen
                         when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
 
+                        -- HDMI clock frequency
                         when X"003" => qnice_ramrom_data_in <= qnice_hdmi_clk_freq(15 downto 0);
                         when X"004" => qnice_ramrom_data_in <= "0000" & qnice_hdmi_clk_freq(27 downto 16);
+
+                        -- HyperRAM access statistics
+                        when X"008" => qnice_ramrom_data_in <=          qnice_stats_idle(15 downto 0);
+                        when X"009" => qnice_ramrom_data_in <= "0000" & qnice_stats_idle(27 downto 16);
+                        when X"00A" => qnice_ramrom_data_in <=          qnice_stats_wait(15 downto 0);
+                        when X"00B" => qnice_ramrom_data_in <= "0000" & qnice_stats_wait(27 downto 16);
+                        when X"00C" => qnice_ramrom_data_in <=          qnice_stats_write(15 downto 0);
+                        when X"00D" => qnice_ramrom_data_in <= "0000" & qnice_stats_write(27 downto 16);
+                        when X"00E" => qnice_ramrom_data_in <=          qnice_stats_read(15 downto 0);
+                        when X"00F" => qnice_ramrom_data_in <= "0000" & qnice_stats_read(27 downto 16);
                         when others => null;
                      end case;
 
@@ -1153,6 +1175,56 @@ begin
          m_avm_readdatavalid_i => hr_readdatavalid,
          m_avm_waitrequest_i   => hr_waitrequest
       ); -- i_avm_arbit_general
+
+   ---------------------------------------------------------------------------------------------------------------
+   -- HyperRAM statistics
+   ---------------------------------------------------------------------------------------------------------------
+
+   i_sys2hr : entity work.cdc_pulse
+     port map (
+       src_clk_i   => clk_i,
+       src_pulse_i => sys_pps,
+       dst_clk_i   => hr_clk_x1,
+       dst_pulse_o => hr_pps
+     ); -- i_sys2hr
+
+   i_avm_stats : entity work.avm_stats
+      port map (
+         clk_i               => hr_clk_x1,
+         pps_i               => hr_pps,
+         rst_i               => hr_rst,
+         avm_write_i         => hr_write,
+         avm_read_i          => hr_read,
+         avm_address_i       => hr_address,
+         avm_writedata_i     => hr_writedata,
+         avm_byteenable_i    => hr_byteenable,
+         avm_burstcount_i    => hr_burstcount,
+         avm_readdata_i      => hr_readdata,
+         avm_readdatavalid_i => hr_readdatavalid,
+         avm_waitrequest_i   => hr_waitrequest,
+         stats_idle_o        => hr_stats_idle,
+         stats_wait_o        => hr_stats_wait,
+         stats_write_o       => hr_stats_write,
+         stats_read_o        => hr_stats_read
+      ); -- i_avm_stats
+
+   -- Clock domain crossing: HyperRAM to QNICE
+   i_hr2qnice: entity work.cdc_stable
+      generic map (
+         G_DATA_SIZE => 112
+      )
+      port map (
+         src_clk_i                 => hr_clk_x1,
+         src_data_i( 27 downto  0) => hr_stats_idle,
+         src_data_i( 55 downto 28) => hr_stats_wait,
+         src_data_i( 83 downto 56) => hr_stats_write,
+         src_data_i(111 downto 84) => hr_stats_read,
+         dst_clk_i                 => qnice_clk,
+         dst_data_o( 27 downto  0) => qnice_stats_idle,
+         dst_data_o( 55 downto 28) => qnice_stats_wait,
+         dst_data_o( 83 downto 56) => qnice_stats_write,
+         dst_data_o(111 downto 84) => qnice_stats_read
+      ); -- i_hr2qnice
 
    ---------------------------------------------------------------------------------------------------------------
    -- HyperRAM controller
