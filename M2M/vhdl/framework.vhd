@@ -20,6 +20,9 @@ library xpm;
 use xpm.vcomponents.all;
 
 entity framework is
+generic (
+   G_BOARD : string                                         -- Which platform are we running on.
+);
 port (
    clk_i                   : in    std_logic;                  -- 100 MHz clock
    reset_n_i               : in    std_logic;
@@ -199,7 +202,15 @@ port (
    qnice_ramrom_data_in_i  : in    std_logic_vector(15 downto 0);
    qnice_ramrom_ce_o       : out   std_logic;
    qnice_ramrom_we_o       : out   std_logic;
-   qnice_ramrom_wait_i     : in    std_logic
+   qnice_ramrom_wait_i     : in    std_logic;
+
+   -- PMOD I2C device
+   grove_sda_io            : inout std_logic;
+   grove_scl_io            : inout std_logic;
+
+   -- On-board I2C devices
+   fpga_sda_io             : inout std_logic;
+   fpga_scl_io             : inout std_logic
 );
 end entity framework;
 
@@ -224,6 +235,7 @@ constant C_DEV_VRAM_ATTR      : std_logic_vector(15 downto 0) := x"0001";
 constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
 constant C_DEV_ASCAL_PPHASE   : std_logic_vector(15 downto 0) := x"0003";
 constant C_DEV_HYPERRAM       : std_logic_vector(15 downto 0) := x"0004";
+constant C_DEV_I2C            : std_logic_vector(15 downto 0) := x"0005";
 constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
 
 -- SysInfo record numbers
@@ -232,6 +244,7 @@ constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
 constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
 constant C_SYS_CRTSANDROMS    : std_logic_vector(15 downto 0) := x"0020";
 constant C_SYS_CORE           : std_logic_vector(15 downto 0) := x"0030";
+constant C_SYS_BOARD          : std_logic_vector(15 downto 0) := x"0040";
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -353,6 +366,11 @@ signal qnice_avm_readdata      : std_logic_vector(15 downto 0);
 signal qnice_avm_readdatavalid : std_logic;
 signal qnice_avm_waitrequest   : std_logic;
 
+signal qnice_i2c_wait         : std_logic;
+signal qnice_i2c_ce           : std_logic;
+signal qnice_i2c_we           : std_logic;
+signal qnice_i2c_rd_data      : std_logic_vector(15 downto 0);
+
 ---------------------------------------------------------------------------------------------
 -- HyperRAM
 ---------------------------------------------------------------------------------------------
@@ -399,6 +417,19 @@ signal hr_dq_oe               : std_logic;   -- Output enable for DQ
 
 signal qnice_pps              : std_logic;
 signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
+
+signal scl_out                : std_logic_vector(7 downto 0);
+signal sda_out                : std_logic_vector(7 downto 0);
+
+-- return ASCII value of given string at the position defined by strpos
+function str2data(str : string; strpos : integer) return std_logic_vector is
+begin
+   if strpos <= str'length then
+      return std_logic_vector(to_unsigned(character'pos(str(strpos)), 16));
+   else
+      return (others => '0'); -- zero terminated strings
+   end if;
+end;
 
 begin
 
@@ -662,6 +693,8 @@ begin
       qnice_vram_we            <= '0';
       qnice_vram_attr_we       <= '0';
       qnice_poly_wr            <= '0';
+      qnice_i2c_ce             <= '0';
+      qnice_i2c_we             <= '0';
 
       -----------------------------------
       -- Framework devices
@@ -691,6 +724,13 @@ begin
                qnice_ramrom_ce_hyperram   <= qnice_ramrom_ce_o;
                qnice_ramrom_data_in       <= qnice_ramrom_data_in_hyperram;
                qnice_ramrom_wait          <= qnice_ramrom_wait_hyperram;
+
+            -- I2C devices access
+            when C_DEV_I2C =>
+               qnice_i2c_ce               <= qnice_ramrom_ce_o;
+               qnice_i2c_we               <= qnice_ramrom_we_o;
+               qnice_ramrom_data_in       <= qnice_i2c_rd_data;
+               qnice_ramrom_wait          <= qnice_i2c_wait;
 
             -- Read-only System Info (constants are defined in sysdef.asm)
             when C_DEV_SYS_INFO =>
@@ -793,6 +833,10 @@ begin
 
                         when others => null;
                      end case;
+
+                  -- Info about the board
+                  when C_SYS_BOARD =>
+                     qnice_ramrom_data_in <= str2data(G_BOARD, to_integer(unsigned(qnice_ramrom_addr_o(11 downto 0))));
 
                   when others => null;
                end case;
@@ -1189,6 +1233,35 @@ begin
    hr_d_io    <= hr_dq_out   when hr_dq_oe   = '1' else (others => 'Z');
    hr_rwds_in <= hr_rwds_io;
    hr_dq_in   <= hr_d_io;
+
+   ---------------------------------------------------------------------------------------------------------------
+   -- I2C controller
+   ---------------------------------------------------------------------------------------------------------------
+
+   i2c_controller_inst : entity work.i2c_controller
+   generic map (
+      G_I2C_CLK_DIV => 250   -- SCL=100kHz @50MHz
+   )
+   port map (
+      clk_i         => qnice_clk,
+      rst_i         => qnice_rst,
+      cpu_wait_o    => qnice_i2c_wait,
+      cpu_ce_i      => qnice_i2c_ce,
+      cpu_we_i      => qnice_i2c_we,
+      cpu_addr_i    => qnice_ramrom_addr_o(7 downto 0),
+      cpu_wr_data_i => qnice_ramrom_data_out_o,
+      cpu_rd_data_o => qnice_i2c_rd_data,
+      scl_in_i      => "111111" & grove_scl_io & fpga_scl_io,
+      sda_in_i      => "111111" & grove_sda_io & fpga_sda_io,
+      scl_out_o     => scl_out,
+      sda_out_o     => sda_out
+   ); -- i2c_controller_inst
+
+   -- Open collector, i.e. either drive pin low, or let it float (tri-state)
+   fpga_sda_io  <= '0' when sda_out(0) = '0' else 'Z';
+   fpga_scl_io  <= '0' when scl_out(0) = '0' else 'Z';
+   grove_sda_io <= '0' when sda_out(1) = '0' else 'Z';
+   grove_scl_io <= '0' when scl_out(1) = '0' else 'Z';
 
 end architecture synthesis;
 

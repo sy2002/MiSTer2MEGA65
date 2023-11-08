@@ -468,10 +468,6 @@ begin
    f_step_o      <= '0';
    f_wdata_o     <= '0';
    f_wgate_o     <= '0';
-   fpga_sda_io   <= 'Z';
-   fpga_scl_io   <= 'Z';
-   grove_sda_io  <= 'Z';
-   grove_scl_io  <= 'Z';
    led_o         <= '0'; -- Off
    p1lo_io       <= (others => 'Z');
    p1hi_io       <= (others => 'Z');
@@ -486,6 +482,9 @@ begin
    -----------------------------------------------------------------------------------------
 
    i_framework : entity work.framework
+   generic map (
+      G_BOARD => "MEGA65_R3"
+   )
    port map (
       -- Connect to I/O ports
       clk_i                   => clk_i,
@@ -643,7 +642,12 @@ begin
       qnice_ramrom_data_in_i  => qnice_ramrom_data_in,
       qnice_ramrom_ce_o       => qnice_ramrom_ce,
       qnice_ramrom_we_o       => qnice_ramrom_we,
-      qnice_ramrom_wait_i     => qnice_ramrom_wait
+      qnice_ramrom_wait_i     => qnice_ramrom_wait,
+
+      fpga_sda_io             => fpga_sda_io,
+      fpga_scl_io             => fpga_scl_io,
+      grove_sda_io            => grove_sda_io,
+      grove_scl_io            => grove_scl_io
    ); -- i_framework
 
 
