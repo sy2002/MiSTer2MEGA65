@@ -103,6 +103,7 @@ begin
       if ram_rd(1) = '1' then
         cpu_wait_o <= '0';
         cpu_rd_data_o <= ram_rd_data;
+        ram_rd <= "00";
       end if;
 
 

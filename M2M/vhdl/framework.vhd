@@ -366,6 +366,9 @@ signal qnice_avm_readdata      : std_logic_vector(15 downto 0);
 signal qnice_avm_readdatavalid : std_logic;
 signal qnice_avm_waitrequest   : std_logic;
 
+signal qnice_pps              : std_logic;
+signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
+
 signal qnice_i2c_wait         : std_logic;
 signal qnice_i2c_ce           : std_logic;
 signal qnice_i2c_we           : std_logic;
@@ -414,9 +417,6 @@ signal hr_rwds_oe             : std_logic;   -- Output enable for RWDS
 signal hr_dq_in               : std_logic_vector(7 downto 0);
 signal hr_dq_out              : std_logic_vector(7 downto 0);
 signal hr_dq_oe               : std_logic;   -- Output enable for DQ
-
-signal qnice_pps              : std_logic;
-signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
 
 signal scl_out                : std_logic_vector(7 downto 0);
 signal sda_out                : std_logic_vector(7 downto 0);

@@ -59,6 +59,11 @@ architecture synthesis of i2c_controller is
   signal rx_data   : std_logic_vector(15 downto 0);
   signal response  : std_logic_vector( 3 downto 0);    -- d3: Slave hold, d2: NACK,  d1: busy, d0: idle
 
+  signal scl_in    : std_logic;
+  signal sda_in    : std_logic;
+  signal scl_out   : std_logic;
+  signal sda_out   : std_logic;
+
 begin
 
   cpu_to_i2c_master_inst : entity work.cpu_to_i2c_master
@@ -99,11 +104,21 @@ begin
       rx_vld_o       => rx_vld,
       rx_data_o      => rx_data,
       response_o     => response,
-      scl_in_i       => scl_in_i(i2c_bus),
-      sda_in_i       => sda_in_i(i2c_bus),
-      scl_out_o      => scl_out_o(i2c_bus),
-      sda_out_o      => sda_out_o(i2c_bus)
+      scl_in_i       => scl_in,
+      sda_in_i       => sda_in,
+      scl_out_o      => scl_out,
+      sda_out_o      => sda_out
     ); -- i2c_master_inst
+
+  i2c_proc : process (all)
+  begin
+    scl_in <= scl_in_i(i2c_bus);
+    sda_in <= sda_in_i(i2c_bus);
+    scl_out_o <= (others => 'H');
+    scl_out_o(i2c_bus) <= scl_out;
+    sda_out_o <= (others => 'H');
+    sda_out_o(i2c_bus) <= sda_out;
+  end process i2c_proc;
 
 end architecture synthesis;
 
