@@ -422,14 +422,14 @@ signal scl_out                : std_logic_vector(7 downto 0);
 signal sda_out                : std_logic_vector(7 downto 0);
 
 -- return ASCII value of given string at the position defined by strpos
-function str2data(str : string; strpos : integer) return std_logic_vector is
+pure function str2data(str : string; strpos : integer) return std_logic_vector is
 begin
    if strpos <= str'length then
       return std_logic_vector(to_unsigned(character'pos(str(strpos)), 16));
    else
       return (others => '0'); -- zero terminated strings
    end if;
-end;
+end function str2data;
 
 begin
 

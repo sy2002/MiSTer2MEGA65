@@ -25,7 +25,6 @@ create_generated_clock -name sdcard_clk -source [get_pins i_framework/i_clk_m2m/
 
 ## The following constraints are needed by M2M/vhdl/controllers/HDMI/video_out_clock.vhd
 create_generated_clock -name div_clk -source [get_ports {clk_i}] -divide_by 2 [get_pins i_framework/i_video_out_clock/clki_div_reg/Q]
-set_false_path -through [get_pins i_framework/i_video_out_clock/U_BUFG_1/S1]
 set_case_analysis 1 [get_pins i_framework/i_video_out_clock/clk_mux_reg/Q]
 
 ## Generic CDC

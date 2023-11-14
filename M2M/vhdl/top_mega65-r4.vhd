@@ -491,16 +491,16 @@ begin
    eth_reset_o           <= '1';
    eth_txd_o             <= (others => '0');
    eth_txen_o            <= '0';
-   f_density_o           <= '0';
-   f_motora_o            <= '0';
-   f_motorb_o            <= '0';
-   f_selecta_o           <= '0';
-   f_selectb_o           <= '0';
-   f_side1_o             <= '0';
-   f_stepdir_o           <= '0';
-   f_step_o              <= '0';
-   f_wdata_o             <= '0';
-   f_wgate_o             <= '0';
+   f_density_o           <= '1';
+   f_motora_o            <= '1';
+   f_motorb_o            <= '1';
+   f_selecta_o           <= '1';
+   f_selectb_o           <= '1';
+   f_side1_o             <= '1';
+   f_stepdir_o           <= '1';
+   f_step_o              <= '1';
+   f_wdata_o             <= '1';
+   f_wgate_o             <= '1';
    joystick_5v_disable_o <= '0'; -- Enable 5V power supply to joysticks
    led_g_n_o             <= '1'; -- Off
    led_r_n_o             <= '1'; -- Off
