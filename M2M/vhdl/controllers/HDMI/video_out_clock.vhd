@@ -126,7 +126,7 @@ begin
       data := x"0000000000";
       -- values below pasted in from video_out_clk.xls
       if fref = 100.0 then
-        case '0' & addr is
+        case addr is
           -- Desired frequency = 25.200 MHz
           -- CLKFBOUT_MULT_F   = 31.500
           -- DIVCLK_DIVIDE     = 5
