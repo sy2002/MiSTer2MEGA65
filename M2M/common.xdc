@@ -51,6 +51,8 @@ set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_r
 set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/D"]
 set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/D"]
 
+set_false_path -from [get_clocks hdmi_clk]  -to [get_clocks audio_clk]
+set_false_path -from [get_clocks audio_clk] -to [get_clocks hdmi_clk]
 set_false_path -from [get_clocks qnice_clk] -to [get_clocks hdmi_clk]
 set_false_path   -through [get_pins i_framework/i_av_pipeline/i_digital_pipeline/i_ascal/reset_na]
 
