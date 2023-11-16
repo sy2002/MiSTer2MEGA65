@@ -431,6 +431,19 @@ begin
    end if;
 end function str2data;
 
+pure function hyperram_phase(str : string) return real is
+begin
+   if str = "MEGA65_R3" then
+      return 162.0;
+   elsif str = "MEGA65_R4" then
+      return 207.0;
+   elsif str = "MEGA65_R5" then
+      return 207.0;
+   else
+      return 180.0; -- Unknown board type -> return reasonable default value
+   end if;
+end function hyperram_phase;
+
 begin
 
    hr_clk_o    <= hr_clk_x1;
@@ -445,6 +458,10 @@ begin
    ---------------------------------------------------------------------------------------------------------------
 
    i_clk_m2m : entity work.clk_m2m
+      generic map (
+         G_HYPERRAM_FREQ_MHZ => 100,
+         G_HYPERRAM_PHASE    => hyperram_phase(G_BOARD)
+      )
       port map (
          sys_clk_i       => clk_i,
          sys_rstn_i      => reset_m2m_n,        -- reset everything
