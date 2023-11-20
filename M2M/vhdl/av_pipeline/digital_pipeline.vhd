@@ -21,6 +21,7 @@ use xpm.vcomponents.all;
 entity digital_pipeline is
    generic (
       G_VIDEO_MODE_VECTOR    : video_modes_vector;   -- Desired video format of HDMI output.
+      G_AUDIO_CLOCK_RATE     : natural;
       G_VGA_DX               : natural;              -- Actual format of video from Core (in pixels).
       G_VGA_DY               : natural;
       G_FONT_FILE            : string;
@@ -249,7 +250,7 @@ begin
    i_clk_synthetic_enable : entity work.clk_synthetic_enable
       port map (
          clk_i       => audio_clk_i,
-         src_speed_i => 30_000_000,
+         src_speed_i => G_AUDIO_CLOCK_RATE,
          dst_speed_i => HDMI_PCM_SAMPLING,
          enable_o    => audio_pcm_clken
       ); -- i_clk_synthetic_enable

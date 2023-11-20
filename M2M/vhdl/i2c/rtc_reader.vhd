@@ -34,7 +34,7 @@ end entity rtc_reader;
 
 architecture synthesis of rtc_reader is
 
-  type cmd_t is (WRITE_CMD, WAIT_CMD, SHIFT_CMD);
+  type cmd_t is (NOP_CMD, WRITE_CMD, WAIT_CMD, SHIFT_CMD);
   type action_t is record
     cmd  : cmd_t;
     addr : std_logic_vector( 7 downto 0);
@@ -102,6 +102,9 @@ begin
         when BUSY_ST =>
           if next_action = '0' then
             case action.cmd is
+              when NOP_CMD =>
+                null;
+
               when WRITE_CMD =>
                 cpu_ce_o      <= '1';
                 cpu_we_o      <= '1';
@@ -132,6 +135,7 @@ begin
                   cpu_addr_o  <= cpu_addr_o + 1;
                   if action.data = 1 then
                     next_action <= '1';
+                    cpu_ce_o    <= '0';
                   end if;
                 end if;
 

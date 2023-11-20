@@ -22,7 +22,7 @@ use xpm.vcomponents.all;
 entity av_pipeline is
    generic (
       G_VIDEO_MODE_VECTOR     : video_modes_vector;   -- Desired video format of HDMI output.
-      G_AUDIO_CLOCK_RATE      : natural := 30_000_000;
+      G_AUDIO_CLOCK_RATE      : natural;
       G_VGA_DX                : natural;              -- Actual format of video from Core (in pixels).
       G_VGA_DY                : natural;
       G_FONT_FILE             : string;
@@ -528,6 +528,7 @@ begin
    i_digital_pipeline : entity work.digital_pipeline
       generic map (
          G_VIDEO_MODE_VECTOR => G_VIDEO_MODE_VECTOR,
+         G_AUDIO_CLOCK_RATE  => G_AUDIO_CLOCK_RATE,
          G_VGA_DX            => G_VGA_DX,
          G_VGA_DY            => G_VGA_DY,
          G_FONT_FILE         => G_FONT_FILE,

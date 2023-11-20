@@ -181,20 +181,22 @@ begin
    stage5_vga_osm_vram_attr <= vga_osm_vram_attr_i;
 
    -- 16x16 pixel font ROM
-   font : entity work.dualport_2clk_ram
-      generic map
-      (
-         ADDR_WIDTH   => 12,
-         DATA_WIDTH   => 16,
-         ROM_PRELOAD  => true,
-         ROM_FILE     => G_FONT_FILE
+   inst_font : entity work.ram_init
+      generic map (
+         G_ADDR_WIDTH   => 12,
+         G_DATA_WIDTH   => 16,
+         G_ROM_PRELOAD  => true,
+         G_ROM_FILE     => G_FONT_FILE,
+         G_ROM_FILE_HEX => false
       )
-      port map
-      (
-         clock_a      => clk_i,
-         address_a    => stage5_vga_osm_font_addr,
-         q_a          => stage6_vga_osm_font_data
-      ); -- font
+      port map (
+         clock_i   => clk_i,
+         clen_i    => '1',
+         address_i => stage5_vga_osm_font_addr,
+         data_i    => (others => '0'),
+         wren_i    => '0',
+         q_o       => stage6_vga_osm_font_data
+      ); -- inst_font
 
    p_stage6 : process (clk_i)
    begin

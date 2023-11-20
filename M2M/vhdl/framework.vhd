@@ -229,23 +229,6 @@ constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 6) := (
    C_HDMI_720x480p_5994,  -- HDMI 720x480    @ 59.94 Hz
    C_SVGA_800_600_60);    -- SVGA 800x600    @ 60 Hz
 
--- Devices: MiSTer2MEGA framework
-constant C_DEV_VRAM_DATA      : std_logic_vector(15 downto 0) := x"0000";
-constant C_DEV_VRAM_ATTR      : std_logic_vector(15 downto 0) := x"0001";
-constant C_DEV_OSM_CONFIG     : std_logic_vector(15 downto 0) := x"0002";
-constant C_DEV_ASCAL_PPHASE   : std_logic_vector(15 downto 0) := x"0003";
-constant C_DEV_HYPERRAM       : std_logic_vector(15 downto 0) := x"0004";
-constant C_DEV_I2C            : std_logic_vector(15 downto 0) := x"0005";
-constant C_DEV_SYS_INFO       : std_logic_vector(15 downto 0) := x"00FF";
-
--- SysInfo record numbers
-constant C_SYS_DRIVES         : std_logic_vector(15 downto 0) := x"0000";
-constant C_SYS_VGA            : std_logic_vector(15 downto 0) := x"0010";
-constant C_SYS_HDMI           : std_logic_vector(15 downto 0) := x"0011";
-constant C_SYS_CRTSANDROMS    : std_logic_vector(15 downto 0) := x"0020";
-constant C_SYS_CORE           : std_logic_vector(15 downto 0) := x"0030";
-constant C_SYS_BOARD          : std_logic_vector(15 downto 0) := x"0040";
-
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
 ---------------------------------------------------------------------------------------------
@@ -297,14 +280,6 @@ signal audio_right            : std_logic_vector(15 downto 0);
 -- qnice_clk
 ---------------------------------------------------------------------------------------------
 
--- Device management
-signal qnice_ramrom_data_in          : std_logic_vector(15 downto 0);
-signal qnice_ramrom_data_in_hyperram : std_logic_vector(15 downto 0);
-signal qnice_ramrom_wait             : std_logic;
-signal qnice_ramrom_wait_hyperram    : std_logic;
-signal qnice_ramrom_ce_hyperram      : std_logic;
-signal qnice_ramrom_address          : std_logic_vector(31 downto 0);
-
 -- Control and status register that QNICE uses to control the Core
 signal qnice_csr_reset        : std_logic;
 signal qnice_csr_pause        : std_logic;
@@ -342,15 +317,7 @@ signal qnice_h_freq           : std_logic_vector(15 downto 0); -- horizontal syn
 -- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
 signal qnice_qnice_keys_n     : std_logic_vector(15 downto 0);
 
--- Shell configuration (config.vhd)
-signal qnice_config_data      : std_logic_vector(15 downto 0);
-
 -- Paddles in 50 MHz clock domain which happens to be QNICE's
-signal qnice_pot1_x           : unsigned(7 downto 0);
-signal qnice_pot1_y           : unsigned(7 downto 0);
-signal qnice_pot2_x           : unsigned(7 downto 0);
-signal qnice_pot2_y           : unsigned(7 downto 0);
-
 signal qnice_pot1_x_n         : unsigned(7 downto 0);
 signal qnice_pot1_y_n         : unsigned(7 downto 0);
 signal qnice_pot2_x_n         : unsigned(7 downto 0);
@@ -360,19 +327,34 @@ signal qnice_avm_write         : std_logic;
 signal qnice_avm_read          : std_logic;
 signal qnice_avm_address       : std_logic_vector(31 downto 0);
 signal qnice_avm_writedata     : std_logic_vector(15 downto 0);
-signal qnice_avm_byteenable    : std_logic_vector(1 downto 0);
-signal qnice_avm_burstcount    : std_logic_vector(7 downto 0);
+signal qnice_avm_byteenable    : std_logic_vector( 1 downto 0);
+signal qnice_avm_burstcount    : std_logic_vector( 7 downto 0);
 signal qnice_avm_readdata      : std_logic_vector(15 downto 0);
 signal qnice_avm_readdatavalid : std_logic;
 signal qnice_avm_waitrequest   : std_logic;
 
-signal qnice_pps              : std_logic;
-signal qnice_hdmi_clk_freq    : std_logic_vector(27 downto 0);
+signal qnice_pps               : std_logic;
+signal qnice_hdmi_clk_freq     : std_logic_vector(27 downto 0);
 
-signal qnice_i2c_wait         : std_logic;
-signal qnice_i2c_ce           : std_logic;
-signal qnice_i2c_we           : std_logic;
-signal qnice_i2c_rd_data      : std_logic_vector(15 downto 0);
+signal qnice_i2c_wait          : std_logic;
+signal qnice_i2c_ce            : std_logic;
+signal qnice_i2c_we            : std_logic;
+signal qnice_i2c_rd_data       : std_logic_vector(15 downto 0);
+
+signal qnice_rtc_wait          : std_logic;
+signal qnice_rtc_ce            : std_logic;
+signal qnice_rtc_we            : std_logic;
+signal qnice_rtc_rd_data       : std_logic_vector(15 downto 0);
+
+signal qnice_rtc               : std_logic_vector(64 downto 0);
+
+-- Statistics
+signal qnice_hr_count_long     : std_logic_vector(31 downto 0);
+signal qnice_hr_count_short    : std_logic_vector(31 downto 0);
+signal qnice_hr_count_long_d   : std_logic_vector(31 downto 0);
+signal qnice_hr_count_short_d  : std_logic_vector(31 downto 0);
+signal qnice_hr_count_long_dd  : std_logic_vector(31 downto 0);
+signal qnice_hr_count_short_dd : std_logic_vector(31 downto 0);
 
 ---------------------------------------------------------------------------------------------
 -- HyperRAM
@@ -383,8 +365,8 @@ signal hr_dig_write           : std_logic;
 signal hr_dig_read            : std_logic;
 signal hr_dig_address         : std_logic_vector(31 downto 0) := (others => '0');
 signal hr_dig_writedata       : std_logic_vector(15 downto 0);
-signal hr_dig_byteenable      : std_logic_vector(1 downto 0);
-signal hr_dig_burstcount      : std_logic_vector(7 downto 0);
+signal hr_dig_byteenable      : std_logic_vector( 1 downto 0);
+signal hr_dig_burstcount      : std_logic_vector( 7 downto 0);
 signal hr_dig_readdata        : std_logic_vector(15 downto 0);
 signal hr_dig_readdatavalid   : std_logic;
 signal hr_dig_waitrequest     : std_logic;
@@ -393,8 +375,8 @@ signal hr_qnice_write         : std_logic;
 signal hr_qnice_read          : std_logic;
 signal hr_qnice_address       : std_logic_vector(31 downto 0) := (others => '0');
 signal hr_qnice_writedata     : std_logic_vector(15 downto 0);
-signal hr_qnice_byteenable    : std_logic_vector(1 downto 0);
-signal hr_qnice_burstcount    : std_logic_vector(7 downto 0);
+signal hr_qnice_byteenable    : std_logic_vector( 1 downto 0);
+signal hr_qnice_burstcount    : std_logic_vector( 7 downto 0);
 signal hr_qnice_readdata      : std_logic_vector(15 downto 0);
 signal hr_qnice_readdatavalid : std_logic;
 signal hr_qnice_waitrequest   : std_logic;
@@ -404,11 +386,15 @@ signal hr_write               : std_logic;
 signal hr_read                : std_logic;
 signal hr_address             : std_logic_vector(31 downto 0) := (others => '0');
 signal hr_writedata           : std_logic_vector(15 downto 0);
-signal hr_byteenable          : std_logic_vector(1 downto 0);
-signal hr_burstcount          : std_logic_vector(7 downto 0);
+signal hr_byteenable          : std_logic_vector( 1 downto 0);
+signal hr_burstcount          : std_logic_vector( 7 downto 0);
 signal hr_readdata            : std_logic_vector(15 downto 0);
 signal hr_readdatavalid       : std_logic;
 signal hr_waitrequest         : std_logic;
+
+-- Statistics
+signal hr_count_long          : unsigned(31 downto 0);
+signal hr_count_short         : unsigned(31 downto 0);
 
 -- Physical layer
 signal hr_rwds_in             : std_logic;
@@ -420,16 +406,6 @@ signal hr_dq_oe               : std_logic;   -- Output enable for DQ
 
 signal scl_out                : std_logic_vector(7 downto 0);
 signal sda_out                : std_logic_vector(7 downto 0);
-
--- return ASCII value of given string at the position defined by strpos
-pure function str2data(str : string; strpos : integer) return std_logic_vector is
-begin
-   if strpos <= str'length then
-      return std_logic_vector(to_unsigned(character'pos(str(strpos)), 16));
-   else
-      return (others => '0'); -- zero terminated strings
-   end if;
-end function str2data;
 
 pure function hyperram_phase(str : string) return real is
 begin
@@ -445,13 +421,6 @@ begin
 end function hyperram_phase;
 
 begin
-
-   hr_clk_o    <= hr_clk_x1;
-   hr_rst_o    <= hr_rst;
-
-   qnice_clk_o <= qnice_clk;
-   qnice_rst_o <= qnice_rst;
-
 
    ---------------------------------------------------------------------------------------------------------------
    -- Generate clocks and reset signals
@@ -477,7 +446,6 @@ begin
          sys_pps_o       => sys_pps
       ); -- i_clk_m2m
 
-
    qnice_clk_sel <= VIDEO_MODE_VECTOR(qnice_video_mode_i).CLK_SEL;
 
    -- reconfigurable MMCM: 25.2MHz, 27MHz, 74.25MHz or 148.5MHz
@@ -494,24 +462,11 @@ begin
          clko_x5 => tmds_clk
       ); -- i_video_out_clock
 
+   hr_clk_o    <= hr_clk_x1;
+   hr_rst_o    <= hr_rst;
 
-   -- Determine HDMI clock frequency
-   i_sys2hdmi : entity work.cdc_pulse
-     port map (
-       src_clk_i   => clk_i,
-       src_pulse_i => sys_pps,
-       dst_clk_i   => qnice_clk,
-       dst_pulse_o => qnice_pps
-     );
-
-   i_clock_counter : entity work.clock_counter
-   port map (
-      clk_i     => qnice_clk,
-      pps_i     => qnice_pps,
-      cnt_o     => qnice_hdmi_clk_freq,
-      mon_clk_i => hdmi_clk
-   );
-
+   qnice_clk_o <= qnice_clk;
+   qnice_rst_o <= qnice_rst;
 
    ---------------------------------------------------------------------------------------------------------------
    -- Board Clock Domain: clk_i
@@ -612,356 +567,194 @@ begin
    -- QNICE Clock Domain: qnice_clk
    ---------------------------------------------------------------------------------------------------------------
 
-   -- QNICE Co-Processor (System-on-a-Chip) for On-Screen-Menu, Disk mounting/virtual drives, ROM loading, etc.
-   QNICE_SOC : entity work.QNICE
+   i_qnice_wrapper : entity work.qnice_wrapper
+   generic map (
+      G_BOARD => G_BOARD
+   )
+   port map (
+      clk_i                     => qnice_clk,
+      rst_i                     => qnice_rst,
+      uart_rxd_i                => uart_rxd_i,
+      uart_txd_o                => uart_txd_o,
+      sd_reset_o                => sd_reset_o,
+      sd_clk_o                  => sd_clk_o,
+      sd_mosi_o                 => sd_mosi_o,
+      sd_miso_i                 => sd_miso_i,
+      sd_cd_i                   => sd_cd_i,
+      sd2_reset_o               => sd2_reset_o,
+      sd2_clk_o                 => sd2_clk_o,
+      sd2_mosi_o                => sd2_mosi_o,
+      sd2_miso_i                => sd2_miso_i,
+      sd2_cd_i                  => sd2_cd_i,
+      paddle_i                  => paddle_i,
+      paddle_drain_o            => paddle_drain_o,
+      qnice_osm_cfg_enable_o    => qnice_osm_cfg_enable,
+      qnice_osm_cfg_xy_o        => qnice_osm_cfg_xy,
+      qnice_osm_cfg_dxdy_o      => qnice_osm_cfg_dxdy,
+      qnice_hdmax_i             => qnice_hdmax,
+      qnice_vdmax_i             => qnice_vdmax,
+      qnice_h_pixels_i          => qnice_h_pixels,
+      qnice_v_pixels_i          => qnice_v_pixels,
+      qnice_h_pulse_i           => qnice_h_pulse,
+      qnice_h_bp_i              => qnice_h_bp,
+      qnice_h_fp_i              => qnice_h_fp,
+      qnice_v_pulse_i           => qnice_v_pulse,
+      qnice_v_bp_i              => qnice_v_bp,
+      qnice_v_fp_i              => qnice_v_fp,
+      qnice_h_freq_i            => qnice_h_freq,
+      qnice_ascal_mode_i        => qnice_ascal_mode_i,
+      qnice_ascal_polyphase_i   => qnice_ascal_polyphase_i,
+      qnice_ascal_triplebuf_i   => qnice_ascal_triplebuf_i,
+      qnice_flip_joyports_i     => qnice_flip_joyports_i,
+      qnice_osm_control_m_o     => qnice_osm_control_m_o,
+      qnice_gp_reg_o            => qnice_gp_reg_o,
+      qnice_csr_reset_o         => qnice_csr_reset,
+      qnice_csr_pause_o         => qnice_csr_pause,
+      qnice_csr_keyboard_on_o   => qnice_csr_keyboard_on,
+      qnice_csr_joy1_on_o       => qnice_csr_joy1_on,
+      qnice_csr_joy2_on_o       => qnice_csr_joy2_on,
+      qnice_ascal_mode_o        => qnice_ascal_mode,
+      qnice_poly_wr_o           => qnice_poly_wr,
+      qnice_vram_data_i         => qnice_vram_data,
+      qnice_vram_we_o           => qnice_vram_we,
+      qnice_vram_attr_we_o      => qnice_vram_attr_we,
+      qnice_qnice_keys_n_i      => qnice_qnice_keys_n,
+      qnice_pot1_x_n_o          => qnice_pot1_x_n,
+      qnice_pot1_y_n_o          => qnice_pot1_y_n,
+      qnice_pot2_x_n_o          => qnice_pot2_x_n,
+      qnice_pot2_y_n_o          => qnice_pot2_y_n,
+      qnice_avm_write_o         => qnice_avm_write,
+      qnice_avm_read_o          => qnice_avm_read,
+      qnice_avm_address_o       => qnice_avm_address,
+      qnice_avm_writedata_o     => qnice_avm_writedata,
+      qnice_avm_byteenable_o    => qnice_avm_byteenable,
+      qnice_avm_burstcount_o    => qnice_avm_burstcount,
+      qnice_avm_readdata_i      => qnice_avm_readdata,
+      qnice_avm_readdatavalid_i => qnice_avm_readdatavalid,
+      qnice_avm_waitrequest_i   => qnice_avm_waitrequest,
+      qnice_pps_i               => qnice_pps,
+      qnice_hdmi_clk_freq_i     => qnice_hdmi_clk_freq,
+      qnice_hr_count_long_i     => qnice_hr_count_long,
+      qnice_hr_count_short_i    => qnice_hr_count_short,
+      qnice_i2c_wait_i          => qnice_i2c_wait,
+      qnice_i2c_ce_o            => qnice_i2c_ce,
+      qnice_i2c_we_o            => qnice_i2c_we,
+      qnice_i2c_rd_data_i       => qnice_i2c_rd_data,
+      qnice_rtc_wait_i          => qnice_rtc_wait,
+      qnice_rtc_ce_o            => qnice_rtc_ce,
+      qnice_rtc_we_o            => qnice_rtc_we,
+      qnice_rtc_rd_data_i       => qnice_rtc_rd_data,
+      qnice_ramrom_dev_o        => qnice_ramrom_dev_o,
+      qnice_ramrom_addr_o       => qnice_ramrom_addr_o,
+      qnice_ramrom_data_out_o   => qnice_ramrom_data_out_o,
+      qnice_ramrom_data_in_i    => qnice_ramrom_data_in_i,
+      qnice_ramrom_ce_o         => qnice_ramrom_ce_o,
+      qnice_ramrom_we_o         => qnice_ramrom_we_o,
+      qnice_ramrom_wait_i       => qnice_ramrom_wait_i
+   ); -- i_qnice_wrapper
+
+   -- Determine HDMI clock frequency
+   i_clock_counter : entity work.clock_counter
+   port map (
+      clk_i     => qnice_clk,
+      pps_i     => qnice_pps,
+      cnt_o     => qnice_hdmi_clk_freq,
+      mon_clk_i => hdmi_clk
+   );
+
+   --------------------------------------------------------
+   -- HyperRAM clock domain: hr_clk_x1
+   --------------------------------------------------------
+
+   i_avm_arbit_general : entity work.avm_arbit_general
       generic map (
-         G_FIRMWARE              => QNICE_FIRMWARE,
-         G_VGA_DX                => VGA_DX,
-         G_VGA_DY                => VGA_DY,
-         G_FONT_DX               => FONT_DX,
-         G_FONT_DY               => FONT_DY
+         G_NUM_SLAVES   => 3,
+         G_FREQ_HZ      => BOARD_CLK_SPEED,
+         G_ADDRESS_SIZE => 32,
+         G_DATA_SIZE    => 16
       )
       port map (
-         clk50_i                 => qnice_clk,
-         reset_n_i               => not qnice_rst,
+         clk_i                 => hr_clk_x1,
+         rst_i                 => hr_rst,
+         s_avm_write_i         => hr_dig_write         & hr_core_write_i         & hr_qnice_write,
+         s_avm_read_i          => hr_dig_read          & hr_core_read_i          & hr_qnice_read,
+         s_avm_address_i       => hr_dig_address       & hr_core_address_i       & hr_qnice_address,
+         s_avm_writedata_i     => hr_dig_writedata     & hr_core_writedata_i     & hr_qnice_writedata,
+         s_avm_byteenable_i    => hr_dig_byteenable    & hr_core_byteenable_i    & hr_qnice_byteenable,
+         s_avm_burstcount_i    => hr_dig_burstcount    & hr_core_burstcount_i    & hr_qnice_burstcount,
+         s_avm_readdata_o(3*16-1 downto 2*16) => hr_dig_readdata,
+         s_avm_readdata_o(2*16-1 downto 1*16) => hr_core_readdata_o,
+         s_avm_readdata_o(1*16-1 downto 0*16) => hr_qnice_readdata,
+         s_avm_readdatavalid_o(2) => hr_dig_readdatavalid,
+         s_avm_readdatavalid_o(1) => hr_core_readdatavalid_o,
+         s_avm_readdatavalid_o(0) => hr_qnice_readdatavalid,
+         s_avm_waitrequest_o(2)   => hr_dig_waitrequest,
+         s_avm_waitrequest_o(1)   => hr_core_waitrequest_o,
+         s_avm_waitrequest_o(0)   => hr_qnice_waitrequest,
+         m_avm_write_o         => hr_write,
+         m_avm_read_o          => hr_read,
+         m_avm_address_o       => hr_address,
+         m_avm_writedata_o     => hr_writedata,
+         m_avm_byteenable_o    => hr_byteenable,
+         m_avm_burstcount_o    => hr_burstcount,
+         m_avm_readdata_i      => hr_readdata,
+         m_avm_readdatavalid_i => hr_readdatavalid,
+         m_avm_waitrequest_i   => hr_waitrequest
+      ); -- i_avm_arbit_general
 
-         -- serial communication (rxd, txd only; rts/cts are not available)
-         -- 115.200 baud, 8-N-1
-         uart_rxd_i              => uart_rxd_i,
-         uart_txd_o              => uart_txd_o,
-
-         -- Micro SD Connector (external slot at back of the cover)
-         sd_reset_o              => sd_reset_o,
-         sd_clk_o                => sd_clk_o,
-         sd_mosi_o               => sd_mosi_o,
-         sd_miso_i               => sd_miso_i,
-         sd_cd_i                 => sd_cd_i,
-
-         -- SD Connector (this is the slot at the bottom side of the case under the cover)
-         sd2_reset_o             => sd2_reset_o,
-         sd2_clk_o               => sd2_clk_o,
-         sd2_mosi_o              => sd2_mosi_o,
-         sd2_miso_i              => sd2_miso_i,
-         sd2_cd_i                => sd2_cd_i,
-
-         -- QNICE public registers
-         csr_reset_o             => qnice_csr_reset,
-         csr_pause_o             => qnice_csr_pause,
-         csr_osm_o               => qnice_osm_cfg_enable,
-         csr_keyboard_o          => qnice_csr_keyboard_on,
-         csr_joy1_o              => qnice_csr_joy1_on,
-         csr_joy2_o              => qnice_csr_joy2_on,
-         osm_xy_o                => qnice_osm_cfg_xy,
-         osm_dxdy_o              => qnice_osm_cfg_dxdy,
-
-         ascal_mode_i            => "0" & qnice_ascal_triplebuf_i & qnice_ascal_polyphase_i & qnice_ascal_mode_i,
-         ascal_mode_o            => qnice_ascal_mode,
-
-         -- Keyboard input for the firmware and Shell (see sysdef.asm)
-         keys_n_i                => qnice_qnice_keys_n,
-
-         -- 256-bit General purpose control flags
-         -- "d" = directly controled by the firmware
-         -- "m" = indirectly controled by the menu system
-         control_d_o             => qnice_gp_reg_o,
-         control_m_o             => qnice_osm_control_m_o,
-
-         -- 16-bit special-purpose and 16-bit general-purpose input flags
-         -- Special-purpose flags are having a given semantic when the "Shell" firmware is running,
-         -- but right now they are reserved and not used, yet.
-         special_i               => (others => '0'),
-         general_i               => (others => '0'),
-
-         -- QNICE MMIO 4k-segmented access to RAMs, ROMs and similarily behaving devices
-         -- ramrom_dev_o: 0 = VRAM data, 1 = VRAM attributes, > 256 = free to be used for any "RAM like" device
-         -- ramrom_addr_o is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
-         ramrom_dev_o            => qnice_ramrom_dev_o,
-         ramrom_addr_o           => qnice_ramrom_addr_o,
-         ramrom_data_o           => qnice_ramrom_data_out_o,
-         ramrom_data_i           => qnice_ramrom_data_in,
-         ramrom_ce_o             => qnice_ramrom_ce_o,
-         ramrom_wait_i           => qnice_ramrom_wait,
-         ramrom_we_o             => qnice_ramrom_we_o
-      ); -- QNICE_SOC
-
-   -- Shell configuration file config.vhd
-   shell_cfg : entity work.config
-      port map (
-         clk_i                   => qnice_clk,
-         -- bits 27 .. 12:    select configuration data block; called "Selector" hereafter
-         -- bits 11 downto 0: address the up to 4k the configuration data
-         address_i               => qnice_ramrom_addr_o,
-
-         -- config data
-         data_o                  => qnice_config_data
-      ); -- shell_cfg
-
-   -- QNICE devices selected via qnice_ramrom_dev
-   --    Devices with IDs < x"0100" are framework devices
-   --    All others are user specific / core specific devices
-   -- (refer to M2M/rom/sysdef.asm for a memory map and more details)
-   qnice_ramrom_devices : process(all)
-      variable strpos      : natural;
-      variable current_chr : std_logic_vector(15 downto 0);
-   begin
-      qnice_ramrom_ce_hyperram <= '0';
-      qnice_ramrom_data_in     <= x"EEEE";
-      qnice_ramrom_wait        <= '0';
-      qnice_vram_we            <= '0';
-      qnice_vram_attr_we       <= '0';
-      qnice_poly_wr            <= '0';
-      qnice_i2c_ce             <= '0';
-      qnice_i2c_we             <= '0';
-
-      -----------------------------------
-      -- Framework devices
-      -----------------------------------
-      if qnice_ramrom_dev_o < x"0100" then
-         case qnice_ramrom_dev_o is
-
-            -- On-Screen-Menu (OSM) video ram data and attributes
-            when C_DEV_VRAM_DATA =>
-               qnice_vram_we              <= qnice_ramrom_we_o;
-               qnice_ramrom_data_in       <= x"00" & qnice_vram_data(7 downto 0);
-            when C_DEV_VRAM_ATTR =>
-               qnice_vram_attr_we         <= qnice_ramrom_we_o;
-               qnice_ramrom_data_in       <= x"00" & qnice_vram_data(15 downto 8);
-
-            -- Shell configuration data (config.vhd)
-            when C_DEV_OSM_CONFIG =>
-               qnice_ramrom_data_in       <= qnice_config_data;
-
-            -- ascal.vhd's polyphase handling
-            when C_DEV_ASCAL_PPHASE =>
-               qnice_ramrom_data_in       <= x"EEEE"; -- write-only
-               qnice_poly_wr              <= qnice_ramrom_we_o;
-
-            -- HyperRAM access
-            when C_DEV_HYPERRAM =>
-               qnice_ramrom_ce_hyperram   <= qnice_ramrom_ce_o;
-               qnice_ramrom_data_in       <= qnice_ramrom_data_in_hyperram;
-               qnice_ramrom_wait          <= qnice_ramrom_wait_hyperram;
-
-            -- I2C devices access
-            when C_DEV_I2C =>
-               qnice_i2c_ce               <= qnice_ramrom_ce_o;
-               qnice_i2c_we               <= qnice_ramrom_we_o;
-               qnice_ramrom_data_in       <= qnice_i2c_rd_data;
-               qnice_ramrom_wait          <= qnice_i2c_wait;
-
-            -- Read-only System Info (constants are defined in sysdef.asm)
-            when C_DEV_SYS_INFO =>
-               case qnice_ramrom_addr_o(27 downto 12) is
-
-                  -- Virtual drives
-                  when C_SYS_DRIVES =>
-                     case qnice_ramrom_addr_o(11 downto 0) is
-                        when x"000" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_VDNUM, 16));
-                        when x"001" => qnice_ramrom_data_in <= C_VD_DEVICE;
-
-                        when others =>
-                           if qnice_ramrom_addr_o(11 downto 4) = x"10" then
-                              qnice_ramrom_data_in <= C_VD_BUFFER(to_integer(unsigned(qnice_ramrom_addr_o(3 downto 0))));
-                           end if;
-                     end case;
-
-                  -- Simulated cartridges and ROMs
-                  when C_SYS_CRTSANDROMS =>
-                     if qnice_ramrom_addr_o(11 downto 0) = x"000" then
-                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROMS_MAN_NUM, 16));
-                     elsif qnice_ramrom_addr_o(11 downto 0) = x"001" then
-                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(C_CRTROMS_AUTO_NUM, 16));
-                     elsif qnice_ramrom_addr_o(11 downto 8) = x"1" then
-                        qnice_ramrom_data_in <= C_CRTROMS_MAN(to_integer(unsigned(qnice_ramrom_addr_o(7 downto 0))));
-                     elsif qnice_ramrom_addr_o(11 downto 8) = x"2" then
-                        qnice_ramrom_data_in <= C_CRTROMS_AUTO(to_integer(unsigned(qnice_ramrom_addr_o(7 downto 0))));
-                     elsif qnice_ramrom_addr_o(11 downto 8) >= x"3" then
-                        strpos := to_integer(unsigned(qnice_ramrom_addr_o(15 downto 0))) - 16#7300# + 1;
-                        qnice_ramrom_data_in <= std_logic_vector(to_unsigned(character'pos(C_CRTROMS_AUTO_NAMES(strpos)), 16));
-                     end if;
-
-                  -- Graphics card VGA
-                  when C_SYS_VGA =>
-                     case qnice_ramrom_addr_o(11 downto 0) is
-                        -- SYS_DXDY
-                        when X"000" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-
-                        -- SHELL_M_XY: Always start at the top/left corner
-                        when X"001" => qnice_ramrom_data_in <= x"0000";
-
-                        -- SHELL_M_DXDY: Use full screen
-                        when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-
-                        when others => null;
-                     end case;
-
-                  -- Graphics card HDMI
-                  when C_SYS_HDMI =>
-                     case qnice_ramrom_addr_o(11 downto 0) is
-                        -- SYS_DXDY
-                        when X"000" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-
-                        -- SHELL_M_XY: Always start at the top/left corner
-                        when X"001" => qnice_ramrom_data_in <= x"0000";
-
-                        -- SHELL_M_DXDY: Use full screen
-                        when X"002" => qnice_ramrom_data_in <= std_logic_vector(to_unsigned((VGA_DX/FONT_DX) * 256 + (VGA_DY/FONT_DY), 16));
-
-                        when X"003" => qnice_ramrom_data_in <= qnice_hdmi_clk_freq(15 downto 0);
-                        when X"004" => qnice_ramrom_data_in <= "0000" & qnice_hdmi_clk_freq(27 downto 16);
-                        when others => null;
-                     end case;
-
-                  -- Info about the core
-                  when C_SYS_CORE =>
-                     case qnice_ramrom_addr_o(11 downto 0) is
-                        -- CORE_X: Horizontal size of core display
-                        when X"000" => qnice_ramrom_data_in <= "0000" & qnice_hdmax;
-
-                        -- CORE_Y: Vertical size of core display
-                        when X"001" => qnice_ramrom_data_in <= "0000" & qnice_vdmax;
-
-                        -- CORE_H_PIXELS:
-                        when X"002" => qnice_ramrom_data_in <= "0000" & qnice_h_pixels;
-
-                        -- CORE_V_PIXELS:
-                        when X"003" => qnice_ramrom_data_in <= "0000" & qnice_v_pixels;
-
-                        -- CORE_H_PULSE:
-                        when X"004" => qnice_ramrom_data_in <= "0000" & qnice_h_pulse;
-
-                        -- CORE_H_BP:
-                        when X"005" => qnice_ramrom_data_in <= "0000" & qnice_h_bp;
-
-                        -- CORE_H_FP:
-                        when X"006" => qnice_ramrom_data_in <= "0000" & qnice_h_fp;
-
-                        -- CORE_V_PULSE:
-                        when X"007" => qnice_ramrom_data_in <= "0000" & qnice_v_pulse;
-
-                        -- CORE_V_BP:
-                        when X"008" => qnice_ramrom_data_in <= "0000" & qnice_v_bp;
-
-                        -- CORE_V_FP:
-                        when X"009" => qnice_ramrom_data_in <= "0000" & qnice_v_fp;
-
-                        -- CORE_H_FREQ:
-                        when X"00A" => qnice_ramrom_data_in <= qnice_h_freq;
-
-                        when others => null;
-                     end case;
-
-                  -- Info about the board
-                  when C_SYS_BOARD =>
-                     qnice_ramrom_data_in <= str2data(G_BOARD, to_integer(unsigned(qnice_ramrom_addr_o(11 downto 0))));
-
-                  when others => null;
-               end case;
-            when others => null;
-         end case;
-
-      -----------------------------------
-      -- User/core specific devices
-      -----------------------------------
-      else
-         qnice_ramrom_data_in <= qnice_ramrom_data_in_i;
-         qnice_ramrom_wait    <= qnice_ramrom_wait_i;
-      end if;
-   end process qnice_ramrom_devices;
-
-   qnice_ramrom_address <= "10000" & qnice_ramrom_addr_o(26 downto 0) when qnice_ramrom_addr_o(27) = '1'
-                      else "000000000" & qnice_ramrom_addr_o(22 downto 0);
-
-   i_qnice2hyperram : entity work.qnice2hyperram
-      port map (
-         clk_i                 => qnice_clk,
-         rst_i                 => qnice_rst,
-         s_qnice_wait_o        => qnice_ramrom_wait_hyperram,
-         s_qnice_address_i     => qnice_ramrom_address,
-         s_qnice_cs_i          => qnice_ramrom_ce_hyperram,
-         s_qnice_write_i       => qnice_ramrom_we_o,
-         s_qnice_writedata_i   => qnice_ramrom_data_out_o,
-         s_qnice_byteenable_i  => "11",
-         s_qnice_readdata_o    => qnice_ramrom_data_in_hyperram,
-         m_avm_write_o         => qnice_avm_write,
-         m_avm_read_o          => qnice_avm_read,
-         m_avm_address_o       => qnice_avm_address,
-         m_avm_writedata_o     => qnice_avm_writedata,
-         m_avm_byteenable_o    => qnice_avm_byteenable,
-         m_avm_burstcount_o    => qnice_avm_burstcount,
-         m_avm_readdata_i      => qnice_avm_readdata,
-         m_avm_readdatavalid_i => qnice_avm_readdatavalid,
-         m_avm_waitrequest_i   => qnice_avm_waitrequest
-      ); -- i_qnice2hyperram
-
-   -- Generate the paddle readings (mouse not supported, yet)
-   -- Works with 50 MHz, which happens to be the QNICE clock domain
-   i_mouse_paddles: entity work.mouse_input
-      port map (
-         clk                     => qnice_clk,
-
-         mouse_debug             => open,
-         amiga_mouse_enable_a    => '0',
-         amiga_mouse_enable_b    => '0',
-         amiga_mouse_assume_a    => '0',
-         amiga_mouse_assume_b    => '0',
-
-         -- These are the 1351 mouse / C64 paddle inputs and drain control
-         fa_potx                 => paddle_i(0),
-         fa_poty                 => paddle_i(1),
-         fb_potx                 => paddle_i(2),
-         fb_poty                 => paddle_i(3),
-         pot_drain               => paddle_drain_o,
-
-         -- To allow auto-detection of Amiga mouses, we need to know what the
-         -- rest of the joystick pins are doing
-         fa_fire                 => '1',
-         fa_left                 => '1',
-         fa_right                => '1',
-         fa_up                   => '1',
-         fa_down                 => '1',
-         fb_fire                 => '1',
-         fb_left                 => '1',
-         fb_right                => '1',
-         fb_up                   => '1',
-         fb_down                 => '1',
-
-         fa_up_out               => open,
-         fa_down_out             => open,
-         fa_left_out             => open,
-         fa_right_out            => open,
-
-         fb_up_out               => open,
-         fb_down_out             => open,
-         fb_left_out             => open,
-         fb_right_out            => open,
-
-         -- We output the four sampled pot values
-         pota_x                  => qnice_pot1_x,
-         pota_y                  => qnice_pot1_y,
-         potb_x                  => qnice_pot2_x,
-         potb_y                  => qnice_pot2_y
-      ); -- i_mouse_paddles
-
-    -- We need to invert the values that we get from i_mouse_paddles
-   correct_and_flip_paddles : process(all)
-   begin
-      if qnice_flip_joyports_i = '0' then
-         qnice_pot1_x_n <= x"FF" - qnice_pot1_x;
-         qnice_pot1_y_n <= x"FF" - qnice_pot1_y;
-         qnice_pot2_x_n <= x"FF" - qnice_pot2_x;
-         qnice_pot2_y_n <= x"FF" - qnice_pot2_y;
-      else
-         qnice_pot2_x_n <= x"FF" - qnice_pot1_x;
-         qnice_pot2_y_n <= x"FF" - qnice_pot1_y;
-         qnice_pot1_x_n <= x"FF" - qnice_pot2_x;
-         qnice_pot1_y_n <= x"FF" - qnice_pot2_y;
-      end if;
-   end process correct_and_flip_paddles;
 
    ---------------------------------------------------------------------------------------------------------------
    -- Clock Domain Crossing
    ---------------------------------------------------------------------------------------------------------------
+
+   -- Clock domain crossing: SYS to CORE
+   i_sys2main: xpm_cdc_array_single
+      generic map (
+         WIDTH => 2
+      )
+      port map (
+         src_clk     => clk_i,
+         src_in(0)   => not reset_m2m_n,
+         src_in(1)   => not reset_core_n,
+         dest_clk    => main_clk_i,
+         dest_out(0) => main_reset_m2m_o,
+         dest_out(1) => main_reset_core_o
+      ); -- i_sys2main
+
+   -- Clock domain crossing: SYS to QNICE
+   i_sys2qnice : entity work.cdc_pulse
+     port map (
+       src_clk_i   => clk_i,
+       src_pulse_i => sys_pps,
+       dst_clk_i   => qnice_clk,
+       dst_pulse_o => qnice_pps
+     ); -- i_sys2qnice
+
+   -- Clock domain crossing: CORE to QNICE
+   i_main2qnice: xpm_cdc_array_single
+      generic map (
+         WIDTH => 16
+      )
+      port map (
+         src_clk                => main_clk_i,
+         src_in(15 downto  0)   => main_qnice_keys_n,
+         dest_clk               => qnice_clk,
+         dest_out(15 downto  0) => qnice_qnice_keys_n
+      ); -- i_main2qnice
+
+   -- Clock domain crossing: CORE to AUDIO
+   i_main2audio: entity work.cdc_stable
+      generic map (
+         G_DATA_SIZE => 32
+      )
+      port map (
+         src_clk_i                => main_clk_i,
+         src_data_i(15 downto  0) => std_logic_vector(main_audio_l_i),
+         src_data_i(31 downto 16) => std_logic_vector(main_audio_r_i),
+         dst_clk_i                => audio_clk,
+         dst_data_o(15 downto  0) => audio_left,
+         dst_data_o(31 downto 16) => audio_right
+      ); -- i_main2audio
 
    -- Clock domain crossing: QNICE to CORE
    i_qnice2main: xpm_cdc_array_single
@@ -997,45 +790,53 @@ begin
          dest_out(549 downto 542)   => main_pot2_y_o
       ); -- i_qnice2main
 
-   -- Clock domain crossing: CORE to QNICE
-   i_main2qnice: xpm_cdc_array_single
+   -- Clock domain crossing: QNICE to HR
+   i_avm_fifo_qnice : entity work.avm_fifo
       generic map (
-         WIDTH => 16
+         G_WR_DEPTH     => 16,
+         G_RD_DEPTH     => 16,
+         G_FILL_SIZE    => 1,
+         G_ADDRESS_SIZE => 32,
+         G_DATA_SIZE    => 16
       )
       port map (
-         src_clk                => main_clk_i,
-         src_in(15 downto  0)   => main_qnice_keys_n,
-         dest_clk               => qnice_clk,
-         dest_out(15 downto  0) => qnice_qnice_keys_n
-      ); -- i_main2qnice
+         s_clk_i               => qnice_clk,
+         s_rst_i               => qnice_rst,
+         s_avm_waitrequest_o   => qnice_avm_waitrequest,
+         s_avm_write_i         => qnice_avm_write,
+         s_avm_read_i          => qnice_avm_read,
+         s_avm_address_i       => qnice_avm_address,
+         s_avm_writedata_i     => qnice_avm_writedata,
+         s_avm_byteenable_i    => qnice_avm_byteenable,
+         s_avm_burstcount_i    => qnice_avm_burstcount,
+         s_avm_readdata_o      => qnice_avm_readdata,
+         s_avm_readdatavalid_o => qnice_avm_readdatavalid,
+         m_clk_i               => hr_clk_x1,
+         m_rst_i               => hr_rst,
+         m_avm_waitrequest_i   => hr_qnice_waitrequest,
+         m_avm_write_o         => hr_qnice_write,
+         m_avm_read_o          => hr_qnice_read,
+         m_avm_address_o       => hr_qnice_address,
+         m_avm_writedata_o     => hr_qnice_writedata,
+         m_avm_byteenable_o    => hr_qnice_byteenable,
+         m_avm_burstcount_o    => hr_qnice_burstcount,
+         m_avm_readdata_i      => hr_qnice_readdata,
+         m_avm_readdatavalid_i => hr_qnice_readdatavalid
+      ); -- i_avm_fifo_qnice
 
-   -- Clock domain crossing: Board clock domain (clk_i) to core (main_clk_i)
-   i_board2main: xpm_cdc_array_single
+   -- Clock domain crossing: HR to QNICE
+   i_hr2qnice: entity work.cdc_stable
       generic map (
-         WIDTH => 2
+         G_DATA_SIZE => 64
       )
       port map (
-         src_clk                 => clk_i,
-         src_in(0)               => not reset_m2m_n,
-         src_in(1)               => not reset_core_n,
-         dest_clk                => main_clk_i,
-         dest_out(0)             => main_reset_m2m_o,
-         dest_out(1)             => main_reset_core_o
-      ); -- i_board2main
-
-   -- Clock domain crossing: CORE to AUDIO
-   i_main2audio: entity work.cdc_stable
-      generic map (
-         G_DATA_SIZE => 32
-      )
-      port map (
-         src_clk_i                => main_clk_i,
-         src_data_i(15 downto  0) => std_logic_vector(main_audio_l_i),
-         src_data_i(31 downto 16) => std_logic_vector(main_audio_r_i),
-         dst_clk_i                => audio_clk,
-         dst_data_o(15 downto  0) => audio_left,
-         dst_data_o(31 downto 16) => audio_right
-      ); -- i_main2audio
+         src_clk_i                => hr_clk_x1,
+         src_data_i(31 downto  0) => std_logic_vector(hr_count_long),
+         src_data_i(63 downto 32) => std_logic_vector(hr_count_short),
+         dst_clk_i                => qnice_clk,
+         dst_data_o(31 downto  0) => qnice_hr_count_long,
+         dst_data_o(63 downto 32) => qnice_hr_count_short
+      ); -- i_hr2qnice
 
 
    ---------------------------------------------------------------------------------------------------------------
@@ -1045,7 +846,7 @@ begin
    i_av_pipeline : entity work.av_pipeline
       generic map (
          G_VIDEO_MODE_VECTOR     => VIDEO_MODE_VECTOR,
-         G_AUDIO_CLOCK_RATE      => 30_000_000,
+         G_AUDIO_CLOCK_RATE      => 12_288_000,
          G_VGA_DX                => VGA_DX,
          G_VGA_DY                => VGA_DY,
          G_FONT_FILE             => FONT_FILE,
@@ -1142,79 +943,6 @@ begin
       ); -- i_av_pipeline
 
 
-   i_avm_fifo_qnice : entity work.avm_fifo
-      generic map (
-         G_WR_DEPTH     => 16,
-         G_RD_DEPTH     => 16,
-         G_FILL_SIZE    => 1,
-         G_ADDRESS_SIZE => 32,
-         G_DATA_SIZE    => 16
-      )
-      port map (
-         s_clk_i               => qnice_clk,
-         s_rst_i               => qnice_rst,
-         s_avm_waitrequest_o   => qnice_avm_waitrequest,
-         s_avm_write_i         => qnice_avm_write,
-         s_avm_read_i          => qnice_avm_read,
-         s_avm_address_i       => qnice_avm_address,
-         s_avm_writedata_i     => qnice_avm_writedata,
-         s_avm_byteenable_i    => qnice_avm_byteenable,
-         s_avm_burstcount_i    => qnice_avm_burstcount,
-         s_avm_readdata_o      => qnice_avm_readdata,
-         s_avm_readdatavalid_o => qnice_avm_readdatavalid,
-         m_clk_i               => hr_clk_x1,
-         m_rst_i               => hr_rst,
-         m_avm_waitrequest_i   => hr_qnice_waitrequest,
-         m_avm_write_o         => hr_qnice_write,
-         m_avm_read_o          => hr_qnice_read,
-         m_avm_address_o       => hr_qnice_address,
-         m_avm_writedata_o     => hr_qnice_writedata,
-         m_avm_byteenable_o    => hr_qnice_byteenable,
-         m_avm_burstcount_o    => hr_qnice_burstcount,
-         m_avm_readdata_i      => hr_qnice_readdata,
-         m_avm_readdatavalid_i => hr_qnice_readdatavalid
-      ); -- i_avm_fifo_qnice
-
-   --------------------------------------------------------
-   -- Instantiate HyperRAM arbiter
-   --------------------------------------------------------
-
-   i_avm_arbit_general : entity work.avm_arbit_general
-      generic map (
-         G_NUM_SLAVES   => 3,
-         G_FREQ_HZ      => BOARD_CLK_SPEED,
-         G_ADDRESS_SIZE => 32,
-         G_DATA_SIZE    => 16
-      )
-      port map (
-         clk_i                 => hr_clk_x1,
-         rst_i                 => hr_rst,
-         s_avm_write_i         => hr_dig_write         & hr_core_write_i         & hr_qnice_write,
-         s_avm_read_i          => hr_dig_read          & hr_core_read_i          & hr_qnice_read,
-         s_avm_address_i       => hr_dig_address       & hr_core_address_i       & hr_qnice_address,
-         s_avm_writedata_i     => hr_dig_writedata     & hr_core_writedata_i     & hr_qnice_writedata,
-         s_avm_byteenable_i    => hr_dig_byteenable    & hr_core_byteenable_i    & hr_qnice_byteenable,
-         s_avm_burstcount_i    => hr_dig_burstcount    & hr_core_burstcount_i    & hr_qnice_burstcount,
-         s_avm_readdata_o(3*16-1 downto 2*16) => hr_dig_readdata,
-         s_avm_readdata_o(2*16-1 downto 1*16) => hr_core_readdata_o,
-         s_avm_readdata_o(1*16-1 downto 0*16) => hr_qnice_readdata,
-         s_avm_readdatavalid_o(2) => hr_dig_readdatavalid,
-         s_avm_readdatavalid_o(1) => hr_core_readdatavalid_o,
-         s_avm_readdatavalid_o(0) => hr_qnice_readdatavalid,
-         s_avm_waitrequest_o(2)   => hr_dig_waitrequest,
-         s_avm_waitrequest_o(1)   => hr_core_waitrequest_o,
-         s_avm_waitrequest_o(0)   => hr_qnice_waitrequest,
-         m_avm_write_o         => hr_write,
-         m_avm_read_o          => hr_read,
-         m_avm_address_o       => hr_address,
-         m_avm_writedata_o     => hr_writedata,
-         m_avm_byteenable_o    => hr_byteenable,
-         m_avm_burstcount_o    => hr_burstcount,
-         m_avm_readdata_i      => hr_readdata,
-         m_avm_readdatavalid_i => hr_readdatavalid,
-         m_avm_waitrequest_i   => hr_waitrequest
-      ); -- i_avm_arbit_general
-
    ---------------------------------------------------------------------------------------------------------------
    -- HyperRAM controller
    ---------------------------------------------------------------------------------------------------------------
@@ -1234,6 +962,8 @@ begin
          avm_readdata_o      => hr_readdata,
          avm_readdatavalid_o => hr_readdatavalid,
          avm_waitrequest_o   => hr_waitrequest,
+         count_long_o        => hr_count_long,
+         count_short_o       => hr_count_short,
          hr_resetn_o         => hr_reset_o,
          hr_csn_o            => hr_cs0_o,
          hr_ck_o             => hr_clk_p_o,
@@ -1255,24 +985,31 @@ begin
    -- I2C controller
    ---------------------------------------------------------------------------------------------------------------
 
-   i2c_controller_inst : entity work.i2c_controller
+   i_rtc_i2c : entity work.rtc_i2c
    generic map (
       G_I2C_CLK_DIV => 250   -- SCL=100kHz @50MHz
    )
    port map (
       clk_i         => qnice_clk,
       rst_i         => qnice_rst,
-      cpu_wait_o    => qnice_i2c_wait,
-      cpu_ce_i      => qnice_i2c_ce,
-      cpu_we_i      => qnice_i2c_we,
-      cpu_addr_i    => qnice_ramrom_addr_o(7 downto 0),
-      cpu_wr_data_i => qnice_ramrom_data_out_o,
-      cpu_rd_data_o => qnice_i2c_rd_data,
+      rtc_o         => qnice_rtc,
+      rtc_wait_o    => qnice_rtc_wait,
+      rtc_ce_i      => qnice_rtc_ce,
+      rtc_we_i      => qnice_rtc_we,
+      rtc_addr_i    => qnice_ramrom_addr_o(7 downto 0),
+      rtc_wr_data_i => qnice_ramrom_data_out_o,
+      rtc_rd_data_o => qnice_rtc_rd_data,
+      i2c_wait_o    => qnice_i2c_wait,
+      i2c_ce_i      => qnice_i2c_ce,
+      i2c_we_i      => qnice_i2c_we,
+      i2c_addr_i    => qnice_ramrom_addr_o(7 downto 0),
+      i2c_wr_data_i => qnice_ramrom_data_out_o,
+      i2c_rd_data_o => qnice_i2c_rd_data,
       scl_in_i      => "111111" & grove_scl_io & fpga_scl_io,
       sda_in_i      => "111111" & grove_sda_io & fpga_sda_io,
       scl_out_o     => scl_out,
       sda_out_o     => sda_out
-   ); -- i2c_controller_inst
+   ); -- i_rtc_i2c
 
    -- Open collector, i.e. either drive pin low, or let it float (tri-state)
    fpga_sda_io  <= '0' when sda_out(0) = '0' else 'Z';

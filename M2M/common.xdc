@@ -16,12 +16,12 @@ create_generated_clock -name qnice_clk     [get_pins i_framework/i_clk_m2m/i_clk
 create_generated_clock -name hr_clk_x1     [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT1]
 create_generated_clock -name hr_clk_x2     [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT2]
 create_generated_clock -name hr_clk_x2_del [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT3]
-create_generated_clock -name audio_clk     [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT4]
+create_generated_clock -name audio_clk     [get_pins i_framework/i_clk_m2m/i_clk_audio/CLKOUT0]
 create_generated_clock -name tmds_clk      [get_pins i_framework/i_video_out_clock/MMCM/CLKOUT0]
 create_generated_clock -name hdmi_clk      [get_pins i_framework/i_video_out_clock/MMCM/CLKOUT1]
 
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
-create_generated_clock -name sdcard_clk -source [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins i_framework/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
+create_generated_clock -name sdcard_clk -source [get_pins i_framework/i_clk_m2m/i_clk_qnice/CLKOUT0] -divide_by 2 [get_pins i_framework/i_qnice_wrapper/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
 
 ## The following constraints are needed by M2M/vhdl/controllers/HDMI/video_out_clock.vhd
 create_generated_clock -name div_clk -source [get_ports {clk_i}] -divide_by 2 [get_pins i_framework/i_video_out_clock/clki_div_reg/Q]
@@ -32,10 +32,10 @@ set_max_delay 8 -datapath_only -from [get_clocks] -to [get_pins -hierarchical "*
 
 ## QNICE's EAE combinatorial division networks take longer than the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells -include_replicated {{i_framework/QNICE_SOC/eae_inst/op0_reg[*]} {i_framework/QNICE_SOC/eae_inst/op1_reg[*]}}] \
-   -to [get_cells -include_replicated {i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
-set_multicycle_path -from [get_cells -include_replicated {{i_framework/QNICE_SOC/eae_inst/op0_reg[*]} {i_framework/QNICE_SOC/eae_inst/op1_reg[*]}}] \
-   -to [get_cells -include_replicated {i_framework/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
+set_multicycle_path -from [get_cells -include_replicated {{i_framework/i_qnice_wrapper/QNICE_SOC/eae_inst/op0_reg[*]} {i_framework/i_qnice_wrapper/QNICE_SOC/eae_inst/op1_reg[*]}}] \
+   -to [get_cells -include_replicated {i_framework/i_qnice_wrapper/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
+set_multicycle_path -from [get_cells -include_replicated {{i_framework/i_qnice_wrapper/QNICE_SOC/eae_inst/op0_reg[*]} {i_framework/i_qnice_wrapper/QNICE_SOC/eae_inst/op1_reg[*]}}] \
+   -to [get_cells -include_replicated {i_framework/i_qnice_wrapper/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
 
 # Timing between the two system clocks, ascal.vhd, audio, HDMI and HyperRAM is asynchronous.
 # The HyperRAM operates with three different clock domains, and the signals are

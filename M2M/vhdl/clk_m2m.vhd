@@ -37,7 +37,7 @@ entity clk_m2m is
       hr_clk_x2_del_o : out std_logic;   -- MEGA65 HyperRAM @ 200 MHz phase delayed
       hr_rst_o        : out std_logic;   -- MEGA65 HyperRAM reset, synchronized
 
-      audio_clk_o     : out std_logic;   -- Audio's 30 MHz clock
+      audio_clk_o     : out std_logic;   -- Audio's 12.288 MHz clock
       audio_rst_o     : out std_logic;   -- Audio's reset, synchronized
 
       sys_pps_o       : out std_logic    -- One pulse per second (in sys_clk domain)
@@ -46,6 +46,7 @@ end entity clk_m2m;
 
 architecture rtl of clk_m2m is
 
+signal audio_fb_mmcm      : std_logic;
 signal qnice_fb_mmcm      : std_logic;
 signal qnice_clk_mmcm     : std_logic;
 signal hr_clk_x1_mmcm     : std_logic;
@@ -56,6 +57,7 @@ signal audio_clk_mmcm     : std_logic;
 signal sys_clk_9975_bg    : std_logic;
 
 signal qnice_locked       : std_logic;
+signal audio_locked       : std_logic;
 
 signal sys_counter        : natural range 0 to 99_999_999;
 
@@ -67,7 +69,7 @@ begin
 
    -- VCO frequency range for Artix 7 speed grade -1 : 600 MHz - 1200 MHz
    -- f_VCO = f_CLKIN * CLKFBOUT_MULT_F / DIVCLK_DIVIDE
-   
+
    i_clk_qnice : PLLE2_BASE
       generic map (
          BANDWIDTH            => "OPTIMIZED",
@@ -86,9 +88,6 @@ begin
          CLKOUT3_DIVIDE       => 6,          -- HyperRAM @ 200 MHz phase delayed
          CLKOUT3_DUTY_CYCLE   => 0.500,
          CLKOUT3_PHASE        => 180.000,
-         CLKOUT4_DIVIDE       => 40,         -- Audio @ 30 MHz
-         CLKOUT4_DUTY_CYCLE   => 0.500,
-         CLKOUT4_PHASE        => 0.000,
          DIVCLK_DIVIDE        => 1,
          REF_JITTER1          => 0.010,
          STARTUP_WAIT         => "FALSE"
@@ -101,11 +100,33 @@ begin
          CLKOUT1             => hr_clk_x1_mmcm,
          CLKOUT2             => hr_clk_x2_mmcm,
          CLKOUT3             => hr_clk_x2_del_mmcm,
-         CLKOUT4             => audio_clk_mmcm,
          LOCKED              => qnice_locked,
          PWRDWN              => '0',
          RST                 => '0'
       ); -- i_clk_qnice
+
+   i_clk_audio : MMCME2_BASE
+      generic map (
+         BANDWIDTH            => "OPTIMIZED",
+         CLKFBOUT_MULT_F      => 48.000,     -- 960 MHz
+         CLKFBOUT_PHASE       => 0.000,
+         CLKIN1_PERIOD        => 10.0,       -- INPUT @ 100 MHz
+         CLKOUT0_DIVIDE_F     => 78.125,     -- AUDIO @ 12.288 MHz
+         CLKOUT0_DUTY_CYCLE   => 0.500,
+         CLKOUT0_PHASE        => 0.000,
+         DIVCLK_DIVIDE        => 5,
+         REF_JITTER1          => 0.010,
+         STARTUP_WAIT         => FALSE
+      )
+      port map (
+         CLKFBIN             => audio_fb_mmcm,
+         CLKFBOUT            => audio_fb_mmcm,
+         CLKIN1              => sys_clk_i,
+         CLKOUT0             => audio_clk_mmcm,
+         LOCKED              => audio_locked,
+         PWRDWN              => '0',
+         RST                 => '0'
+      ); -- i_clk_audio
 
    ---------------------------------------------------------------------------------------
    -- Output buffering
@@ -178,7 +199,7 @@ begin
          DEST_SYNC_FF    => 10
       )
       port map (
-         src_arst  => not (qnice_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         src_arst  => not (audio_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
          dest_clk  => audio_clk_o,      -- 1-bit input: Destination clock.
          dest_arst => audio_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
                                         -- This output is registered.
