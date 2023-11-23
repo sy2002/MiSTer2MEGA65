@@ -291,7 +291,7 @@ constant SEL_OPTM_CRTROM      : std_logic_vector(15 downto 0) := x"0311";
 constant SEL_OPTM_CRTROM_STR  : std_logic_vector(15 downto 0) := x"0312";
 
 -- !!! DO NOT TOUCH !!! Configuration constants for OPTM_GROUPS (shell.asm and menu.asm expect them to be like this)
-constant OPTM_G_TEXT       : integer := 0;                -- text that cannot be selected
+constant OPTM_G_TEXT       : integer := 16#00000#;         -- text that cannot be selected
 constant OPTM_G_CLOSE      : integer := 16#000FF#;        -- menu items that closes menu
 constant OPTM_G_STDSEL     : integer := 16#00100#;        -- item within a group that is selected by default
 constant OPTM_G_LINE       : integer := 16#00200#;        -- draw a line at this position
@@ -312,7 +312,7 @@ constant OPTM_GTC          : natural := 17;                -- Amount of signific
 -- configuration file, such as OPTM_G_MOUNT_DRV and OPTM_G_LOAD_ROM, then we need to make sure that we
 -- also extend _ROSMS_4A and _ROSMC_NEXTBIT in options.asm accordingly.
 -- Also: Right now OPTM_G_SUBMENU cannot have a "selected" state (and therefore cannot be saved in the config file)
--- and this _ROSMS_4A and _ROSMC_NEXTBIT are not yet handling the situation. If we decided to change that in future,
+-- and therefore _ROSMS_4A and _ROSMC_NEXTBIT are not yet handling the situation. If we decided to change that in future,
 -- we would need to define the right semantics everywhere.
 
 --------------------------------------------------------------------------------------------------------------------
@@ -449,42 +449,38 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
 
 begin
 
-addr_decode : process(clk_i, address_i)
-   variable index : integer;
-   variable whs_array_index : integer;
-   variable whs_page_index : integer;
-
-   -- return ASCII value of given string at the position defined by address_i(11 downto 0)
-   function str2data(str : string) return std_logic_vector is
+addr_decode : process(clk_i)
+   -- return ASCII value of given string at the position defined by index (zero-based)
+   pure function str2data(str : string; index : integer) return std_logic_vector is
    variable strpos : integer;
    begin
-      strpos := to_integer(unsigned(address_i(11 downto 0))) + 1;
+      strpos := index + 1;
       if strpos <= str'length then
          return std_logic_vector(to_unsigned(character'pos(str(strpos)), 16));
       else
-         return (others => '0'); -- zero terminated strings
+         return X"0000"; -- zero terminated strings
       end if;
-   end;
+   end function str2data;
 
    -- return the dimensions of the Options menu
-   function getDXDY(dx, dy, index: natural) return std_logic_vector is
+   pure function getDXDY(dx, dy, index: natural) return std_logic_vector is
    begin
       case index is
          when 0 => return std_logic_vector(to_unsigned(dx + 2, 16));
          when 1 => return std_logic_vector(to_unsigned(dy + 2, 16));
-         when others => return (others => '0');
+         when others => return X"0000";
       end case;
-   end;
+   end function getDXDY;
 
    -- convert bool to std_logic_vector
-   function bool2slv(b: boolean) return std_logic_vector is
+   pure function bool2slv(b: boolean) return std_logic_vector is
    begin
       if b then
          return x"0001";
       else
          return x"0000";
       end if;
-   end;
+   end function bool2slv;
 
    -- return the General Configuration settings
    function getGenConf(index: natural) return std_logic_vector is
@@ -507,14 +503,20 @@ addr_decode : process(clk_i, address_i)
          when 15     => return bool2slv(SAVE_SETTINGS);
          when others => return x"0000";
       end case;
-   end;
+   end function getGenConf;
+
+   variable index           : integer;
+   variable whs_page_index  : integer;
+   variable whs_array_index : integer;
 
 begin
-   index := to_integer(unsigned(address_i(11 downto 0)));
-   whs_array_index := to_integer(unsigned(address_i(23 downto 20)));
-   whs_page_index  := to_integer(unsigned(address_i(19 downto 12)));
 
    if falling_edge(clk_i) then
+
+      index := to_integer(unsigned(address_i(11 downto 0)));
+      whs_page_index  := to_integer(unsigned(address_i(19 downto 12)));
+      whs_array_index := to_integer(unsigned(address_i(23 downto 20)));
+
       data_o <= x"EEEE";
 
       -----------------------------------------------------------------------------------
@@ -528,9 +530,7 @@ begin
                data_o <= std_logic_vector(to_unsigned(WHS(whs_array_index).page_count, 16));
             else
                if index < WHS(whs_array_index).page_length(whs_page_index) then
-                  data_o <= std_logic_vector(to_unsigned(character'pos(
-                                             WHS_DATA(WHS(whs_array_index).page_start(whs_page_index) + index + 1)
-                                            ), 16));
+                  data_o <= str2data(WHS_DATA, WHS(whs_array_index).page_start(whs_page_index) + index);
                else
                   data_o <= (others => '0'); -- zero-terminated strings
                end if;
@@ -545,13 +545,13 @@ begin
 
          case address_i(27 downto 12) is
             when SEL_GENERAL           => data_o <= getGenConf(index);
-            when SEL_DIR_START         => data_o <= str2data(DIR_START);
-            when SEL_CFG_FILE          => data_o <= str2data(CFG_FILE);
-            when SEL_CORENAME          => data_o <= str2data(CORENAME);
-            when SEL_OPTM_ITEMS        => data_o <= str2data(OPTM_ITEMS);
-            when SEL_OPTM_MOUNT_STR    => data_o <= str2data(OPTM_S_MOUNT);
-            when SEL_OPTM_CRTROM_STR   => data_o <= str2data(OPTM_S_CRTROM);
-            when SEL_OPTM_SAVING_STR   => data_o <= str2data(OPTM_S_SAVING);
+            when SEL_DIR_START         => data_o <= str2data(DIR_START, index);
+            when SEL_CFG_FILE          => data_o <= str2data(CFG_FILE, index);
+            when SEL_CORENAME          => data_o <= str2data(CORENAME, index);
+            when SEL_OPTM_ITEMS        => data_o <= str2data(OPTM_ITEMS, index);
+            when SEL_OPTM_MOUNT_STR    => data_o <= str2data(OPTM_S_MOUNT, index);
+            when SEL_OPTM_CRTROM_STR   => data_o <= str2data(OPTM_S_CRTROM, index);
+            when SEL_OPTM_SAVING_STR   => data_o <= str2data(OPTM_S_SAVING, index);
             when SEL_OPTM_GROUPS       => data_o <= std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(15)) &
                                                     std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(14)) & "0" &
                                                     std_logic(to_unsigned(OPTM_GROUPS(index), OPTM_GTC)(12)) & "0000" &
