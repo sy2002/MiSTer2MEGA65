@@ -42,22 +42,39 @@ architecture synthesis of rtc_reader is
   end record action_t;
 
   type action_list_t is array (natural range <>) of action_t;
-  -- For the R4 board:
+  -- For the R5 board we are controlling several devices:
+  -- DC/DC converter:
+  -- I2C bus      = 2 (I2C)
+  -- I2C address  = 0x61 and 0x67
+  -- I2C register = 0x01
+  -- RTC (RV-3032-C7):
   -- I2C bus      = 0 (FPGA)
   -- I2C address  = 0x51
   -- I2C register = 0x00
-  constant C_ACTION_LIST_R4 : action_list_t := (
+  constant C_ACTION_LIST_R5 : action_list_t := (
+    -- This initializes the two DC/DC converters
     0 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
-    1 => (WRITE_CMD, X"00", X"0000"),   -- Prepare to write to RTC
-    2 => (WRITE_CMD, X"F0", X"01A2"),   -- Send one byte, 0x00, to RTC
+    1 => (WRITE_CMD, X"00", X"01A7"),   -- Prepare to write to device
+    2 => (WRITE_CMD, X"F0", X"42C2"),   -- Send two bytes to device
     3 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
     4 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
-    5 => (WRITE_CMD, X"F0", X"07A3"),   -- Receive seven bytes from RTC
-    6 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
-    7 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
-    8 => (SHIFT_CMD, X"00", X"0004")    -- Read seven bytes from buffer
+    5 => (WRITE_CMD, X"00", X"01A7"),   -- Prepare to write to device
+    6 => (WRITE_CMD, X"F0", X"42CE"),   -- Send two bytes to device
+    7 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
+    8 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+
+    -- This reads from the RTC
+    9 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+   10 => (WRITE_CMD, X"00", X"0100"),   -- Prepare to write to RTC
+   11 => (WRITE_CMD, X"F0", X"01A2"),   -- Send one byte, 0x01, to RTC
+   12 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
+   13 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+   14 => (WRITE_CMD, X"F0", X"07A3"),   -- Receive seven bytes from RTC
+   15 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
+   16 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+   17 => (SHIFT_CMD, X"00", X"0004")    -- Read seven bytes from buffer
    );
-  constant C_ACTION_LIST : action_list_t := C_ACTION_LIST_R4; -- TBD
+  constant C_ACTION_LIST : action_list_t := C_ACTION_LIST_R5; -- TBD
   constant C_ACTION_NUM : natural := C_ACTION_LIST'length;
 
   type state_t is (RESET_ST, IDLE_ST, BUSY_ST);
@@ -71,7 +88,9 @@ architecture synthesis of rtc_reader is
 begin
 
   busy_o <= '0' when state = IDLE_ST else '1';
-  rtc_o  <= rtc;
+
+  --        Toggle & 0x40       Weekday             Year-Month-Date Hours-Minutes-Seconds
+  rtc_o  <= rtc(64 downto 56) & rtc(31 downto 24) & rtc(55 downto 32) & rtc(23 downto 0);
 
   fsm_proc : process (clk_i)
   begin

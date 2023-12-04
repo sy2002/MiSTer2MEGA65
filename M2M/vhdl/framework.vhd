@@ -156,6 +156,8 @@ port (
    main_pot1_y_o           : out   std_logic_vector(7 downto 0);
    main_pot2_x_o           : out   std_logic_vector(7 downto 0);
    main_pot2_y_o           : out   std_logic_vector(7 downto 0);
+   main_rtc_o              : out   std_logic_vector(64 downto 0);
+
 
    -- Audio
    audio_clk_o             : out   std_logic;
@@ -204,11 +206,22 @@ port (
    qnice_ramrom_we_o       : out   std_logic;
    qnice_ramrom_wait_i     : in    std_logic;
 
+   -- I2C bus
+   -- U32 = PCA9655EMTTXG. Address 0x40. I/O expander.
+   -- U12 = MP8869SGL-Z.   Address 0x61. DC/DC Converter.
+   -- U14 = MP8869SGL-Z.   Address 0x67. DC/DC Converter.
+   i2c_scl_io              : inout std_logic;
+   i2c_sda_io              : inout std_logic;
+
    -- PMOD I2C device
+   -- Connected to J18
    grove_sda_io            : inout std_logic;
    grove_scl_io            : inout std_logic;
 
-   -- On-board I2C devices
+   -- I2C bus for on-board peripherals
+   -- U36. 24AA025E48T. Address 0x50. 2K Serial EEPROM.
+   -- U38. RV-3032-C7.  Address 0x51. Real-Time Clock Module.
+   -- U39. 24LC128.     Address 0x56. 128K CMOS Serial EEPROM.
    fpga_sda_io             : inout std_logic;
    fpga_scl_io             : inout std_logic
 );
@@ -235,8 +248,8 @@ constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 6) := (
 
 signal qnice_clk              : std_logic;               -- QNICE main clock @ 50 MHz
 signal hr_clk_x1              : std_logic;               -- HyperRAM @ 100 MHz
-signal hr_clk_x2              : std_logic;               -- HyperRAM @ 200 MHz
-signal hr_clk_x2_del          : std_logic;               -- HyperRAM @ 200 MHz phase delayed
+signal hr_clk_x1_del          : std_logic;               -- HyperRAM @ 100 MHz phase delayed
+signal hr_delay_refclk        : std_logic;               -- HyperRAM @ 200 MHz
 signal audio_clk              : std_logic;               -- Audio clock @ 60 MHz
 signal tmds_clk               : std_logic;               -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
 signal hdmi_clk               : std_logic;               -- HDMI pixel clock at normal speed @ 74.25 MHz
@@ -399,26 +412,13 @@ signal hr_count_short         : unsigned(31 downto 0);
 -- Physical layer
 signal hr_rwds_in             : std_logic;
 signal hr_rwds_out            : std_logic;
-signal hr_rwds_oe             : std_logic;   -- Output enable for RWDS
+signal hr_rwds_oe_n           : std_logic;   -- Output enable for RWDS
 signal hr_dq_in               : std_logic_vector(7 downto 0);
 signal hr_dq_out              : std_logic_vector(7 downto 0);
-signal hr_dq_oe               : std_logic;   -- Output enable for DQ
+signal hr_dq_oe_n             : std_logic;   -- Output enable for DQ
 
 signal scl_out                : std_logic_vector(7 downto 0);
 signal sda_out                : std_logic_vector(7 downto 0);
-
-pure function hyperram_phase(str : string) return real is
-begin
-   if str = "MEGA65_R3" then
-      return 162.0;
-   elsif str = "MEGA65_R4" then
-      return 207.0;
-   elsif str = "MEGA65_R5" then
-      return 207.0;
-   else
-      return 180.0; -- Unknown board type -> return reasonable default value
-   end if;
-end function hyperram_phase;
 
 begin
 
@@ -429,7 +429,7 @@ begin
    i_clk_m2m : entity work.clk_m2m
       generic map (
          G_HYPERRAM_FREQ_MHZ => 100,
-         G_HYPERRAM_PHASE    => hyperram_phase(G_BOARD)
+         G_HYPERRAM_PHASE    => 90.0
       )
       port map (
          sys_clk_i       => clk_i,
@@ -438,8 +438,8 @@ begin
          qnice_clk_o     => qnice_clk,
          qnice_rst_o     => qnice_rst,
          hr_clk_x1_o     => hr_clk_x1,
-         hr_clk_x2_o     => hr_clk_x2,
-         hr_clk_x2_del_o => hr_clk_x2_del,
+         hr_clk_x1_del_o   => hr_clk_x1_del,
+         hr_delay_refclk_o => hr_delay_refclk,
          hr_rst_o        => hr_rst,
          audio_clk_o     => audio_clk,
          audio_rst_o     => audio_rst,
@@ -759,7 +759,7 @@ begin
    -- Clock domain crossing: QNICE to CORE
    i_qnice2main: xpm_cdc_array_single
       generic map (
-         WIDTH => 550
+         WIDTH => 615
       )
       port map (
          src_clk                    => qnice_clk,
@@ -775,6 +775,7 @@ begin
          src_in(533 downto 526)     => std_logic_vector(qnice_pot1_y_n),
          src_in(541 downto 534)     => std_logic_vector(qnice_pot2_x_n),
          src_in(549 downto 542)     => std_logic_vector(qnice_pot2_y_n),
+         src_in(614 downto 550)     => qnice_rtc,
          dest_clk                   => main_clk_i,
          dest_out(0)                => main_qnice_reset_o,
          dest_out(1)                => main_qnice_pause_o,
@@ -787,7 +788,8 @@ begin
          dest_out(525 downto 518)   => main_pot1_x_o,
          dest_out(533 downto 526)   => main_pot1_y_o,
          dest_out(541 downto 534)   => main_pot2_x_o,
-         dest_out(549 downto 542)   => main_pot2_y_o
+         dest_out(549 downto 542)   => main_pot2_y_o,
+         dest_out(614 downto 550)   => main_rtc_o
       ); -- i_qnice2main
 
    -- Clock domain crossing: QNICE to HR
@@ -948,10 +950,14 @@ begin
    ---------------------------------------------------------------------------------------------------------------
 
    i_hyperram : entity work.hyperram
+      generic map (
+         G_HYPERRAM_FREQ_MHZ => 100,
+         G_ERRATA_ISSI_D_FIX => true
+      )
       port map (
          clk_x1_i            => hr_clk_x1,
-         clk_x2_i            => hr_clk_x2,
-         clk_x2_del_i        => hr_clk_x2_del,
+         clk_x1_del_i        => hr_clk_x1_del,
+         delay_refclk_i      => hr_delay_refclk,
          rst_i               => hr_rst,
          avm_write_i         => hr_write,
          avm_read_i          => hr_read,
@@ -969,17 +975,18 @@ begin
          hr_ck_o             => hr_clk_p_o,
          hr_rwds_in_i        => hr_rwds_in,
          hr_rwds_out_o       => hr_rwds_out,
-         hr_rwds_oe_o        => hr_rwds_oe,
+         hr_rwds_oe_n_o      => hr_rwds_oe_n,
          hr_dq_in_i          => hr_dq_in,
          hr_dq_out_o         => hr_dq_out,
-         hr_dq_oe_o          => hr_dq_oe
+         hr_dq_oe_n_o        => hr_dq_oe_n
       ); -- i_hyperram
 
    -- Tri-state buffers for HyperRAM
-   hr_rwds_io <= hr_rwds_out when hr_rwds_oe = '1' else 'Z';
-   hr_d_io    <= hr_dq_out   when hr_dq_oe   = '1' else (others => 'Z');
+   hr_rwds_io <= hr_rwds_out when hr_rwds_oe_n = '0' else 'Z';
+   hr_d_io    <= hr_dq_out   when hr_dq_oe_n   = '0' else (others => 'Z');
    hr_rwds_in <= hr_rwds_io;
    hr_dq_in   <= hr_d_io;
+
 
    ---------------------------------------------------------------------------------------------------------------
    -- I2C controller
@@ -1005,8 +1012,8 @@ begin
       i2c_addr_i    => qnice_ramrom_addr_o(7 downto 0),
       i2c_wr_data_i => qnice_ramrom_data_out_o,
       i2c_rd_data_o => qnice_i2c_rd_data,
-      scl_in_i      => "111111" & grove_scl_io & fpga_scl_io,
-      sda_in_i      => "111111" & grove_sda_io & fpga_sda_io,
+      scl_in_i      => "11111" & i2c_scl_io & grove_scl_io & fpga_scl_io,
+      sda_in_i      => "11111" & i2c_sda_io & grove_sda_io & fpga_sda_io,
       scl_out_o     => scl_out,
       sda_out_o     => sda_out
    ); -- i_rtc_i2c
@@ -1016,6 +1023,8 @@ begin
    fpga_scl_io  <= '0' when scl_out(0) = '0' else 'Z';
    grove_sda_io <= '0' when sda_out(1) = '0' else 'Z';
    grove_scl_io <= '0' when scl_out(1) = '0' else 'Z';
+   i2c_sda_io   <= '0' when sda_out(2) = '0' else 'Z';
+   i2c_scl_io   <= '0' when scl_out(2) = '0' else 'Z';
 
 end architecture synthesis;
 

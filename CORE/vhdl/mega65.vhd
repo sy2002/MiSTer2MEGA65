@@ -162,6 +162,7 @@ port (
    main_pot1_y_i           : in  std_logic_vector(7 downto 0);
    main_pot2_x_i           : in  std_logic_vector(7 downto 0);
    main_pot2_y_i           : in  std_logic_vector(7 downto 0);
+   main_rtc_i              : in  std_logic_vector(64 downto 0);
 
    -- CBM-488/IEC serial port
    iec_reset_n_o           : out std_logic;

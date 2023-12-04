@@ -276,6 +276,7 @@ architecture synthesis of mega65_r3 is
    signal main_pot1_y            : std_logic_vector(7 downto 0);
    signal main_pot2_x            : std_logic_vector(7 downto 0);
    signal main_pot2_y            : std_logic_vector(7 downto 0);
+   signal main_rtc               : std_logic_vector(64 downto 0);
 
    signal cart_en                : std_logic;
    signal cart_roml_oe           : std_logic;
@@ -360,6 +361,9 @@ architecture synthesis of mega65_r3 is
    signal qnice_ramrom_ce        : std_logic;
    signal qnice_ramrom_we        : std_logic;
    signal qnice_ramrom_wait      : std_logic;
+
+   signal i2c_sda                : std_logic := 'H';
+   signal i2c_scl                : std_logic := 'H';
 
 begin
 
@@ -598,6 +602,7 @@ begin
       main_pot1_y_o           => main_pot1_y,
       main_pot2_x_o           => main_pot2_x,
       main_pot2_y_o           => main_pot2_y,
+      main_rtc_o              => main_rtc,
 
       -- Provide HyperRAM to core (in HyperRAM clock domain)
       hr_clk_o                => hr_clk,
@@ -644,6 +649,8 @@ begin
       qnice_ramrom_we_o       => qnice_ramrom_we,
       qnice_ramrom_wait_i     => qnice_ramrom_wait,
 
+      i2c_sda_io              => i2c_sda,
+      i2c_scl_io              => i2c_scl,
       fpga_sda_io             => fpga_sda_io,
       fpga_scl_io             => fpga_scl_io,
       grove_sda_io            => grove_sda_io,
@@ -775,6 +782,7 @@ begin
          main_pot1_y_i           => main_pot1_y,
          main_pot2_x_i           => main_pot2_x,
          main_pot2_y_i           => main_pot2_y,
+         main_rtc_i              => main_rtc,
 
          --------------------------------------------------------------------------------------------------------
          -- Provide support for external memory (Avalon Memory Map)
