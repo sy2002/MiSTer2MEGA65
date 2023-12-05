@@ -14,6 +14,9 @@ use ieee.numeric_std_unsigned.all;
 -- Bit       64 : Toggle flag. Flips anytime there is a change in the other bits
 
 entity rtc_reader is
+  generic (
+    G_BOARD : string                                         -- Which platform are we running on.
+  );
   port (
     clk_i         : in  std_logic;
     rst_i         : in  std_logic;
@@ -42,6 +45,33 @@ architecture synthesis of rtc_reader is
   end record action_t;
 
   type action_list_t is array (natural range <>) of action_t;
+
+  -- For the R3 board we are controlling several devices:
+  -- RTC (ISL12020MIRZ):
+  -- I2C bus      = 0 (FPGA)
+  -- I2C address  = 0x6F
+  -- I2C register = 0x00
+  -- Values read back are:
+  -- Seconds
+  -- Minutes
+  -- Hours
+  -- DayOfMonth
+  -- Month
+  -- Year
+  -- DayOfWeek
+  constant C_ACTION_LIST_R3 : action_list_t := (
+    -- This reads from the RTC
+    0 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+    1 => (WRITE_CMD, X"00", X"0000"),   -- Prepare to write to RTC
+    2 => (WRITE_CMD, X"F0", X"01DE"),   -- Send one byte, 0x01, to RTC
+    3 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
+    4 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+    5 => (WRITE_CMD, X"F0", X"07DF"),   -- Receive seven bytes from RTC
+    6 => (WAIT_CMD,  X"F1", X"0000"),   -- Wait until I2C command is accepted
+    7 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
+    8 => (SHIFT_CMD, X"00", X"0004")    -- Read seven bytes from buffer
+   );
+
   -- For the R5 board we are controlling several devices:
   -- DC/DC converter:
   -- I2C bus      = 2 (I2C)
@@ -50,7 +80,15 @@ architecture synthesis of rtc_reader is
   -- RTC (RV-3032-C7):
   -- I2C bus      = 0 (FPGA)
   -- I2C address  = 0x51
-  -- I2C register = 0x00
+  -- I2C register = 0x01
+  -- Values read back are:
+  -- Seconds
+  -- Minutes
+  -- Hours
+  -- DayOfWeek
+  -- DayOfMonth
+  -- Month
+  -- Year
   constant C_ACTION_LIST_R5 : action_list_t := (
     -- This initializes the two DC/DC converters
     0 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
@@ -74,7 +112,28 @@ architecture synthesis of rtc_reader is
    16 => (WAIT_CMD,  X"F1", X"0001"),   -- Wait until I2C is idle
    17 => (SHIFT_CMD, X"00", X"0004")    -- Read seven bytes from buffer
    );
-  constant C_ACTION_LIST : action_list_t := C_ACTION_LIST_R5; -- TBD
+
+  pure function get_action_list return action_list_t is
+  begin
+    if G_BOARD = "MEGA65_R3" then
+      return C_ACTION_LIST_R3;
+    else
+      return C_ACTION_LIST_R5; -- Valid for R4 and R5
+    end if;
+  end function get_action_list;
+
+  pure function gen_result(arg : std_logic_vector) return std_logic_vector is
+  begin
+    if G_BOARD = "MEGA65_R3" then
+      return arg;
+    else
+      -- Valid for R4 and R5
+      return arg(64 downto 56) & arg(31 downto 24) & arg(55 downto 32) & arg(23 downto 0);
+    end if;
+  end function gen_result;
+  
+
+  constant C_ACTION_LIST : action_list_t := get_action_list;
   constant C_ACTION_NUM : natural := C_ACTION_LIST'length;
 
   type state_t is (RESET_ST, IDLE_ST, BUSY_ST);
@@ -89,8 +148,7 @@ begin
 
   busy_o <= '0' when state = IDLE_ST else '1';
 
-  --        Toggle & 0x40       Weekday             Year-Month-Date Hours-Minutes-Seconds
-  rtc_o  <= rtc(64 downto 56) & rtc(31 downto 24) & rtc(55 downto 32) & rtc(23 downto 0);
+  rtc_o  <= gen_result(rtc);
 
   fsm_proc : process (clk_i)
   begin

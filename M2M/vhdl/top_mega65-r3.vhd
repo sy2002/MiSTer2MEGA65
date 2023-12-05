@@ -184,8 +184,8 @@ port (
    -- I2C bus for on-board peripherals:
    -- U36. 24AA025E48T.   Address 0x50. 2K Serial EEPROM.
    -- U37. SSM2518CPZ-R7. Address 0x34. Audio DAC
-   -- U38. ISL12020MIRZ.  Address 0x57. Real-Time Clock Module.
-   -- U38. ISL12020MIRZ.  Address 0x6F. SRAM.
+   -- U38. ISL12020MIRZ.  Address 0x6F. Real-Time Clock Module.
+   -- U38. ISL12020MIRZ.  Address 0x57. SRAM.
    -- U39. 24LC128.       Address 0x54. 128K CMOS Serial EEPROM.
    fpga_sda_io        : inout std_logic;
    fpga_scl_io        : inout std_logic;

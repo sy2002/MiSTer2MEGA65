@@ -994,6 +994,7 @@ begin
 
    i_rtc_i2c : entity work.rtc_i2c
    generic map (
+      G_BOARD       => G_BOARD,
       G_I2C_CLK_DIV => 250   -- SCL=100kHz @50MHz
    )
    port map (

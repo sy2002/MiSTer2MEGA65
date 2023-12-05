@@ -4,6 +4,7 @@ use ieee.numeric_std_unsigned.all;
 
 entity rtc_i2c is
   generic (
+    G_BOARD       : string;                                 -- Which platform are we running on.
     G_I2C_CLK_DIV : integer
   );
   port (
@@ -55,6 +56,9 @@ architecture synthesis of rtc_i2c is
 begin
 
   rtc_inst : entity work.rtc
+    generic map (
+      G_BOARD => G_BOARD
+    )
     port map (
       clk_i         => clk_i,
       rst_i         => rst_i,

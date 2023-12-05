@@ -14,6 +14,9 @@ use ieee.numeric_std_unsigned.all;
 -- Bit       64 : Toggle flag. Flips anytime there is a change in the other bits
 
 entity rtc is
+  generic (
+    G_BOARD : string                                         -- Which platform are we running on.
+  );
   port (
     clk_i         : in  std_logic;
     rst_i         : in  std_logic;
@@ -46,6 +49,9 @@ architecture synthesis of rtc is
 begin
 
    rtc_reader_inst : entity work.rtc_reader
+     generic map (
+       G_BOARD => G_BOARD
+     )
      port map (
        clk_i         => clk_i,
        rst_i         => rst_i,
