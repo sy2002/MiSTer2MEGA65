@@ -494,17 +494,17 @@ begin
    cart_rw_in        <= cart_rw_io;
    cart_io1_in       <= cart_io1_io;
    cart_io2_in       <= cart_io2_io;
-   cart_ctrl_en_o    <= cart_en;
+   cart_ctrl_en_o    <= not cart_en;
    cart_ctrl_dir_o   <= cart_ctrl_oe;
 
    cart_d_io         <= cart_d_out    when cart_data_oe = '1' else (others => 'Z');
    cart_d_in         <= cart_d_io;
-   cart_data_en_o    <= cart_en;
+   cart_data_en_o    <= not cart_en;
    cart_data_dir_o   <= cart_data_oe;
 
    cart_a_io         <= cart_a_out    when cart_addr_oe = '1' else (others => 'Z');
    cart_a_in         <= cart_a_io;
-   cart_addr_en_o    <= cart_en;
+   cart_addr_en_o    <= not cart_en;
    cart_haddr_dir_o  <= cart_addr_oe;
    cart_laddr_dir_o  <= cart_addr_oe;
 
