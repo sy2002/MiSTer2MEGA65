@@ -992,7 +992,7 @@ begin
    -- I2C controller
    ---------------------------------------------------------------------------------------------------------------
 
-   i_rtc_i2c : entity work.rtc_i2c
+   i_rtc_wrapper : entity work.rtc_wrapper
    generic map (
       G_BOARD       => G_BOARD,
       G_I2C_CLK_DIV => 250   -- SCL=100kHz @50MHz
@@ -1017,7 +1017,7 @@ begin
       sda_in_i      => "11111" & i2c_sda_io & grove_sda_io & fpga_sda_io,
       scl_out_o     => scl_out,
       sda_out_o     => sda_out
-   ); -- i_rtc_i2c
+   ); -- i_rtc_wrapper
 
    -- Open collector, i.e. either drive pin low, or let it float (tri-state)
    fpga_sda_io  <= '0' when sda_out(0) = '0' else 'Z';
