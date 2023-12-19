@@ -24,25 +24,27 @@ use ieee.numeric_std_unsigned.all;
 -- 0x05    | Month                  (BCD format, 0x01-0x12)
 -- 0x06    | Year since 2000        (BCD format, 0x00-0x99)
 -- 0x07    | DayOfWeek              (0x00 = Monday)
--- 0x08    | Run/Stop               (bit 0 : RW : Internal Timer Running)
--- 0x09    | Command                (bit 0 : RO : I2C Busy)
+-- 0x08    | Command                (bit 0 : RO : I2C Busy)
 --                                  (bit 1 : RW : Copy from RTC to internal)
 --                                  (bit 2 : RW : Copy from internal to RTC)
+--                                  (bit 3 : RW : Internal Timer Running)
 --
 -- Addresses 0x00 to 0x07 provide R/W access to the internal timer.
 --
--- The Run/Stop byte (address 0x08) is used to start or stop the internal timer. Any
--- changes to the internal timer are only allowed when the internal timer is stopped. So
--- addresses 0x00 to 0x07 are read-only, when the internal timer is running.
---
--- The Command byte (address 0x09) is used to synchronize with the external RTC. The
--- protocol is as follows:
--- 1. Stop the internal timer by writing 0x00 to Run/Stop.
+-- The Command byte (address 0x08) is used to start or stop the internal timer, and to
+-- synchronize with the external RTC.  Any changes to the internal timer are only allowed
+-- when the internal timer is stopped. So addresses 0x00 to 0x07 are read-only, when the
+-- internal timer is running.
+-- The protocol for synchronizing with the RTC is as follows:
+-- 1. Stop the internal timer by writing 0x00 to Command.
 -- 2. Read from Command and make sure value read is zero (otherwise wait).
 -- 3. Write either 0x02 or 0x04 to the command byte.
 -- 4. Read from Command and wait until value read is zero. (Note: The I2C transaction
 --    takes approximately 1 millisecond to complete).
--- 5. Start the internal timer by writing 0x01 to Run/Stop.
+-- 5. Start the internal timer by writing 0x08 to Command.
+-- Optionally, you may use auto-start in step 3 above by writing 0x0A or 0x0C. This
+-- will automatically re-start the internal timer right after the I2C transaction is
+-- complete, so that step 5 can be skipped.
 -- Note: The Command byte automatically clears, when the command is completed. Reading
 -- from the Command byte gives the status of the current command.
 --
@@ -183,17 +185,26 @@ begin
          end if;
 
          if cpu_s_ce_i = '1' and cpu_s_we_i = '1' then
+            -- Local timer only writeable when timer is stopped
             if cpu_s_addr_i < X"08" and running = '0' then
                idx := to_integer(cpu_s_addr_i(2 downto 0));
                rtc_internal(8*idx+7 downto 8*idx) <= cpu_s_wr_data_i(7 downto 0);
             end if;
+
+            -- Command byte only writeable when I2C is idle
             if cpu_s_addr_i = X"08" and rtc_busy = '0' then
-               running <= cpu_s_wr_data_i(0);
-            end if;
-            if cpu_s_addr_i = X"09" and running = '0' then
-               rtc_reading <= cpu_s_wr_data_i(1);
-               rtc_read    <= cpu_s_wr_data_i(1);
-               rtc_write   <= cpu_s_wr_data_i(2);
+               -- When timer is running, no RTC commands are allowed
+               if running = '1' and cpu_s_wr_data_i(2 downto 1) = "00" then
+                  running <= cpu_s_wr_data_i(3);
+               end if;
+
+               -- When timer is stopped bits 1-3 are writeable
+               if running = '0' then
+                  running     <= cpu_s_wr_data_i(3);
+                  rtc_reading <= cpu_s_wr_data_i(1);
+                  rtc_read    <= cpu_s_wr_data_i(1);
+                  rtc_write   <= cpu_s_wr_data_i(2);
+               end if;
             end if;
          end if;
 
@@ -230,8 +241,7 @@ begin
          when X"05" => cpu_s_rd_data_o <= X"00" & rtc_internal(47 downto 40);
          when X"06" => cpu_s_rd_data_o <= X"00" & rtc_internal(55 downto 48);
          when X"07" => cpu_s_rd_data_o <= X"00" & rtc_internal(63 downto 56);
-         when X"08" => cpu_s_rd_data_o <= X"00" & "0000000" & running;
-         when X"09" => cpu_s_rd_data_o <= X"00" & "00000" & rtc_write & rtc_read & rtc_busy;
+         when X"08" => cpu_s_rd_data_o <= X"00" & "0000" & running & rtc_write & rtc_read & rtc_busy;
          when others => cpu_s_rd_data_o <= X"0000";
       end case;
    end process comb_proc;
