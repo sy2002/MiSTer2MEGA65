@@ -2,6 +2,7 @@
 -- MiSTer2MEGA65 Framework
 --
 -- QNICE interface to date/time. Includes both internal timer and external RTC.
+-- Copied from https://github.com/MJoergen/i2c
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------

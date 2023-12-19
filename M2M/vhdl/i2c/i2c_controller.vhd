@@ -1,3 +1,12 @@
+----------------------------------------------------------------------------------
+-- MiSTer2MEGA65 Framework
+--
+-- QNICE interface to I2C devices
+-- Copied from https://github.com/MJoergen/i2c
+--
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
+----------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;

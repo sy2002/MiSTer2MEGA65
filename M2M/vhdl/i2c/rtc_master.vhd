@@ -4,6 +4,7 @@
 -- RTC controller. Connects to QNICE interface of the I2C master.
 -- This provides the QNICE CPU with a generic RTC interface.
 -- In other words, it abstracts away the specifics of the various hardware revisions.
+-- Copied from https://github.com/MJoergen/i2c
 --
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2023 and licensed under GPL v3
 ----------------------------------------------------------------------------------
