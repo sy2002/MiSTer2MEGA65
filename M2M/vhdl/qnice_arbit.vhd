@@ -10,21 +10,21 @@ entity qnice_arbit is
     s0_wait_o    : out std_logic;
     s0_ce_i      : in  std_logic;
     s0_we_i      : in  std_logic;
-    s0_addr_i    : in  std_logic_vector( 7 downto 0);
+    s0_addr_i    : in  std_logic_vector(27 downto 0);
     s0_wr_data_i : in  std_logic_vector(15 downto 0);
     s0_rd_data_o : out std_logic_vector(15 downto 0);
 
     s1_wait_o    : out std_logic;
     s1_ce_i      : in  std_logic;
     s1_we_i      : in  std_logic;
-    s1_addr_i    : in  std_logic_vector( 7 downto 0);
+    s1_addr_i    : in  std_logic_vector(27 downto 0);
     s1_wr_data_i : in  std_logic_vector(15 downto 0);
     s1_rd_data_o : out std_logic_vector(15 downto 0);
 
     m_wait_i     : in  std_logic;
     m_ce_o       : out std_logic;
     m_we_o       : out std_logic;
-    m_addr_o     : out std_logic_vector( 7 downto 0);
+    m_addr_o     : out std_logic_vector(27 downto 0);
     m_wr_data_o  : out std_logic_vector(15 downto 0);
     m_rd_data_i  : in  std_logic_vector(15 downto 0)
   );

@@ -34,7 +34,7 @@ entity rtc_wrapper is
     i2c_wait_o    : out std_logic;
     i2c_ce_i      : in  std_logic;
     i2c_we_i      : in  std_logic;
-    i2c_addr_i    : in  std_logic_vector( 7 downto 0);
+    i2c_addr_i    : in  std_logic_vector(27 downto 0);
     i2c_wr_data_i : in  std_logic_vector(15 downto 0);
     i2c_rd_data_o : out std_logic_vector(15 downto 0);
 
@@ -58,7 +58,7 @@ architecture synthesis of rtc_wrapper is
   signal i2c_rtc_wait    : std_logic;
   signal i2c_rtc_ce      : std_logic;
   signal i2c_rtc_we      : std_logic;
-  signal i2c_rtc_addr    : std_logic_vector( 7 downto 0);
+  signal i2c_rtc_addr    : std_logic_vector(27 downto 0);
   signal i2c_rtc_wr_data : std_logic_vector(15 downto 0);
   signal i2c_rtc_rd_data : std_logic_vector(15 downto 0);
 
@@ -99,7 +99,7 @@ begin
        s1_wait_o    => rtc_i2c_wait,
        s1_ce_i      => rtc_i2c_ce,
        s1_we_i      => rtc_i2c_we,
-       s1_addr_i    => rtc_i2c_addr,
+       s1_addr_i    => X"00000" & rtc_i2c_addr,
        s1_wr_data_i => rtc_i2c_wr_data,
        s1_rd_data_o => rtc_i2c_rd_data,
        m_wait_i     => i2c_rtc_wait,

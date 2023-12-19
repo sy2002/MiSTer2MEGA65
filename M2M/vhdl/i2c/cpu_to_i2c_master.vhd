@@ -19,7 +19,7 @@ entity cpu_to_i2c_master is
     cpu_wait_o    : out std_logic;
     cpu_ce_i      : in  std_logic;
     cpu_we_i      : in  std_logic;
-    cpu_addr_i    : in  std_logic_vector(7 downto 0);
+    cpu_addr_i    : in  std_logic_vector(27 downto 0);
     cpu_wr_data_i : in  std_logic_vector(15 downto 0);
     cpu_rd_data_o : out std_logic_vector(15 downto 0);
     -- I2C master signals
@@ -38,9 +38,9 @@ end entity cpu_to_i2c_master;
 
 architecture synthesis of cpu_to_i2c_master is
 
-  constant REG_I2C_DATA   : std_logic_vector(7 downto 0) := X"00";
-  constant REG_I2C_CONFIG : std_logic_vector(7 downto 0) := X"F0";
-  constant REG_I2C_STATUS : std_logic_vector(7 downto 0) := X"F1";
+  constant REG_I2C_DATA   : std_logic_vector(27 downto 0) := X"0000000";
+  constant REG_I2C_CONFIG : std_logic_vector(27 downto 0) := X"00000F0";
+  constant REG_I2C_STATUS : std_logic_vector(27 downto 0) := X"00000F1";
   constant RAM_AW         : integer := 4;
 
   signal cpu_rd_en        : std_logic;
@@ -57,6 +57,10 @@ architecture synthesis of cpu_to_i2c_master is
   signal ram_wr_data      : std_logic_vector(15 downto 0);
   signal ram_rd_data      : std_logic_vector(15 downto 0);
   signal nack             : std_logic;
+
+  signal mmap_mode        : std_logic;
+  signal mmap_reading     : std_logic;
+  signal mmap_addr        : std_logic_vector(7 downto 0);
 
 begin
 
@@ -98,13 +102,13 @@ begin
         end if;
       end if;
 
-      if cpu_wr_en = '1' and cpu_addr_i(7 downto RAM_AW) = REG_I2C_DATA(7 downto RAM_AW) then
+      if cpu_wr_en = '1' and cpu_addr_i(11 downto RAM_AW) = REG_I2C_DATA(11 downto RAM_AW) then
         ram_addr    <= unsigned(cpu_addr_i(RAM_AW-1 downto 0));
         ram_wr_data <= cpu_wr_data_i;
         ram_wr      <= '1';
       end if;
 
-      if cpu_rd_en = '1' and cpu_addr_i(7 downto RAM_AW) = REG_I2C_DATA(7 downto RAM_AW) then
+      if cpu_rd_en = '1' and cpu_addr_i(11 downto RAM_AW) = REG_I2C_DATA(11 downto RAM_AW) then
         ram_addr   <= unsigned(cpu_addr_i(RAM_AW-1 downto 0));
         ram_rd(0)  <= '1';
         cpu_wait_o <= '1';
@@ -113,6 +117,41 @@ begin
         cpu_wait_o <= '0';
         cpu_rd_data_o <= ram_rd_data;
         ram_rd <= "00";
+      end if;
+
+      if start_o = '0' and response_i(0) = '1' and mmap_mode = '1' then
+        if mmap_reading = '0' then
+          cpu_wait_o    <= '0';
+          cpu_rd_data_o <= X"00" & rx_data_i(15 downto 8);
+          mmap_mode     <= '0';
+        else
+          mmap_reading <= '0';
+          start        <= "1111";
+          i2c_bus_o    <= to_integer(unsigned(cpu_addr_i(23 downto 20)));
+          i2c_addr_o   <= mmap_addr;
+          num_bytes_o  <= "0001";
+        end if;
+      end if;
+      if cpu_wr_en = '1' and cpu_addr_i(8) = '1' and cpu_wait_o = '0' then
+        mmap_mode    <= '1';
+        mmap_reading <= '0';
+        cpu_wait_o   <= '1';
+        start        <= "1111";
+        i2c_bus_o    <= to_integer(unsigned(cpu_addr_i(23 downto 20)));
+        i2c_addr_o   <= cpu_addr_i(18 downto 12) & "0";
+        num_bytes_o  <= "0010";
+        tx_data_o    <= cpu_addr_i(7 downto 0) & cpu_wr_data_i(7 downto 0);
+      end if;
+      if cpu_rd_en = '1' and cpu_addr_i(8) = '1' and cpu_wait_o = '0' then
+        mmap_mode    <= '1';
+        mmap_reading <= '1';
+        mmap_addr    <= cpu_addr_i(18 downto 12) & "1";
+        cpu_wait_o   <= '1';
+        start        <= "1111";
+        i2c_bus_o    <= to_integer(unsigned(cpu_addr_i(23 downto 20)));
+        i2c_addr_o   <= cpu_addr_i(18 downto 12) & "0";
+        num_bytes_o  <= "0001";
+        tx_data_o    <= cpu_addr_i(7 downto 0) & X"00";
       end if;
 
 
@@ -134,7 +173,7 @@ begin
           ram_addr <= ram_addr + 1;
         end if;
       else
-        if rx_vld_i = '1' then
+        if rx_vld_i = '1' and mmap_mode = '0' then
           ram_wr_data <= rx_data_i;
           ram_wr <= '1';
         end if;
@@ -145,8 +184,9 @@ begin
 
       if rst_i = '1' then
         cpu_wait_o <= '0';
-        start <= (others => '0');
-        nack  <= '0';
+        start      <= (others => '0');
+        nack       <= '0';
+        mmap_mode  <= '0';
       end if;
     end if;
   end process cpu_proc;

@@ -44,7 +44,7 @@ entity i2c_controller is
     cpu_wait_o    : out std_logic;
     cpu_ce_i      : in  std_logic;
     cpu_we_i      : in  std_logic;
-    cpu_addr_i    : in  std_logic_vector(7 downto 0);
+    cpu_addr_i    : in  std_logic_vector(27 downto 0);
     cpu_wr_data_i : in  std_logic_vector(15 downto 0);
     cpu_rd_data_o : out std_logic_vector(15 downto 0);
     -- I2C signals
