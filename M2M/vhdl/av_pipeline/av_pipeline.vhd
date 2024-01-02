@@ -565,7 +565,7 @@ begin
 
          -- Connect to QNICE and Video RAM
          hdmi_dvi_i               => qnice_dvi_i, -- proper clock domain crossing for this very signal happens inside vga_to_hdmi.vhd
-         hdmi_video_mode_i        => to_integer(unsigned(hdmi_video_mode)),
+         hdmi_video_mode_i        => slv_to_video_mode(hdmi_video_mode),
          hdmi_crop_mode_i         => hdmi_zoom_crop,
          hdmi_osm_cfg_scaling_i   => first_nonzero_bit(hdmi_osm_cfg_scaling),
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
