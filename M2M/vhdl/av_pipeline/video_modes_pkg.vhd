@@ -187,8 +187,50 @@ package video_modes_pkg is
 
    type video_modes_vector is array(natural range<>) of video_modes_t;
 
+   type video_mode_type is (
+      C_VIDEO_HDMI_16_9_50  ,  -- HDMI 1280x720    @ 50 Hz
+      C_VIDEO_HDMI_16_9_60  ,  -- HDMI 1280x720    @ 60 Hz
+      C_VIDEO_HDMI_4_3_50   ,  -- PAL  576p in 4:3 @ 50 Hz
+      C_VIDEO_HDMI_5_4_50   ,  -- PAL  576p in 5:4 @ 50 Hz
+      C_VIDEO_HDMI_640_60   ,  -- HDMI 640x480     @ 60 Hz
+      C_VIDEO_HDMI_720_5994 ,  -- HDMI 720x480     @ 59.94 Hz
+      C_VIDEO_SVGA_800_60      -- SVGA 800x600     @ 60 Hz
+   );
+
+   pure function video_mode_to_slv(video_mode : video_mode_type) return std_logic_vector;
+
+   pure function slv_to_video_mode(video_mode_slv : std_logic_vector) return video_mode_type;
+
 end package video_modes_pkg;
 
 package body video_modes_pkg is
+
+   pure function video_mode_to_slv(video_mode : video_mode_type) return std_logic_vector is
+   begin
+      case video_mode is
+         when C_VIDEO_HDMI_16_9_50  => return "0000";
+         when C_VIDEO_HDMI_16_9_60  => return "0001";
+         when C_VIDEO_HDMI_4_3_50   => return "0010";
+         when C_VIDEO_HDMI_5_4_50   => return "0011";
+         when C_VIDEO_HDMI_640_60   => return "0100";
+         when C_VIDEO_HDMI_720_5994 => return "0101";
+         when C_VIDEO_SVGA_800_60   => return "0110";
+      end case;
+   end function video_mode_to_slv;
+
+   pure function slv_to_video_mode(video_mode_slv : std_logic_vector) return video_mode_type is
+   begin
+      case video_mode_slv is
+         when "0000" => return C_VIDEO_HDMI_16_9_50;
+         when "0001" => return C_VIDEO_HDMI_16_9_60;
+         when "0010" => return C_VIDEO_HDMI_4_3_50;
+         when "0011" => return C_VIDEO_HDMI_5_4_50;
+         when "0100" => return C_VIDEO_HDMI_640_60;
+         when "0101" => return C_VIDEO_HDMI_720_5994;
+         when "0110" => return C_VIDEO_SVGA_800_60;
+         when others => return C_VIDEO_HDMI_16_9_50;
+      end case;
+   end function slv_to_video_mode;
+
 end package body video_modes_pkg;
 

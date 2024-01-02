@@ -182,7 +182,7 @@ port (
 
    -- QNICE control signals
    qnice_dvi_i             : in    std_logic;
-   qnice_video_mode_i      : in    natural range 0 to 6;
+   qnice_video_mode_i      : in    video_mode_type;
    qnice_osm_cfg_scaling_i : in    std_logic_vector(8 downto 0);
    qnice_retro15kHz_i      : in    std_logic;
    qnice_scandoubler_i     : in    std_logic;
@@ -241,6 +241,8 @@ constant VIDEO_MODE_VECTOR    : video_modes_vector(0 to 6) := (
    C_HDMI_640x480p_60,    -- HDMI 640x480    @ 60 Hz
    C_HDMI_720x480p_5994,  -- HDMI 720x480    @ 59.94 Hz
    C_SVGA_800_600_60);    -- SVGA 800x600    @ 60 Hz
+
+signal video_mode : video_modes_t;
 
 ---------------------------------------------------------------------------------------------
 -- Clocks and active high reset signals for each clock domain
@@ -446,7 +448,15 @@ begin
          sys_pps_o       => sys_pps
       ); -- i_clk_m2m
 
-   qnice_clk_sel <= VIDEO_MODE_VECTOR(qnice_video_mode_i).CLK_SEL;
+   video_mode <= C_SVGA_800_600_60    when qnice_video_mode_i = C_VIDEO_SVGA_800_60   else
+                 C_HDMI_720x480p_5994 when qnice_video_mode_i = C_VIDEO_HDMI_720_5994 else
+                 C_HDMI_640x480p_60   when qnice_video_mode_i = C_VIDEO_HDMI_640_60   else
+                 C_HDMI_576p_50       when qnice_video_mode_i = C_VIDEO_HDMI_5_4_50   else
+                 C_HDMI_576p_50       when qnice_video_mode_i = C_VIDEO_HDMI_4_3_50   else
+                 C_HDMI_720p_60       when qnice_video_mode_i = C_VIDEO_HDMI_16_9_60  else
+                 C_HDMI_720p_50;                             -- C_VIDEO_HDMI_16_9_50
+
+   qnice_clk_sel <= video_mode.CLK_SEL;
 
    -- reconfigurable MMCM: 25.2MHz, 27MHz, 74.25MHz or 148.5MHz
    i_video_out_clock : entity work.video_out_clock
@@ -884,7 +894,7 @@ begin
          qnice_zoom_crop_i       => qnice_zoom_crop_i,
          qnice_audio_filter_i    => qnice_audio_filter_i,
          qnice_audio_mute_i      => qnice_audio_mute_i,
-         qnice_video_mode_i      => std_logic_vector(to_unsigned(qnice_video_mode_i, 4)),
+         qnice_video_mode_i      => video_mode_to_slv(qnice_video_mode_i),
          qnice_dvi_i             => qnice_dvi_i,
          qnice_poly_clk_i        => qnice_clk,
          qnice_poly_dw_i         => qnice_ramrom_data_out_o(9 downto 0),
