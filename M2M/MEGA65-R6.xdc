@@ -103,7 +103,7 @@ set_property -dict {PACKAGE_PIN E16  IOSTANDARD LVCMOS33} [get_ports {audio_sdti
 set_property -dict {PACKAGE_PIN F19  IOSTANDARD LVCMOS33} [get_ports {audio_lrclk_o}];          # AUDIO_LRCLK
 set_property -dict {PACKAGE_PIN F18  IOSTANDARD LVCMOS33} [get_ports {audio_pdn_n_o}];          # nSD_AUDIO
 set_property -dict {PACKAGE_PIN F4   IOSTANDARD LVCMOS33} [get_ports {audio_i2cfil_o}];         # AUDIO1
-set_property -dict {PACKAGE_PIN L6   IOSTANDARD LVCMOS33} [get_ports {audio_scl_o}];            # AUDIO2
+set_property -dict {PACKAGE_PIN L6   IOSTANDARD LVCMOS33} [get_ports {audio_scl_io}];           # AUDIO2
 set_property -dict {PACKAGE_PIN W9   IOSTANDARD LVCMOS33} [get_ports {audio_sda_io}];           # AUDIO3
 
 # Joystick

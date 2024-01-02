@@ -88,7 +88,7 @@ port (
    audio_lrclk_o           : out   std_logic;   -- Input Channel Clock Pin,      48.0 kHz
    audio_pdn_n_o           : out   std_logic;   -- Power-Down & Reset Pin
    audio_i2cfil_o          : out   std_logic;   -- I2C Interface Mode Select Pin
-   audio_scl_o             : out   std_logic;   -- Control Data Clock Input Pin
+   audio_scl_io            : inout std_logic;   -- Control Data Clock Input Pin
    audio_sda_io            : inout std_logic;   -- Control Data Input/Output Pin
 
    -- Joysticks and Paddles
@@ -739,7 +739,7 @@ begin
       hdmi_sda_io             => hdmi_sda_io,
       vga_scl_io              => vga_scl_io,
       vga_sda_io              => vga_sda_io,
-      audio_scl_io            => audio_scl_o,
+      audio_scl_io            => audio_scl_io,
       audio_sda_io            => audio_sda_io,
       i2c_scl_io              => i2c_scl_io,
       i2c_sda_io              => i2c_sda_io,
