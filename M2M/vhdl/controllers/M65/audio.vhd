@@ -30,10 +30,7 @@ port (
    audio_bick_o   : out   std_logic;   -- Audio Serial Data Clock Pin,   3.072 MHz
    audio_sdti_o   : out   std_logic;   -- Audio Serial Data Input Pin,  16-bit LSB justified
    audio_lrclk_o  : out   std_logic;   -- Input Channel Clock Pin,      48.0 kHz
-   audio_pdn_n_o  : out   std_logic;   -- Power-Down & Reset Pin
-   audio_i2cfil_o : out   std_logic;   -- I2C Interface Mode Select Pin
-   audio_scl_o    : out   std_logic;   -- Control Data Clock Input Pin
-   audio_sda_io   : inout std_logic    -- Control Data Input/Output Pin
+   audio_pdn_n_o  : out   std_logic    -- Power-Down & Reset Pin
 );
 end entity audio;
 
@@ -86,9 +83,6 @@ begin
 
    audio_mclk_o   <= audio_clk_i;
    audio_pdn_n_o  <= not audio_reset_i;
-   audio_i2cfil_o <= '0';  -- I2C speed 400 kHz
-   audio_scl_o    <= '1';
-   audio_sda_io   <= 'Z';
 
 end architecture synthesis;
 

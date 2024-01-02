@@ -447,10 +447,6 @@ begin
    -- Safe default values for ports not supported by the M2M framework
    ---------------------------------------------------------------------------------------------
 
-   vga_scl_io    <= 'Z';
-   vga_sda_io    <= 'Z';
-   hdmi_scl_io   <= 'Z';
-   hdmi_sda_io   <= 'Z';
    hdmi_ls_oe_o  <= '1';
    hdmi_cec_io   <= 'Z';
    audio_mclk_o  <= '0';
@@ -652,6 +648,12 @@ begin
       qnice_ramrom_we_o       => qnice_ramrom_we,
       qnice_ramrom_wait_i     => qnice_ramrom_wait,
 
+      hdmi_scl_io             => hdmi_scl_io,
+      hdmi_sda_io             => hdmi_sda_io,
+      vga_scl_io              => vga_scl_io,
+      vga_sda_io              => vga_sda_io,
+      audio_scl_io            => open,
+      audio_sda_io            => open,
       i2c_sda_io              => i2c_sda,
       i2c_scl_io              => i2c_scl,
       fpga_sda_io             => fpga_sda_io,

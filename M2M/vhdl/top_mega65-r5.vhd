@@ -456,11 +456,10 @@ begin
          audio_bick_o   => audio_bick_o,
          audio_sdti_o   => audio_sdti_o,
          audio_lrclk_o  => audio_lrclk_o,
-         audio_pdn_n_o  => audio_pdn_n_o,
-         audio_i2cfil_o => audio_i2cfil_o,
-         audio_scl_o    => audio_scl_o,
-         audio_sda_io   => audio_sda_io
+         audio_pdn_n_o  => audio_pdn_n_o
       ); -- i_audio
+
+   audio_i2cfil_o <= '0';  -- I2C speed 400 kHz
 
    ---------------------------------------------------------------------------------------------
    -- C64 Cartridge port
@@ -521,13 +520,9 @@ begin
    -- Safe default values for ports not supported by the M2M framework
    ---------------------------------------------------------------------------------------------
 
-   vga_scl_io            <= 'Z';
-   vga_sda_io            <= 'Z';
    vdac_psave_n_o        <= '1';
    hdmi_hiz_en_o         <= '0'; -- HDMI is 50 ohm terminated.
    hdmi_ls_oe_n_o        <= '0'; -- Enable HDMI output
-   hdmi_scl_io           <= 'Z';
-   hdmi_sda_io           <= 'Z';
    dbg_io_11             <= 'Z';
 
    eth_clock_o           <= '0';
@@ -740,6 +735,12 @@ begin
       qnice_ramrom_we_o       => qnice_ramrom_we,
       qnice_ramrom_wait_i     => qnice_ramrom_wait,
 
+      hdmi_scl_io             => hdmi_scl_io,
+      hdmi_sda_io             => hdmi_sda_io,
+      vga_scl_io              => vga_scl_io,
+      vga_sda_io              => vga_sda_io,
+      audio_scl_io            => audio_scl_o,
+      audio_sda_io            => audio_sda_io,
       i2c_scl_io              => i2c_scl_io,
       i2c_sda_io              => i2c_sda_io,
       fpga_sda_io             => fpga_sda_io,

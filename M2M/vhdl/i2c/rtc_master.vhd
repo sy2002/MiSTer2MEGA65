@@ -111,7 +111,7 @@ architecture synthesis of rtc_master is
   -- 5: DayOfMonth
   -- 6: Month
   -- 7: Year
-  constant C_ACTION_LIST_READ_R5 : action_list_t := (
+  constant C_ACTION_LIST_READ_R456 : action_list_t := (
     -- This reads from the RTC
     0 => (WAIT_CMD,      X"F1", X"0001"),   -- Wait until I2C is idle
     1 => (WRITE_CMD,     X"00", X"0000"),   -- Prepare to write to RTC
@@ -125,7 +125,7 @@ architecture synthesis of rtc_master is
     9 => (END_CMD,       X"00", X"0000")
    );
 
-  constant C_ACTION_LIST_WRITE_R5 : action_list_t := (
+  constant C_ACTION_LIST_WRITE_R456 : action_list_t := (
     -- This writes to the RTC
     0 => (WAIT_CMD,      X"F1", X"0001"),   -- Wait until I2C is idle
     1 => (SHIFT_OUT_CMD, X"00", X"0005"),   -- Prepare to write to RTC
@@ -140,7 +140,7 @@ architecture synthesis of rtc_master is
     if board = "MEGA65_R3" then
       return C_ACTION_LIST_READ_R3;
     else
-      return C_ACTION_LIST_READ_R5; -- Valid for R4 and R5
+      return C_ACTION_LIST_READ_R456; -- Valid for R4, R5, and R6
     end if;
   end function get_action_list_read;
 
@@ -149,7 +149,7 @@ architecture synthesis of rtc_master is
     if board = "MEGA65_R3" then
       return C_ACTION_LIST_WRITE_R3;
     else
-      return C_ACTION_LIST_WRITE_R5; -- Valid for R4 and R5
+      return C_ACTION_LIST_WRITE_R456; -- Valid for R4, R5, and R6
     end if;
   end function get_action_list_write;
 
