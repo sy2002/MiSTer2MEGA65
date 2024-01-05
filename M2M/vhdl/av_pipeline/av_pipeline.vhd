@@ -42,7 +42,7 @@ entity av_pipeline is
       video_hs_i              : in  std_logic;
       video_hblank_i          : in  std_logic;
       video_vblank_i          : in  std_logic;
-      audio_clk_i             : in  std_logic; -- 30 MHz
+      audio_clk_i             : in  std_logic; -- 12.288 MHz
       audio_rst_i             : in  std_logic;
       audio_left_i            : in  std_logic_vector(15 downto 0);
       audio_right_i           : in  std_logic_vector(15 downto 0);
