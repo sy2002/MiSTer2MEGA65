@@ -373,6 +373,7 @@ begin
     )
     port map (
       clk   => vga_clk,
+      rst   => vga_rst,
       d(0)  => pcm_acr,
       d(1)  => pcm_acr_s(0),
       d(2)  => pcm_acr_s(1),
@@ -397,6 +398,7 @@ begin
     )
     port map (
       clk   => pcm_clk,
+      rst   => pcm_rst,
       d(0)  => iec_req_s(2),
       q(0)  => iec_ack
     );
@@ -408,6 +410,7 @@ begin
     )
     port map (
       clk             => vga_clk,
+      rst             => vga_rst,
       d(56)           => iec_sync,
       d(55)           => iec_rp,
       d(54)           => iec_rc,
@@ -439,6 +442,7 @@ begin
     )
     port map (
       clk             => vga_clk,
+      rst             => vga_rst,
       d(53 downto 34) => pcm_n,
       d(33 downto 14) => pcm_cts,
       d(13)           => dvi,
