@@ -180,7 +180,7 @@ begin
    i_xpm_cdc_async_rst_hr : xpm_cdc_async_rst
       generic map (
          RST_ACTIVE_HIGH => 1,
-         DEST_SYNC_FF    => 10
+         DEST_SYNC_FF    => 6
       )
       port map (
          -- 1-bit input: Source reset signal
@@ -196,7 +196,7 @@ begin
    i_xpm_cdc_async_rst_audio : xpm_cdc_async_rst
       generic map (
          RST_ACTIVE_HIGH => 1,
-         DEST_SYNC_FF    => 10
+         DEST_SYNC_FF    => 6
       )
       port map (
          src_arst  => not (audio_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.

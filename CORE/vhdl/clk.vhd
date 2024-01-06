@@ -115,7 +115,7 @@ begin
    i_xpm_cdc_async_rst_main : xpm_cdc_async_rst
       generic map (
          RST_ACTIVE_HIGH => 1,
-         DEST_SYNC_FF    => 10
+         DEST_SYNC_FF    => 6
       )
       port map (
          src_arst  => not main_locked,   -- 1-bit input: Source reset signal.

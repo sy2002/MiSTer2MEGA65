@@ -70,13 +70,15 @@ architecture synthesis of vga_osm is
       vga_osm_rgb         : std_logic_vector(23 downto 0);
    end record stage_t;
 
-   signal stage1 : stage_t;
-   signal stage2 : stage_t;
-   signal stage3 : stage_t;
-   signal stage4 : stage_t;
-   signal stage5 : stage_t;
-   signal stage6 : stage_t;
-   signal stage7 : stage_t;
+   constant STATE_INIT : stage_t := (0,0,0,0,0,0,0,0,0,0,0,0,0,X"0000",X"00",'0',X"000000");
+
+   signal stage1 : stage_t := STATE_INIT;
+   signal stage2 : stage_t := STATE_INIT;
+   signal stage3 : stage_t := STATE_INIT;
+   signal stage4 : stage_t := STATE_INIT;
+   signal stage5 : stage_t := STATE_INIT;
+   signal stage6 : stage_t := STATE_INIT;
+   signal stage7 : stage_t := STATE_INIT;
    signal stage5_vga_osm_font_addr : std_logic_vector(11 downto 0);
    signal stage5_vga_osm_vram_attr : std_logic_vector( 7 downto 0);
    signal stage6_vga_osm_font_data : std_logic_vector(15 downto 0);
