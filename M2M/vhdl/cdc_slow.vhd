@@ -8,7 +8,7 @@ library ieee;
 entity cdc_slow is
   generic (
     G_DATA_SIZE    : integer;
-    G_REGISTER_SRC : boolean := false  -- Add register to input data
+    G_REGISTER_SRC : boolean := true  -- Add register to input data
   );
   port (
     src_clk_i   : in    std_logic;

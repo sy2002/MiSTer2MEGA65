@@ -18,6 +18,7 @@ entity democore_audio is
    );
    port (
       clk_i         : in  std_logic;
+      rst_i         : in  std_logic;
 
       freq_i        : in  std_logic_vector(15 downto 0);
       vol_left_i    : in  std_logic_vector(15 downto 0);
@@ -31,8 +32,8 @@ end entity democore_audio;
 
 architecture synthesis of democore_audio is
 
-   signal x : signed(15 downto 0) := X"7C00";
-   signal y : signed(15 downto 0) := X"0000";
+   signal x : signed(15 downto 0);
+   signal y : signed(15 downto 0);
 
    signal x_d      : signed(15 downto 0);
    signal x_dd     : signed(15 downto 0);
@@ -65,6 +66,10 @@ begin
             ny := y - sign_extend(nx(15 downto 8));
             x <= nx;
             y <= ny;
+         end if;
+         if rst_i = '1' then
+            x <= X"7C00";
+            y <= X"0000";
          end if;
       end if;
    end process p_xy;

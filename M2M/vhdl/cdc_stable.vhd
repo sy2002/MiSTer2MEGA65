@@ -11,7 +11,7 @@ library ieee;
 entity cdc_stable is
   generic (
     G_DATA_SIZE    : integer;
-    G_REGISTER_SRC : boolean := false  -- Add register to input data
+    G_REGISTER_SRC : boolean := true  -- add register to input data
   );
   port (
     src_clk_i  : in    std_logic := '0';
@@ -23,13 +23,14 @@ end entity cdc_stable;
 
 architecture synthesis of cdc_stable is
 
-  signal src_data    : std_logic_vector(G_DATA_SIZE - 1 downto 0);
-  signal dst_data_d  : std_logic_vector(G_DATA_SIZE - 1 downto 0);
-  signal dst_data_dd : std_logic_vector(G_DATA_SIZE - 1 downto 0);
+  signal src_data     : std_logic_vector(G_DATA_SIZE - 1 downto 0);
+  signal dst_data_d   : std_logic_vector(G_DATA_SIZE - 1 downto 0);
+  signal dst_data_dd  : std_logic_vector(G_DATA_SIZE - 1 downto 0);
+  signal dst_data_ddd : std_logic_vector(G_DATA_SIZE - 1 downto 0);
 
-  attribute async_reg                : string;
-  attribute async_reg of dst_data_d  : signal is "true";
-  attribute async_reg of dst_data_dd : signal is "true";
+  attribute async_reg                 : string;
+  attribute async_reg of dst_data_d   : signal is "true";
+  attribute async_reg of dst_data_dd  : signal is "true";
 
 begin
 
@@ -55,12 +56,13 @@ begin
     sample_proc : process (dst_clk_i)
     begin
       if rising_edge(dst_clk_i) then
-        dst_data_d  <= src_data;   -- CDC
-        dst_data_dd <= dst_data_d;
+        dst_data_d   <= src_data;   -- CDC
+        dst_data_dd  <= dst_data_d;
+        dst_data_ddd <= dst_data_dd;
 
         -- Propagate, when sampling is stable
-        if dst_data_d = dst_data_dd then
-          dst_data_o <= dst_data_dd;
+        if dst_data_dd = dst_data_ddd then
+          dst_data_o <= dst_data_ddd;
         end if;
       end if;
     end process sample_proc;

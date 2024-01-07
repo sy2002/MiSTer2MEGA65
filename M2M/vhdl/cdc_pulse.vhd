@@ -33,8 +33,7 @@ begin
 
   cdc_stable_inst : entity work.cdc_stable
     generic map (
-      G_DATA_SIZE    => 1,
-      G_REGISTER_SRC => false
+      G_DATA_SIZE    => 1
     )
     port map (
       src_clk_i     => src_clk_i,

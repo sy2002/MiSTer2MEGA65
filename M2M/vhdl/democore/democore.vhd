@@ -124,6 +124,7 @@ begin
       )
       port map (
          clk_i         => clk_main_i,
+         rst_i         => reset_i,
          freq_i        => audio_freq,
          vol_left_i    => audio_vol_left,
          vol_right_i   => audio_vol_right,

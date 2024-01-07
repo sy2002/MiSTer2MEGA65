@@ -59,6 +59,10 @@ signal sys_clk_9975_bg    : std_logic;
 signal qnice_locked       : std_logic;
 signal audio_locked       : std_logic;
 
+signal sys_qnice_rst      : std_logic;
+signal sys_hr_rst         : std_logic;
+signal sys_audio_rst      : std_logic;
+
 signal sys_counter        : natural range 0 to 99_999_999;
 
 begin
@@ -166,12 +170,22 @@ begin
    -- Reset generation
    -------------------------------------
 
+   process (sys_clk_i)
+   begin
+      if rising_edge(sys_clk_i) then
+         sys_qnice_rst <= not (qnice_locked and sys_rstn_i);
+         sys_hr_rst    <= not (qnice_locked and sys_rstn_i and core_rstn_i);
+         sys_audio_rst <= not (audio_locked and sys_rstn_i);
+      end if;
+   end process;
+
+
    i_xpm_cdc_async_rst_qnice : xpm_cdc_async_rst
       generic map (
          RST_ACTIVE_HIGH => 1
       )
       port map (
-         src_arst  => not (qnice_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         src_arst  => sys_qnice_rst,    -- 1-bit input: Source reset signal.
          dest_clk  => qnice_clk_o,      -- 1-bit input: Destination clock.
          dest_arst => qnice_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
                                         -- This output is registered.
@@ -187,7 +201,7 @@ begin
          -- Important: The HyperRAM needs to be reset when ascal is being reset! The Avalon memory interface
          -- assumes that both ends maintain state information and agree on this state information. Therefore,
          -- one side can not be reset in the middle of e.g. a burst transaction, without the other end becoming confused.
-         src_arst  => not (qnice_locked and sys_rstn_i and core_rstn_i),
+         src_arst  => sys_hr_rst,       -- 1-bit input: Source reset signal.
          dest_clk  => hr_clk_x1_o,      -- 1-bit input: Destination clock.
          dest_arst => hr_rst_o          -- 1-bit output: src_rst synchronized to the destination clock domain.
                                         -- This output is registered.
@@ -199,7 +213,7 @@ begin
          DEST_SYNC_FF    => 6
       )
       port map (
-         src_arst  => not (audio_locked and sys_rstn_i),   -- 1-bit input: Source reset signal.
+         src_arst  => sys_audio_rst,    -- 1-bit input: Source reset signal.
          dest_clk  => audio_clk_o,      -- 1-bit input: Destination clock.
          dest_arst => audio_rst_o       -- 1-bit output: src_rst synchronized to the destination clock domain.
                                         -- This output is registered.
