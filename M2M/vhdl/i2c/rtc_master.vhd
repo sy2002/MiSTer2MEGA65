@@ -181,7 +181,7 @@ architecture synthesis of rtc_master is
         end if;
       end if;
     else
-      -- Valid for R4 and R5
+      -- Valid for R4, R5, and R6
       return arg(39 downto 32) & arg(63 downto 40) & arg(31 downto 0);
     end if;
   end function post_read;
@@ -192,7 +192,7 @@ architecture synthesis of rtc_master is
     if board = "MEGA65_R3" then
       return X"00" & arg(63 downto 8) & X"00";
     else
-      -- Valid for R4 and R5
+      -- Valid for R4, R5, and R6
       return arg(55 downto 32) & arg(63 downto 56) & arg(31 downto 0) & X"00";
     end if;
   end function pre_write;
@@ -342,6 +342,8 @@ begin
           end if;
 
         when VERIFY_ST =>
+          -- Occasionally, reading from RTC fails. To detect this, we check the DayOfMonth
+          -- MonthOfYear. If these two fields are zero, then the read from RTC has failed.
           if rtc(47 downto 32) = X"0000" then
             if count_down = 0 then
               -- Reading from RTC did not work. Try again.
