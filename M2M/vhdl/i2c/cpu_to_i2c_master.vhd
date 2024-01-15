@@ -50,7 +50,7 @@ architecture synthesis of cpu_to_i2c_master is
 
   signal start            : std_logic_vector(3 downto 0);
   signal num_bytes        : std_logic_vector(3 downto 0);  -- Number of bytes to send
-  signal i2c_ram          : i2c_ram_t(0 to 2**RAM_AW-1);
+  signal i2c_ram          : i2c_ram_t(0 to 2**RAM_AW-1) := (others => (others => '0'));
   signal ram_addr         : unsigned(RAM_AW-1 downto 0) := (others => '0'); -- LSB not use for ram address
   signal ram_wr           : std_logic;
   signal ram_rd           : std_logic_vector(1 downto 0);
