@@ -50,7 +50,7 @@ THE FOLLOWING LIST NEEDS ALWAYS TO BE PART OF YOUR LIST:
     https://www.digikey.com/eewiki/pages/viewpage.action?pageId=15925278
 
   * VGA to HDMI converter IP core, done by Adam Barnes
-    https://github.com/amb5l/tyto_project
+    https://github.com/amb5l/tyto2
 
   * AVALON SCALER used for scaling to 720p for HDMI, done by temlib.org
     http://temlib.org/site/?page_id=10
