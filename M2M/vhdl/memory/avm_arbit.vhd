@@ -13,6 +13,7 @@ library ieee;
 
 entity avm_arbit is
    generic (
+      G_PREFER_SWAP  : boolean;
       G_FREQ_HZ      : integer := 100_000_000;  -- 100 MHz
       G_ADDRESS_SIZE : integer;
       G_DATA_SIZE    : integer
@@ -69,6 +70,7 @@ architecture synthesis of avm_arbit is
    signal s1_last : std_logic;
 
    signal last_grant : std_logic      := '0';
+   signal swapped    : std_logic      := '0';
 
    signal burstcount : std_logic_vector(7 downto 0);
 
@@ -234,6 +236,25 @@ begin
                      s0_active_grant <= '0';
                      last_grant      <= '1';
                   end if;
+
+                  if G_PREFER_SWAP then
+                     -- If no pending requests, pre-emptively give grant to other
+                     if s1_active_req = '0' and s0_active_req = '0' and swapped = '0' then
+                        s1_active_grant <= '1';
+                        last_grant      <= '1';
+                        swapped         <= '1';
+                     end if;
+                     if s1_active_req = '0' and s0_active_req = '0' and swapped = '1' then
+                        s0_active_grant <= '1';
+                        last_grant      <= '0';
+                     end if;
+                  else
+                     -- If no pending requests, keep the existing grant
+                     if s1_active_req = '0' and s0_active_req = '0' then
+                        s0_active_grant <= '1';
+                        last_grant      <= '0';
+                     end if;
+                  end if;
                end if;
 
             when "10" =>
@@ -246,6 +267,25 @@ begin
                      s1_active_grant <= '0';
                      last_grant      <= '0';
                   end if;
+
+                  if G_PREFER_SWAP then
+                     -- If no pending requests, pre-emptively give grant to other
+                     if s1_active_req = '0' and s0_active_req = '0' and swapped = '0' then
+                        s0_active_grant <= '1';
+                        last_grant      <= '0';
+                        swapped         <= '1';
+                     end if;
+                     if s1_active_req = '0' and s0_active_req = '0' and swapped = '1' then
+                        s1_active_grant <= '1';
+                        last_grant      <= '1';
+                     end if;
+                  else
+                     -- If no pending requests, keep the existing grant
+                     if s1_active_req = '0' and s0_active_req = '0' then
+                        s1_active_grant <= '1';
+                        last_grant      <= '1';
+                     end if;
+                  end if;
                end if;
 
             when others =>
@@ -253,6 +293,10 @@ begin
                   severity failure;
 
          end case;
+
+         if s1_active_req = '1' or s0_active_req = '1' then
+            swapped <= '0';
+         end if;
 
          if rst_i = '1' then
             s0_active_grant <= '0';

@@ -66,6 +66,7 @@ begin
 
    i_avm_arbit_01 : entity work.avm_arbit
       generic map (
+         G_PREFER_SWAP  => false,
          G_FREQ_HZ      => G_FREQ_HZ,
          G_ADDRESS_SIZE => G_ADDRESS_SIZE,
          G_DATA_SIZE    => G_DATA_SIZE
@@ -106,6 +107,7 @@ begin
 
       i_avm_arbit_23 : entity work.avm_arbit
          generic map (
+            G_PREFER_SWAP  => false,
             G_FREQ_HZ      => G_FREQ_HZ,
             G_ADDRESS_SIZE => G_ADDRESS_SIZE,
             G_DATA_SIZE    => G_DATA_SIZE
@@ -155,6 +157,7 @@ begin
 
    i_avm_arbit : entity work.avm_arbit
       generic map (
+         G_PREFER_SWAP  => true,
          G_FREQ_HZ      => G_FREQ_HZ,
          G_ADDRESS_SIZE => G_ADDRESS_SIZE,
          G_DATA_SIZE    => G_DATA_SIZE
