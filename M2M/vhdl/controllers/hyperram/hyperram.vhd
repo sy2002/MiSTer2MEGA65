@@ -52,7 +52,7 @@ entity hyperram is
       hr_rwds_oe_n_o      : out std_logic;   -- Output enable for RWDS
       hr_dq_in_i          : in  std_logic_vector(7 downto 0);
       hr_dq_out_o         : out std_logic_vector(7 downto 0);
-      hr_dq_oe_n_o        : out std_logic    -- Output enable for DQ
+      hr_dq_oe_n_o        : out std_logic_vector(7 downto 0)    -- Output enable for DQ
    );
 end entity hyperram;
 
@@ -132,12 +132,12 @@ begin
       avm_waitrequest_o   <= errata_waitrequest;
       avm_readdata_o      <= errata_readdata;
       avm_readdatavalid_o <= errata_readdatavalid;
-      errata_write          <= avm_write_i;
-      errata_read           <= avm_read_i;
-      errata_address        <= avm_address_i;
-      errata_writedata      <= avm_writedata_i;
-      errata_byteenable     <= avm_byteenable_i;
-      errata_burstcount     <= avm_burstcount_i;
+      errata_write        <= avm_write_i;
+      errata_read         <= avm_read_i;
+      errata_address      <= avm_address_i;
+      errata_writedata    <= avm_writedata_i;
+      errata_byteenable   <= avm_byteenable_i;
+      errata_burstcount   <= avm_burstcount_i;
 
    end generate;
 

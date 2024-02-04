@@ -426,7 +426,7 @@ signal hr_rwds_out            : std_logic;
 signal hr_rwds_oe_n           : std_logic;   -- Output enable for RWDS
 signal hr_dq_in               : std_logic_vector(7 downto 0);
 signal hr_dq_out              : std_logic_vector(7 downto 0);
-signal hr_dq_oe_n             : std_logic;   -- Output enable for DQ
+signal hr_dq_oe_n             : std_logic_vector(7 downto 0);   -- Output enable for DQ
 
 signal scl_out                : std_logic_vector(7 downto 0);
 signal sda_out                : std_logic_vector(7 downto 0);
@@ -1002,7 +1002,9 @@ begin
 
    -- Tri-state buffers for HyperRAM
    hr_rwds_io <= hr_rwds_out when hr_rwds_oe_n = '0' else 'Z';
-   hr_d_io    <= hr_dq_out   when hr_dq_oe_n   = '0' else (others => 'Z');
+   hr_d_gen : for i in 0 to 7 generate
+      hr_d_io(i) <= hr_dq_out(i) when hr_dq_oe_n(i) = '0' else 'Z';
+   end generate hr_d_gen;
    hr_rwds_in <= hr_rwds_io;
    hr_dq_in   <= hr_d_io;
 

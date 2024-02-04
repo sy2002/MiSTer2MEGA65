@@ -44,7 +44,7 @@ entity hyperram_io is
       hr_rwds_out_o       : out std_logic;
       hr_dq_out_o         : out std_logic_vector(7 downto 0);
       hr_rwds_oe_n_o      : out std_logic;
-      hr_dq_oe_n_o        : out std_logic
+      hr_dq_oe_n_o        : out std_logic_vector(7 downto 0)
    );
 end entity hyperram_io;
 
@@ -61,8 +61,14 @@ begin
    ------------------------------------------------
 
    b_output : block
-      signal hr_dq_oe_n   : std_logic;
+      signal hr_dq_oe_n   : std_logic_vector(7 downto 0);
       signal hr_rwds_oe_n : std_logic;
+
+      -- Make sure all eight flip-flops are preserved, even though
+      -- they have identical inputs. This is necessary for the
+      -- set_property IOB TRUE constraint to have effect.
+      attribute dont_touch : string;
+      attribute dont_touch of hr_dq_oe_n : signal is "true";
    begin
 
       i_oddr_clk : ODDR
@@ -108,15 +114,13 @@ begin
       p_output : process (clk_x1_i)
       begin
          if rising_edge(clk_x1_i) then
-            hr_dq_oe_n   <= not ctrl_dq_oe_i;
+            hr_dq_oe_n   <= (others => not ctrl_dq_oe_i);
             hr_rwds_oe_n <= not ctrl_rwds_oe_i;
          end if;
       end process p_output;
 
-      -- This assert the OE a clock cycle earlier for better timing.
-      -- See also the set_multicycle_path constraints in the XDC file.
-      hr_dq_oe_n_o   <= hr_dq_oe_n   and not ctrl_dq_oe_i;
-      hr_rwds_oe_n_o <= hr_rwds_oe_n and not ctrl_rwds_oe_i;
+      hr_dq_oe_n_o   <= hr_dq_oe_n;
+      hr_rwds_oe_n_o <= hr_rwds_oe_n;
 
    end block b_output;
 
@@ -137,12 +141,14 @@ begin
       signal hr_toggle        : std_logic := '0';
 
       signal ctrl_toggle      : std_logic;
+      signal ctrl_toggle_d    : std_logic;
       signal ctrl_dq_ddr_in   : std_logic_vector(15 downto 0);
       signal ctrl_dq_ie       : std_logic;
       signal ctrl_rwds_in     : std_logic;
 
       attribute ASYNC_REG : string;
       attribute ASYNC_REG of ctrl_toggle    : signal is "TRUE";
+      attribute ASYNC_REG of ctrl_toggle_d  : signal is "TRUE";
       attribute ASYNC_REG of ctrl_dq_ddr_in : signal is "TRUE";
       attribute ASYNC_REG of ctrl_dq_ie     : signal is "TRUE";
       attribute ASYNC_REG of ctrl_rwds_in   : signal is "TRUE";
@@ -210,11 +216,12 @@ begin
       begin
          if rising_edge(clk_x1_i) then
             ctrl_toggle    <= hr_toggle;
+            ctrl_toggle_d  <= ctrl_toggle;
             ctrl_dq_ddr_in <= hr_dq_in;
-            ctrl_dq_ie     <= hr_toggle xor ctrl_toggle;
             ctrl_rwds_in   <= hr_rwds_in_delay;
          end if;
       end process p_async;
+      ctrl_dq_ie       <= ctrl_toggle_d xor ctrl_toggle;
 
       ctrl_dq_ddr_in_o <= ctrl_dq_ddr_in;
       ctrl_dq_ie_o     <= ctrl_dq_ie;
