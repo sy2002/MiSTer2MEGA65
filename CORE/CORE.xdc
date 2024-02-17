@@ -1,6 +1,6 @@
 ## NAME-OF-YOUR-PROJECT for MEGA65 (NAME-OF-THE-GITHUB-REPO)
 ##
-## Signal mapping for CORE-R3
+## Core specific constraints
 ##
 ## This machine is based on EXACT GITHUB REPO NAME OF THE MiSTer REPO
 ## Powered by MiSTer2MEGA65
