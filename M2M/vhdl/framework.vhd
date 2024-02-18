@@ -764,7 +764,8 @@ begin
    -- Clock domain crossing: CORE to AUDIO
    i_main2audio: entity work.cdc_stable
       generic map (
-         G_DATA_SIZE => 32
+         G_REGISTER_SRC => true,
+         G_DATA_SIZE    => 32
       )
       port map (
          src_clk_i                => main_clk_i,
