@@ -759,7 +759,7 @@ begin
          G_BOARD => "MEGA65_R6"
       )
       port map (
-         CLK                     => clk_i,
+         clk_i                   => clk_i,
 
          -- Share clock and reset with the framework
          main_clk_o              => main_clk,            -- CORE's 54 MHz clock

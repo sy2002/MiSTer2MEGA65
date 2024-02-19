@@ -162,7 +162,7 @@ begin
    p_stage9 : process (vga_clk_i)
    begin
       if rising_edge(vga_clk_i) then
-         stage9 <= stage5;
+         stage9 <= stage8;
 
          -- On-Screen Menu overlay
          if stage8_vga_osm_on = '1' then
