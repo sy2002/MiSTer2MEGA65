@@ -53,14 +53,16 @@ set tDSSmax  0.8 ; # RWDS to data valid, max
 set tDSHmin -0.8 ; # RWDS to data invalid, min
 
 # FPGA to HyperRAM (address and write data)
-set_property IOB TRUE [get_cells i_framework/i_hyperram/i_hyperram_io/output_block.hr_rwds_oe_n_reg ]
-set_property IOB TRUE [get_cells i_framework/i_hyperram/i_hyperram_io/output_block.hr_dq_oe_n_reg[*] ]
+set_property IOB TRUE [get_cells i_framework/i_hyperram/i_hyperram_tx/hr_rwds_oe_n_reg ]
+set_property IOB TRUE [get_cells i_framework/i_hyperram/i_hyperram_tx/hr_dq_oe_n_reg[*] ]
+set_property IOB TRUE [get_cells i_framework/i_hyperram/i_hyperram_ctrl/hb_csn_o_reg ]
+set_property IOB TRUE [get_cells i_framework/i_hyperram/i_hyperram_ctrl/hb_rstn_o_reg ]
 # setup
-set_output_delay -max  $HR_tIS -clock hr_ck [get_ports {hr_rwds_io hr_d_io[*]}]
-set_output_delay -max  $HR_tIS -clock hr_ck [get_ports {hr_rwds_io hr_d_io[*]}] -clock_fall -add_delay
+set_output_delay -max  $HR_tIS -clock hr_ck [get_ports {hr_reset_o hr_cs0_o hr_rwds_io hr_d_io[*]}]
+set_output_delay -max  $HR_tIS -clock hr_ck [get_ports {hr_reset_o hr_cs0_o hr_rwds_io hr_d_io[*]}] -clock_fall -add_delay
 # hold
-set_output_delay -min -$HR_tIH -clock hr_ck [get_ports {hr_rwds_io hr_d_io[*]}]
-set_output_delay -min -$HR_tIH -clock hr_ck [get_ports {hr_rwds_io hr_d_io[*]}] -clock_fall -add_delay
+set_output_delay -min -$HR_tIH -clock hr_ck [get_ports {hr_reset_o hr_cs0_o hr_rwds_io hr_d_io[*]}]
+set_output_delay -min -$HR_tIH -clock hr_ck [get_ports {hr_reset_o hr_cs0_o hr_rwds_io hr_d_io[*]}] -clock_fall -add_delay
 
 # HyperRAM to FPGA (read data, clocked in by RWDS)
 # edge aligned, so pretend that data is launched by previous edge
@@ -70,6 +72,13 @@ set_input_delay -max [expr 5.0+$tDSSmax] -clock hr_rwds [get_ports hr_d_io[*]] -
 # hold
 set_input_delay -min [expr 5.0+$tDSHmin] -clock hr_rwds [get_ports hr_d_io[*]]
 set_input_delay -min [expr 5.0+$tDSHmin] -clock hr_rwds [get_ports hr_d_io[*]] -clock_fall -add_delay
+# This is necessary, because Vivado can not by itself find a good placement
+set_property LOC IDELAY_X0Y212 [get_cells i_framework/i_hyperram/i_hyperram_rx/delay_rwds2_inst]
+# Clock Domain Crossing
+set_max_delay 2 -datapath_only -from [get_cells i_framework/i_hyperram/i_hyperram_ctrl/hb_read_o_reg]
+set_max_delay 2 -datapath_only -from [get_cells i_framework/i_hyperram/i_hyperram_rx/iddr_dq_gen[*].iddr_dq_inst]
+# Prevent insertion of extra BUFG
+set_property CLOCK_BUFFER_TYPE NONE [get_nets -of [get_pins i_framework/i_hyperram/i_hyperram_rx/delay_rwds2_inst/DATAOUT]]
 
 
 ################################################################################
