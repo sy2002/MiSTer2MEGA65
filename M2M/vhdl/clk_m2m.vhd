@@ -20,10 +20,6 @@ library xpm;
 use xpm.vcomponents.all;
 
 entity clk_m2m is
-   generic (
-      G_HYPERRAM_FREQ_MHZ : integer;
-      G_HYPERRAM_PHASE    : real      -- Must be a multiple of 45/5 = 9
-   );
    port (
       sys_clk_i       : in  std_logic;   -- expects 100 MHz
       sys_rstn_i      : in  std_logic;   -- Asynchronous, asserted low
@@ -87,7 +83,7 @@ begin
          CLKOUT2_PHASE        => 0.000,
          CLKOUT3_DIVIDE       => 12,         -- HyperRAM @ 100 MHz phase delayed
          CLKOUT3_DUTY_CYCLE   => 0.500,
-         CLKOUT3_PHASE        => G_HYPERRAM_PHASE,
+         CLKOUT3_PHASE        => 90.000,
          DIVCLK_DIVIDE        => 1,
          REF_JITTER1          => 0.010,
          STARTUP_WAIT         => "FALSE"

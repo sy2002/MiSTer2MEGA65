@@ -438,10 +438,6 @@ begin
    ---------------------------------------------------------------------------------------------------------------
 
    i_clk_m2m : entity work.clk_m2m
-      generic map (
-         G_HYPERRAM_FREQ_MHZ => 100,
-         G_HYPERRAM_PHASE    => 90.0
-      )
       port map (
          sys_clk_i       => clk_i,
          sys_rstn_i      => reset_m2m_n,        -- reset everything
@@ -971,7 +967,6 @@ begin
 
    i_hyperram : entity work.hyperram
       generic map (
-         G_HYPERRAM_FREQ_MHZ => 100,
          G_ERRATA_ISSI_D_FIX => true
       )
       port map (
