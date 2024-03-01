@@ -52,11 +52,11 @@ Status of the framework
 **The MiSTer2MEGA (M2M) framework is stable and ready for being used.**
 The first production quality core that is based on M2M is the
 [Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65).
-Additionally there is a
-[Galaga core](https://github.com/sho3string/GalagaMEGA65)
-and a work-in-progress
-[Apple II core](https://github.com/lydon42/Apple-II_MEGA65/tree/progress)
-based on M2M.
+Additionally there is already
+[a decent amount of cores](https://sy2002.github.io/m65cores/)
+that are based on the M2M framework. Head to the
+[Alternate MEGA65 cores](https://sy2002.github.io/m65cores/)
+website to learn more.
 
 The documentation of the M2M framework needs quite some more work before
 we will be able to call it "good enough" - let alone complete:
