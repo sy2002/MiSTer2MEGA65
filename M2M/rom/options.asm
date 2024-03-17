@@ -1,4 +1,4 @@
-    ; ****************************************************************************
+; ****************************************************************************
 ; MiSTer2MEGA65 (M2M) QNICE ROM
 ;
 ; Options menu / "Help" menu
@@ -1349,7 +1349,7 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
                 MOVE    R8, R0                  ; custom SUBMENU_SUMMARY?
                 RBRA    _OPTM_CBS_RET, !Z       ; yes
                 MOVE    R7, R0                  ; no: standard semantics
-                MOVE    R9, R3                  ; 3: ptr to current men. item
+                MOVE    R9, R3                  ; R3: ptr to current men. item
 
                 ; Search for the first menu group within the submenu and
                 ; within this menu group, find the currently selected item
