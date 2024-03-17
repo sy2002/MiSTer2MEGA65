@@ -1,7 +1,55 @@
+Version 2.0.0 - MONTH DAY, 2024
+===============================
+
+Improvements
+------------
+
+* Added support for multiple MEGA65 models including the 2024 batches aka R6;
+  currently we support R3/R3A, R4, R5, R6
+
+* Added support for additional bi-directional Expansion Port signals
+
+* Increased robustness of HyperRAM
+
+* Support for the MEGA65's I2C architecture
+
+* Support for the MEGA65's real-time-clock
+
+* Two more 60Hz screen resolutions: 4:3 480p and 4:3 800x600 and one 59.94Hz
+  screen resolution: 3:2 480p. Implemented by a more elegant aka dynamic video
+  clock reprogramming.
+
+* Better HDMI compatibilty due to switching to the Tyto2 framework and due
+  to fixing an audio bug
+
+* More robust reset handling: Cores start in reset state and the firmware
+  is un-resetting the core when time is ripe
+
+* The power led indicates a long reset by switching to blue
+
+* Run/Stop now has a global "go back" semantic: It either closes an open
+  window (including help screens or file selectors) or it goes back one menu
+  level when the user is in a sub-menu.
+
+Bug fixes
+---------
+
+* The "Audio improvements" feature only worked with analog audio (3.5mm jack)
+  but not with digital audio via HDMI
+
+* Fixed a crash in the file browser
+
+* Fixed missing ".." in folders created with certain macOS versions
+
+* Fixed Run/Stop propagation bug when closing the OSM
+
+* MEGA65's internal floppy drive kepts spinning when a floppy was inserted.
+
 Version 1.0.0 - June 21, 2023
 =============================
 
-Commodore 64 for MEGA65 version 5 is based on this version 1.0.0 of the MiSTer2MEGA65 framework.
+Commodore 64 for MEGA65 version 5 is based on this version 1.0.0 of the
+MiSTer2MEGA65 framework.
 
 Version 0.9.1 - January 28, 2023
 ================================
