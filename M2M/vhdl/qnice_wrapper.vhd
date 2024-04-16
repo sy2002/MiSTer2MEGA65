@@ -29,18 +29,17 @@ port (
    uart_txd_o                : out std_logic;                  -- send data
 
    -- Micro SD Connector (external slot at back of the cover)
-   sd_reset_o                : out std_logic;
-   sd_clk_o                  : out std_logic;
-   sd_mosi_o                 : out std_logic;
-   sd_miso_i                 : in  std_logic;
-   sd_cd_i                   : in  std_logic;
+   sd_cd_i                   : in    std_logic;
+   sd_clk_o                  : out   std_logic;
+   sd_cmd_io                 : inout std_logic;
+   sd_dat_io                 : inout std_logic_vector(3 downto 0);
 
    -- SD Connector (this is the slot at the bottom side of the case under the cover)
-   sd2_reset_o               : out std_logic;
-   sd2_clk_o                 : out std_logic;
-   sd2_mosi_o                : out std_logic;
-   sd2_miso_i                : in  std_logic;
-   sd2_cd_i                  : in  std_logic;
+   sd2_cd_i                  : in    std_logic;
+   sd2_clk_o                 : out   std_logic;
+   sd2_cmd_io                : inout std_logic;
+   sd2_dat_io                : inout std_logic_vector(3 downto 0);
+   sd2_wp_i                  : in    std_logic;
 
    paddle_i                  : in  std_logic_vector(3 downto 0);
    paddle_drain_o            : out std_logic;
@@ -211,18 +210,17 @@ begin
          uart_txd_o              => uart_txd_o,
 
          -- Micro SD Connector (external slot at back of the cover)
-         sd_reset_o              => sd_reset_o,
-         sd_clk_o                => sd_clk_o,
-         sd_mosi_o               => sd_mosi_o,
-         sd_miso_i               => sd_miso_i,
          sd_cd_i                 => sd_cd_i,
+         sd_clk_o                => sd_clk_o,
+         sd_cmd_io               => sd_cmd_io,
+         sd_dat_io               => sd_dat_io,
 
          -- SD Connector (this is the slot at the bottom side of the case under the cover)
-         sd2_reset_o             => sd2_reset_o,
-         sd2_clk_o               => sd2_clk_o,
-         sd2_mosi_o              => sd2_mosi_o,
-         sd2_miso_i              => sd2_miso_i,
          sd2_cd_i                => sd2_cd_i,
+         sd2_clk_o               => sd2_clk_o,
+         sd2_cmd_io              => sd2_cmd_io,
+         sd2_dat_io              => sd2_dat_io,
+         sd2_wp_i                => sd2_wp_i,
 
          -- QNICE public registers
          csr_reset_o             => qnice_csr_reset_o,

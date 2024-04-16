@@ -62,23 +62,17 @@ port (
    kb_jtagen_o             : out   std_logic;
 
    -- Micro SD Connector (external slot at back of the cover)
-   sd_reset_o              : out   std_logic;
-   sd_clk_o                : out   std_logic;
-   sd_mosi_o               : out   std_logic;
-   sd_miso_i               : in    std_logic;
    sd_cd_i                 : in    std_logic;
-   sd_d1_i                 : in    std_logic;
-   sd_d2_i                 : in    std_logic;
+   sd_clk_o                : out   std_logic;
+   sd_cmd_io               : inout std_logic;
+   sd_dat_io               : inout std_logic_vector(3 downto 0);
 
    -- SD Connector (this is the slot at the bottom side of the case under the cover)
-   sd2_reset_o             : out   std_logic;
-   sd2_clk_o               : out   std_logic;
-   sd2_mosi_o              : out   std_logic;
-   sd2_miso_i              : in    std_logic;
    sd2_cd_i                : in    std_logic;
+   sd2_clk_o               : out   std_logic;
+   sd2_cmd_io              : inout std_logic;
+   sd2_dat_io              : inout std_logic_vector(3 downto 0);
    sd2_wp_i                : in    std_logic;
-   sd2_d1_i                : in    std_logic;
-   sd2_d2_i                : in    std_logic;
 
    -- Audio DAC. U37 = AK4432VT
    -- I2C address 0x19
@@ -596,16 +590,15 @@ begin
       kb_io0_o                => kb_io0_o,
       kb_io1_o                => kb_io1_o,
       kb_io2_i                => kb_io2_i,
-      sd_reset_o              => sd_reset_o,
-      sd_clk_o                => sd_clk_o,
-      sd_mosi_o               => sd_mosi_o,
-      sd_miso_i               => sd_miso_i,
       sd_cd_i                 => sd_cd_i,
-      sd2_reset_o             => sd2_reset_o,
-      sd2_clk_o               => sd2_clk_o,
-      sd2_mosi_o              => sd2_mosi_o,
-      sd2_miso_i              => sd2_miso_i,
+      sd_clk_o                => sd_clk_o,
+      sd_cmd_io               => sd_cmd_io,
+      sd_dat_io               => sd_dat_io,
       sd2_cd_i                => sd2_cd_i,
+      sd2_clk_o               => sd2_clk_o,
+      sd2_cmd_io              => sd2_cmd_io,
+      sd2_dat_io              => sd2_dat_io,
+      sd2_wp_i                => sd2_wp_i,
       joy_1_up_n_i            => fa_up_n_i,
       joy_1_down_n_i          => fa_down_n_i,
       joy_1_left_n_i          => fa_left_n_i,
