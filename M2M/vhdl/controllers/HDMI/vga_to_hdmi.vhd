@@ -364,7 +364,7 @@ begin
     end if;
   end process PCM;
 
-  P_IEC_REQ: process (pcm_rst, iec_ack, pcm_clk) is
+  P_IEC_REQ: process (all) is
   begin
     if pcm_rst = '1' or iec_ack = '1' then
       iec_req <= '0';
