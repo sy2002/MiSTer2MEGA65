@@ -73,4 +73,4 @@ the C64 source code as your "user's manual" and "reference handbook": Post
 your question in the
 [Discussion Forum](https://github.com/sy2002/MiSTer2MEGA65/discussions)
 and join the
-[friendly MEGA65 community on Discord](https://discord.com/channels/719326990221574164/1057791653517209601).
+[friendly MEGA65 community on Discord](https://discord.com/channels/719326990221574164/1177364456896999485).
