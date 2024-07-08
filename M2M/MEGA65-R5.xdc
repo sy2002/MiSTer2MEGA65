@@ -183,7 +183,6 @@ set_property -dict {PACKAGE_PIN T16  IOSTANDARD LVCMOS33} [get_ports {cart_romh_
 set_property -dict {PACKAGE_PIN T18  IOSTANDARD LVCMOS33} [get_ports {cart_romh_io}];           # F_C64_ROMH
 set_property -dict {PACKAGE_PIN U16  IOSTANDARD LVCMOS33} [get_ports {cart_roml_oe_n_o}];       # F_C64_ROML_DIR
 set_property -dict {PACKAGE_PIN AB18 IOSTANDARD LVCMOS33} [get_ports {cart_roml_io}];           # F_C64_ROML
-set_property -dict {PACKAGE_PIN T21  IOSTANDARD LVCMOS33} [get_ports {cart_en_o}];              # EXP_SLOT_EN
 set_property -dict {PACKAGE_PIN L19  IOSTANDARD LVCMOS33} [get_ports {cart_addr_en_o}];         # F_ADDR_EN
 set_property -dict {PACKAGE_PIN L18  IOSTANDARD LVCMOS33} [get_ports {cart_haddr_dir_o}];       # F_HADDR_DIR
 set_property -dict {PACKAGE_PIN L21  IOSTANDARD LVCMOS33} [get_ports {cart_laddr_dir_o}];       # F_LADDR_DIR
