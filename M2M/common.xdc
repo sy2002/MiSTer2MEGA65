@@ -77,6 +77,9 @@ set_max_delay 2 -datapath_only -from [get_cells i_framework/i_hyperram/hyperram_
 set_max_delay 2 -datapath_only -from [get_cells i_framework/i_hyperram/hyperram_rx_inst/iddr_dq_gen[*].iddr_dq_inst]
 # Prevent insertion of extra BUFG
 set_property CLOCK_BUFFER_TYPE NONE [get_nets -of [get_pins i_framework/i_hyperram/hyperram_rx_inst/delay_rwds_inst/DATAOUT]]
+# Receive FIFO: There is a CDC in the LUTRAM.
+# There is approx 1.1 ns Clock->Data delay for the LUTRAM itself, plus 0.5 ns routing delay to the capture flip-flop.
+set_max_delay 2 -datapath_only -from [get_clocks hr_rwds] -to [get_clocks hr_clk]
 
 
 ################################################################################
