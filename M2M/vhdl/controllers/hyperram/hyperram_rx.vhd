@@ -36,10 +36,10 @@ architecture synthesis of hyperram_rx is
 
    signal rwds_dq_in    : std_logic_vector(15 downto 0);
    signal rwds_in_delay : std_logic;
-   signal rwds_in_delay_idelay : std_logic;
 
-   signal ctrl_dq_ie   : std_logic;
-   signal ctrl_dq_ie_d : std_logic;
+   signal ctrl_dq_ie    : std_logic;
+   signal ctrl_dq_ie_d  : std_logic;
+   signal ctrl_dq_ie_d2 : std_logic;
 
 begin
 
@@ -59,7 +59,7 @@ begin
       generic map (
          IDELAY_TYPE           => "FIXED",
          DELAY_SRC             => "IDATAIN",
-         IDELAY_VALUE          => 12,    -- Number of taps: 6/21/24 sy2002 implemented Antti Lukats proposal
+         IDELAY_VALUE          => 20,
          HIGH_PERFORMANCE_MODE => "TRUE",
          SIGNAL_PATTERN        => "CLOCK",
          REFCLK_FREQUENCY      => 200.0, -- Each tap on average 5/32 ns.
@@ -77,23 +77,9 @@ begin
          idatain     => hr_rwds_in_i,
          datain      => '0',
          ldpipeen    => '0',
-         dataout     => rwds_in_delay_idelay,
+         dataout     => rwds_in_delay,
          cntvalueout => open
       ); -- delay_rwds_inst
-    
-   -- 6/21/24 sy2002 implemented Antti Lukats proposal   
-   -- add local buffer, is faster than BUFG insertion!
-   BUFR_inst : BUFR
-   generic map (
-      BUFR_DIVIDE => "BYPASS",   -- Values: "BYPASS, 1, 2, 3, 4, 5, 6, 7, 8"
-      SIM_DEVICE => "7SERIES"    -- Must be set to "7SERIES"
-   )
-   port map (
-      O => rwds_in_delay,        -- 1-bit output: Clock output port
-      CE => '1',                 -- 1-bit input: Active high, clock enable (Divided modes only)
-      CLR => '0',                -- 1-bit input: Active high, asynchronous clear (Divided modes only)
-      I => rwds_in_delay_idelay  -- 1-bit input: Clock buffer input driven by an IBUF, MMCM or local interconnect
-   );      
 
    -- Transfer the RWDS signal to the clk_i domain. This is used solely to determine the
    -- latency mode of the current transaction.
@@ -149,11 +135,15 @@ begin
    ctrl_dq_ie_d_proc : process (clk_i)
    begin
       if rising_edge(clk_i) then
-         ctrl_dq_ie_d <= ctrl_dq_ie;
+         ctrl_dq_ie_d  <= ctrl_dq_ie;   -- delayed version of data valid
+         ctrl_dq_ie_d2 <= ctrl_dq_ie_d; -- we need past-2 time also
       end if;
    end process ctrl_dq_ie_d_proc;
 
-   ctrl_dq_ie_o <= ctrl_dq_ie_d and ctrl_dq_ie;
+   -- if it was low for 2 clock cycles then we cut out the valid signal
+   -- it works as long as there is never 2 clocks without fifo valid
+   -- but this is so by design, there is max 1 clock cycle where fifo data is not available
+   ctrl_dq_ie_o <= (ctrl_dq_ie_d or ctrl_dq_ie_d2) and ctrl_dq_ie;
 
 end architecture synthesis;
 
