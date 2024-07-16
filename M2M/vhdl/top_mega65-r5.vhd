@@ -164,6 +164,7 @@ port (
    cart_romh_io            : inout std_logic;
    cart_roml_oe_n_o        : out   std_logic;
    cart_roml_io            : inout std_logic;
+   cart_en_o               : out   std_logic;
    cart_addr_en_o          : out   std_logic;
    cart_haddr_dir_o        : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
    cart_laddr_dir_o        : out   std_logic;                  -- =1 means FPGA->Port, =0 means Port->FPGA
@@ -464,6 +465,7 @@ begin
    -- C64 Cartridge port
    ---------------------------------------------------------------------------------------------
 
+   cart_en_o         <= cart_en;
    cart_reset_io     <= cart_reset_out when cart_reset_oe = '1' else 'Z';
    cart_game_io      <= cart_game_out  when cart_game_oe  = '1' else 'Z';
    cart_exrom_io     <= cart_exrom_out when cart_exrom_oe = '1' else 'Z';
