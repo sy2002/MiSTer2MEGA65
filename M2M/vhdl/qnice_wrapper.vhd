@@ -106,9 +106,6 @@ entity qnice_wrapper is
       qnice_pps_i               : in    std_logic;
       qnice_hdmi_clk_freq_i     : in    std_logic_vector(27 downto 0);
 
-      qnice_hr_count_long_i     : in    std_logic_vector(31 downto 0);
-      qnice_hr_count_short_i    : in    std_logic_vector(31 downto 0);
-
       qnice_i2c_wait_i          : in    std_logic;
       qnice_i2c_ce_o            : out   std_logic;
       qnice_i2c_we_o            : out   std_logic;
@@ -153,7 +150,6 @@ architecture synthesis of qnice_wrapper is
    constant C_SYS_CRTSANDROMS : std_logic_vector(15 downto 0)  := x"0020";
    constant C_SYS_CORE        : std_logic_vector(15 downto 0)  := x"0030";
    constant C_SYS_BOARD       : std_logic_vector(15 downto 0)  := x"0040";
-   constant C_SYS_HYPERRAM    : std_logic_vector(15 downto 0)  := x"0041";
 
    -- Device management
    signal   qnice_ramrom_data_in          : std_logic_vector(15 downto 0);
@@ -171,12 +167,6 @@ architecture synthesis of qnice_wrapper is
    signal   qnice_pot1_y : unsigned(7 downto 0);
    signal   qnice_pot2_x : unsigned(7 downto 0);
    signal   qnice_pot2_y : unsigned(7 downto 0);
-
-   -- Statistics
-   signal   qnice_hr_count_long_d   : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_short_d  : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_long_dd  : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_short_dd : std_logic_vector(31 downto 0);
 
    -- return ASCII value of given string at the position defined by index (zero-based)
 
@@ -489,51 +479,6 @@ begin
                   when C_SYS_BOARD =>
                      qnice_ramrom_data_in <= str2data(G_BOARD, to_integer(unsigned(qnice_ramrom_addr_o(11 downto 0))));
 
-                  when C_SYS_HYPERRAM =>
-                     --
-                     case qnice_ramrom_addr_o(11 downto 0) is
-
-                        when X"000" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_long_dd(15 downto 0);
-
-                        when X"001" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_long_dd(31 downto 16);
-
-                        when X"002" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_short_dd(15 downto 0);
-
-                        when X"003" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_short_dd(31 downto 16);
-
-                        when X"004" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_long_d(15 downto 0);
-
-                        when X"005" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_long_d(31 downto 16);
-
-                        when X"006" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_short_d(15 downto 0);
-
-                        when X"007" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_short_d(31 downto 16);
-
-                        when X"008" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_long_i(15 downto 0);
-
-                        when X"009" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_long_i(31 downto 16);
-
-                        when X"00A" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_short_i(15 downto 0);
-
-                        when X"00B" =>
-                           qnice_ramrom_data_in <= qnice_hr_count_short_i(31 downto 16);
-
-                        when others =>
-                           null;
-
-                     end case;
-
                   when others =>
                      null;
 
@@ -577,19 +522,6 @@ begin
          m_avm_readdatavalid_i => qnice_avm_readdatavalid_i,
          m_avm_waitrequest_i   => qnice_avm_waitrequest_i
       ); -- qnice2avalon_inst
-
-   hr_stats_proc : process (clk_i)
-   begin
-      if rising_edge(clk_i) then
-         if qnice_pps_i = '1' then
-            qnice_hr_count_long_d   <= qnice_hr_count_long_i;
-            qnice_hr_count_short_d  <= qnice_hr_count_short_i;
-
-            qnice_hr_count_long_dd  <= std_logic_vector(unsigned(qnice_hr_count_long_i) - unsigned(qnice_hr_count_long_d));
-            qnice_hr_count_short_dd <= std_logic_vector(unsigned(qnice_hr_count_short_i) - unsigned(qnice_hr_count_short_d));
-         end if;
-      end if;
-   end process hr_stats_proc;
 
    -- Generate the paddle readings (mouse not supported, yet)
    -- Works with 50 MHz, which happens to be the QNICE clock domain

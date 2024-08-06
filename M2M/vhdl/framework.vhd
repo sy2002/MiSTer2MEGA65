@@ -374,14 +374,6 @@ architecture synthesis of framework is
 
    signal   qnice_rtc : std_logic_vector(64 downto 0);
 
-   -- Statistics
-   signal   qnice_hr_count_long     : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_short    : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_long_d   : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_short_d  : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_long_dd  : std_logic_vector(31 downto 0);
-   signal   qnice_hr_count_short_dd : std_logic_vector(31 downto 0);
-
    signal   scl_out : std_logic_vector(7 downto 0);
    signal   sda_out : std_logic_vector(7 downto 0);
 
@@ -420,10 +412,6 @@ architecture synthesis of framework is
    signal   hr_readdata      : std_logic_vector(15 downto 0);
    signal   hr_readdatavalid : std_logic;
    signal   hr_waitrequest   : std_logic;
-
-   -- Statistics
-   signal   hr_count_long  : unsigned(31 downto 0);
-   signal   hr_count_short : unsigned(31 downto 0);
 
    -- Physical layer
    signal   hr_rwds_in   : std_logic;
@@ -651,8 +639,6 @@ begin
          qnice_avm_waitrequest_i   => qnice_avm_waitrequest,
          qnice_pps_i               => qnice_pps,
          qnice_hdmi_clk_freq_i     => qnice_hdmi_clk_freq,
-         qnice_hr_count_long_i     => qnice_hr_count_long,
-         qnice_hr_count_short_i    => qnice_hr_count_short,
          qnice_i2c_wait_i          => qnice_i2c_wait,
          qnice_i2c_ce_o            => qnice_i2c_ce,
          qnice_i2c_we_o            => qnice_i2c_we,
@@ -844,20 +830,6 @@ begin
          m_avm_readdatavalid_i => hr_qnice_readdatavalid
       ); -- avm_fifo_qnice_inst
 
-   -- Clock domain crossing: HR to QNICE
-   hr2qnice_inst : entity work.cdc_stable
-      generic map (
-         G_DATA_SIZE => 64
-      )
-      port map (
-         src_clk_i                => hr_clk,
-         src_data_i(31 downto  0) => std_logic_vector(hr_count_long),
-         src_data_i(63 downto 32) => std_logic_vector(hr_count_short),
-         dst_clk_i                => qnice_clk,
-         dst_data_o(31 downto  0) => qnice_hr_count_long,
-         dst_data_o(63 downto 32) => qnice_hr_count_short
-      ); -- hr2qnice_inst
-
 
    ---------------------------------------------------------------------------------------------------------------
    -- Audio and video processing pipeline: Multiple clock domains
@@ -985,8 +957,6 @@ begin
          avm_readdata_o      => hr_readdata,
          avm_readdatavalid_o => hr_readdatavalid,
          avm_waitrequest_o   => hr_waitrequest,
-         count_long_o        => hr_count_long,
-         count_short_o       => hr_count_short,
          hr_resetn_o         => hr_reset_o,
          hr_csn_o            => hr_cs0_o,
          hr_ck_o             => hr_clk_p_o,
