@@ -67,19 +67,19 @@ port (
    -- HyperRAM Clock Domain
    --------------------------------------------------------------------------------------------------------
 
-   hr_clk_i                : in  std_logic;
-   hr_rst_i                : in  std_logic;
-   hr_core_write_o         : out std_logic;
-   hr_core_read_o          : out std_logic;
-   hr_core_address_o       : out std_logic_vector(31 downto 0);
-   hr_core_writedata_o     : out std_logic_vector(15 downto 0);
-   hr_core_byteenable_o    : out std_logic_vector( 1 downto 0);
-   hr_core_burstcount_o    : out std_logic_vector( 7 downto 0);
-   hr_core_readdata_i      : in  std_logic_vector(15 downto 0);
-   hr_core_readdatavalid_i : in  std_logic;
-   hr_core_waitrequest_i   : in  std_logic;
-   hr_high_i               : in  std_logic;  -- Core is too fast
-   hr_low_i                : in  std_logic;  -- Core is too slow
+   mem_clk_i                : in  std_logic;
+   mem_rst_i                : in  std_logic;
+   mem_core_write_o         : out std_logic;
+   mem_core_read_o          : out std_logic;
+   mem_core_address_o       : out std_logic_vector(31 downto 0);
+   mem_core_writedata_o     : out std_logic_vector(15 downto 0);
+   mem_core_byteenable_o    : out std_logic_vector( 1 downto 0);
+   mem_core_burstcount_o    : out std_logic_vector( 7 downto 0);
+   mem_core_readdata_i      : in  std_logic_vector(15 downto 0);
+   mem_core_readdatavalid_i : in  std_logic;
+   mem_core_waitrequest_i   : in  std_logic;
+   mem_high_i               : in  std_logic;  -- Core is too fast
+   mem_low_i                : in  std_logic;  -- Core is too slow
 
    --------------------------------------------------------------------------------------------------------
    -- Video Clock Domain
@@ -258,12 +258,12 @@ signal qnice_demo_vd_we       : std_logic;
 
 begin
 
-   hr_core_write_o      <= '0';
-   hr_core_read_o       <= '0';
-   hr_core_address_o    <= (others => '0');
-   hr_core_writedata_o  <= (others => '0');
-   hr_core_byteenable_o <= (others => '0');
-   hr_core_burstcount_o <= (others => '0');
+   mem_core_write_o      <= '0';
+   mem_core_read_o       <= '0';
+   mem_core_address_o    <= (others => '0');
+   mem_core_writedata_o  <= (others => '0');
+   mem_core_byteenable_o <= (others => '0');
+   mem_core_burstcount_o <= (others => '0');
 
    -- Tristate all expansion port drivers that we can directly control
    -- @TODO: As soon as we support modules that can act as busmaster, we need to become more flexible here

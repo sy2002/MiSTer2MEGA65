@@ -165,20 +165,20 @@ entity framework is
       audio_left_o            : out   signed(15 downto 0);
       audio_right_o           : out   signed(15 downto 0);
 
-      -- Provide HyperRAM to core (in HyperRAM clock domain)
-      hr_clk_o                : out   std_logic;
-      hr_rst_o                : out   std_logic;
-      hr_core_write_i         : in    std_logic;
-      hr_core_read_i          : in    std_logic;
-      hr_core_address_i       : in    std_logic_vector(31 downto 0);
-      hr_core_writedata_i     : in    std_logic_vector(15 downto 0);
-      hr_core_byteenable_i    : in    std_logic_vector(1 downto 0);
-      hr_core_burstcount_i    : in    std_logic_vector(7 downto 0);
-      hr_core_readdata_o      : out   std_logic_vector(15 downto 0);
-      hr_core_readdatavalid_o : out   std_logic;
-      hr_core_waitrequest_o   : out   std_logic;
-      hr_high_o               : out   std_logic;                    -- Core is too fast
-      hr_low_o                : out   std_logic;                    -- Core is too slow
+      -- Give core access to external memory
+      mem_clk_o                : out   std_logic;
+      mem_rst_o                : out   std_logic;
+      mem_core_write_i         : in    std_logic;
+      mem_core_read_i          : in    std_logic;
+      mem_core_address_i       : in    std_logic_vector(31 downto 0);
+      mem_core_writedata_i     : in    std_logic_vector(15 downto 0);
+      mem_core_byteenable_i    : in    std_logic_vector(1 downto 0);
+      mem_core_burstcount_i    : in    std_logic_vector(7 downto 0);
+      mem_core_readdata_o      : out   std_logic_vector(15 downto 0);
+      mem_core_readdatavalid_o : out   std_logic;
+      mem_core_waitrequest_o   : out   std_logic;
+      mem_high_o               : out   std_logic;                    -- Core is too fast
+      mem_low_o                : out   std_logic;                    -- Core is too slow
 
       -- QNICE control signals
       qnice_dvi_i             : in    std_logic;
@@ -479,8 +479,8 @@ begin
          clko_x5 => tmds_clk
       ); -- video_out_clock_inst
 
-   hr_clk_o    <= hr_clk;
-   hr_rst_o    <= hr_rst;
+   mem_clk_o    <= hr_clk;
+   mem_rst_o    <= hr_rst;
 
    qnice_clk_o <= qnice_clk;
    qnice_rst_o <= qnice_rst;
@@ -693,20 +693,20 @@ begin
       port map (
          clk_i                                      => hr_clk,
          rst_i                                      => hr_rst,
-         s_avm_write_i                              => hr_dig_write         & hr_core_write_i         & hr_qnice_write,
-         s_avm_read_i                               => hr_dig_read          & hr_core_read_i          & hr_qnice_read,
-         s_avm_address_i                            => hr_dig_address       & hr_core_address_i       & hr_qnice_address,
-         s_avm_writedata_i                          => hr_dig_writedata     & hr_core_writedata_i     & hr_qnice_writedata,
-         s_avm_byteenable_i                         => hr_dig_byteenable    & hr_core_byteenable_i    & hr_qnice_byteenable,
-         s_avm_burstcount_i                         => hr_dig_burstcount    & hr_core_burstcount_i    & hr_qnice_burstcount,
+         s_avm_write_i                              => hr_dig_write         & mem_core_write_i         & hr_qnice_write,
+         s_avm_read_i                               => hr_dig_read          & mem_core_read_i          & hr_qnice_read,
+         s_avm_address_i                            => hr_dig_address       & mem_core_address_i       & hr_qnice_address,
+         s_avm_writedata_i                          => hr_dig_writedata     & mem_core_writedata_i     & hr_qnice_writedata,
+         s_avm_byteenable_i                         => hr_dig_byteenable    & mem_core_byteenable_i    & hr_qnice_byteenable,
+         s_avm_burstcount_i                         => hr_dig_burstcount    & mem_core_burstcount_i    & hr_qnice_burstcount,
          s_avm_readdata_o(3 * 16 - 1 downto 2 * 16) => hr_dig_readdata,
-         s_avm_readdata_o(2 * 16 - 1 downto 1 * 16) => hr_core_readdata_o,
+         s_avm_readdata_o(2 * 16 - 1 downto 1 * 16) => mem_core_readdata_o,
          s_avm_readdata_o(1 * 16 - 1 downto 0 * 16) => hr_qnice_readdata,
          s_avm_readdatavalid_o(2)                   => hr_dig_readdatavalid,
-         s_avm_readdatavalid_o(1)                   => hr_core_readdatavalid_o,
+         s_avm_readdatavalid_o(1)                   => mem_core_readdatavalid_o,
          s_avm_readdatavalid_o(0)                   => hr_qnice_readdatavalid,
          s_avm_waitrequest_o(2)                     => hr_dig_waitrequest,
-         s_avm_waitrequest_o(1)                     => hr_core_waitrequest_o,
+         s_avm_waitrequest_o(1)                     => mem_core_waitrequest_o,
          s_avm_waitrequest_o(0)                     => hr_qnice_waitrequest,
          m_avm_write_o                              => hr_write,
          m_avm_read_o                               => hr_read,
@@ -938,8 +938,8 @@ begin
          hr_readdata_i           => hr_dig_readdata,
          hr_readdatavalid_i      => hr_dig_readdatavalid,
          hr_waitrequest_i        => hr_dig_waitrequest,
-         hr_high_o               => hr_high_o,
-         hr_low_o                => hr_low_o,
+         hr_high_o               => mem_high_o,
+         hr_low_o                => mem_low_o,
          -- Output to MEGA65 board
          vga_red                 => vga_red_o,
          vga_green               => vga_green_o,
