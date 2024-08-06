@@ -260,16 +260,12 @@ architecture synthesis of framework is
    ---------------------------------------------------------------------------------------------
 
    signal   qnice_clk       : std_logic;                     -- QNICE main clock @ 50 MHz
-   signal   hr_clk          : std_logic;                     -- HyperRAM @ 100 MHz
-   signal   hr_clk_del      : std_logic;                     -- HyperRAM @ 100 MHz phase delayed
-   signal   hr_delay_refclk : std_logic;                     -- HyperRAM @ 200 MHz
    signal   audio_clk       : std_logic;                     -- Audio clock @ 60 MHz
    signal   tmds_clk        : std_logic;                     -- HDMI pixel clock at 5x speed for TMDS @ 371.25 MHz
    signal   hdmi_clk        : std_logic;                     -- HDMI pixel clock at normal speed @ 74.25 MHz
    signal   sys_pps         : std_logic;                     -- One pulse per second
 
    signal   qnice_rst : std_logic;
-   signal   hr_rst    : std_logic;
    signal   audio_rst : std_logic;
    signal   hdmi_rst  : std_logic;
 
@@ -378,48 +374,40 @@ architecture synthesis of framework is
    signal   sda_out : std_logic_vector(7 downto 0);
 
    ---------------------------------------------------------------------------------------------
-   -- HyperRAM
+   -- External memory
    ---------------------------------------------------------------------------------------------
 
-   -- Digital pipeline's signals to the HyperRAM arbiter
-   signal   hr_dig_write         : std_logic;
-   signal   hr_dig_read          : std_logic;
-   signal   hr_dig_address       : std_logic_vector(31 downto 0)   := (others => '0');
-   signal   hr_dig_writedata     : std_logic_vector(15 downto 0);
-   signal   hr_dig_byteenable    : std_logic_vector( 1 downto 0);
-   signal   hr_dig_burstcount    : std_logic_vector( 7 downto 0);
-   signal   hr_dig_readdata      : std_logic_vector(15 downto 0);
-   signal   hr_dig_readdatavalid : std_logic;
-   signal   hr_dig_waitrequest   : std_logic;
+   -- Digital pipeline's signals to the external memory arbiter
+   signal   mem_dig_write         : std_logic;
+   signal   mem_dig_read          : std_logic;
+   signal   mem_dig_address       : std_logic_vector(31 downto 0)   := (others => '0');
+   signal   mem_dig_writedata     : std_logic_vector(15 downto 0);
+   signal   mem_dig_byteenable    : std_logic_vector( 1 downto 0);
+   signal   mem_dig_burstcount    : std_logic_vector( 7 downto 0);
+   signal   mem_dig_readdata      : std_logic_vector(15 downto 0);
+   signal   mem_dig_readdatavalid : std_logic;
+   signal   mem_dig_waitrequest   : std_logic;
 
-   signal   hr_qnice_write         : std_logic;
-   signal   hr_qnice_read          : std_logic;
-   signal   hr_qnice_address       : std_logic_vector(31 downto 0) := (others => '0');
-   signal   hr_qnice_writedata     : std_logic_vector(15 downto 0);
-   signal   hr_qnice_byteenable    : std_logic_vector( 1 downto 0);
-   signal   hr_qnice_burstcount    : std_logic_vector( 7 downto 0);
-   signal   hr_qnice_readdata      : std_logic_vector(15 downto 0);
-   signal   hr_qnice_readdatavalid : std_logic;
-   signal   hr_qnice_waitrequest   : std_logic;
+   signal   mem_qnice_write         : std_logic;
+   signal   mem_qnice_read          : std_logic;
+   signal   mem_qnice_address       : std_logic_vector(31 downto 0) := (others => '0');
+   signal   mem_qnice_writedata     : std_logic_vector(15 downto 0);
+   signal   mem_qnice_byteenable    : std_logic_vector( 1 downto 0);
+   signal   mem_qnice_burstcount    : std_logic_vector( 7 downto 0);
+   signal   mem_qnice_readdata      : std_logic_vector(15 downto 0);
+   signal   mem_qnice_readdatavalid : std_logic;
+   signal   mem_qnice_waitrequest   : std_logic;
 
-   -- HyperRAM controller
-   signal   hr_write         : std_logic;
-   signal   hr_read          : std_logic;
-   signal   hr_address       : std_logic_vector(31 downto 0)       := (others => '0');
-   signal   hr_writedata     : std_logic_vector(15 downto 0);
-   signal   hr_byteenable    : std_logic_vector( 1 downto 0);
-   signal   hr_burstcount    : std_logic_vector( 7 downto 0);
-   signal   hr_readdata      : std_logic_vector(15 downto 0);
-   signal   hr_readdatavalid : std_logic;
-   signal   hr_waitrequest   : std_logic;
-
-   -- Physical layer
-   signal   hr_rwds_in   : std_logic;
-   signal   hr_rwds_out  : std_logic;
-   signal   hr_rwds_oe_n : std_logic;                        -- Output enable for RWDS
-   signal   hr_dq_in     : std_logic_vector(7 downto 0);
-   signal   hr_dq_out    : std_logic_vector(7 downto 0);
-   signal   hr_dq_oe_n   : std_logic_vector(7 downto 0);     -- Output enable for DQ
+   -- External memory controller
+   signal   mem_write         : std_logic;
+   signal   mem_read          : std_logic;
+   signal   mem_address       : std_logic_vector(31 downto 0)       := (others => '0');
+   signal   mem_writedata     : std_logic_vector(15 downto 0);
+   signal   mem_byteenable    : std_logic_vector( 1 downto 0);
+   signal   mem_burstcount    : std_logic_vector( 7 downto 0);
+   signal   mem_readdata      : std_logic_vector(15 downto 0);
+   signal   mem_readdatavalid : std_logic;
+   signal   mem_waitrequest   : std_logic;
 
 begin
 
@@ -434,10 +422,6 @@ begin
          core_rstn_i       => reset_core_n, -- reset only the core (means the HyperRAM needs to be reset, too)
          qnice_clk_o       => qnice_clk,
          qnice_rst_o       => qnice_rst,
-         hr_clk_o          => hr_clk,
-         hr_clk_del_o      => hr_clk_del,
-         hr_delay_refclk_o => hr_delay_refclk,
-         hr_rst_o          => hr_rst,
          audio_clk_o       => audio_clk,
          audio_rst_o       => audio_rst,
          sys_pps_o         => sys_pps
@@ -466,9 +450,6 @@ begin
          clko    => hdmi_clk,
          clko_x5 => tmds_clk
       ); -- video_out_clock_inst
-
-   mem_clk_o    <= hr_clk;
-   mem_rst_o    <= hr_rst;
 
    qnice_clk_o <= qnice_clk;
    qnice_rst_o <= qnice_rst;
@@ -666,7 +647,7 @@ begin
       ); -- clock_counter_inst
 
    --------------------------------------------------------
-   -- HyperRAM clock domain: hr_clk
+   -- External memory clock domain: mem_clk_o
    --------------------------------------------------------
 
    avm_arbit_general_inst : entity work.avm_arbit_general
@@ -677,32 +658,32 @@ begin
          G_DATA_SIZE    => 16
       )
       port map (
-         clk_i                                      => hr_clk,
-         rst_i                                      => hr_rst,
-         s_avm_write_i                              => hr_dig_write         & mem_core_write_i         & hr_qnice_write,
-         s_avm_read_i                               => hr_dig_read          & mem_core_read_i          & hr_qnice_read,
-         s_avm_address_i                            => hr_dig_address       & mem_core_address_i       & hr_qnice_address,
-         s_avm_writedata_i                          => hr_dig_writedata     & mem_core_writedata_i     & hr_qnice_writedata,
-         s_avm_byteenable_i                         => hr_dig_byteenable    & mem_core_byteenable_i    & hr_qnice_byteenable,
-         s_avm_burstcount_i                         => hr_dig_burstcount    & mem_core_burstcount_i    & hr_qnice_burstcount,
-         s_avm_readdata_o(3 * 16 - 1 downto 2 * 16) => hr_dig_readdata,
+         clk_i                                      => mem_clk_o,
+         rst_i                                      => mem_rst_o,
+         s_avm_write_i                              => mem_dig_write         & mem_core_write_i         & mem_qnice_write,
+         s_avm_read_i                               => mem_dig_read          & mem_core_read_i          & mem_qnice_read,
+         s_avm_address_i                            => mem_dig_address       & mem_core_address_i       & mem_qnice_address,
+         s_avm_writedata_i                          => mem_dig_writedata     & mem_core_writedata_i     & mem_qnice_writedata,
+         s_avm_byteenable_i                         => mem_dig_byteenable    & mem_core_byteenable_i    & mem_qnice_byteenable,
+         s_avm_burstcount_i                         => mem_dig_burstcount    & mem_core_burstcount_i    & mem_qnice_burstcount,
+         s_avm_readdata_o(3 * 16 - 1 downto 2 * 16) => mem_dig_readdata,
          s_avm_readdata_o(2 * 16 - 1 downto 1 * 16) => mem_core_readdata_o,
-         s_avm_readdata_o(1 * 16 - 1 downto 0 * 16) => hr_qnice_readdata,
-         s_avm_readdatavalid_o(2)                   => hr_dig_readdatavalid,
+         s_avm_readdata_o(1 * 16 - 1 downto 0 * 16) => mem_qnice_readdata,
+         s_avm_readdatavalid_o(2)                   => mem_dig_readdatavalid,
          s_avm_readdatavalid_o(1)                   => mem_core_readdatavalid_o,
-         s_avm_readdatavalid_o(0)                   => hr_qnice_readdatavalid,
-         s_avm_waitrequest_o(2)                     => hr_dig_waitrequest,
+         s_avm_readdatavalid_o(0)                   => mem_qnice_readdatavalid,
+         s_avm_waitrequest_o(2)                     => mem_dig_waitrequest,
          s_avm_waitrequest_o(1)                     => mem_core_waitrequest_o,
-         s_avm_waitrequest_o(0)                     => hr_qnice_waitrequest,
-         m_avm_write_o                              => hr_write,
-         m_avm_read_o                               => hr_read,
-         m_avm_address_o                            => hr_address,
-         m_avm_writedata_o                          => hr_writedata,
-         m_avm_byteenable_o                         => hr_byteenable,
-         m_avm_burstcount_o                         => hr_burstcount,
-         m_avm_readdata_i                           => hr_readdata,
-         m_avm_readdatavalid_i                      => hr_readdatavalid,
-         m_avm_waitrequest_i                        => hr_waitrequest
+         s_avm_waitrequest_o(0)                     => mem_qnice_waitrequest,
+         m_avm_write_o                              => mem_write,
+         m_avm_read_o                               => mem_read,
+         m_avm_address_o                            => mem_address,
+         m_avm_writedata_o                          => mem_writedata,
+         m_avm_byteenable_o                         => mem_byteenable,
+         m_avm_burstcount_o                         => mem_burstcount,
+         m_avm_readdata_i                           => mem_readdata,
+         m_avm_readdatavalid_i                      => mem_readdatavalid,
+         m_avm_waitrequest_i                        => mem_waitrequest
       ); -- avm_arbit_general_inst
 
 
@@ -796,7 +777,7 @@ begin
          dest_out(614 downto 550) => main_rtc_o
       ); -- qnice2main_inst
 
-   -- Clock domain crossing: QNICE to HR
+   -- Clock domain crossing: QNICE to MEM
    avm_fifo_qnice_inst : entity work.avm_fifo
       generic map (
          G_WR_DEPTH     => 16,
@@ -817,17 +798,17 @@ begin
          s_avm_burstcount_i    => qnice_avm_burstcount,
          s_avm_readdata_o      => qnice_avm_readdata,
          s_avm_readdatavalid_o => qnice_avm_readdatavalid,
-         m_clk_i               => hr_clk,
-         m_rst_i               => hr_rst,
-         m_avm_waitrequest_i   => hr_qnice_waitrequest,
-         m_avm_write_o         => hr_qnice_write,
-         m_avm_read_o          => hr_qnice_read,
-         m_avm_address_o       => hr_qnice_address,
-         m_avm_writedata_o     => hr_qnice_writedata,
-         m_avm_byteenable_o    => hr_qnice_byteenable,
-         m_avm_burstcount_o    => hr_qnice_burstcount,
-         m_avm_readdata_i      => hr_qnice_readdata,
-         m_avm_readdatavalid_i => hr_qnice_readdatavalid
+         m_clk_i               => mem_clk_o,
+         m_rst_i               => mem_rst_o,
+         m_avm_waitrequest_i   => mem_qnice_waitrequest,
+         m_avm_write_o         => mem_qnice_write,
+         m_avm_read_o          => mem_qnice_read,
+         m_avm_address_o       => mem_qnice_address,
+         m_avm_writedata_o     => mem_qnice_writedata,
+         m_avm_byteenable_o    => mem_qnice_byteenable,
+         m_avm_burstcount_o    => mem_qnice_burstcount,
+         m_avm_readdata_i      => mem_qnice_readdata,
+         m_avm_readdatavalid_i => mem_qnice_readdatavalid
       ); -- avm_fifo_qnice_inst
 
 
@@ -899,19 +880,19 @@ begin
          qnice_q_o               => qnice_vram_data,
          sys_clk_i               => clk_i,
          sys_pps_i               => sys_pps,
-         hr_clk_i                => hr_clk,
-         hr_rst_i                => hr_rst,
-         hr_write_o              => hr_dig_write,
-         hr_read_o               => hr_dig_read,
-         hr_address_o            => hr_dig_address,
-         hr_writedata_o          => hr_dig_writedata,
-         hr_byteenable_o         => hr_dig_byteenable,
-         hr_burstcount_o         => hr_dig_burstcount,
-         hr_readdata_i           => hr_dig_readdata,
-         hr_readdatavalid_i      => hr_dig_readdatavalid,
-         hr_waitrequest_i        => hr_dig_waitrequest,
-         hr_high_o               => mem_high_o,
-         hr_low_o                => mem_low_o,
+         mem_clk_i               => mem_clk_o,
+         mem_rst_i               => mem_rst_o,
+         mem_write_o             => mem_dig_write,
+         mem_read_o              => mem_dig_read,
+         mem_address_o           => mem_dig_address,
+         mem_writedata_o         => mem_dig_writedata,
+         mem_byteenable_o        => mem_dig_byteenable,
+         mem_burstcount_o        => mem_dig_burstcount,
+         mem_readdata_i          => mem_dig_readdata,
+         mem_readdatavalid_i     => mem_dig_readdatavalid,
+         mem_waitrequest_i       => mem_dig_waitrequest,
+         mem_high_o              => mem_high_o,
+         mem_low_o               => mem_low_o,
          -- Output to MEGA65 board
          vga_red                 => vga_red_o,
          vga_green               => vga_green_o,
@@ -936,49 +917,33 @@ begin
 
 
    ---------------------------------------------------------------------------------------------------------------
-   -- HyperRAM controller
+   -- External memory controller
    ---------------------------------------------------------------------------------------------------------------
 
-   hyperram_inst : entity work.hyperram
+   memory_wrapper_inst : entity work.memory_wrapper
       generic map (
-         G_ERRATA_ISSI_D_FIX => true
+         G_BOARD => G_BOARD
       )
       port map (
-         clk_i               => hr_clk,
-         clk_del_i           => hr_clk_del,
-         delay_refclk_i      => hr_delay_refclk,
-         rst_i               => hr_rst,
-         avm_write_i         => hr_write,
-         avm_read_i          => hr_read,
-         avm_address_i       => hr_address,
-         avm_writedata_i     => hr_writedata,
-         avm_byteenable_i    => hr_byteenable,
-         avm_burstcount_i    => hr_burstcount,
-         avm_readdata_o      => hr_readdata,
-         avm_readdatavalid_o => hr_readdatavalid,
-         avm_waitrequest_o   => hr_waitrequest,
-         hr_resetn_o         => hr_reset_o,
-         hr_csn_o            => hr_cs0_o,
-         hr_ck_o             => hr_clk_p_o,
-         hr_rwds_in_i        => hr_rwds_in,
-         hr_rwds_out_o       => hr_rwds_out,
-         hr_rwds_oe_n_o      => hr_rwds_oe_n,
-         hr_dq_in_i          => hr_dq_in,
-         hr_dq_out_o         => hr_dq_out,
-         hr_dq_oe_n_o        => hr_dq_oe_n
-      ); -- hyperram_inst
-
-   -- Tri-state buffers for HyperRAM
-   hr_rwds_io <= hr_rwds_out when hr_rwds_oe_n = '0' else
-                 'Z';
-
-   hr_d_gen : for i in 0 to 7 generate
-      hr_d_io(i) <= hr_dq_out(i) when hr_dq_oe_n(i) = '0' else
-                    'Z';
-   end generate hr_d_gen;
-
-   hr_rwds_in <= hr_rwds_io;
-   hr_dq_in   <= hr_d_io;
+         sys_clk_i           => clk_i,
+         sys_rstn_i          => reset_n_i,
+         mem_clk_o           => mem_clk_o,
+         mem_rst_o           => mem_rst_o,
+         mem_waitrequest_o   => mem_waitrequest,
+         mem_write_i         => mem_write,
+         mem_read_i          => mem_read,
+         mem_address_i       => mem_address,
+         mem_writedata_i     => mem_writedata,
+         mem_byteenable_i    => mem_byteenable,
+         mem_burstcount_i    => mem_burstcount,
+         mem_readdata_o      => mem_readdata,
+         mem_readdatavalid_o => mem_readdatavalid,
+         hr_d_io             => hr_d_io,
+         hr_rwds_io          => hr_rwds_io,
+         hr_reset_o          => hr_reset_o,
+         hr_clk_p_o          => hr_clk_p_o,
+         hr_cs0_o            => hr_cs0_o
+      ); -- memory_wrapper_inst
 
 
    ---------------------------------------------------------------------------------------------------------------

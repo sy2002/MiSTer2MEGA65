@@ -77,18 +77,18 @@ entity digital_pipeline is
       qnice_poly_a_i           : in  unsigned(6+3 downto 0);    -- FRAC+3 downto 0, if we change FRAC below, we need to change quite some code, also in the M2M Firmware
       qnice_poly_wr_i          : in  std_logic;
 
-      -- Connect to HyperRAM controller
-      hr_clk_i                 : in  std_logic;
-      hr_rst_i                 : in  std_logic;
-      hr_write_o               : out std_logic;
-      hr_read_o                : out std_logic;
-      hr_address_o             : out std_logic_vector(31 downto 0);
-      hr_writedata_o           : out std_logic_vector(15 downto 0);
-      hr_byteenable_o          : out std_logic_vector( 1 downto 0);
-      hr_burstcount_o          : out std_logic_vector( 7 downto 0);
-      hr_readdata_i            : in  std_logic_vector(15 downto 0);
-      hr_readdatavalid_i       : in  std_logic;
-      hr_waitrequest_i         : in  std_logic
+      -- Connect to external memory controller
+      mem_clk_i                : in  std_logic;
+      mem_rst_i                : in  std_logic;
+      mem_write_o              : out std_logic;
+      mem_read_o               : out std_logic;
+      mem_address_o            : out std_logic_vector(31 downto 0);
+      mem_writedata_o          : out std_logic_vector(15 downto 0);
+      mem_byteenable_o         : out std_logic_vector( 1 downto 0);
+      mem_burstcount_o         : out std_logic_vector( 7 downto 0);
+      mem_readdata_i           : in  std_logic_vector(15 downto 0);
+      mem_readdatavalid_i      : in  std_logic;
+      mem_waitrequest_i        : in  std_logic
    );
 end entity digital_pipeline;
 
@@ -152,15 +152,15 @@ architecture synthesis of digital_pipeline is
    signal hdmi_osm_vs            : std_logic;
    signal hdmi_osm_de            : std_logic;
 
-   signal hr_wide_write          : std_logic;
-   signal hr_wide_read           : std_logic;
-   signal hr_wide_address        : std_logic_vector(C_AVM_ADDRESS_SIZE-1 downto 0);
-   signal hr_wide_writedata      : std_logic_vector(C_AVM_DATA_SIZE-1 downto 0);
-   signal hr_wide_byteenable     : std_logic_vector(C_AVM_DATA_SIZE/8-1 downto 0);
-   signal hr_wide_burstcount     : std_logic_vector(7 downto 0);
-   signal hr_wide_readdata       : std_logic_vector(C_AVM_DATA_SIZE-1 downto 0);
-   signal hr_wide_readdatavalid  : std_logic;
-   signal hr_wide_waitrequest    : std_logic;
+   signal mem_wide_write         : std_logic;
+   signal mem_wide_read          : std_logic;
+   signal mem_wide_address       : std_logic_vector(C_AVM_ADDRESS_SIZE-1 downto 0);
+   signal mem_wide_writedata     : std_logic_vector(C_AVM_DATA_SIZE-1 downto 0);
+   signal mem_wide_byteenable    : std_logic_vector(C_AVM_DATA_SIZE/8-1 downto 0);
+   signal mem_wide_burstcount    : std_logic_vector(7 downto 0);
+   signal mem_wide_readdata      : std_logic_vector(C_AVM_DATA_SIZE-1 downto 0);
+   signal mem_wide_readdatavalid : std_logic;
+   signal mem_wide_waitrequest   : std_logic;
 
 begin
 
@@ -288,7 +288,7 @@ begin
    -- Digital output (HDMI) - Video part
    ---------------------------------------------------------------------------------------------
 
-   reset_na <= not (video_rst_i or hr_rst_i);
+   reset_na <= not (video_rst_i or mem_rst_i);
 
    i_ascal : entity work.ascal
       generic map (
@@ -408,16 +408,16 @@ begin
          poly_wr           => qnice_poly_wr_i,              -- input
 
          -- Avalon Memory interface
-         avl_clk           => hr_clk_i,                     -- input
-         avl_waitrequest   => hr_wide_waitrequest,          -- input
-         avl_readdata      => hr_wide_readdata,             -- input
-         avl_readdatavalid => hr_wide_readdatavalid,        -- input
-         avl_burstcount    => hr_wide_burstcount,           -- output
-         avl_writedata     => hr_wide_writedata,            -- output
-         avl_address       => hr_wide_address,              -- output
-         avl_write         => hr_wide_write,                -- output
-         avl_read          => hr_wide_read,                 -- output
-         avl_byteenable    => hr_wide_byteenable,           -- output
+         avl_clk           => mem_clk_i,                    -- input
+         avl_waitrequest   => mem_wide_waitrequest,         -- input
+         avl_readdata      => mem_wide_readdata,            -- input
+         avl_readdatavalid => mem_wide_readdatavalid,       -- input
+         avl_burstcount    => mem_wide_burstcount,          -- output
+         avl_writedata     => mem_wide_writedata,           -- output
+         avl_address       => mem_wide_address,             -- output
+         avl_write         => mem_wide_write,               -- output
+         avl_read          => mem_wide_read,                -- output
+         avl_byteenable    => mem_wide_byteenable,          -- output
 
          -- Asynchronous reset, active low
          reset_na          => reset_na                      -- input
@@ -427,30 +427,30 @@ begin
       generic map (
          G_SLAVE_ADDRESS_SIZE  => C_AVM_ADDRESS_SIZE,
          G_SLAVE_DATA_SIZE     => C_AVM_DATA_SIZE,
-         G_MASTER_ADDRESS_SIZE => 22,  -- HyperRAM size is 4 MWords = 8 MBytes.
+         G_MASTER_ADDRESS_SIZE => 22,  -- External memory size is 4 MWords = 8 MBytes.
          G_MASTER_DATA_SIZE    => 16
       )
       port map (
-         clk_i                 => hr_clk_i,
-         rst_i                 => hr_rst_i,
-         s_avm_write_i         => hr_wide_write,
-         s_avm_read_i          => hr_wide_read,
-         s_avm_address_i       => hr_wide_address,
-         s_avm_writedata_i     => hr_wide_writedata,
-         s_avm_byteenable_i    => hr_wide_byteenable,
-         s_avm_burstcount_i    => hr_wide_burstcount,
-         s_avm_readdata_o      => hr_wide_readdata,
-         s_avm_readdatavalid_o => hr_wide_readdatavalid,
-         s_avm_waitrequest_o   => hr_wide_waitrequest,
-         m_avm_write_o         => hr_write_o,
-         m_avm_read_o          => hr_read_o,
-         m_avm_address_o       => hr_address_o(21 downto 0), -- MSB defaults to zero
-         m_avm_writedata_o     => hr_writedata_o,
-         m_avm_byteenable_o    => hr_byteenable_o,
-         m_avm_burstcount_o    => hr_burstcount_o,
-         m_avm_readdata_i      => hr_readdata_i,
-         m_avm_readdatavalid_i => hr_readdatavalid_i,
-         m_avm_waitrequest_i   => hr_waitrequest_i
+         clk_i                 => mem_clk_i,
+         rst_i                 => mem_rst_i,
+         s_avm_write_i         => mem_wide_write,
+         s_avm_read_i          => mem_wide_read,
+         s_avm_address_i       => mem_wide_address,
+         s_avm_writedata_i     => mem_wide_writedata,
+         s_avm_byteenable_i    => mem_wide_byteenable,
+         s_avm_burstcount_i    => mem_wide_burstcount,
+         s_avm_readdata_o      => mem_wide_readdata,
+         s_avm_readdatavalid_o => mem_wide_readdatavalid,
+         s_avm_waitrequest_o   => mem_wide_waitrequest,
+         m_avm_write_o         => mem_write_o,
+         m_avm_read_o          => mem_read_o,
+         m_avm_address_o       => mem_address_o(21 downto 0), -- MSB defaults to zero
+         m_avm_writedata_o     => mem_writedata_o,
+         m_avm_byteenable_o    => mem_byteenable_o,
+         m_avm_burstcount_o    => mem_burstcount_o,
+         m_avm_readdata_i      => mem_readdata_i,
+         m_avm_readdatavalid_i => mem_readdatavalid_i,
+         m_avm_waitrequest_i   => mem_waitrequest_i
       ); -- i_avm_decrease
 
    i_video_overlay : entity work.video_overlay

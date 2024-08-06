@@ -3,10 +3,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.numeric_std_unsigned.all;
 
--- This module monitors the read and write accesses to the HyperRAM by the ascaler.
+-- This module monitors the read and write accesses to the external memory by the ascaler.
 --
--- The input stream from the CORE creates writes to the HyperRAM.
--- The output stream to the HDMI creates reads from the HyperRAM.
+-- The input stream from the CORE creates writes to the external memory.
+-- The output stream to the HDMI creates reads from the external memory.
 -- The goal is to ensure that the writes occur just before the reads, specifically
 -- to ensure they do not "cross over".
 --
@@ -27,22 +27,21 @@ use ieee.numeric_std_unsigned.all;
 
 entity hdmi_flicker_free is
 generic (
+   G_MEM_FREQ_HZ    : natural := 100_000_000;
    G_THRESHOLD_LOW  : std_logic_vector(31 downto 0);
    G_THRESHOLD_HIGH : std_logic_vector(31 downto 0)
 );
 port (
-   hr_clk_i       : in  std_logic;
-   hr_write_i     : in  std_logic;
-   hr_read_i      : in  std_logic;
-   hr_address_i   : in  std_logic_vector(31 downto 0);
-   high_o         : out std_logic;  -- CORE is too fast
-   low_o          : out std_logic   -- CORE is too slow
+   mem_clk_i     : in  std_logic;
+   mem_write_i   : in  std_logic;
+   mem_read_i    : in  std_logic;
+   mem_address_i : in  std_logic_vector(31 downto 0);
+   high_o        : out std_logic;  -- CORE is too fast
+   low_o         : out std_logic   -- CORE is too slow
 );
 end entity hdmi_flicker_free;
 
 architecture synthesis of hdmi_flicker_free is
-
-   constant C_HR_FREQ_HZ    : natural := 100_000_000;
 
    signal last_core_address : std_logic_vector(31 downto 0);
    signal last_hdmi_address : std_logic_vector(31 downto 0);
@@ -57,27 +56,27 @@ architecture synthesis of hdmi_flicker_free is
    signal dbg_max_diff      : std_logic_vector(31 downto 0);
    signal dbg_min_stored    : std_logic_vector(31 downto 0);
    signal dbg_max_stored    : std_logic_vector(31 downto 0);
-   signal dbg_sec1_cnt      : natural range 0 to C_HR_FREQ_HZ-1;
+   signal dbg_sec1_cnt      : natural range 0 to G_MEM_FREQ_HZ-1;
    signal dbg_sec1          : std_logic;
 
 begin
 
-   p_last_address : process (hr_clk_i)
+   p_last_address : process (mem_clk_i)
    begin
-      if rising_edge(hr_clk_i) then
-         if hr_write_i = '1' then
-            last_core_address <= hr_address_i; -- The CORE is writing to HyperRAM
+      if rising_edge(mem_clk_i) then
+         if mem_write_i = '1' then
+            last_core_address <= mem_address_i; -- The CORE is writing to external memory
          end if;
 
-         if hr_read_i = '1' then
-            last_hdmi_address <= hr_address_i; -- The HDMI is reading from HyperRAM
+         if mem_read_i = '1' then
+            last_hdmi_address <= mem_address_i; -- The HDMI is reading from external memory
          end if;
       end if;
    end process p_last_address;
 
-   p_last_diff : process (hr_clk_i)
+   p_last_diff : process (mem_clk_i)
    begin
-      if rising_edge(hr_clk_i) then
+      if rising_edge(mem_clk_i) then
          -- Only sample once each frame
          if last_hdmi_address = 0 then
             last_diff <= last_core_address; -- This is CORE-HDMI, i.e. value of CORE when HDMI=0
@@ -85,9 +84,9 @@ begin
       end if;
    end process p_last_diff;
 
-   p_output : process (hr_clk_i)
+   p_output : process (mem_clk_i)
    begin
-      if rising_edge(hr_clk_i) then
+      if rising_edge(mem_clk_i) then
          low_o  <= '0';
          high_o <= '0';
 
@@ -102,10 +101,10 @@ begin
    end process p_output;
 
    -- Pulse every second
-   p_debug_sec1 : process (hr_clk_i)
+   p_debug_sec1 : process (mem_clk_i)
    begin
-      if rising_edge(hr_clk_i) then
-         if dbg_sec1_cnt < C_HR_FREQ_HZ-1 then
+      if rising_edge(mem_clk_i) then
+         if dbg_sec1_cnt < G_MEM_FREQ_HZ-1 then
             dbg_sec1_cnt <= dbg_sec1_cnt + 1;
             dbg_sec1     <= '0';
          else
@@ -116,9 +115,9 @@ begin
    end process p_debug_sec1;
 
    -- Debug statistics
-   p_debug : process (hr_clk_i)
+   p_debug : process (mem_clk_i)
    begin
-      if rising_edge(hr_clk_i) then
+      if rising_edge(mem_clk_i) then
          dbg_low_d  <= low_o;
          dbg_high_d <= high_o;
 

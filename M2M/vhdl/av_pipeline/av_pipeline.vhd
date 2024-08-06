@@ -93,20 +93,20 @@ entity av_pipeline is
       sys_clk_i               : in  std_logic;
       sys_pps_i               : in  std_logic;
 
-      -- HyperRAM access for framebuffer
-      hr_clk_i                : in  std_logic;
-      hr_rst_i                : in  std_logic;
-      hr_write_o              : out std_logic;
-      hr_read_o               : out std_logic;
-      hr_address_o            : out std_logic_vector(31 downto 0);
-      hr_writedata_o          : out std_logic_vector(15 downto 0);
-      hr_byteenable_o         : out std_logic_vector( 1 downto 0);
-      hr_burstcount_o         : out std_logic_vector( 7 downto 0);
-      hr_readdata_i           : in  std_logic_vector(15 downto 0);
-      hr_readdatavalid_i      : in  std_logic;
-      hr_waitrequest_i        : in  std_logic;
-      hr_high_o               : out std_logic; -- Core is too fast
-      hr_low_o                : out std_logic; -- Core is too slow
+      -- External memory access for framebuffer
+      mem_clk_i               : in  std_logic;
+      mem_rst_i               : in  std_logic;
+      mem_write_o             : out std_logic;
+      mem_read_o              : out std_logic;
+      mem_address_o           : out std_logic_vector(31 downto 0);
+      mem_writedata_o         : out std_logic_vector(15 downto 0);
+      mem_byteenable_o        : out std_logic_vector( 1 downto 0);
+      mem_burstcount_o        : out std_logic_vector( 7 downto 0);
+      mem_readdata_i          : in  std_logic_vector(15 downto 0);
+      mem_readdatavalid_i     : in  std_logic;
+      mem_waitrequest_i       : in  std_logic;
+      mem_high_o              : out std_logic; -- Core is too fast
+      mem_low_o               : out std_logic; -- Core is too slow
 
       -- I/O to Analog output (VGA + 3.5mm audio jack)
       VGA_RED                 : out std_logic_vector( 7 downto 0);
@@ -583,33 +583,33 @@ begin
          qnice_poly_a_i           => unsigned(qnice_poly_a_i),
          qnice_poly_wr_i          => qnice_poly_wr_i,
 
-         -- Connect to HyperRAM controller
-         hr_clk_i                 => hr_clk_i,
-         hr_rst_i                 => hr_rst_i,
-         hr_write_o               => hr_write_o,
-         hr_read_o                => hr_read_o,
-         hr_address_o             => hr_address_o,
-         hr_writedata_o           => hr_writedata_o,
-         hr_byteenable_o          => hr_byteenable_o,
-         hr_burstcount_o          => hr_burstcount_o,
-         hr_readdata_i            => hr_readdata_i,
-         hr_readdatavalid_i       => hr_readdatavalid_i,
-         hr_waitrequest_i         => hr_waitrequest_i
+         -- Connect to external memory controller
+         mem_clk_i                => mem_clk_i,
+         mem_rst_i                => mem_rst_i,
+         mem_write_o              => mem_write_o,
+         mem_read_o               => mem_read_o,
+         mem_address_o            => mem_address_o,
+         mem_writedata_o          => mem_writedata_o,
+         mem_byteenable_o         => mem_byteenable_o,
+         mem_burstcount_o         => mem_burstcount_o,
+         mem_readdata_i           => mem_readdata_i,
+         mem_readdatavalid_i      => mem_readdatavalid_i,
+         mem_waitrequest_i        => mem_waitrequest_i
       ); -- i_digital_pipeline
 
-   -- Monitor the read and write accesses to the HyperRAM by the ascaler.
+   -- Monitor the read and write accesses to the external memory by the ascaler.
    i_hdmi_flicker_free : entity work.hdmi_flicker_free
       generic map (
          G_THRESHOLD_LOW  => X"0000_1000",  -- @TODO: Optimize these threshold values
          G_THRESHOLD_HIGH => X"0000_2000"
       )
       port map (
-         hr_clk_i       => hr_clk_i,
-         hr_write_i     => hr_write_o,
-         hr_read_i      => hr_read_o,
-         hr_address_i   => hr_address_o,
-         high_o         => hr_high_o,       -- Core is too fast
-         low_o          => hr_low_o         -- Core is too slow
+         mem_clk_i     => mem_clk_i,
+         mem_write_i   => mem_write_o,
+         mem_read_i    => mem_read_o,
+         mem_address_i => mem_address_o,
+         high_o        => mem_high_o,       -- Core is too fast
+         low_o         => mem_low_o         -- Core is too slow
       ); -- i_hdmi_flicker_free
 
    ---------------------------------------------------------------------------------------------------------------
