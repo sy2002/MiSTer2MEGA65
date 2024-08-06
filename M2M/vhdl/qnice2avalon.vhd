@@ -3,11 +3,11 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std_unsigned.all;
 
 -- This module allows the QNICE CPU to access an Avalon Memory Mapped
--- device (normally the HyperRAM device of the MEGA65).
+-- device (normally the external memory device of the MEGA65).
 --
 -- This module runs in the QNICE clock domain.
 
-entity qnice2hyperram is
+entity qnice2avalon is
    port (
       -- This is the QNICE clock
       clk_i                 : in  std_logic;
@@ -23,7 +23,7 @@ entity qnice2hyperram is
       s_qnice_byteenable_i  : in  std_logic_vector( 1 downto 0);
       s_qnice_readdata_o    : out std_logic_vector(15 downto 0);
 
-      -- Connect to HyperRAM (via avm_fifo)
+      -- Connect to external memory (via avm_fifo)
       -- This is a master interface
       m_avm_write_o         : out std_logic;
       m_avm_read_o          : out std_logic;
@@ -35,9 +35,9 @@ entity qnice2hyperram is
       m_avm_readdatavalid_i : in  std_logic;
       m_avm_waitrequest_i   : in  std_logic
    );
-end entity qnice2hyperram;
+end entity qnice2avalon;
 
-architecture synthesis of qnice2hyperram is
+architecture synthesis of qnice2avalon is
 
    signal reading               : std_logic;
    signal m_avm_readdatavalid_d : std_logic;

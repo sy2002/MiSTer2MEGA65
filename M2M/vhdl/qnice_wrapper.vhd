@@ -556,7 +556,7 @@ begin
    qnice_ramrom_address <= "10000" & qnice_ramrom_addr_o(26 downto 0) when qnice_ramrom_addr_o(27) = '1' else
                            "000000000" & qnice_ramrom_addr_o(22 downto 0);
 
-   qnice2hyperram_inst : entity work.qnice2hyperram
+   qnice2avalon_inst : entity work.qnice2avalon
       port map (
          clk_i                 => clk_i,
          rst_i                 => rst_i,
@@ -576,7 +576,7 @@ begin
          m_avm_readdata_i      => qnice_avm_readdata_i,
          m_avm_readdatavalid_i => qnice_avm_readdatavalid_i,
          m_avm_waitrequest_i   => qnice_avm_waitrequest_i
-      ); -- qnice2hyperram_inst
+      ); -- qnice2avalon_inst
 
    hr_stats_proc : process (clk_i)
    begin
