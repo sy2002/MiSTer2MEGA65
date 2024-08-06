@@ -88,14 +88,14 @@ set_max_delay 2 -datapath_only -from [get_clocks hr_rwds] -to [get_clocks hr_clk
 
 ## Clock divider sdcard_clk that creates the 25 MHz used by sd_spi.vhd
 create_generated_clock -name sdcard_clk -source [get_pins framework_inst/clk_m2m_inst/i_clk_qnice/CLKOUT0] -divide_by 2 \
-   [get_pins framework_inst/qnice_wrapper_inst/QNICE_SOC/sd_card/Slow_Clock_25MHz_reg/Q]
+   [get_pins framework_inst/qnice_wrapper_inst/qnice_inst/sd_card/Slow_Clock_25MHz_reg/Q]
 
 ## QNICE's EAE combinatorial division networks take longer than the regular clock period, so we specify a multicycle path
 ## see also the comments in EAE.vhd and explanations in UG903/chapter 5/Multicycle Paths as well as ug911/page 25
-set_multicycle_path -from [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/QNICE_SOC/eae_inst/op*_reg[*]}] \
-   -to [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/QNICE_SOC/eae_inst/res_reg[*]}] -setup 3
-set_multicycle_path -from [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/QNICE_SOC/eae_inst/op*_reg[*]}] \
-   -to [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/QNICE_SOC/eae_inst/res_reg[*]}] -hold 2
+set_multicycle_path -from [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/qnice_inst/eae_inst/op*_reg[*]}] \
+   -to [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/qnice_inst/eae_inst/res_reg[*]}] -setup 3
+set_multicycle_path -from [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/qnice_inst/eae_inst/op*_reg[*]}] \
+   -to [get_cells -include_replicated {framework_inst/qnice_wrapper_inst/qnice_inst/eae_inst/res_reg[*]}] -hold 2
 
 
 ################################################################################
