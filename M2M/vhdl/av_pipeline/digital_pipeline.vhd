@@ -168,6 +168,8 @@ architecture synthesis of digital_pipeline is
    attribute keep : string;
    attribute keep of reset_na : signal is "true";
 
+   signal   video_size : std_logic_vector(23 downto 0);
+
 begin
 
    -- SYS_DXDY
@@ -434,7 +436,7 @@ begin
       -- That's because the "serialiser_10to1_selectio" entities use the high-speed
       -- TMDS clock, which requires data to be synchronized with the hdmi_clk.
 
-      no_ascal_inst : component xpm_cdc_array_single
+      video2hdmi_inst : component xpm_cdc_array_single
          generic map (
             WIDTH => 27
          )
@@ -449,12 +451,23 @@ begin
             dest_out(24)          => hdmi_hs,
             dest_out(25)          => hdmi_vs,
             dest_out(26)          => hdmi_de
-         ); -- no_ascal_inst
+         ); -- video2hdmi_inst
 
       (hdmi_red, hdmi_green, hdmi_blue) <= unsigned(hdmi_color);
 
-      video_hdmax_o <= hdmi_hmax;
-      video_vdmax_o <= hdmi_vmax;
+      hdmi2video_inst : component xpm_cdc_array_single
+         generic map (
+            WIDTH => 24
+         )
+         port map (
+            src_clk  => hdmi_clk_i,
+            src_in   => std_logic_vector(to_unsigned(hdmi_hmax, 12)) & std_logic_vector(to_unsigned(hdmi_vmax, 12)),
+            dest_clk => video_clk_i,
+            dest_out => video_size
+         ); -- hdmi2video_inst
+
+      video_hdmax_o <= to_integer(unsigned(video_size(23 downto 12)));
+      video_vdmax_o <= to_integer(unsigned(video_size(11 downto 0)));
 
       mem_wide_write <= '0';
       mem_wide_read  <= '0';
