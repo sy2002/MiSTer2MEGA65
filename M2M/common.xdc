@@ -110,16 +110,16 @@ set_multicycle_path -from [get_cells -include_replicated {framework_inst/qnice_w
 # avl_* : This is the video buffer, i.e. the HyperRAM clock domain.
 # However, we can not refer directly to the Core clock domain here, so instead we make
 # some indirect references.
-set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/D"]
-set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/D"]
-set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/C"] -to [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/D"]
-set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/i_.*_reg.*/D"]
-set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/i_ascal/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/i_ascal/avl_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/ascal_inst/i_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/ascal_inst/avl_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/ascal_inst/i_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/ascal_inst/o_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/ascal_inst/avl_.*_reg.*/C"] -to [get_pins -hierarchical -regexp ".*/ascal_inst/o_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/ascal_inst/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/ascal_inst/i_.*_reg.*/D"]
+set_false_path -quiet -from [get_pins -hierarchical -regexp ".*/ascal_inst/o_.*_reg.*/C"]   -to [get_pins -hierarchical -regexp ".*/ascal_inst/avl_.*_reg.*/D"]
 
 set_false_path -from [get_clocks hdmi_clk]  -to [get_clocks audio_clk]
 set_false_path -from [get_clocks audio_clk] -to [get_clocks hdmi_clk]
 set_false_path -from [get_clocks qnice_clk] -to [get_clocks hdmi_clk]
-set_false_path -through [get_pins framework_inst/av_pipeline_inst/i_digital_pipeline/i_ascal/reset_na]
+set_false_path -through [get_pins framework_inst/av_pipeline_inst/digital_pipeline_inst/ascal_inst/reset_na]
 
 
 ################################
