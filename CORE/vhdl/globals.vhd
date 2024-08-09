@@ -70,6 +70,10 @@ constant CHARS_DY             : natural := VGA_DY / FONT_DY;
 constant CHAR_MEM_SIZE        : natural := CHARS_DX * CHARS_DY;
 constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 
+-- Leave this setting true. Only if the core already outputs a modern high-resolution
+-- HDMI-compatible video stream should you consider setting this to false.
+constant ENABLE_ASCALER       : boolean := true;
+
 ----------------------------------------------------------------------------------------------------------
 -- HyperRAM memory map (in units of 4kW)
 ----------------------------------------------------------------------------------------------------------

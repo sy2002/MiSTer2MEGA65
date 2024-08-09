@@ -532,6 +532,7 @@ begin
 
    digital_pipeline_inst : entity work.digital_pipeline
       generic map (
+         G_ENABLE_ASCALER    => ENABLE_ASCALER,
          G_VIDEO_MODE_VECTOR => G_VIDEO_MODE_VECTOR,
          G_AUDIO_CLOCK_RATE  => G_AUDIO_CLOCK_RATE,
          G_VGA_DX            => G_VGA_DX,
