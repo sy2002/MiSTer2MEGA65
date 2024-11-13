@@ -292,7 +292,7 @@ resize_pblock pblock_MAX10 -add {SLICE_X0Y150:SLICE_X7Y174}
 
 # Place Keyboard close to I/O pins
 create_pblock pblock_m65driver
-add_cells_to_pblock pblock_m65driver [get_cells [list framework_inst/m2m_keyb_inst/m65driver]]
+add_cells_to_pblock pblock_m65driver [get_cells [list framework_inst/m2m_keyb_inst/mega65kbd_to_matrix_inst]]
 resize_pblock pblock_m65driver -add {SLICE_X0Y225:SLICE_X7Y243}
 
 # Place SD card controller in the middle between the left and right FPGA boundary because the output ports are at the opposide edges
