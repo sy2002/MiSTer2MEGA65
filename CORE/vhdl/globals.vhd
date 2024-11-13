@@ -74,6 +74,10 @@ constant VRAM_ADDR_WIDTH      : natural := f_log2(CHAR_MEM_SIZE);
 -- HDMI-compatible video stream should you consider setting this to false.
 constant ENABLE_ASCALER       : boolean := true;
 
+-- Leave this setting false. Only set to true if you want to use the serial port
+-- (via JTAG) for debugging.
+constant ENABLE_UART          : boolean := false;
+
 ----------------------------------------------------------------------------------------------------------
 -- HyperRAM memory map (in units of 4kW)
 ----------------------------------------------------------------------------------------------------------

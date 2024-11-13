@@ -25,6 +25,7 @@ library ieee;
 
 entity m2m_keyb is
    generic (
+      G_USE_UART       : boolean := false;
       G_SCAN_FREQUENCY : integer := 1000 -- keyboard scan frequency in Hz, default: 1 kHz
    );
    port (
@@ -35,6 +36,9 @@ entity m2m_keyb is
       kio8_o           : out   std_logic;                     -- clock to keyboard
       kio9_o           : out   std_logic;                     -- data output to keyboard
       kio10_i          : in    std_logic;                     -- data input from keyboard
+
+      -- interface to serial debug port (via JTAG)
+      uart_rx_i        : in    std_logic;
 
       -- interface to the core
       enable_core_i    : in    std_logic;                     -- 0 = core is decoupled from the keyboard, 1 = standard operation
@@ -60,12 +64,74 @@ architecture synthesis of m2m_keyb is
    signal key_status_n   : std_logic;
    signal keys_n         : std_logic_vector(15 downto 0) := x"FFFF"; -- low active, "no key pressed"
 
+   signal uart_rx_ready : std_logic;
+   signal uart_rx_valid : std_logic;
+   signal uart_rx_data  : std_logic_vector(7 downto 0);
+
+   signal key_ready : std_logic;
+   signal key_valid : std_logic;
+   signal key_data  : natural range 0 to 79;
+   signal key_timer : natural range 0 to 100_000_000; -- Counts clock cycles
+
 begin
 
+   -- Read characters from UART (ASCII format)
+   uart_inst : entity work.uart
+      port map (
+         clk_speed_i => clk_main_speed_i,
+         clk_i       => clk_main_i,
+         rst_i       => '0',
+         tx_valid_i  => '0',
+         tx_ready_o  => open,
+         tx_data_i   => X"00",
+         rx_valid_o  => uart_rx_valid,
+         rx_ready_i  => uart_rx_ready,
+         rx_data_o   => uart_rx_data,
+         uart_tx_o   => open,
+         uart_rx_i   => uart_rx_i
+      ); -- uart_inst
+
+   -- Convert ASCII codes to M65 keyboard codes
+   uart_to_keyb_inst : entity work.uart_to_keyb
+      port map (
+         clk_i        => clk_main_i,
+         rst_i        => '0',
+         uart_valid_i => uart_rx_valid,
+         uart_ready_o => uart_rx_ready,
+         uart_data_i  => uart_rx_data,
+         key_valid_o  => key_valid,
+         key_ready_i  => key_ready,
+         key_data_o   => key_data
+      ); -- uart_to_keyb_inst
+
    -- output the keyboard interface for the core
-   key_num_o       <= key_num;
-   key_pressed_n_o <= key_status_n when enable_core_i else
-                      '1';
+   output_proc : process (clk_main_i)
+   begin
+      if rising_edge(clk_main_i) then
+         key_pressed_n_o <= '1';
+
+         if enable_core_i = '1' then
+            key_num_o       <= key_num;
+            key_pressed_n_o <= key_status_n;
+
+            if G_USE_UART then
+               key_ready <= '0';
+               if key_timer > 0 then
+                  key_timer <= key_timer - 1;
+                  if key_num = key_data then
+                     -- Override with key from UART
+                     key_pressed_n_o <= '0';
+                  end if;
+                  if key_timer = 2 then
+                     key_ready <= '1';
+                  end if;
+               elsif key_valid = '1' then
+                  key_timer <= clk_main_speed_i / 128; -- 8 ms
+               end if;
+            end if;
+         end if;
+      end if;
+   end process output_proc;
 
    -- output the keyboard interface for QNICE
    qnice_keys_n_o  <= keys_n;
@@ -133,17 +199,16 @@ begin
       if rising_edge(clk_main_i) then
          case key_num is
             when 73 => keys_n(0) <= key_status_n;     -- Cursor up
-            when 7  => keys_n(1) <= key_status_n;     -- Cursor down
+            when  7 => keys_n(1) <= key_status_n;     -- Cursor down
             when 74 => keys_n(2) <= key_status_n;     -- Cursor left
-            when 2  => keys_n(3) <= key_status_n;     -- Cursor right
-            when 1  => keys_n(4) <= key_status_n;     -- Return
+            when  2 => keys_n(3) <= key_status_n;     -- Cursor right
+            when  1 => keys_n(4) <= key_status_n;     -- Return
             when 60 => keys_n(5) <= key_status_n;     -- Space
             when 63 => keys_n(6) <= key_status_n;     -- Run/Stop
             when 67 => keys_n(7) <= key_status_n;     -- Help
-            when 4  => keys_n(8) <= key_status_n;     -- F1
-            when 5  => keys_n(9) <= key_status_n;     -- F3
-            when others =>
-               null;
+            when  4 => keys_n(8) <= key_status_n;     -- F1
+            when  5 => keys_n(9) <= key_status_n;     -- F3
+            when others => null;
          end case;
       end if;
    end process keys_n_proc;

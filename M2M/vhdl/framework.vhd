@@ -525,6 +525,9 @@ begin
 
    -- M2M keyboard driver that outputs two distinct keyboard states: key_* for being used by the core and qnice_* for the firmware/Shell
    m2m_keyb_inst : entity work.m2m_keyb
+      generic map (
+         G_USE_UART => ENABLE_UART
+      )
       port map (
          clk_main_i       => main_clk_i,
          clk_main_speed_i => CORE_CLK_SPEED,
@@ -533,6 +536,9 @@ begin
          kio8_o           => kb_io0_o,
          kio9_o           => kb_io1_o,
          kio10_i          => kb_io2_i,
+
+         -- interface to serial debug port (via JTAG)
+         uart_rx_i        => uart_rxd_i,
 
          -- interface to the core
          enable_core_i    => main_csr_keyboard_on,
