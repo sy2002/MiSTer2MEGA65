@@ -68,10 +68,11 @@ architecture synthesis of m2m_keyb is
    signal uart_rx_valid : std_logic;
    signal uart_rx_data  : std_logic_vector(7 downto 0);
 
-   signal key_ready : std_logic;
-   signal key_valid : std_logic;
-   signal key_data  : natural range 0 to 79;
-   signal key_timer : natural range 0 to 100_000_000; -- Counts clock cycles
+   signal key_ready     : std_logic;
+   signal key_valid     : std_logic;
+   signal key_data      : natural range 0 to 79;
+   signal key_timer     : natural range 0 to 100_000_000; -- Counts clock cycles
+   signal key_pressed_n : std_logic;
 
 begin
 
@@ -91,43 +92,41 @@ begin
          uart_rx_i   => uart_rx_i
       ); -- uart_inst
 
-   -- Convert ASCII codes to M65 keyboard codes
-   uart_to_keyb_inst : entity work.uart_to_keyb
+   -- Convert ASCII codes to MEGA65 keyboard codes
+   ascii_to_mega65_inst : entity work.ascii_to_mega65
       port map (
-         clk_i        => clk_main_i,
-         rst_i        => '0',
-         uart_valid_i => uart_rx_valid,
-         uart_ready_o => uart_rx_ready,
-         uart_data_i  => uart_rx_data,
-         key_valid_o  => key_valid,
-         key_ready_i  => key_ready,
-         key_data_o   => key_data
-      ); -- uart_to_keyb_inst
+         clk_i           => clk_main_i,
+         rst_i           => '0',
+         uart_rx_valid_i => uart_rx_valid,
+         uart_rx_ready_o => uart_rx_ready,
+         uart_rx_data_i  => uart_rx_data,
+         key_valid_o     => key_valid,
+         key_ready_i     => key_ready,
+         key_data_o      => key_data
+      ); -- ascii_to_mega65_inst
+
+   key_pressed_n_o <= key_pressed_n or not enable_core_i;
 
    -- output the keyboard interface for the core
    output_proc : process (clk_main_i)
    begin
       if rising_edge(clk_main_i) then
-         key_pressed_n_o <= '1';
+         key_num_o     <= key_num;
+         key_pressed_n <= key_status_n;
 
-         if enable_core_i = '1' then
-            key_num_o       <= key_num;
-            key_pressed_n_o <= key_status_n;
-
-            if G_USE_UART then
-               key_ready <= '0';
-               if key_timer > 0 then
-                  key_timer <= key_timer - 1;
-                  if key_num = key_data then
-                     -- Override with key from UART
-                     key_pressed_n_o <= '0';
-                  end if;
-                  if key_timer = 2 then
-                     key_ready <= '1';
-                  end if;
-               elsif key_valid = '1' then
-                  key_timer <= clk_main_speed_i / 128; -- 8 ms
+         if G_USE_UART then
+            key_ready <= '0';
+            if key_timer > 0 then
+               key_timer <= key_timer - 1;
+               if key_num = key_data then
+                  -- Override with key from UART
+                  key_pressed_n <= '0';
                end if;
+               if key_timer = 2 then
+                  key_ready <= '1';
+               end if;
+            elsif key_valid = '1' then
+               key_timer <= clk_main_speed_i / 128; -- 8 ms
             end if;
          end if;
       end if;
@@ -197,17 +196,17 @@ begin
    keys_n_proc : process (clk_main_i)
    begin
       if rising_edge(clk_main_i) then
-         case key_num is
-            when 73 => keys_n(0) <= key_status_n;     -- Cursor up
-            when  7 => keys_n(1) <= key_status_n;     -- Cursor down
-            when 74 => keys_n(2) <= key_status_n;     -- Cursor left
-            when  2 => keys_n(3) <= key_status_n;     -- Cursor right
-            when  1 => keys_n(4) <= key_status_n;     -- Return
-            when 60 => keys_n(5) <= key_status_n;     -- Space
-            when 63 => keys_n(6) <= key_status_n;     -- Run/Stop
-            when 67 => keys_n(7) <= key_status_n;     -- Help
-            when  4 => keys_n(8) <= key_status_n;     -- F1
-            when  5 => keys_n(9) <= key_status_n;     -- F3
+         case key_num_o is
+            when 73 => keys_n(0) <= key_pressed_n;     -- Cursor up
+            when  7 => keys_n(1) <= key_pressed_n;     -- Cursor down
+            when 74 => keys_n(2) <= key_pressed_n;     -- Cursor left
+            when  2 => keys_n(3) <= key_pressed_n;     -- Cursor right
+            when  1 => keys_n(4) <= key_pressed_n;     -- Return
+            when 60 => keys_n(5) <= key_pressed_n;     -- Space
+            when 63 => keys_n(6) <= key_pressed_n;     -- Run/Stop
+            when 67 => keys_n(7) <= key_pressed_n;     -- Help
+            when  4 => keys_n(8) <= key_pressed_n;     -- F1
+            when  5 => keys_n(9) <= key_pressed_n;     -- F3
             when others => null;
          end case;
       end if;
