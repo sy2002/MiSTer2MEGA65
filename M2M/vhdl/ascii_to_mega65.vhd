@@ -28,6 +28,7 @@ architecture synthesis of ascii_to_mega65 is
    constant C_F7_5          : std_logic_vector(5 * 8 - 1 downto 0) := X"1b_5b_31_38_7e";
    constant C_F9_5          : std_logic_vector(5 * 8 - 1 downto 0) := X"1b_5b_32_30_7e";
    constant C_F11_5         : std_logic_vector(5 * 8 - 1 downto 0) := X"1b_5b_32_33_7e";
+   constant C_F12_5         : std_logic_vector(5 * 8 - 1 downto 0) := X"1b_5b_32_34_7e";
    constant C_HOME_4        : std_logic_vector(4 * 8 - 1 downto 0) := X"1b_5b_31_7e";
    constant C_INSERT_4      : std_logic_vector(4 * 8 - 1 downto 0) := X"1b_5b_32_7e";
    constant C_DELETE_4      : std_logic_vector(4 * 8 - 1 downto 0) := X"1b_5b_33_7e";
@@ -156,6 +157,7 @@ begin
                when C_F7_5  => key_data_o <= C_M65_F7;
                when C_F9_5  => key_data_o <= C_M65_F9;
                when C_F11_5 => key_data_o <= C_M65_F11;
+               when C_F12_5 => key_data_o <= C_M65_HELP;
                when others =>
                   key_valid_o <= key_valid_o; -- Leave unchanged
             end case;
@@ -164,6 +166,7 @@ begin
             key_valid_o  <= '1';
             case uart_buf(4*8-1 downto 0) is
                when C_HOME_4  => key_data_o <= C_M65_CLR_HOME;
+               when C_END_4  => key_data_o <= C_M65_RESTORE;
 
                when others =>
                   key_valid_o <= key_valid_o; -- Leave unchanged
@@ -185,6 +188,7 @@ begin
                when C_LEFT_3  => key_data_o <= C_M65_LEFT_CRSR;
                when C_RIGHT_3 => key_data_o <= C_M65_HORZ_CRSR;
                when C_HOME_3  => key_data_o <= C_M65_CLR_HOME;
+               when C_END_3   => key_data_o <= C_M65_RESTORE;
                when others =>
                   key_valid_o <= key_valid_o; -- Leave unchanged
                   if uart_buf(uart_buf_len*8-1 downto uart_buf_len*8-8) = X"1b" and uart_buf(7 downto 0) /= X"7e" then

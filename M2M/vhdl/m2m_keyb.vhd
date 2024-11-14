@@ -126,7 +126,8 @@ begin
                   key_ready <= '1';
                end if;
             elsif key_valid = '1' then
-               key_timer <= clk_main_speed_i / 128; -- 8 ms
+               -- Simulate key pressed for a short while
+               key_timer <= clk_main_speed_i / 8; -- 125 ms
             end if;
          end if;
       end if;
