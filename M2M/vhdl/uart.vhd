@@ -106,7 +106,7 @@ begin
                -- Start bit detected
                if uart_rx_d = '0' then
                   -- Make sure we sample in the "middle" of each bit
-                  rx_counter <= clk_speed_i / 2;
+                  rx_counter <= clk_speed_i / 2 + G_BAUD_RATE;
                   rx_state   <= CHECK_START_ST;
                end if;
 
@@ -114,7 +114,7 @@ begin
                if rx_counter < clk_speed_i then
                   rx_counter <= rx_counter + G_BAUD_RATE;
                else
-                  rx_counter <= 0;
+                  rx_counter <= (rx_counter - clk_speed_i) + G_BAUD_RATE;
                   rx_data    <= uart_rx_d & rx_data(9 downto 1);
                   rx_state   <= BUSY_ST;
                end if;
@@ -127,7 +127,7 @@ begin
                if rx_counter < clk_speed_i then
                   rx_counter <= rx_counter + G_BAUD_RATE;
                else
-                  rx_counter <= 0;
+                  rx_counter <= (rx_counter - clk_speed_i) + G_BAUD_RATE;
                   rx_data    <= uart_rx_d & rx_data(9 downto 1);
                end if;
 
@@ -143,14 +143,12 @@ begin
             end if;
             rx_data    <= (others => '1');
             rx_state   <= IDLE_ST;
-            rx_counter <= 0;
          end if;
 
          if rst_i = '1' then
             rx_valid_o <= '0';
             rx_data    <= (others => '1');
             rx_state   <= IDLE_ST;
-            rx_counter <= 0;
          end if;
       end if;
    end process rx_proc;

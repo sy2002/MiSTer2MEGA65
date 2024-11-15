@@ -3,6 +3,15 @@ library ieee;
    use ieee.numeric_std_unsigned.all;
 
 -- Translates key codes from ASCII to MEGA65.
+--
+-- I'm using the same key mapping as the XEMU:
+-- https://github.com/MEGA65/mega65-user-guide/blob/master/images/xemu-extended-keyboard.png
+--
+-- In particular:
+-- CLR/HOME <-> Home
+-- RUN/STOP <-> End
+-- HELP     <-> Page Up
+-- RESTORE  <-> Page Down
 
 entity ascii_to_mega65 is
    port (
@@ -130,7 +139,7 @@ architecture synthesis of ascii_to_mega65 is
 
 begin
 
-   uart_rx_ready_o <= '1';
+   uart_rx_ready_o <= key_ready_i or not key_valid_o;
 
    uart_buf_proc : process (clk_i)
       variable uart_buf_hex_v : std_logic_vector(C_UART_BUF_SIZE * 16 - 1 downto 0);
@@ -140,7 +149,7 @@ begin
             key_valid_o <= '0';
          end if;
 
-         if uart_rx_valid_i = '1' then
+         if uart_rx_valid_i = '1' and uart_rx_ready_o = '1' then
             -- A byte is received, just shift it in.
             uart_buf <= uart_buf(uart_buf'left-8 downto 0) & uart_rx_data_i;
             if uart_buf_len < C_UART_BUF_SIZE then
@@ -157,7 +166,6 @@ begin
                when C_F7_5  => key_data_o <= C_M65_F7;
                when C_F9_5  => key_data_o <= C_M65_F9;
                when C_F11_5 => key_data_o <= C_M65_F11;
-               when C_F12_5 => key_data_o <= C_M65_HELP;
                when others =>
                   key_valid_o <= key_valid_o; -- Leave unchanged
             end case;
@@ -165,8 +173,10 @@ begin
             uart_buf_len <= 0;
             key_valid_o  <= '1';
             case uart_buf(4*8-1 downto 0) is
-               when C_HOME_4  => key_data_o <= C_M65_CLR_HOME;
-               when C_END_4  => key_data_o <= C_M65_RESTORE;
+               when C_PAGE_UP_4   => key_data_o <= C_M65_HELP;
+               when C_PAGE_DOWN_4 => key_data_o <= C_M65_RESTORE;
+               when C_HOME_4      => key_data_o <= C_M65_CLR_HOME;
+               when C_END_4       => key_data_o <= C_M65_RUN_STOP;
 
                when others =>
                   key_valid_o <= key_valid_o; -- Leave unchanged
@@ -188,7 +198,7 @@ begin
                when C_LEFT_3  => key_data_o <= C_M65_LEFT_CRSR;
                when C_RIGHT_3 => key_data_o <= C_M65_HORZ_CRSR;
                when C_HOME_3  => key_data_o <= C_M65_CLR_HOME;
-               when C_END_3   => key_data_o <= C_M65_RESTORE;
+               when C_END_3   => key_data_o <= C_M65_RUN_STOP;
                when others =>
                   key_valid_o <= key_valid_o; -- Leave unchanged
                   if uart_buf(uart_buf_len*8-1 downto uart_buf_len*8-8) = X"1b" and uart_buf(7 downto 0) /= X"7e" then
@@ -202,7 +212,6 @@ begin
             case character'val(to_integer(uart_buf(7 downto 0))) is
                when character'val( 9) => key_data_o <= C_M65_TAB;
                when character'val(13) => key_data_o <= C_M65_RETURN;
-               when character'val(26) => key_data_o <= C_M65_RUN_STOP; -- Pause/Break key
                when ' '       => key_data_o <= C_M65_SPACE;
                when '*'       => key_data_o <= C_M65_ASTERISK;
                when '+'       => key_data_o <= C_M65_PLUS;

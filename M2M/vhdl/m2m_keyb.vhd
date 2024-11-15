@@ -30,6 +30,7 @@ entity m2m_keyb is
    );
    port (
       clk_main_i       : in    std_logic;                     -- core clock
+      rst_main_i       : in    std_logic;
       clk_main_speed_i : in    natural;                       -- speed of core clock in Hz
 
       -- interface to the MEGA65 keyboard controller
@@ -68,70 +69,120 @@ architecture synthesis of m2m_keyb is
    signal uart_rx_valid : std_logic;
    signal uart_rx_data  : std_logic_vector(7 downto 0);
 
+   signal fifo_ready : std_logic;
+   signal fifo_valid : std_logic;
+   signal fifo_data  : std_logic_vector(7 downto 0);
+
    signal key_ready     : std_logic;
    signal key_valid     : std_logic;
    signal key_data      : natural range 0 to 79;
+   signal key_data_r    : natural range 0 to 79;
    signal key_timer     : natural range 0 to 100_000_000; -- Counts clock cycles
    signal key_pressed_n : std_logic;
 
+   type key_state_type is (IDLE_ST, KEY_PRESS_ST, KEY_RELEASE_ST);
+   signal key_state : key_state_type := IDLE_ST;
+
 begin
 
-   -- Read characters from UART (ASCII format)
-   uart_inst : entity work.uart
-      port map (
-         clk_speed_i => clk_main_speed_i,
-         clk_i       => clk_main_i,
-         rst_i       => '0',
-         tx_valid_i  => '0',
-         tx_ready_o  => open,
-         tx_data_i   => X"00",
-         rx_valid_o  => uart_rx_valid,
-         rx_ready_i  => uart_rx_ready,
-         rx_data_o   => uart_rx_data,
-         uart_tx_o   => open,
-         uart_rx_i   => uart_rx_i
-      ); -- uart_inst
+   use_uart_gen : if G_USE_UART generate
 
-   -- Convert ASCII codes to MEGA65 keyboard codes
-   ascii_to_mega65_inst : entity work.ascii_to_mega65
-      port map (
-         clk_i           => clk_main_i,
-         rst_i           => '0',
-         uart_rx_valid_i => uart_rx_valid,
-         uart_rx_ready_o => uart_rx_ready,
-         uart_rx_data_i  => uart_rx_data,
-         key_valid_o     => key_valid,
-         key_ready_i     => key_ready,
-         key_data_o      => key_data
-      ); -- ascii_to_mega65_inst
+      -- Read characters from UART (ASCII format)
+      uart_inst : entity work.uart
+         port map (
+            clk_speed_i => clk_main_speed_i,
+            clk_i       => clk_main_i,
+            rst_i       => rst_main_i,
+            tx_valid_i  => '0',
+            tx_ready_o  => open,
+            tx_data_i   => X"00",
+            rx_valid_o  => uart_rx_valid,
+            rx_ready_i  => uart_rx_ready,
+            rx_data_o   => uart_rx_data,
+            uart_tx_o   => open,
+            uart_rx_i   => uart_rx_i
+         ); -- uart_inst
+
+      axi_fifo_small_inst : entity work.axi_fifo_small
+         generic map (
+            G_RAM_WIDTH => 8,
+            G_RAM_DEPTH => 256
+         )
+         port map (
+            clk_i     => clk_main_i,
+            rst_i     => rst_main_i,
+            s_ready_o => uart_rx_ready,
+            s_valid_i => uart_rx_valid,
+            s_data_i  => uart_rx_data,
+            m_ready_i => fifo_ready,
+            m_valid_o => fifo_valid,
+            m_data_o  => fifo_data
+         ); -- axi_fifo_small_inst
+
+      -- Convert ASCII codes to MEGA65 keyboard codes
+      ascii_to_mega65_inst : entity work.ascii_to_mega65
+         port map (
+            clk_i           => clk_main_i,
+            rst_i           => rst_main_i,
+            uart_rx_valid_i => fifo_valid,
+            uart_rx_ready_o => fifo_ready,
+            uart_rx_data_i  => fifo_data,
+            key_valid_o     => key_valid,
+            key_ready_i     => key_ready,
+            key_data_o      => key_data
+         ); -- ascii_to_mega65_inst
+
+   end generate use_uart_gen;
 
    key_pressed_n_o <= key_pressed_n or not enable_core_i;
 
-   -- output the keyboard interface for the core
-   output_proc : process (clk_main_i)
+   key_ready <= '1' when key_state = IDLE_ST else '0';
+
+   uart_fsm_proc : process (clk_main_i)
    begin
       if rising_edge(clk_main_i) then
          key_num_o     <= key_num;
          key_pressed_n <= key_status_n;
 
          if G_USE_UART then
-            key_ready <= '0';
-            if key_timer > 0 then
-               key_timer <= key_timer - 1;
-               if key_num = key_data then
+            case key_state is
+               when IDLE_ST =>
+                  if key_valid = '1' then
+                     -- Store key
+                     key_data_r <= key_data;
+                     -- Simulate key pressed for a short while
+                     key_timer  <= clk_main_speed_i / 32; -- 32 ms
+                     key_state  <= KEY_PRESS_ST;
+                  end if;
+
+               when KEY_PRESS_ST =>
+                  if key_num = key_data_r then
                   -- Override with key from UART
                   key_pressed_n <= '0';
                end if;
-               if key_timer = 2 then
-                  key_ready <= '1';
-               end if;
-            elsif key_valid = '1' then
-               -- Simulate key pressed for a short while
-               key_timer <= clk_main_speed_i / 8; -- 125 ms
+                  if key_timer > 0 then
+                     key_timer <= key_timer - 1;
+                  else
+                     -- Simulate key released for a short while
+               key_timer <= clk_main_speed_i / 32; -- 32 ms
+                     key_state <= KEY_RELEASE_ST;
+                  end if;
+
+               when KEY_RELEASE_ST =>
+                  if key_timer > 0 then
+                     key_timer <= key_timer - 1;
+            else
+                     key_state <= IDLE_ST;
             end if;
+
+            end case;
+
+            if rst_main_i = '1' then
+               key_state <= IDLE_ST;
          end if;
       end if;
-   end process output_proc;
+      end if;
+   end process uart_fsm_proc;
 
    -- output the keyboard interface for QNICE
    qnice_keys_n_o  <= keys_n;
@@ -167,7 +218,7 @@ begin
       port map (
          clk                    => clk_main_i,
          clock_frequency        => clk_main_speed_i,
-         reset_in               => '0',
+         reset_in               => rst_main_i,
 
          matrix_col             => matrix_col,
          matrix_col_idx         => matrix_col_idx,

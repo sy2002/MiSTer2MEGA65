@@ -530,6 +530,7 @@ begin
       )
       port map (
          clk_main_i       => main_clk_i,
+         rst_main_i       => main_rst_i,
          clk_main_speed_i => CORE_CLK_SPEED,
 
          -- interface to the MEGA65 keyboard controller
