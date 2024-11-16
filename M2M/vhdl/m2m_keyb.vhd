@@ -53,7 +53,8 @@ entity m2m_keyb is
       drive_led_col_i  : in    std_logic_vector(23 downto 0); -- RGB color of drive led
 
       -- interface to QNICE: used by the firmware and the Shell (see sysdef.asm for details)
-      qnice_keys_n_o   : out   std_logic_vector(15 downto 0)
+      qnice_keys_n_o   : out   std_logic_vector(15 downto 0);
+      keys_read_i      : in    std_logic
    );
 end entity m2m_keyb;
 
@@ -157,30 +158,30 @@ begin
 
                when KEY_PRESS_ST =>
                   if key_num = key_data_r then
-                  -- Override with key from UART
-                  key_pressed_n <= '0';
-               end if;
+                     -- Override with key from UART
+                     key_pressed_n <= '0';
+                  end if;
                   if key_timer > 0 then
                      key_timer <= key_timer - 1;
-                  else
+                  elsif keys_read_i = '1' then -- Wait for QNICE to process key
                      -- Simulate key released for a short while
-               key_timer <= clk_main_speed_i / 32; -- 32 ms
+                     key_timer <= clk_main_speed_i / 32; -- 32 ms
                      key_state <= KEY_RELEASE_ST;
                   end if;
 
                when KEY_RELEASE_ST =>
                   if key_timer > 0 then
                      key_timer <= key_timer - 1;
-            else
+                  elsif keys_read_i = '1' then -- Wait for QNICE to process key
                      key_state <= IDLE_ST;
-            end if;
+                  end if;
 
             end case;
 
             if rst_main_i = '1' then
                key_state <= IDLE_ST;
+            end if;
          end if;
-      end if;
       end if;
    end process uart_fsm_proc;
 

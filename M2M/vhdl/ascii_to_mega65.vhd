@@ -136,15 +136,19 @@ architecture synthesis of ascii_to_mega65 is
 
    signal   uart_buf     : std_logic_vector(C_UART_BUF_SIZE * 8 - 1 downto 0);
    signal   uart_buf_len : natural range 0 to C_UART_BUF_SIZE;
+   signal   uart_buf_en  : std_logic;
 
 begin
 
-   uart_rx_ready_o <= key_ready_i or not key_valid_o;
+   uart_rx_ready_o <= (key_ready_i or not key_valid_o) and uart_buf_en;
 
    uart_buf_proc : process (clk_i)
       variable uart_buf_hex_v : std_logic_vector(C_UART_BUF_SIZE * 16 - 1 downto 0);
    begin
       if rising_edge(clk_i) then
+         -- Only check input every other clock cycle
+         uart_buf_en <= not uart_buf_en;
+
          if key_ready_i = '1' then
             key_valid_o <= '0';
          end if;

@@ -64,6 +64,7 @@ port (
 
    -- Keyboard input for the firmware and Shell (see sysdef.asm)
    keys_n_i             : in std_logic_vector(15 downto 0);
+   keys_read_o          : out std_logic;
 
    -- 256-bit general purpose control (output) flags
    -- "d" = directly controled by the firmware
@@ -198,6 +199,7 @@ signal general_en                : std_logic;                        -- $FFE5 (r
 signal general_data_out          : std_logic_vector(15 downto 0);
 signal ascal_mode_data_out       : std_logic_vector(15 downto 0);
 signal keys_en                   : std_logic;                        -- $FFE8
+signal keys_en_d                 : std_logic;                        -- $FFE8
 signal keys_data_out             : std_logic_vector(15 downto 0);
 signal cfd_addr_en               : std_logic;                        -- $FFF0
 signal cfd_addr_we               : std_logic;
@@ -643,6 +645,10 @@ begin
             if ramrom_4kwin_we then
                reg_ramrom_4kwin <= to_integer(unsigned(cpu_data_out));
             end if;
+
+            -- Detect rising edge of "keys_en"
+            keys_read_o <= keys_en and not keys_en_d;
+            keys_en_d   <= keys_en;
          end if;
       end if;
    end process;

@@ -87,6 +87,7 @@ entity qnice_wrapper is
 
       -- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
       qnice_qnice_keys_n_i      : in    std_logic_vector(15 downto 0);
+      qnice_keys_read_o         : out   std_logic;
 
       qnice_pot1_x_n_o          : out   unsigned(7 downto 0);
       qnice_pot1_y_n_o          : out   unsigned(7 downto 0);
@@ -233,6 +234,7 @@ begin
 
          -- Keyboard input for the firmware and Shell (see sysdef.asm)
          keys_n_i       => qnice_qnice_keys_n_i,
+         keys_read_o    => qnice_keys_read_o,
 
          -- 256-bit General purpose control flags
          -- "d" = directly controled by the firmware

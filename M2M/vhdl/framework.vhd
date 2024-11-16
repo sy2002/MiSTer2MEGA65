@@ -287,6 +287,7 @@ architecture synthesis of framework is
 
    -- keyboard handling
    signal   main_qnice_keys_n : std_logic_vector(15 downto 0);
+   signal   main_keys_read    : std_logic;
 
    --- control signals from QNICE in main's clock domain
    signal   main_flip_joyports : std_logic;
@@ -338,6 +339,7 @@ architecture synthesis of framework is
 
    -- m2m_keyb output for the firmware and the Shell; see also sysdef.asm
    signal   qnice_qnice_keys_n : std_logic_vector(15 downto 0);
+   signal   qnice_keys_read    : std_logic;
 
    -- Paddles in 50 MHz clock domain which happens to be QNICE's
    signal   qnice_pot1_x_n : unsigned(7 downto 0);
@@ -553,7 +555,8 @@ begin
          drive_led_col_i  => main_drive_led_col_i,
 
          -- interface to QNICE: used by the firmware and the Shell
-         qnice_keys_n_o   => main_qnice_keys_n
+         qnice_keys_n_o   => main_qnice_keys_n,
+         keys_read_i      => main_keys_read
       ); -- m2m_keyb_inst
 
    ---------------------------------------------------------------------------------------------------------------
@@ -612,6 +615,7 @@ begin
          qnice_vram_we_o           => qnice_vram_we,
          qnice_vram_attr_we_o      => qnice_vram_attr_we,
          qnice_qnice_keys_n_i      => qnice_qnice_keys_n,
+         qnice_keys_read_o         => qnice_keys_read,
          qnice_pot1_x_n_o          => qnice_pot1_x_n,
          qnice_pot1_y_n_o          => qnice_pot1_y_n,
          qnice_pot2_x_n_o          => qnice_pot2_x_n,
@@ -732,6 +736,14 @@ begin
          dest_clk               => qnice_clk,
          dest_out(15 downto  0) => qnice_qnice_keys_n
       ); -- main2qnice_inst
+
+   qnice2main_pulse_inst : entity work.cdc_pulse
+      port map (
+         src_clk_i   => qnice_clk,
+         src_pulse_i => qnice_keys_read,
+         dst_clk_i   => main_clk_i,
+         dst_pulse_o => main_keys_read
+      ); -- main2audio_inst
 
    -- Clock domain crossing: CORE to AUDIO
    main2audio_inst : entity work.cdc_stable
