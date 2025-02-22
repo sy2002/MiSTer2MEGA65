@@ -1,3 +1,24 @@
+Version 2.0.1 - February 22, 2025
+=================================
+
+Bug fixes
+---------
+
+* Fixed the "jail bar" aka "bar code" HDMI issue that is technically a
+  HyperRAM issue. All cores based on V2.0.0 were affected; mostly on R6
+  devices but there is at least one known R3 occurance.
+
+  If you want to learn more about the phenomenon and the fix, then look at
+  this issue for the R6: https://github.com/MJoergen/C64MEGA65/issues/145
+  And at this for the R3: https://github.com/MJoergen/C64MEGA65/issues/166
+
+* R6 only: Joysticks in port #2 did not work. Due to a bug in the R5/R6
+  boards, the cartridge port needs to be enabled for joystick port 2 to work.
+  Special thanks to rjaremczak for this fix.
+
+* R3 only: Corrected constraint for p1hi_io[0] (cartridge port)
+
+
 Version 2.0.0 - June 28, 2024
 =============================
 
