@@ -1061,6 +1061,12 @@ _HDR_SEND_DONE  MOVE    R11, R8                 ; virtual drive ID
                 XOR     R10, R10
                 RSUB    VD_DRV_WRITE, 1
 
+                ; unassert write enable.
+                ; we don't want it active when reading from the disk later!
+                MOVE    VD_B_WREN, R8           ; unassert write enable
+                XOR     R9, R9                  ; make zero
+                RSUB    VD_CAD_WRITE, 1
+
                 SYSCALL(leave, 1)
                 RET
 
