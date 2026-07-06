@@ -655,12 +655,24 @@ the current framework; updating the **rest** of the Wiki is still a future task.
   still files them under its "Deprecated Reference Guide" — trust the tiering.)
 - **Corrected to match the current framework:** `1.-What-is-MiSTer2MEGA65.md`, `2.-First-Steps.md`, and
   `3.-"Hello-World"-Tutorial.md` (the filename literally embeds quotes) — the three intro/tutorial pages were
-  re-synced to the current sources: board support is R3/R3A/R4/R5/R6 (the "R2 planned" claim is gone); the
-  board tops and constraints are framework-owned (`M2M/vhdl/top_mega65-rX.vhd`, `M2M/MEGA65-RX.xdc` +
-  `M2M/common.xdc`, top entity `mega65_rX`, bitstream `mega65_r3.bit`); the top instantiates `i_framework`
-  and `CORE` **side by side** (there is no wrapping `M2M` module); and tutorial 3 now tracks the 35-item
-  template menu in `config.vhd` (`OPTM_SIZE` 35, the `C_MENU_*` indices in `mega65.vhd`, and the
-  `clk_main_speed_i` port on `entity main`). The embedded **screenshots** may still show older labels.
+  audited end-to-end (facts, links, images) and re-synced to the current sources:
+  - **Facts:** board support is R3/R3A/R4/R5/R6 (the "R2 planned" claim is gone); the board tops and
+    constraints are framework-owned (`M2M/vhdl/top_mega65-rX.vhd`, `M2M/MEGA65-RX.xdc` + `M2M/common.xdc`,
+    top entity `mega65_rX`, bitstream `mega65_r3.bit`); the top instantiates `i_framework` and `CORE`
+    **side by side** (there is no wrapping `M2M` / `m2m.vhd` module); tutorial 3 tracks the 35-item template
+    menu in `config.vhd` (`OPTM_SIZE` 35, `C_MENU_*` in `mega65.vhd`, the `clk_main_speed_i` port on
+    `entity main`); and packaging a `.cor` now uses **`coretool`** (the modern replacement for `bit2core`,
+    which is documented as the legacy equivalent).
+  - **Links:** dead/stale links fixed — mega65-tools binaries now come from the **MEGA65 Filehost**
+    (`files.mega65.org`; the old `releases/tag/CI-latest` 404s), the README link targets the repo root
+    (default branch is `development`; `master` is gone), and Vivado downloads from **AMD** (the `xilinx.com`
+    URL 301-redirects). The YouTube / Trenz / C64 `#some-demo-pictures` links were verified live.
+  - **Images:** the two structural graphics (`firststeps-structure.png`, `firststeps-layout.png`) were
+    **factually wrong** — they drew a phantom `M2M : m2m (m2m.vhd)` wrapper and the old `CORE_R3` top — and
+    were replaced with **Mermaid** diagrams (GitHub wikis render Mermaid). The remaining screenshots
+    (`firststeps-intro.png`, `template.jpg`, `osm_i.png`) are current; `osm_i.png` already shows the
+    `clk_main_speed_i` port. **Still `bit2core`, not audited here:** the release page
+    `How-to-release-...` and the big `The-Ultimate-...Porting-Guide.md`.
 - **Known-wrong — do not use for the current architecture:**
   - `Architecture.md` is a `@TODO` stub describing an **unbuilt** HAL design (`hal_mega65_rX.vhd`) — those
     files do not exist; the real hierarchy is `framework.vhd` + `top_mega65-r{3..6}.vhd`.
