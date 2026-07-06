@@ -1,6 +1,14 @@
 Version 2.1.0 - MONTH DAY, YEAR
 ===============================
 
+Improvements
+------------
+
+* Heavily improved documentation: Wiki and "The Ultimate Porting Guide"
+
+Bug fixes
+---------
+
 WIP
 
 Version 2.0.1 - February 22, 2025
