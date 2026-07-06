@@ -6,6 +6,8 @@ Improvements
 
 * Heavily improved documentation: Wiki and "The Ultimate Porting Guide"
 
+* Support for AI coding assistants: Added AGENTS.md and CLAUDE.md
+
 Bug fixes
 ---------
 
