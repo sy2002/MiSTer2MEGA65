@@ -1,3 +1,32 @@
+> # 🛑 AI CODING ASSISTANTS — READ THIS BEFORE ANYTHING ELSE
+>
+> **This `AGENTS.md` (and `CLAUDE.md`) describe the MiSTer2MEGA65 _framework_ — its internals,
+> written for people improving the framework itself. If you are instead helping someone build
+> _their own core_ from this template, this guide is WRONG for that job and must be replaced.**
+>
+> **Step 1 — determine which repository you are in. Run:**
+> `git remote get-url origin`
+>
+> - Output contains **`sy2002/MiSTer2MEGA65`** → you are in the **upstream framework**. This file
+>   is correct here. Ignore this banner and continue to the guide below.
+> - **Anything else** — a different repo, a fork, or no remote at all → you are almost certainly in
+>   a **downstream core** that was cloned from the template but never customised. **STOP and do this
+>   before any other work:**
+>   1. **Warn the user, prominently and unmistakably:** their `AGENTS.md` and `CLAUDE.md` are still
+>      the MiSTer2MEGA65 _framework's_ own guide. Those files describe framework internals, not the
+>      user's core, and will actively mislead every AI assistant used in this repo. They must be
+>      replaced.
+>   2. **Do NOT treat the guide below as a description of the user's core.** It is about developing
+>      the framework, which is not what the user is doing.
+>   3. **Offer to write a replacement** `AGENTS.md` that describes the user's core (keep `CLAUDE.md`
+>      importing it via `@AGENTS.md`). The reference cores did exactly this — e.g. the C64 core ships
+>      its own `AGENTS.md`. Section 4.10 below describes the porter journey worth capturing in it.
+>
+> _Framework maintainers: this banner is self-gating on the git remote, so it stays out of your way.
+> It exists only to protect porters who forgot to replace this file._
+
+---
+
 # MiSTer2MEGA65 — Framework Project Guide for Coding Agents
 
 This is the cold-start brief for coding agents working **on the MiSTer2MEGA65 (M2M)
@@ -645,17 +674,17 @@ already in `M2M/`; grep before claiming (only the QNICE bump has landed):
 ## 10. The Wiki (`../MiSTer2MEGA65.wiki/`) — status
 
 The Wiki is a **separate repo**; parts are outdated. **Trust `Home.md`'s tiering, and the actual source
-code, over any individual page.** The three intro/tutorial pages (see below) have been corrected to match
-the current framework; updating the **rest** of the Wiki is still a future task.
+code, over any individual page.** The three intro/tutorial pages (see below) are now up to date with the
+current framework; updating the **rest** of the Wiki is still a future task.
 
 - **Canonical (2026-dated):** `The-Ultimate-MiSTer2MEGA65-Porting-Guide.md` (the new main reference, uses
   C64MEGA65 as running example), `Home.md`, and the topic pages Home.md lists as current
   (`On-Screen-Menu-(OSM).md`, `Welcome and Help Screens.md`, `config.vhd-Switches-and-Settings.md`,
   `make_release.py.md`). (`Devices.md` and `Video-pipeline-and-output.md` were edited in 2026 but `Home.md`
   still files them under its "Deprecated Reference Guide" — trust the tiering.)
-- **Corrected to match the current framework:** `1.-What-is-MiSTer2MEGA65.md`, `2.-First-Steps.md`, and
-  `3.-"Hello-World"-Tutorial.md` (the filename literally embeds quotes) — the three intro/tutorial pages were
-  audited end-to-end (facts, links, images) and re-synced to the current sources:
+- **Up to date (2026) — verified against the current framework:** `1.-What-is-MiSTer2MEGA65.md`,
+  `2.-First-Steps.md`, and `3.-"Hello-World"-Tutorial.md` (the filename literally embeds quotes) — the three
+  intro/tutorial pages are current on facts, links, and images:
   - **Facts:** board support is R3/R3A/R4/R5/R6 (the "R2 planned" claim is gone); the board tops and
     constraints are framework-owned (`M2M/vhdl/top_mega65-rX.vhd`, `M2M/MEGA65-RX.xdc` + `M2M/common.xdc`,
     top entity `mega65_rX`, bitstream `mega65_r3.bit`); the top instantiates `i_framework` and `CORE`
