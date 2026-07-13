@@ -56,7 +56,13 @@ architecture synthesis of avm_increase is
 
 begin
 
-  s_avm_waitrequest_o   <= '0' when (state = IDLE_ST or state = WRITING_ST) and
+  -- A read presented in WRITING_ST is NOT accepted (see the abort-drain in
+  -- the FSM): without this term it was silently dropped — no conformant
+  -- master interleaves a read into its own write burst, but an aborted
+  -- upstream (reset race, decouple chop) can leave this converter holding
+  -- burst debt that the next master's read then runs into.
+  s_avm_waitrequest_o   <= '1' when state = WRITING_ST and s_avm_read_i = '1' else
+                           '0' when (state = IDLE_ST or state = WRITING_ST) and
                            (m_avm_write_o = '0' or m_avm_waitrequest_i = '0') else
                            '1';
 
@@ -142,6 +148,26 @@ begin
                 m_avm_byteenable_o(G_SLAVE_DATA_SIZE / 8 * (i + 1) - 1 downto G_SLAVE_DATA_SIZE / 8 * i) <= s_avm_byteenable_i;
               end if;
             end loop;
+
+            if s_burstcount = 1 then
+              m_avm_write_o <= '1';
+              state         <= IDLE_ST;
+            end if;
+          elsif s_avm_read_i = '1' and s_burstcount > 0 and
+                (m_avm_write_o = '0' or m_avm_waitrequest_i = '0') then
+            -- Abort-drain: the writer of this burst died (it will never
+            -- deliver the remaining beats), so self-complete the announced
+            -- master burst with dummy beats — byteenable lanes stay 0, so
+            -- memory content is untouched.  The read is held off by
+            -- waitrequest above and gets accepted normally in IDLE_ST.
+            -- A plain read-stall would deadlock instead: nobody else
+            -- generates the drain beats.
+            s_burstcount <= s_burstcount - 1;
+            offset       <= offset + 1;
+
+            if offset = C_RATIO - 1 then
+              m_avm_write_o <= '1';
+            end if;
 
             if s_burstcount = 1 then
               m_avm_write_o <= '1';
