@@ -21,9 +21,7 @@ use xpm.vcomponents.all;
 
 entity framework is
 generic (
-   G_BOARD : string;                                        -- Which platform are we running on.
-   -- Optional analog VGA Standard-mode sync reshaping.
-   G_VGA_STD_SYNC : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF
+   G_BOARD : string                                         -- Which platform are we running on.
 );
 port (
    clk_i                   : in    std_logic;                  -- 100 MHz clock
@@ -872,7 +870,7 @@ begin
          G_FONT_FILE             => FONT_FILE,
          G_FONT_DX               => FONT_DX,
          G_FONT_DY               => FONT_DY,
-         G_VGA_STD_SYNC          => G_VGA_STD_SYNC
+         G_VGA_STD_SYNC          => VGA_STD_SYNC
       )
       port map (
          -- Input from Core

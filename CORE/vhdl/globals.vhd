@@ -59,6 +59,15 @@ constant QNICE_CLK_SPEED      : natural := 50_000_000;   -- a change here has de
 constant VGA_DX               : natural := 720;
 constant VGA_DY               : natural := 576;
 
+-- Optional analog VGA Standard-mode sync reshaping.
+-- Keep this OFF unless the core's scandoubled timing needs different sync
+-- pulse widths or polarities for reliable PC-VGA monitor classification.
+-- Example using the canonical 640x480@60 pulse profile when video_clk equals
+-- CORE_CLK_SPEED:
+-- constant VGA_STD_SYNC : vga_sync_reshaper_cfg_t :=
+--    make_vga_sync_reshaper_cfg(C_VGA_SYNC_DMT_640X480_60, CORE_CLK_SPEED);
+constant VGA_STD_SYNC         : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF;
+
 --    FONT_*  size of one OSM character
 constant FONT_FILE            : string  := "../font/Anikki-16x16-m2m.rom";
 constant FONT_DX              : natural := 16;
@@ -177,4 +186,3 @@ constant audio_att      : std_logic_vector( 4 downto 0) := "00000";
 constant audio_mix      : std_logic_vector( 1 downto 0) := "00"; -- 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
 
 end package globals;
-

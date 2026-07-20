@@ -211,6 +211,48 @@ package video_modes_pkg is
       VSYNC_POLARITY    => '1'
    );
 
+   -- A pulse-only preset describes the physical HS duration through a
+   -- reference pixel clock and width. It does not describe or alter the
+   -- active geometry, line period or frame period of the core's raster.
+   type vga_sync_preset_t is record
+      PIXEL_CLOCK_KHZ    : positive;
+      HSYNC_WIDTH_PIXELS : positive;
+      VSYNC_WIDTH_LINES : positive;
+      HSYNC_POLARITY    : std_logic;
+      VSYNC_POLARITY    : std_logic;
+   end record vga_sync_preset_t;
+
+   -- Common VESA DMT pulse profiles. make_vga_sync_reshaper_cfg converts the
+   -- reference HS duration to the number of clocks in the core's video_clk.
+   constant C_VGA_SYNC_DMT_640X480_60 : vga_sync_preset_t := (
+      PIXEL_CLOCK_KHZ    => 25_175,
+      HSYNC_WIDTH_PIXELS => 96,
+      VSYNC_WIDTH_LINES  => 2,
+      HSYNC_POLARITY     => '0',
+      VSYNC_POLARITY     => '0'
+   );
+
+   constant C_VGA_SYNC_DMT_800X600_60 : vga_sync_preset_t := (
+      PIXEL_CLOCK_KHZ    => 40_000,
+      HSYNC_WIDTH_PIXELS => 128,
+      VSYNC_WIDTH_LINES  => 4,
+      HSYNC_POLARITY     => '1',
+      VSYNC_POLARITY     => '1'
+   );
+
+   constant C_VGA_SYNC_DMT_1024X768_60 : vga_sync_preset_t := (
+      PIXEL_CLOCK_KHZ    => 65_000,
+      HSYNC_WIDTH_PIXELS => 136,
+      VSYNC_WIDTH_LINES  => 6,
+      HSYNC_POLARITY     => '0',
+      VSYNC_POLARITY     => '0'
+   );
+
+   pure function make_vga_sync_reshaper_cfg (
+      preset       : vga_sync_preset_t;
+      video_clk_hz : positive
+   ) return vga_sync_reshaper_cfg_t;
+
    type video_mode_type is (
       C_VIDEO_HDMI_16_9_50  ,  -- HDMI 1280x720    @ 50 Hz
       C_VIDEO_HDMI_16_9_60  ,  -- HDMI 1280x720    @ 60 Hz
@@ -228,6 +270,31 @@ package video_modes_pkg is
 end package video_modes_pkg;
 
 package body video_modes_pkg is
+
+   pure function make_vga_sync_reshaper_cfg (
+      preset       : vga_sync_preset_t;
+      video_clk_hz : positive
+   ) return vga_sync_reshaper_cfg_t is
+      variable hsync_width_clks : natural;
+   begin
+      -- Dividing Hz to kHz first keeps the multiplication in a synthesis-safe
+      -- integer range. The sub-kHz truncation is far below one output clock.
+      hsync_width_clks := (((video_clk_hz / 1_000) * preset.HSYNC_WIDTH_PIXELS) +
+                            (preset.PIXEL_CLOCK_KHZ / 2)) /
+                           preset.PIXEL_CLOCK_KHZ;
+
+      assert hsync_width_clks > 0
+         report "make_vga_sync_reshaper_cfg: video clock is too slow for preset"
+         severity failure;
+
+      return (
+         ENABLED           => true,
+         HSYNC_WIDTH_CLKS  => hsync_width_clks,
+         VSYNC_WIDTH_LINES => preset.VSYNC_WIDTH_LINES,
+         HSYNC_POLARITY    => preset.HSYNC_POLARITY,
+         VSYNC_POLARITY    => preset.VSYNC_POLARITY
+      );
+   end function make_vga_sync_reshaper_cfg;
 
    pure function video_mode_to_slv(video_mode : video_mode_type) return std_logic_vector is
    begin

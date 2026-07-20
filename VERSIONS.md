@@ -9,8 +9,10 @@ Improvements
 * Support for AI coding assistants: Added AGENTS.md and CLAUDE.md
 
 * Added an optional, core-configurable sync-pulse reshaper for analog VGA
-  Standard mode. It defaults to an exact wire-through, so existing cores keep
-  their original analog video behavior.
+  Standard mode. Core porters configure it in `CORE/vhdl/globals.vhd`; the
+  stock profile is an exact wire-through, preserving existing analog behavior.
+  Common VESA DMT pulse presets are provided and converted to each core's
+  video-clock frequency at elaboration time.
 
 Bug fixes
 ---------

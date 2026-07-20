@@ -279,7 +279,11 @@ clock-enables (in the core's `video_clk` domain) and signed 16-bit stereo PCM (a
   disabled here), OSM overlay, optional composite sync; RGB forced to 0 during blanking (MEGA65
   VDAC requirement); output registers clock on `falling_edge(video_clk)` for a clean sample. The
   optional `vga_sync_reshaper.vhd` can replace only the Standard-mode HS/VS pulse widths and
-  polarities after the analog/digital split; its record-valued generic defaults to an exact bypass.
+  polarities after the analog/digital split. Core porters select its record-valued
+  `VGA_STD_SYNC` profile in `CORE/vhdl/globals.vhd`; the stock value is an exact bypass.
+  `video_modes_pkg.vhd` provides common VESA DMT pulse presets and
+  `make_vga_sync_reshaper_cfg`, which converts their physical HS duration to the core's
+  `video_clk` frequency. These presets never change raster geometry or frame timing.
 - **Digital HDMI** (`digital_pipeline.vhd`): `crop` (optional zoom) → **`ascal.vhd`** (temlib
   polyphase scaler, ~2900 lines — don't edit) which writes input frames into **HyperRAM** and
   reads them out at the chosen fixed HDMI mode → OSM overlay → `vga_to_hdmi` (Tyto2) → TMDS
