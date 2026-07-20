@@ -277,7 +277,9 @@ clock-enables (in the core's `video_clk` domain) and signed 16-bit stereo PCM (a
 
 - **Analog VGA** (`analog_pipeline.vhd`): optional MiSTer **scandoubler** (`hq2x` and gamma are
   disabled here), OSM overlay, optional composite sync; RGB forced to 0 during blanking (MEGA65
-  VDAC requirement); output registers clock on `falling_edge(video_clk)` for a clean sample.
+  VDAC requirement); output registers clock on `falling_edge(video_clk)` for a clean sample. The
+  optional `vga_sync_reshaper.vhd` can replace only the Standard-mode HS/VS pulse widths and
+  polarities after the analog/digital split; its record-valued generic defaults to an exact bypass.
 - **Digital HDMI** (`digital_pipeline.vhd`): `crop` (optional zoom) → **`ascal.vhd`** (temlib
   polyphase scaler, ~2900 lines — don't edit) which writes input frames into **HyperRAM** and
   reads them out at the chosen fixed HDMI mode → OSM overlay → `vga_to_hdmi` (Tyto2) → TMDS
@@ -750,7 +752,7 @@ core; `keyboard.vhd`'s "bit 0=Space, 1=Return, 2=Run/Stop" comment is stale (the
 | QNICE hardware / MMIO map | `M2M/vhdl/QNICE/{qnice,qnice_mmio,qnice_globals}.vhd`, `M2M/rom/sysdef.asm` |
 | QNICE↔framework devices | `M2M/vhdl/qnice_wrapper.vhd` (device-id decode), `qnice2hyperram.vhd`, `sdmux.vhd` |
 | HDMI tearing / flicker-free | `M2M/vhdl/hdmi_flicker_free.vhd`, `av_pipeline/digital_pipeline.vhd`, `ascal.vhd`, `controllers/HDMI/video_out_clock.vhd` |
-| VGA / scandoubler / CSYNC | `av_pipeline/analog_pipeline.vhd`, `controllers/MiSTer/{scandoubler.v,csync.sv,video_mixer.sv}` |
+| VGA / scandoubler / CSYNC | `av_pipeline/{analog_pipeline,vga_sync_reshaper}.vhd`, `controllers/MiSTer/{scandoubler.v,csync.sv,video_mixer.sv}` |
 | OSM rendering / scaling | `av_pipeline/{video_overlay,vga_osm,vga_recover_counters}.vhd`, `M2M/font/` |
 | Video modes / resolutions | `av_pipeline/video_modes_pkg.vhd`, `framework.vhd` (VIDEO_MODE_VECTOR) |
 | Audio | `av_pipeline/audio_out.v`, `globals.vhd` (filter coeffs), `controllers/M65/{audio.vhd,pcm_to_pdm.vhdl}` |

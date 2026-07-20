@@ -10,13 +10,18 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.video_modes_pkg.all;
+
 entity analog_pipeline is
    generic (
       G_VGA_DX                : natural;                 -- Actual format of video from Core (in pixels).
       G_VGA_DY                : natural;
       G_FONT_FILE             : string;
       G_FONT_DX               : natural;
-      G_FONT_DY               : natural
+      G_FONT_DY               : natural;
+      -- Optional sync-pulse reshaping for analog VGA Standard mode.
+      G_VGA_STD_SYNC          : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF
    );
    port (
       -- Input from Core (video and audio)
@@ -92,6 +97,9 @@ architecture synthesis of analog_pipeline is
    signal vga_hs_ps          : std_logic;
    signal vga_vs_ps          : std_logic;
    signal vga_cs_ps          : std_logic;
+   signal vga_hs_reshaped    : std_logic;
+   signal vga_vs_reshaped    : std_logic;
+   signal sync_reshape_en    : std_logic;
 
    component video_mixer is
       port (
@@ -213,6 +221,26 @@ begin
          csync => vga_cs_ps
       ); -- i_csync
 
+   -- This is deliberately downstream of the analog/digital split and the
+   -- analog OSM. HDMI therefore continues to receive the original core syncs.
+   -- Retro 15 kHz and composite-sync modes select the module's wire-through
+   -- path and retain the existing signals without another register stage.
+   sync_reshape_en <= video_scandoubler_i and not video_retro15kHz_i and not video_csync_i;
+
+   i_vga_sync_reshaper : entity work.vga_sync_reshaper
+      generic map (
+         G_CONFIG => G_VGA_STD_SYNC
+      )
+      port map (
+         clk_i    => video_clk_i,
+         rst_i    => video_rst_i,
+         enable_i => sync_reshape_en,
+         hs_i     => vga_hs_ps,
+         vs_i     => vga_vs_ps,
+         hs_o     => vga_hs_reshaped,
+         vs_o     => vga_vs_reshaped
+      ); -- i_vga_sync_reshaper
+
    -- We need to phase-shift the output signal so that the VDAC can sample a nice and steady signal.
    -- We also need to make sure that not only the RGB signals are phase-shifted, but also the
    -- HS and VS signals, otherwise on real analog VGA screens there might be undesired effects.
@@ -232,8 +260,8 @@ begin
             -- connector, see: https://en.wikipedia.org/wiki/VGA_connector
             -- Composite sync output that is compatible with the MiSTer VGA to SCART adaptor needs
             -- the composite sync signal on pin 13 and HIGH on pin 14, see: https://misterfpga.org/viewtopic.php?t=1811
-            vga_hs_o    <= vga_hs_ps when not video_csync_i else not vga_cs_ps;
-            vga_vs_o    <= vga_vs_ps when not video_csync_i else '1';
+            vga_hs_o    <= vga_hs_reshaped when not video_csync_i else not vga_cs_ps;
+            vga_vs_o    <= vga_vs_reshaped when not video_csync_i else '1';
          end if;
       end process;
    end block VGA_OUT_PHASE_SHIFTED;
@@ -250,4 +278,3 @@ begin
    vdac_clk_o    <= video_clk_i;
 
 end architecture synthesis;
-

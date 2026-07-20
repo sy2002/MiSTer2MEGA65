@@ -15,6 +15,9 @@ library work;
 use work.video_modes_pkg.all;
 
 entity mega65_r5 is
+generic (
+   G_VGA_STD_SYNC : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF
+);
 port (
    -- Onboard crystal oscillator = 100 MHz
    clk_i                   : in    std_logic;
@@ -573,7 +576,8 @@ begin
 
    i_framework : entity work.framework
    generic map (
-      G_BOARD => "MEGA65_R5"
+      G_BOARD        => "MEGA65_R5",
+      G_VGA_STD_SYNC => G_VGA_STD_SYNC
    )
    port map (
       -- Connect to I/O ports
@@ -965,4 +969,3 @@ begin
       ); -- CORE
 
 end architecture synthesis;
-

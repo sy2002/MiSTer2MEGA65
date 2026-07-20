@@ -187,6 +187,30 @@ package video_modes_pkg is
 
    type video_modes_vector is array(natural range<>) of video_modes_t;
 
+   --------------------------------------------------------
+   -- Analog VGA sync reshaper
+   --------------------------------------------------------
+
+   -- The source syncs at the M2M core-video boundary are active-high.  When
+   -- enabled, the reshaper preserves their leading edges and the complete
+   -- raster period, but replaces the pulse widths and output polarities.
+   type vga_sync_reshaper_cfg_t is record
+      ENABLED           : boolean;
+      HSYNC_WIDTH_CLKS  : natural;
+      VSYNC_WIDTH_LINES : natural;
+      HSYNC_POLARITY    : std_logic;
+      VSYNC_POLARITY    : std_logic;
+   end record vga_sync_reshaper_cfg_t;
+
+   -- Backward-compatible default: no logic and an exact sync wire-through.
+   constant C_VGA_SYNC_RESHAPER_OFF : vga_sync_reshaper_cfg_t := (
+      ENABLED           => false,
+      HSYNC_WIDTH_CLKS  => 0,
+      VSYNC_WIDTH_LINES => 0,
+      HSYNC_POLARITY    => '1',
+      VSYNC_POLARITY    => '1'
+   );
+
    type video_mode_type is (
       C_VIDEO_HDMI_16_9_50  ,  -- HDMI 1280x720    @ 50 Hz
       C_VIDEO_HDMI_16_9_60  ,  -- HDMI 1280x720    @ 60 Hz
@@ -233,4 +257,3 @@ package body video_modes_pkg is
    end function slv_to_video_mode;
 
 end package body video_modes_pkg;
-

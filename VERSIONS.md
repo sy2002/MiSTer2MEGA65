@@ -8,6 +8,10 @@ Improvements
 
 * Support for AI coding assistants: Added AGENTS.md and CLAUDE.md
 
+* Added an optional, core-configurable sync-pulse reshaper for analog VGA
+  Standard mode. It defaults to an exact wire-through, so existing cores keep
+  their original analog video behavior.
+
 Bug fixes
 ---------
 
