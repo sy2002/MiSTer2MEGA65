@@ -364,6 +364,11 @@ set_property -dict {PULLUP FALSE  SLEW FAST  DRIVE 16}    [get_ports {sdram_*}];
 ## PLACEMENT CONSTRAINTS
 ################################
 
+# Place HyperRAM close to I/O pins
+create_pblock pblock_i_hyperram
+add_cells_to_pblock pblock_i_hyperram [get_cells [list i_framework/i_hyperram]]
+resize_pblock pblock_i_hyperram -add {SLICE_X0Y200:SLICE_X7Y224}
+
 # Place Keyboard close to I/O pins
 create_pblock pblock_m65driver
 add_cells_to_pblock pblock_m65driver [get_cells [list i_framework/i_m2m_keyb/m65driver]]

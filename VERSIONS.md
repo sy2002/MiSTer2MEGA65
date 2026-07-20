@@ -23,7 +23,9 @@ Improvements
 Bug fixes
 ---------
 
-WIP
+* Restored the HyperRAM controller placement pblock on R3, R4, R5 and R6.
+  Keeping the receive FIFO close to the fixed HyperRAM I/O bank ensures that
+  the IDDR-to-FIFO paths reliably meet their deliberate 2 ns maximum delay.
 
 Version 2.0.1 - February 22, 2025
 =================================

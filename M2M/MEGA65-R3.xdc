@@ -285,6 +285,11 @@ set_property -dict {PULLUP TRUE}                          [get_ports {qspidb_io[
 ## PLACEMENT CONSTRAINTS
 ################################
 
+# Place HyperRAM close to I/O pins
+create_pblock pblock_i_hyperram
+add_cells_to_pblock pblock_i_hyperram [get_cells [list i_framework/i_hyperram]]
+resize_pblock pblock_i_hyperram -add {SLICE_X0Y200:SLICE_X7Y224}
+
 # Place MAX10 close to I/O pins
 create_pblock pblock_MAX10
 add_cells_to_pblock pblock_MAX10 [get_cells [list MAX10]]
