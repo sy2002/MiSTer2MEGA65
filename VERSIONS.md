@@ -14,6 +14,12 @@ Improvements
   Common VESA DMT pulse presets are provided and converted to each core's
   video-clock frequency at elaboration time.
 
+* Added optional, core-configurable HDMI output fitting. A core can select
+  independent physical aspect-ratio presets for its uncropped and cropped
+  views. The framework accounts for HDMI modes with non-square encoded pixels
+  and calculates all target rectangles at elaboration time. The stock legacy
+  profile exactly preserves the previous HDMI image placement.
+
 Bug fixes
 ---------
 

@@ -68,6 +68,15 @@ constant VGA_DY               : natural := 576;
 --    make_vga_sync_reshaper_cfg(C_VGA_SYNC_DMT_640X480_60, CORE_CLK_SPEED);
 constant VGA_STD_SYNC         : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF;
 
+-- Optional digital HDMI output fitting. UNCROPPED is selected while the
+-- core's qnice_zoom_crop_o signal is low; CROPPED is selected while it is
+-- high. The aspect presets describe the intended physical picture shape, so
+-- M2M also handles HDMI modes with non-square encoded pixels correctly.
+-- Example: keep the normal view unchanged and fit a cropped 10:9 image:
+-- constant HDMI_VIEW : hdmi_view_cfg_t :=
+--    make_hdmi_view_cfg(C_HDMI_FIT_LEGACY, C_HDMI_FIT_10_9);
+constant HDMI_VIEW            : hdmi_view_cfg_t := C_HDMI_VIEW_LEGACY;
+
 --    FONT_*  size of one OSM character
 constant FONT_FILE            : string  := "../font/Anikki-16x16-m2m.rom";
 constant FONT_DX              : natural := 16;

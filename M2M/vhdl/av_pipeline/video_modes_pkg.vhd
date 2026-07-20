@@ -263,6 +263,98 @@ package video_modes_pkg is
       C_VIDEO_SVGA_800_60      -- SVGA 800x600     @ 60 Hz
    );
 
+   --------------------------------------------------------
+   -- Digital HDMI output fitting
+   --------------------------------------------------------
+
+   -- HDMI fitting changes only the rectangle into which ascal draws the
+   -- core image. The aspect ratio is the intended physical display aspect,
+   -- not necessarily the ratio of encoded pixels (e.g. 720x480 is 4:3).
+   type hdmi_fit_mode_t is (
+      HDMI_FIT_MODE_LEGACY,      -- Preserve M2M's historical per-mode rectangle
+      HDMI_FIT_MODE_FULL_FRAME,  -- Fill the complete HDMI active area
+      HDMI_FIT_MODE_ASPECT       -- Fit a physical aspect ratio inside the frame
+   );
+
+   -- Ratios should be reduced to small integers. The bound also keeps every
+   -- product for the supported HDMI modes inside VHDL's integer range.
+   subtype hdmi_aspect_value_t is positive range 1 to 255;
+
+   type hdmi_fit_t is record
+      MODE          : hdmi_fit_mode_t;
+      ASPECT_WIDTH  : hdmi_aspect_value_t;
+      ASPECT_HEIGHT : hdmi_aspect_value_t;
+   end record hdmi_fit_t;
+
+   type hdmi_view_cfg_t is record
+      UNCROPPED : hdmi_fit_t;
+      CROPPED   : hdmi_fit_t;
+   end record hdmi_view_cfg_t;
+
+   type hdmi_output_rect_t is record
+      H_MIN : natural;
+      H_MAX : natural;
+      V_MIN : natural;
+      V_MAX : natural;
+   end record hdmi_output_rect_t;
+
+   constant C_HDMI_FIT_LEGACY : hdmi_fit_t := (
+      MODE          => HDMI_FIT_MODE_LEGACY,
+      ASPECT_WIDTH  => 1,
+      ASPECT_HEIGHT => 1
+   );
+
+   constant C_HDMI_FIT_FULL_FRAME : hdmi_fit_t := (
+      MODE          => HDMI_FIT_MODE_FULL_FRAME,
+      ASPECT_WIDTH  => 1,
+      ASPECT_HEIGHT => 1
+   );
+
+   pure function make_hdmi_fit (
+      aspect_width  : hdmi_aspect_value_t;
+      aspect_height : hdmi_aspect_value_t
+   ) return hdmi_fit_t;
+
+   -- Common physical display-aspect presets for core porters.
+   constant C_HDMI_FIT_1_1 : hdmi_fit_t := (
+      MODE => HDMI_FIT_MODE_ASPECT, ASPECT_WIDTH => 1, ASPECT_HEIGHT => 1
+   );
+   constant C_HDMI_FIT_4_3 : hdmi_fit_t := (
+      MODE => HDMI_FIT_MODE_ASPECT, ASPECT_WIDTH => 4, ASPECT_HEIGHT => 3
+   );
+   constant C_HDMI_FIT_5_4 : hdmi_fit_t := (
+      MODE => HDMI_FIT_MODE_ASPECT, ASPECT_WIDTH => 5, ASPECT_HEIGHT => 4
+   );
+   constant C_HDMI_FIT_8_7 : hdmi_fit_t := (
+      MODE => HDMI_FIT_MODE_ASPECT, ASPECT_WIDTH => 8, ASPECT_HEIGHT => 7
+   );
+   constant C_HDMI_FIT_10_9 : hdmi_fit_t := (
+      MODE => HDMI_FIT_MODE_ASPECT, ASPECT_WIDTH => 10, ASPECT_HEIGHT => 9
+   );
+   constant C_HDMI_FIT_16_9 : hdmi_fit_t := (
+      MODE => HDMI_FIT_MODE_ASPECT, ASPECT_WIDTH => 16, ASPECT_HEIGHT => 9
+   );
+
+   pure function make_hdmi_view_cfg (
+      uncropped : hdmi_fit_t;
+      cropped   : hdmi_fit_t
+   ) return hdmi_view_cfg_t;
+
+   -- Exact backward-compatible default: the normal view uses M2M's
+   -- historical per-mode placement and crop/zoom fills the complete frame.
+   constant C_HDMI_VIEW_LEGACY : hdmi_view_cfg_t := (
+      UNCROPPED => C_HDMI_FIT_LEGACY,
+      CROPPED   => C_HDMI_FIT_FULL_FRAME
+   );
+
+   -- Intended for elaboration-time use. The returned coordinates are
+   -- inclusive as required by ascal's hmin/hmax/vmin/vmax inputs.
+   pure function make_hdmi_output_rect (
+      video_mode    : video_modes_t;
+      video_mode_id : video_mode_type;
+      fit           : hdmi_fit_t
+   ) return hdmi_output_rect_t;
+
    pure function video_mode_to_slv(video_mode : video_mode_type) return std_logic_vector;
 
    pure function slv_to_video_mode(video_mode_slv : std_logic_vector) return video_mode_type;
@@ -270,6 +362,14 @@ package video_modes_pkg is
 end package video_modes_pkg;
 
 package body video_modes_pkg is
+
+   pure function divide_rounded (
+      numerator   : natural;
+      denominator : positive
+   ) return natural is
+   begin
+      return (numerator + denominator / 2) / denominator;
+   end function divide_rounded;
 
    pure function make_vga_sync_reshaper_cfg (
       preset       : vga_sync_preset_t;
@@ -295,6 +395,136 @@ package body video_modes_pkg is
          VSYNC_POLARITY    => preset.VSYNC_POLARITY
       );
    end function make_vga_sync_reshaper_cfg;
+
+   pure function make_hdmi_fit (
+      aspect_width  : hdmi_aspect_value_t;
+      aspect_height : hdmi_aspect_value_t
+   ) return hdmi_fit_t is
+   begin
+      return (
+         MODE          => HDMI_FIT_MODE_ASPECT,
+         ASPECT_WIDTH  => aspect_width,
+         ASPECT_HEIGHT => aspect_height
+      );
+   end function make_hdmi_fit;
+
+   pure function make_hdmi_view_cfg (
+      uncropped : hdmi_fit_t;
+      cropped   : hdmi_fit_t
+   ) return hdmi_view_cfg_t is
+   begin
+      return (
+         UNCROPPED => uncropped,
+         CROPPED   => cropped
+      );
+   end function make_hdmi_view_cfg;
+
+   pure function make_hdmi_output_rect (
+      video_mode    : video_modes_t;
+      video_mode_id : video_mode_type;
+      fit           : hdmi_fit_t
+   ) return hdmi_output_rect_t is
+      variable result        : hdmi_output_rect_t;
+      variable frame_width   : positive := 1;
+      variable frame_height  : positive := 1;
+      variable target_width  : natural;
+      variable target_height : natural;
+   begin
+      assert video_mode.H_PIXELS > 0 and video_mode.V_PIXELS > 0
+         report "make_hdmi_output_rect: HDMI active dimensions must be positive"
+         severity failure;
+
+      result := (
+         H_MIN => 0,
+         H_MAX => natural(video_mode.H_PIXELS - 1),
+         V_MIN => 0,
+         V_MAX => natural(video_mode.V_PIXELS - 1)
+      );
+
+      case fit.MODE is
+         when HDMI_FIT_MODE_FULL_FRAME =>
+            null;
+
+         when HDMI_FIT_MODE_LEGACY =>
+            -- These are the original digital_pipeline equations. Keep them
+            -- literal so C_HDMI_VIEW_LEGACY remains pixel-for-pixel stable.
+            case video_mode_id is
+               when C_VIDEO_HDMI_16_9_50 | C_VIDEO_HDMI_16_9_60 =>
+                  target_width := natural(video_mode.V_PIXELS * 4 / 3);
+                  assert video_mode.H_PIXELS >= target_width
+                     report "make_hdmi_output_rect: legacy 4:3 image exceeds HDMI width"
+                     severity failure;
+                  result.H_MIN := natural((video_mode.H_PIXELS - target_width) / 2);
+                  result.H_MAX := natural((video_mode.H_PIXELS + target_width) / 2 - 1);
+
+               when C_VIDEO_HDMI_5_4_50 =>
+                  target_height := natural(video_mode.H_PIXELS * 3 / 4);
+                  assert video_mode.V_PIXELS >= target_height
+                     report "make_hdmi_output_rect: legacy 5:4 image exceeds HDMI height"
+                     severity failure;
+                  result.V_MIN := natural((video_mode.V_PIXELS - target_height) / 2);
+                  result.V_MAX := natural((video_mode.V_PIXELS + target_height) / 2 - 1);
+
+               when others =>
+                  null;
+            end case;
+
+         when HDMI_FIT_MODE_ASPECT =>
+            -- The HDMI InfoFrame describes the physical shape of the active
+            -- frame. Deriving the pixel aspect from it also handles CEA modes
+            -- such as 720x480 and 720x576 with non-square encoded pixels.
+            case video_mode.ASPECT is
+               when "01" =>
+                  frame_width  := 4;
+                  frame_height := 3;
+
+               when "10" =>
+                  frame_width  := 16;
+                  frame_height := 9;
+
+               when others =>
+                  assert false
+                     report "make_hdmi_output_rect: unsupported HDMI frame aspect"
+                     severity failure;
+            end case;
+
+            target_width  := natural(video_mode.H_PIXELS);
+            target_height := natural(video_mode.V_PIXELS);
+
+            if fit.ASPECT_WIDTH * frame_height <= fit.ASPECT_HEIGHT * frame_width then
+               target_width := divide_rounded(
+                  natural(video_mode.H_PIXELS) * fit.ASPECT_WIDTH * frame_height,
+                  fit.ASPECT_HEIGHT * frame_width
+               );
+            else
+               target_height := divide_rounded(
+                  natural(video_mode.V_PIXELS) * frame_width * fit.ASPECT_HEIGHT,
+                  frame_height * fit.ASPECT_WIDTH
+               );
+            end if;
+
+            -- Protect ascal from an empty rectangle if a porter supplies an
+            -- extreme custom ratio, and from rounding one pixel past a frame.
+            if target_width = 0 then
+               target_width := 1;
+            elsif target_width > video_mode.H_PIXELS then
+               target_width := natural(video_mode.H_PIXELS);
+            end if;
+
+            if target_height = 0 then
+               target_height := 1;
+            elsif target_height > video_mode.V_PIXELS then
+               target_height := natural(video_mode.V_PIXELS);
+            end if;
+
+            result.H_MIN := natural((video_mode.H_PIXELS - target_width) / 2);
+            result.H_MAX := result.H_MIN + target_width - 1;
+            result.V_MIN := natural((video_mode.V_PIXELS - target_height) / 2);
+            result.V_MAX := result.V_MIN + target_height - 1;
+      end case;
+
+      return result;
+   end function make_hdmi_output_rect;
 
    pure function video_mode_to_slv(video_mode : video_mode_type) return std_logic_vector is
    begin

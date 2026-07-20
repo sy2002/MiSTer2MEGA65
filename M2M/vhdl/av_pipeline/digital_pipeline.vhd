@@ -26,7 +26,8 @@ entity digital_pipeline is
       G_VGA_DY               : natural;
       G_FONT_FILE            : string;
       G_FONT_DX              : natural;
-      G_FONT_DY              : natural
+      G_FONT_DY              : natural;
+      G_HDMI_VIEW            : hdmi_view_cfg_t := C_HDMI_VIEW_LEGACY
    );
    port (
       -- Input from Core (video and audio)
@@ -94,6 +95,56 @@ end entity digital_pipeline;
 
 architecture synthesis of digital_pipeline is
 
+   type hdmi_output_rect_vector_t is array(natural range <>) of hdmi_output_rect_t;
+
+   pure function video_mode_from_index(index : natural) return video_mode_type is
+   begin
+      case index is
+         when 0      => return C_VIDEO_HDMI_16_9_50;
+         when 1      => return C_VIDEO_HDMI_16_9_60;
+         when 2      => return C_VIDEO_HDMI_4_3_50;
+         when 3      => return C_VIDEO_HDMI_5_4_50;
+         when 4      => return C_VIDEO_HDMI_640_60;
+         when 5      => return C_VIDEO_HDMI_720_5994;
+         when others => return C_VIDEO_SVGA_800_60;
+      end case;
+   end function video_mode_from_index;
+
+   pure function video_mode_to_index(video_mode : video_mode_type) return natural is
+   begin
+      case video_mode is
+         when C_VIDEO_HDMI_16_9_50  => return 0;
+         when C_VIDEO_HDMI_16_9_60  => return 1;
+         when C_VIDEO_HDMI_4_3_50   => return 2;
+         when C_VIDEO_HDMI_5_4_50   => return 3;
+         when C_VIDEO_HDMI_640_60   => return 4;
+         when C_VIDEO_HDMI_720_5994 => return 5;
+         when C_VIDEO_SVGA_800_60   => return 6;
+      end case;
+   end function video_mode_to_index;
+
+   pure function make_hdmi_output_rect_vector (
+      video_modes : video_modes_vector;
+      fit         : hdmi_fit_t
+   ) return hdmi_output_rect_vector_t is
+      variable result : hdmi_output_rect_vector_t(video_modes'range);
+   begin
+      assert video_modes'low = 0 and video_modes'high = 6
+         report "digital_pipeline: G_VIDEO_MODE_VECTOR must use indices 0 to 6"
+         severity failure;
+
+      for i in video_modes'range loop
+         result(i) := make_hdmi_output_rect(video_modes(i), video_mode_from_index(i), fit);
+      end loop;
+
+      return result;
+   end function make_hdmi_output_rect_vector;
+
+   constant C_HDMI_UNCROPPED_RECTS : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
+      make_hdmi_output_rect_vector(G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.UNCROPPED);
+   constant C_HDMI_CROPPED_RECTS : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
+      make_hdmi_output_rect_vector(G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.CROPPED);
+
    -- HDMI PCM sampling rate hardcoded to 48 kHz (should be the most compatible mode)
    -- If this should ever be switchable, don't forget that the signal "select_44100" in
    -- i_vga_to_hdmi would need to be adjusted, too
@@ -130,7 +181,7 @@ architecture synthesis of digital_pipeline is
    signal hdmi_vdisp             : integer;
    signal hdmi_shift             : integer;
 
-   -- Auto-calculate display dimensions based on an 4:3 aspect ratio
+   signal hdmi_output_rect       : hdmi_output_rect_t;
    signal hdmi_hmin              : integer;
    signal hdmi_hmax              : integer;
    signal hdmi_vmin              : integer;
@@ -193,55 +244,16 @@ begin
    hdmi_vsend      <= hdmi_video_mode.V_PIXELS + hdmi_video_mode.V_FP + hdmi_video_mode.V_PULSE;
    hdmi_vdisp      <= hdmi_video_mode.V_PIXELS;
 
-   assert G_VIDEO_MODE_VECTOR(0).H_PIXELS >= G_VIDEO_MODE_VECTOR(0).V_PIXELS*4/3;
-   assert G_VIDEO_MODE_VECTOR(1).H_PIXELS >= G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3;
-   assert G_VIDEO_MODE_VECTOR(2).H_PIXELS <= G_VIDEO_MODE_VECTOR(2).V_PIXELS*4/3;
-   assert G_VIDEO_MODE_VECTOR(3).H_PIXELS <= G_VIDEO_MODE_VECTOR(3).V_PIXELS*4/3;
-   assert G_VIDEO_MODE_VECTOR(4).H_PIXELS <= G_VIDEO_MODE_VECTOR(4).V_PIXELS*4/3;
-   assert G_VIDEO_MODE_VECTOR(5).H_PIXELS <= G_VIDEO_MODE_VECTOR(5).V_PIXELS*4/3;
-   assert G_VIDEO_MODE_VECTOR(6).H_PIXELS <= G_VIDEO_MODE_VECTOR(6).V_PIXELS*4/3;
+   -- Both rectangle tables are constants calculated at elaboration time. The
+   -- runtime hardware is only a mux for the selected video mode and crop bit.
+   hdmi_output_rect <= C_HDMI_CROPPED_RECTS(video_mode_to_index(hdmi_video_mode_i))
+                       when hdmi_crop_mode_i = '1' else
+                       C_HDMI_UNCROPPED_RECTS(video_mode_to_index(hdmi_video_mode_i));
 
-   -- In HDMI 4:3 mode, ignore crop (zoom-in).
-   -- We are using constants here to avoid that large networks are synthesized.
-   hdmi_hmin <= 0                                                                         when hdmi_crop_mode_i = '1' else
-                (G_VIDEO_MODE_VECTOR(0).H_PIXELS-G_VIDEO_MODE_VECTOR(0).V_PIXELS*4/3)/2   when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_50  else
-                (G_VIDEO_MODE_VECTOR(1).H_PIXELS-G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3)/2   when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_60  else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_4_3_50   else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_5_4_50   else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_640_60   else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_720_5994 else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_SVGA_800_60   else
-                0; -- Not used
-
-   hdmi_hmax <= hdmi_video_mode.H_PIXELS-1                                                when hdmi_crop_mode_i = '1' else
-                (G_VIDEO_MODE_VECTOR(0).H_PIXELS+G_VIDEO_MODE_VECTOR(0).V_PIXELS*4/3)/2-1 when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_50  else
-                (G_VIDEO_MODE_VECTOR(1).H_PIXELS+G_VIDEO_MODE_VECTOR(1).V_PIXELS*4/3)/2-1 when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_60  else
-                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_4_3_50   else
-                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_5_4_50   else
-                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_640_60   else
-                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_720_5994 else
-                hdmi_video_mode.H_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_SVGA_800_60   else
-                hdmi_video_mode.H_PIXELS-1; -- Not used
-
-   hdmi_vmin <= 0                                                                         when hdmi_crop_mode_i = '1' else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_50  else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_60  else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_4_3_50   else
-                (G_VIDEO_MODE_VECTOR(3).V_PIXELS-G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = C_VIDEO_HDMI_5_4_50   else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_640_60   else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_HDMI_720_5994 else
-                0                                                                         when hdmi_video_mode_i = C_VIDEO_SVGA_800_60   else
-                0; -- Not used
-
-   hdmi_vmax <= hdmi_video_mode.V_PIXELS-1                                                when hdmi_crop_mode_i = '1' else
-                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_50  else
-                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_16_9_60  else
-                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_4_3_50   else
-                (G_VIDEO_MODE_VECTOR(3).V_PIXELS+G_VIDEO_MODE_VECTOR(3).H_PIXELS*3/4)/2   when hdmi_video_mode_i = C_VIDEO_HDMI_5_4_50   else
-                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_640_60   else
-                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_HDMI_720_5994 else
-                hdmi_video_mode.V_PIXELS-1                                                when hdmi_video_mode_i = C_VIDEO_SVGA_800_60   else
-                hdmi_video_mode.V_PIXELS-1; -- Not used
+   hdmi_hmin <= integer(hdmi_output_rect.H_MIN);
+   hdmi_hmax <= integer(hdmi_output_rect.H_MAX);
+   hdmi_vmin <= integer(hdmi_output_rect.V_MIN);
+   hdmi_vmax <= integer(hdmi_output_rect.V_MAX);
 
    -- Deprecated. Will be removed in future release
    -- The purpose is to right-shift the position of the OSM
@@ -550,4 +562,3 @@ begin
       ); -- GEN_HDMI_CLK
 
 end architecture synthesis;
-

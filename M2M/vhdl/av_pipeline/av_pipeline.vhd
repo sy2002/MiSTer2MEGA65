@@ -29,7 +29,9 @@ entity av_pipeline is
       G_FONT_DX               : natural;
       G_FONT_DY               : natural;
       -- Optional analog VGA Standard-mode sync reshaping.
-      G_VGA_STD_SYNC          : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF
+      G_VGA_STD_SYNC          : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_OFF;
+      -- Optional digital HDMI output fitting.
+      G_HDMI_VIEW             : hdmi_view_cfg_t := C_HDMI_VIEW_LEGACY
    );
    port (
       -- From CORE
@@ -536,7 +538,8 @@ begin
          G_VGA_DY            => G_VGA_DY,
          G_FONT_FILE         => G_FONT_FILE,
          G_FONT_DX           => G_FONT_DX,
-         G_FONT_DY           => G_FONT_DY
+         G_FONT_DY           => G_FONT_DY,
+         G_HDMI_VIEW         => G_HDMI_VIEW
       )
       port map (
          -- Input from Core (video and audio)

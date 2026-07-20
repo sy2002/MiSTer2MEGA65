@@ -287,7 +287,12 @@ clock-enables (in the core's `video_clk` domain) and signed 16-bit stereo PCM (a
 - **Digital HDMI** (`digital_pipeline.vhd`): `crop` (optional zoom) → **`ascal.vhd`** (temlib
   polyphase scaler, ~2900 lines — don't edit) which writes input frames into **HyperRAM** and
   reads them out at the chosen fixed HDMI mode → OSM overlay → `vga_to_hdmi` (Tyto2) → TMDS
-  serialisers. HDMI PCM is fixed at 48 kHz.
+  serialisers. The core-owned `HDMI_VIEW` record in `CORE/vhdl/globals.vhd` optionally selects a
+  separate physical output aspect for the uncropped and cropped views. Common fit presets live in
+  `video_modes_pkg.vhd`; M2M derives the encoded rectangle from the HDMI mode's advertised physical
+  aspect, including non-square-pixel 720×480/576 modes. Both rectangle tables are elaboration-time
+  constants, and `C_HDMI_VIEW_LEGACY` reproduces the old placement exactly. HDMI PCM is fixed at
+  48 kHz.
 - **7 HDMI output modes** (`video_modes_pkg.vhd`, enum `video_mode_type`): `720p@50` (default,
   16:9), `720p@60`, `576p@50` (4:3), `576p@50` (5:4), `640×480@60`, `720×480@59.94`, `800×600@60`.
   The core selects one via `qnice_video_mode_o`. Analog VGA is **not** one of these — it emits the
@@ -486,8 +491,9 @@ friendly to:
 
 1. **`clk.vhd`** — set the MMCM to your core's real clock(s); add `CLKOUTn` + BUFG +
    `xpm_cdc_async_rst` per extra clock.
-2. **`globals.vhd`** — set `CORE_CLK_SPEED` (= step 1, exact Hz), `VGA_DX`/`VGA_DY`, virtual-drive
-   count/devices, CRT/ROM autoload, audio-filter coefficients; keep `QNICE_FIRMWARE = _M2M`.
+2. **`globals.vhd`** — set `CORE_CLK_SPEED` (= step 1, exact Hz), `VGA_DX`/`VGA_DY`, optional
+   `VGA_STD_SYNC`/`HDMI_VIEW` profiles, virtual-drive count/devices, CRT/ROM autoload, audio-filter
+   coefficients; keep `QNICE_FIRMWARE = _M2M`.
 3. **`main.vhd`** — delete `i_democore`, instantiate the MiSTer core in the `clk_main_i` domain; drive
    `video_ce_o`/`video_ce_ovl_o` correctly; wire audio/video/inputs.
 4. **`keyboard.vhd`** — reshape the 80-key snapshot into your core's key format using the `m65_*`
