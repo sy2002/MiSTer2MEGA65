@@ -18,7 +18,11 @@ Improvements
   independent physical aspect-ratio presets for its uncropped and cropped
   views. The framework accounts for HDMI modes with non-square encoded pixels
   and calculates all target rectangles at elaboration time. The stock legacy
-  profile exactly preserves the previous HDMI image placement.
+  profile exactly preserves the previous HDMI image placement. Four optional
+  rational size fractions can now be selected at runtime for the cropped view;
+  the selector is ignored for the uncropped view and all four fractions default
+  to full size for backward-compatible behavior. With that stock profile, the
+  selector CDC and mux are omitted at elaboration.
 
 Bug fixes
 ---------

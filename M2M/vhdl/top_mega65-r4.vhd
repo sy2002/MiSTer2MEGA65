@@ -394,6 +394,7 @@ architecture synthesis of mega65_r4 is
    signal qnice_audio_mute       : std_logic;
    signal qnice_audio_filter     : std_logic;
    signal qnice_zoom_crop        : std_logic;
+   signal qnice_hdmi_view_size   : std_logic_vector(1 downto 0);
    signal qnice_ascal_mode       : std_logic_vector(1 downto 0);
    signal qnice_ascal_polyphase  : std_logic;
    signal qnice_ascal_triplebuf  : std_logic;
@@ -680,6 +681,7 @@ begin
       qnice_audio_mute_i      => qnice_audio_mute,
       qnice_audio_filter_i    => qnice_audio_filter,
       qnice_zoom_crop_i       => qnice_zoom_crop,
+      qnice_hdmi_view_size_i  => qnice_hdmi_view_size,
       qnice_osm_cfg_scaling_i => qnice_osm_cfg_scaling,
       qnice_retro15kHz_i      => qnice_retro15kHz,
       qnice_ascal_mode_i      => qnice_ascal_mode,
@@ -742,6 +744,7 @@ begin
          qnice_audio_mute_o      => qnice_audio_mute,
          qnice_audio_filter_o    => qnice_audio_filter,
          qnice_zoom_crop_o       => qnice_zoom_crop,
+         qnice_hdmi_view_size_o  => qnice_hdmi_view_size,
          qnice_ascal_mode_o      => qnice_ascal_mode,
          qnice_ascal_polyphase_o => qnice_ascal_polyphase,
          qnice_ascal_triplebuf_o => qnice_ascal_triplebuf,

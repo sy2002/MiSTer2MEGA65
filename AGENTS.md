@@ -193,7 +193,8 @@ Declared in `CORE/vhdl/mega65.vhd:21-219`. One generic `G_BOARD : string`
   the 256-bit OSM state `qnice_osm_control_i`, `qnice_gp_reg_i`, and the QNICE MMIO device
   bus (`qnice_dev_{id,addr,data}_i`, `_ce_i`, `_we_i`). Core provides the AV-*mode* config
   outputs (`qnice_dvi_o`, `qnice_video_mode_o`, `qnice_scandoubler_o`, `qnice_audio_mute/filter_o`,
-  `qnice_zoom_crop_o`, `qnice_ascal_{mode,polyphase,triplebuf}_o`, `qnice_retro15kHz_o`,
+  `qnice_zoom_crop_o`, `qnice_hdmi_view_size_o`,
+  `qnice_ascal_{mode,polyphase,triplebuf}_o`, `qnice_retro15kHz_o`,
   `qnice_csync_o`, `qnice_flip_joyports_o`) plus device reply `qnice_dev_data_o`/`_wait_o`.
   Conventions: default reply is `x"EEEE"` (`mega65.vhd:451`); **core device IDs must be
   `>= 0x0100`** (`< 0x0100` is framework-reserved).
@@ -288,11 +289,14 @@ clock-enables (in the core's `video_clk` domain) and signed 16-bit stereo PCM (a
   polyphase scaler, ~2900 lines — don't edit) which writes input frames into **HyperRAM** and
   reads them out at the chosen fixed HDMI mode → OSM overlay → `vga_to_hdmi` (Tyto2) → TMDS
   serialisers. The core-owned `HDMI_VIEW` record in `CORE/vhdl/globals.vhd` optionally selects a
-  separate physical output aspect for the uncropped and cropped views. Common fit presets live in
+  separate physical output aspect for the uncropped and cropped views. The two-bit
+  `qnice_hdmi_view_size_o` signal optionally selects one of four core-configured rational size
+  fractions for the cropped view and is ignored for the uncropped view. Common fit presets live in
   `video_modes_pkg.vhd`; M2M derives the encoded rectangle from the HDMI mode's advertised physical
-  aspect, including non-square-pixel 720×480/576 modes. Both rectangle tables are elaboration-time
-  constants, and `C_HDMI_VIEW_LEGACY` reproduces the old placement exactly. HDMI PCM is fixed at
-  48 kHz.
+  aspect, including non-square-pixel 720×480/576 modes. All rectangle tables are elaboration-time
+  constants, and `C_HDMI_VIEW_LEGACY` makes every selector value reproduce the old placement
+  exactly; when all slots are full-size, the selector CDC and mux are omitted at elaboration.
+  HDMI PCM is fixed at 48 kHz.
 - **7 HDMI output modes** (`video_modes_pkg.vhd`, enum `video_mode_type`): `720p@50` (default,
   16:9), `720p@60`, `576p@50` (4:3), `576p@50` (5:4), `640×480@60`, `720×480@59.94`, `800×600@60`.
   The core selects one via `qnice_video_mode_o`. Analog VGA is **not** one of these — it emits the

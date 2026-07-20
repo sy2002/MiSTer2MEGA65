@@ -190,6 +190,7 @@ port (
    qnice_audio_mute_i      : in    std_logic;
    qnice_audio_filter_i    : in    std_logic;
    qnice_zoom_crop_i       : in    std_logic;
+   qnice_hdmi_view_size_i  : in    std_logic_vector(1 downto 0) := (others => '0');
    qnice_ascal_mode_i      : in    std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_i : in    std_logic;
    qnice_ascal_triplebuf_i : in    std_logic;
@@ -900,6 +901,7 @@ begin
          qnice_scandoubler_i     => qnice_scandoubler_i,
          qnice_csync_i           => qnice_csync_i,
          qnice_zoom_crop_i       => qnice_zoom_crop_i,
+         qnice_hdmi_view_size_i  => qnice_hdmi_view_size_i,
          qnice_audio_filter_i    => qnice_audio_filter_i,
          qnice_audio_mute_i      => qnice_audio_mute_i,
          qnice_video_mode_i      => video_mode_to_slv(qnice_video_mode_i),

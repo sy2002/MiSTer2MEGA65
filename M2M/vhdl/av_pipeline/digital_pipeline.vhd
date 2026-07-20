@@ -59,6 +59,7 @@ entity digital_pipeline is
       hdmi_dvi_i               : in  std_logic;
       hdmi_video_mode_i        : in  video_mode_type;
       hdmi_crop_mode_i         : in  std_logic;
+      hdmi_view_size_i         : in  std_logic_vector(1 downto 0) := (others => '0');
       hdmi_osm_cfg_scaling_i   : in  natural range 0 to 8;
       hdmi_osm_cfg_enable_i    : in  std_logic;
       hdmi_osm_cfg_xy_i        : in  std_logic_vector(15 downto 0);
@@ -125,7 +126,8 @@ architecture synthesis of digital_pipeline is
 
    pure function make_hdmi_output_rect_vector (
       video_modes : video_modes_vector;
-      fit         : hdmi_fit_t
+      fit         : hdmi_fit_t;
+      scale       : hdmi_scale_t := C_HDMI_SCALE_FULL
    ) return hdmi_output_rect_vector_t is
       variable result : hdmi_output_rect_vector_t(video_modes'range);
    begin
@@ -134,7 +136,7 @@ architecture synthesis of digital_pipeline is
          severity failure;
 
       for i in video_modes'range loop
-         result(i) := make_hdmi_output_rect(video_modes(i), video_mode_from_index(i), fit);
+         result(i) := make_hdmi_output_rect(video_modes(i), video_mode_from_index(i), fit, scale);
       end loop;
 
       return result;
@@ -142,8 +144,22 @@ architecture synthesis of digital_pipeline is
 
    constant C_HDMI_UNCROPPED_RECTS : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
       make_hdmi_output_rect_vector(G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.UNCROPPED);
-   constant C_HDMI_CROPPED_RECTS : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
-      make_hdmi_output_rect_vector(G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.CROPPED);
+   constant C_HDMI_CROPPED_RECTS_0 : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
+      make_hdmi_output_rect_vector(
+         G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.CROPPED, G_HDMI_VIEW.CROPPED_SIZES(0)
+      );
+   constant C_HDMI_CROPPED_RECTS_1 : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
+      make_hdmi_output_rect_vector(
+         G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.CROPPED, G_HDMI_VIEW.CROPPED_SIZES(1)
+      );
+   constant C_HDMI_CROPPED_RECTS_2 : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
+      make_hdmi_output_rect_vector(
+         G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.CROPPED, G_HDMI_VIEW.CROPPED_SIZES(2)
+      );
+   constant C_HDMI_CROPPED_RECTS_3 : hdmi_output_rect_vector_t(G_VIDEO_MODE_VECTOR'range) :=
+      make_hdmi_output_rect_vector(
+         G_VIDEO_MODE_VECTOR, G_HDMI_VIEW.CROPPED, G_HDMI_VIEW.CROPPED_SIZES(3)
+      );
 
    -- HDMI PCM sampling rate hardcoded to 48 kHz (should be the most compatible mode)
    -- If this should ever be switchable, don't forget that the signal "select_44100" in
@@ -181,6 +197,7 @@ architecture synthesis of digital_pipeline is
    signal hdmi_vdisp             : integer;
    signal hdmi_shift             : integer;
 
+   signal hdmi_cropped_rect      : hdmi_output_rect_t;
    signal hdmi_output_rect       : hdmi_output_rect_t;
    signal hdmi_hmin              : integer;
    signal hdmi_hmax              : integer;
@@ -244,9 +261,21 @@ begin
    hdmi_vsend      <= hdmi_video_mode.V_PIXELS + hdmi_video_mode.V_FP + hdmi_video_mode.V_PULSE;
    hdmi_vdisp      <= hdmi_video_mode.V_PIXELS;
 
-   -- Both rectangle tables are constants calculated at elaboration time. The
-   -- runtime hardware is only a mux for the selected video mode and crop bit.
-   hdmi_output_rect <= C_HDMI_CROPPED_RECTS(video_mode_to_index(hdmi_video_mode_i))
+   -- All rectangle tables are constants calculated at elaboration time. The
+   -- runtime hardware is only a mux for video mode, crop bit and cropped size.
+   gen_hdmi_view_size : if G_HDMI_VIEW.CROPPED_SIZES /= C_HDMI_VIEW_SIZES_FULL generate
+      with hdmi_view_size_i select hdmi_cropped_rect <=
+         C_HDMI_CROPPED_RECTS_0(video_mode_to_index(hdmi_video_mode_i)) when "00",
+         C_HDMI_CROPPED_RECTS_1(video_mode_to_index(hdmi_video_mode_i)) when "01",
+         C_HDMI_CROPPED_RECTS_2(video_mode_to_index(hdmi_video_mode_i)) when "10",
+         C_HDMI_CROPPED_RECTS_3(video_mode_to_index(hdmi_video_mode_i)) when others;
+   end generate gen_hdmi_view_size;
+
+   gen_legacy_view_size : if G_HDMI_VIEW.CROPPED_SIZES = C_HDMI_VIEW_SIZES_FULL generate
+      hdmi_cropped_rect <= C_HDMI_CROPPED_RECTS_0(video_mode_to_index(hdmi_video_mode_i));
+   end generate gen_legacy_view_size;
+
+   hdmi_output_rect <= hdmi_cropped_rect
                        when hdmi_crop_mode_i = '1' else
                        C_HDMI_UNCROPPED_RECTS(video_mode_to_index(hdmi_video_mode_i));
 

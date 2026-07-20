@@ -39,6 +39,7 @@ port (
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
+   qnice_hdmi_view_size_o  : out std_logic_vector(1 downto 0) := (others => '0');
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
@@ -412,6 +413,7 @@ begin
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
    qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
+   qnice_hdmi_view_size_o     <= (others => '0');                             -- use the first cropped-view size
    
    -- These two signals are often used as a pair (i.e. both '1'), particularly when
    -- you want to run old analog cathode ray tube monitors or TVs (via SCART)

@@ -280,6 +280,31 @@ package video_modes_pkg is
    -- product for the supported HDMI modes inside VHDL's integer range.
    subtype hdmi_aspect_value_t is positive range 1 to 255;
 
+   -- Runtime-selectable cropped-view sizes are rational fractions of the
+   -- maximum rectangle produced by the selected HDMI fit. Fractions greater
+   -- than one are rejected by make_hdmi_output_rect.
+   subtype hdmi_scale_value_t is positive range 1 to 255;
+
+   type hdmi_scale_t is record
+      NUMERATOR   : hdmi_scale_value_t;
+      DENOMINATOR : hdmi_scale_value_t;
+   end record hdmi_scale_t;
+
+   type hdmi_view_sizes_t is array(0 to 3) of hdmi_scale_t;
+
+   constant C_HDMI_SCALE_FULL : hdmi_scale_t := (
+      NUMERATOR   => 1,
+      DENOMINATOR => 1
+   );
+
+   constant C_HDMI_VIEW_SIZES_FULL : hdmi_view_sizes_t :=
+      (others => C_HDMI_SCALE_FULL);
+
+   pure function make_hdmi_scale (
+      numerator   : hdmi_scale_value_t;
+      denominator : hdmi_scale_value_t
+   ) return hdmi_scale_t;
+
    type hdmi_fit_t is record
       MODE          : hdmi_fit_mode_t;
       ASPECT_WIDTH  : hdmi_aspect_value_t;
@@ -287,8 +312,9 @@ package video_modes_pkg is
    end record hdmi_fit_t;
 
    type hdmi_view_cfg_t is record
-      UNCROPPED : hdmi_fit_t;
-      CROPPED   : hdmi_fit_t;
+      UNCROPPED     : hdmi_fit_t;
+      CROPPED       : hdmi_fit_t;
+      CROPPED_SIZES : hdmi_view_sizes_t;
    end record hdmi_view_cfg_t;
 
    type hdmi_output_rect_t is record
@@ -336,15 +362,17 @@ package video_modes_pkg is
    );
 
    pure function make_hdmi_view_cfg (
-      uncropped : hdmi_fit_t;
-      cropped   : hdmi_fit_t
+      uncropped     : hdmi_fit_t;
+      cropped       : hdmi_fit_t;
+      cropped_sizes : hdmi_view_sizes_t := C_HDMI_VIEW_SIZES_FULL
    ) return hdmi_view_cfg_t;
 
    -- Exact backward-compatible default: the normal view uses M2M's
    -- historical per-mode placement and crop/zoom fills the complete frame.
    constant C_HDMI_VIEW_LEGACY : hdmi_view_cfg_t := (
-      UNCROPPED => C_HDMI_FIT_LEGACY,
-      CROPPED   => C_HDMI_FIT_FULL_FRAME
+      UNCROPPED     => C_HDMI_FIT_LEGACY,
+      CROPPED       => C_HDMI_FIT_FULL_FRAME,
+      CROPPED_SIZES => C_HDMI_VIEW_SIZES_FULL
    );
 
    -- Intended for elaboration-time use. The returned coordinates are
@@ -352,7 +380,8 @@ package video_modes_pkg is
    pure function make_hdmi_output_rect (
       video_mode    : video_modes_t;
       video_mode_id : video_mode_type;
-      fit           : hdmi_fit_t
+      fit           : hdmi_fit_t;
+      scale         : hdmi_scale_t := C_HDMI_SCALE_FULL
    ) return hdmi_output_rect_t;
 
    pure function video_mode_to_slv(video_mode : video_mode_type) return std_logic_vector;
@@ -408,21 +437,39 @@ package body video_modes_pkg is
       );
    end function make_hdmi_fit;
 
+   pure function make_hdmi_scale (
+      numerator   : hdmi_scale_value_t;
+      denominator : hdmi_scale_value_t
+   ) return hdmi_scale_t is
+   begin
+      assert numerator <= denominator
+         report "make_hdmi_scale: numerator must not exceed denominator"
+         severity failure;
+
+      return (
+         NUMERATOR   => numerator,
+         DENOMINATOR => denominator
+      );
+   end function make_hdmi_scale;
+
    pure function make_hdmi_view_cfg (
-      uncropped : hdmi_fit_t;
-      cropped   : hdmi_fit_t
+      uncropped     : hdmi_fit_t;
+      cropped       : hdmi_fit_t;
+      cropped_sizes : hdmi_view_sizes_t := C_HDMI_VIEW_SIZES_FULL
    ) return hdmi_view_cfg_t is
    begin
       return (
-         UNCROPPED => uncropped,
-         CROPPED   => cropped
+         UNCROPPED     => uncropped,
+         CROPPED       => cropped,
+         CROPPED_SIZES => cropped_sizes
       );
    end function make_hdmi_view_cfg;
 
    pure function make_hdmi_output_rect (
       video_mode    : video_modes_t;
       video_mode_id : video_mode_type;
-      fit           : hdmi_fit_t
+      fit           : hdmi_fit_t;
+      scale         : hdmi_scale_t := C_HDMI_SCALE_FULL
    ) return hdmi_output_rect_t is
       variable result        : hdmi_output_rect_t;
       variable frame_width   : positive := 1;
@@ -522,6 +569,38 @@ package body video_modes_pkg is
             result.V_MIN := natural((video_mode.V_PIXELS - target_height) / 2);
             result.V_MAX := result.V_MIN + target_height - 1;
       end case;
+
+      -- A 1/1 scale is a deliberate short path: it preserves every legacy
+      -- coordinate exactly instead of recalculating an equivalent rectangle.
+      if scale.NUMERATOR > scale.DENOMINATOR then
+         assert false
+            report "make_hdmi_output_rect: scale numerator must not exceed denominator"
+            severity failure;
+         return result;
+      elsif scale.NUMERATOR < scale.DENOMINATOR then
+         target_width := divide_rounded(
+            (result.H_MAX - result.H_MIN + 1) * scale.NUMERATOR,
+            scale.DENOMINATOR
+         );
+         target_height := divide_rounded(
+            (result.V_MAX - result.V_MIN + 1) * scale.NUMERATOR,
+            scale.DENOMINATOR
+         );
+
+         -- A legal positive fraction can still round a very small rectangle
+         -- to zero, which ascal cannot accept.
+         if target_width = 0 then
+            target_width := 1;
+         end if;
+         if target_height = 0 then
+            target_height := 1;
+         end if;
+
+         result.H_MIN := natural((video_mode.H_PIXELS - target_width) / 2);
+         result.H_MAX := result.H_MIN + target_width - 1;
+         result.V_MIN := natural((video_mode.V_PIXELS - target_height) / 2);
+         result.V_MAX := result.V_MIN + target_height - 1;
+      end if;
 
       return result;
    end function make_hdmi_output_rect;

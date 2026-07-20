@@ -72,9 +72,17 @@ constant VGA_STD_SYNC         : vga_sync_reshaper_cfg_t := C_VGA_SYNC_RESHAPER_O
 -- core's qnice_zoom_crop_o signal is low; CROPPED is selected while it is
 -- high. The aspect presets describe the intended physical picture shape, so
 -- M2M also handles HDMI modes with non-square encoded pixels correctly.
--- Example: keep the normal view unchanged and fit a cropped 10:9 image:
+-- qnice_hdmi_view_size_o optionally selects one of four rational size
+-- fractions for the cropped fit; its binary value indexes slots 0 through 3.
+-- Every slot defaults to full size. Example:
 -- constant HDMI_VIEW : hdmi_view_cfg_t :=
---    make_hdmi_view_cfg(C_HDMI_FIT_LEGACY, C_HDMI_FIT_10_9);
+--    make_hdmi_view_cfg(
+--       C_HDMI_FIT_LEGACY,
+--       C_HDMI_FIT_10_9,
+--       (0 => C_HDMI_SCALE_FULL,
+--        1 => make_hdmi_scale(4, 5),
+--        2 => make_hdmi_scale(9, 14),
+--        3 => C_HDMI_SCALE_FULL));
 constant HDMI_VIEW            : hdmi_view_cfg_t := C_HDMI_VIEW_LEGACY;
 
 --    FONT_*  size of one OSM character

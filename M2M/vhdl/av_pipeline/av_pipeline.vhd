@@ -62,6 +62,7 @@ entity av_pipeline is
       qnice_scandoubler_i     : in  std_logic;
       qnice_csync_i           : in  std_logic;
       qnice_zoom_crop_i       : in  std_logic;
+      qnice_hdmi_view_size_i  : in  std_logic_vector(1 downto 0) := (others => '0');
       qnice_audio_filter_i    : in  std_logic;
       qnice_audio_mute_i      : in  std_logic;
       qnice_video_mode_i      : in  std_logic_vector( 3 downto 0);
@@ -206,6 +207,7 @@ signal hdmi_osm_vram_data     : std_logic_vector(15 downto 0);
 
 signal hdmi_video_mode        : std_logic_vector(3 downto 0);
 signal hdmi_zoom_crop         : std_logic;
+signal hdmi_view_size         : std_logic_vector(1 downto 0);
 
 -- QNICE On Screen Menu selections
 signal hdmi_osm_control_m     : std_logic_vector(255 downto 0);
@@ -506,6 +508,26 @@ begin
          dest_out(46 downto 38) => hdmi_osm_cfg_scaling
       ); -- i_qnice2hdmi
 
+   -- Keep the legacy CDC structurally unchanged unless the core configures at
+   -- least one non-full cropped-view size. This makes the feature disappear
+   -- at elaboration time for unchanged cores.
+   gen_hdmi_view_size : if G_HDMI_VIEW.CROPPED_SIZES /= C_HDMI_VIEW_SIZES_FULL generate
+      i_qnice2hdmi_view_size: xpm_cdc_array_single
+         generic map (
+            WIDTH => 2
+         )
+         port map (
+            src_clk  => qnice_clk_i,
+            src_in   => qnice_hdmi_view_size_i,
+            dest_clk => hdmi_clk_i,
+            dest_out => hdmi_view_size
+         ); -- i_qnice2hdmi_view_size
+   end generate gen_hdmi_view_size;
+
+   gen_legacy_view_size : if G_HDMI_VIEW.CROPPED_SIZES = C_HDMI_VIEW_SIZES_FULL generate
+      hdmi_view_size <= (others => '0');
+   end generate gen_legacy_view_size;
+
 
    i_crop : entity work.crop
       port map (
@@ -573,6 +595,7 @@ begin
          hdmi_dvi_i               => qnice_dvi_i, -- proper clock domain crossing for this very signal happens inside vga_to_hdmi.vhd
          hdmi_video_mode_i        => slv_to_video_mode(hdmi_video_mode),
          hdmi_crop_mode_i         => hdmi_zoom_crop,
+         hdmi_view_size_i         => hdmi_view_size,
          hdmi_osm_cfg_scaling_i   => first_nonzero_bit(hdmi_osm_cfg_scaling),
          hdmi_osm_cfg_enable_i    => hdmi_osm_cfg_enable,
          hdmi_osm_cfg_xy_i        => hdmi_osm_cfg_xy,
