@@ -4,6 +4,12 @@ Version 2.1.0 - MONTH DAY, YEAR
 Improvements
 ------------
 
+* Added the generic `make_release.py` packager and a stock-demo
+  `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell config
+  naming, and release-document policies are declarative; genuinely
+  core-specific checks or artifacts can use optional `CORE/release_hooks.py`
+  callbacks without forking the shared release engine.
+
 * Heavily improved documentation: Wiki and "The Ultimate Porting Guide"
 
 * Support for AI coding assistants: Added AGENTS.md and CLAUDE.md

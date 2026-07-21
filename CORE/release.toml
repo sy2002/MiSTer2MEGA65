@@ -1,0 +1,42 @@
+# Release packaging defaults for the stock MiSTer2MEGA65 demo core.
+#
+# Core porters: customize this file for the core, but keep the repository-root
+# make_release.py as shared framework infrastructure. See the Wiki article
+# "Packaging releases with make_release.py" for every setting and for the
+# recommended CORE_VERSION convention.
+
+[core]
+file_base = "M2M-DEMO"
+display_name = "MiSTer2MEGA65 Demo Core"
+boards = ["R3", "R4", "R5", "R6"]
+
+[version]
+# The stock demo stores its version in CORENAME. A real core should normally
+# define a CORE_VERSION string constant, derive CORENAME and CFG_FILE from it,
+# and use check = "core_version_constant" with constant = "CORE_VERSION".
+check = "regex"
+file = "CORE/vhdl/config.vhd"
+pattern = 'constant\s+CORENAME\s*:\s*string\s*:=\s*"M2M DEMO CORE ([^"]+)"\s*;'
+
+[cor]
+# Leave these empty unless the core registers MEGA65 file associations.
+bit2core_tail = ""
+coretool_flags = ""
+coretool_caps = ""
+
+[shell_config]
+enabled = true
+# This matches the basename of the stock CFG_FILE value, /m2m/m2mcfg.
+filename = "m2mcfg"
+
+[release_notes]
+versions_md = "required"
+
+[alpha]
+# This one policy governs both alpha and beta packages. The framework template
+# has no doc/inofficial.md; maintained downstream cores should normally create
+# that file and change this policy to "required".
+inofficial_md = "skip"
+
+[cleanup]
+stale_files = []

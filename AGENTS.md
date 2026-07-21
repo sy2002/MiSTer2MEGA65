@@ -96,6 +96,7 @@ The single VHDL contract between them is the entity **`MEGA65_Core`** in
 ├── VERSIONS.md          framework changelog (newest on top; top entry = V2.0.1)
 ├── AUTHORS              CREDIT TEMPLATE (placeholders like "YOUR NAME"); shows the required credits
 ├── AGENTS.md  CLAUDE.md this guide (CLAUDE.md just imports AGENTS.md)
+├── make_release.py      generic release packager; core identity/policy comes from CORE/release.toml
 │
 ├── M2M/                 ← THE FRAMEWORK (board-dependent, core-independent). Copied into cores verbatim.
 │   ├── MEGA65-R{3,4,5,6}.xdc   per-board pin constraints
@@ -143,6 +144,7 @@ The single VHDL contract between them is the entity **`MEGA65_Core`** in
 │   │                    make_rom.sh (builds m2m-rom.rom), synth_pre.tcl (Vivado pre-synth hook)
 │   ├── CORE-R{3,4,5,6}.xpr  one Vivado project per board (+ generated .cache/.runs/.hw/.sim dirs)
 │   ├── CORE.xdc         optional core-specific constraints
+│   ├── release.toml     release identity, naming, metadata, and artifact policies
 │   ├── make_qasm.sh, load_bitstream.sh
 │
 └── doc/
@@ -679,7 +681,9 @@ already in `M2M/`; grep before claiming (only the QNICE bump has landed):
   C64MEGA65 #229/#230.
 - **AExp upstreams:** the `HANDLE_CORE_IO` core-io-hook + the `m2m-rom.asm` polling extension for
   writeable disks, and the debounce hack (AExp #4).
-- **`make_release.py`** (both cores ship one) — bring it in with a default TOML.
+- **Generic release packager** — ✅ DONE: the canonical root `make_release.py` plus a usable stock-demo
+  `CORE/release.toml` are now part of the framework template. Core-specific extensions stay in an optional
+  `CORE/release_hooks.py`; do not fork the shared engine for one core.
 - **Port `config.vhd` comments** that point to the new Wiki articles into the framework.
 - **More than one drive 8** — issue #63 also links C64MEGA65 #93 (supporting more than just "drive 8").
 - **Bugfixes (would be V2.0.2):** keyboard dies after leaving the menu (#58); vdrive `sd_lba_i[]` array
@@ -774,7 +778,7 @@ core; `keyboard.vhd`'s "bit 0=Space, 1=Return, 2=Run/Stop" comment is stale (the
 | Keyboard | `M2M/vhdl/m2m_keyb.vhd`, `controllers/M65/{mega65kbd_to_matrix,matrix_to_keynum}.vhdl`, `CORE/vhdl/keyboard.vhd` |
 | I2C / RTC | `M2M/vhdl/i2c/*` (per-board device tables in `rtc_master.vhd`) |
 | Per-board pinout / bring-up | `M2M/MEGA65-RX.xdc`, `M2M/common.xdc`, `M2M/vhdl/top_mega65-rX.vhd`, `controllers/M65/max10.vhdl` (R3) |
-| Build / ROM / settings file | `CORE/m2m-rom/{make_rom.sh,synth_pre.tcl}`, `M2M/tools/make_config.sh`, `M2M/QNICE/tools/make-toolchain.sh` |
+| Build / ROM / settings / release | `CORE/m2m-rom/{make_rom.sh,synth_pre.tcl}`, `M2M/tools/make_config.sh`, `M2M/QNICE/tools/make-toolchain.sh`, `make_release.py`, `CORE/release.toml` |
 | Framework conventions | `doc/m2m/{example-file-headers,exceptions,m2m_migration}.md` |
 
 ---
