@@ -161,11 +161,17 @@ begin
           end if;
 
         when RESPONSE_ST =>
-          if s_burstcount > 1 then
-            s_burstcount <= s_burstcount - 1;
-            offset       <= offset + 1;
-          else
-            state <= IDLE_ST;
+          -- Only advance when the word for the current beat is present in the
+          -- FIFO: with a master that delivers read words with gaps (e.g. a
+          -- DDR3 controller), unconditional streaming would emit stale data
+          -- from the previous word.
+          if m_avm_readdatavalid = '1' then
+            if s_burstcount > 1 then
+              s_burstcount <= s_burstcount - 1;
+              offset       <= offset + 1;
+            else
+              state <= IDLE_ST;
+            end if;
           end if;
 
         when others =>
@@ -182,8 +188,7 @@ begin
   end process fsm_proc;
 
   s_avm_readdata_o      <= m_avm_readdata(G_SLAVE_DATA_SIZE * (to_integer(offset) + 1) - 1 downto G_SLAVE_DATA_SIZE * to_integer(offset));
-  s_avm_readdatavalid_o <= m_avm_readdatavalid when state = READING_ST else
-                           '1' when state = RESPONSE_ST else
+  s_avm_readdatavalid_o <= m_avm_readdatavalid when state = READING_ST or state = RESPONSE_ST else
                            '0';
 
   m_avm_ready           <= '1' when offset = C_RATIO - 1 or state = IDLE_ST else
