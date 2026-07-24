@@ -90,8 +90,7 @@ begin
    end process;
    
    -- debouncer settings for the joysticks:
-   -- 5ms for any joystick direction
-   -- 1ms for the fire button
+   -- 1ms for any joystick direction and the fire button
         
    do_dbnce_joy1_up : entity work.debounce
       generic map(initial => '1', clk_freq => CLK_FREQ, stable_time => 1)
