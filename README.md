@@ -34,7 +34,7 @@ MiSTer2MEGA65, but you get the gist of it.*
 Getting started, detailed documentation and support
 ---------------------------------------------------
 
-1. You might whant to start your journey
+1. You might want to start your journey
   [here](https://github.com/sy2002/MiSTer2MEGA65/wiki/1.-What-is-MiSTer2MEGA65)
   and then follow the reading track that is pointed out in the
   respective chapters.
