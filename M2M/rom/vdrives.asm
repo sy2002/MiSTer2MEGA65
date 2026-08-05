@@ -496,6 +496,11 @@ VD_CAD_WRITE    INCRB
 ; Input:   R8: Virtual drive number
 ;          R9: Register number
 ; Output:  R8: Value
+; CAUTION: R8 is DESTROYED, i.e. the input value (the virtual drive number) is
+;          overwritten by the return value. When iterating over all virtual
+;          drives, keep the loop counter in another register and copy it to R8
+;          before each call. (See VD_DRV_WRITE below, which in contrast to this
+;          function does leave R8 unchanged.)
 VD_DRV_READ     INCRB
 
                 MOVE    M2M$RAMROM_DEV, R0

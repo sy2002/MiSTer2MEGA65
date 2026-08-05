@@ -33,6 +33,18 @@ Improvements
 Bug fixes
 ---------
 
+* Fixed a hang of the Shell that froze QNICE as soon as the on-screen-menu was
+  closed. It occurred in cores that use two or more virtual drives and that
+  have settings persistence switched on, i.e. `SAVE_SETTINGS` is true in
+  `CORE/vhdl/config.vhd` and the file named by `CFG_FILE` is present on the SD
+  card. Symptom: after leaving the menu for the first time, the core stopped
+  reacting to the keyboard and the menu could not be opened again. The
+  write-cache check in `ROSM_SAVE` kept the virtual drive number in R8 across
+  the call to `VD_DRV_READ`, which returns its result in that very register,
+  so the loop never terminated. Cores with zero or one virtual drive were not
+  affected, which is why this went unnoticed for so long. Many thanks to
+  Rhialto for the thorough analysis and the fix (issue #58).
+
 * Restored the HyperRAM controller placement pblock on R3, R4, R5 and R6.
   Keeping the receive FIFO close to the fixed HyperRAM I/O bank ensures that
   the IDDR-to-FIFO paths reliably meet their deliberate 2 ns maximum delay.
