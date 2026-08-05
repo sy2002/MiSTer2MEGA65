@@ -5,8 +5,8 @@ Improvements
 ------------
 
 * Added the generic `make_release.py` packager and a stock-demo
-  `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell config
-  naming, and release-document policies are declarative; genuinely
+  `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell
+  config naming, and release-document policies are declarative; genuinely
   core-specific checks or artifacts can use optional `CORE/release_hooks.py`
   callbacks without forking the shared release engine.
 
@@ -26,24 +26,24 @@ Improvements
   and calculates all target rectangles at elaboration time. The stock legacy
   profile exactly preserves the previous HDMI image placement. Four optional
   rational size fractions can now be selected at runtime for the cropped view;
-  the selector is ignored for the uncropped view and all four fractions default
-  to full size for backward-compatible behavior. With that stock profile, the
-  selector CDC and mux are omitted at elaboration.
+  the selector is ignored for the uncropped view and all four fractions
+  default to full size for backward-compatible behavior. With that stock
+  profile, the selector CDC and mux are omitted at elaboration.
 
 Bug fixes
 ---------
 
+* Fixed silent data corruption when writing to disk images: opening a file or
+  a directory stole QNICE's single 512-byte sector buffer from a handle that
+  was in the middle of writing, so up to a sector of data was lost without any
+  error. Easy to trigger by using the file browser while a virtual drive was
+  still flushing its write cache.
+
 * Fixed a hang of the Shell that froze QNICE as soon as the on-screen-menu was
-  closed. It occurred in cores that use two or more virtual drives and that
-  have settings persistence switched on, i.e. `SAVE_SETTINGS` is true in
-  `CORE/vhdl/config.vhd` and the file named by `CFG_FILE` is present on the SD
-  card. Symptom: after leaving the menu for the first time, the core stopped
-  reacting to the keyboard and the menu could not be opened again. The
-  write-cache check in `ROSM_SAVE` kept the virtual drive number in R8 across
-  the call to `VD_DRV_READ`, which returns its result in that very register,
-  so the loop never terminated. Cores with zero or one virtual drive were not
-  affected, which is why this went unnoticed for so long. Many thanks to
-  Rhialto for the thorough analysis and the fix (issue #58).
+  closed: the keyboard stopped reacting and the menu could not be opened
+  again. It occurred in cores that use two or more virtual drives and that
+  have settings persistence switched on. Many thanks to Rhialto for the
+  thorough analysis and the fix (issue #58).
 
 * Restored the HyperRAM controller placement pblock on R3, R4, R5 and R6.
   Keeping the receive FIFO close to the fixed HyperRAM I/O bank ensures that
