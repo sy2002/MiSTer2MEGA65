@@ -62,6 +62,8 @@
 --    drives simultaneously, unless the img_readonly_o, img_size_o and img_type_o values are the same
 --    for these drives. Make sure that you output these values before you actually trigger the rising
 --    edge of the mount bit. Also make sure that you only strobe the signal and do not keep it up all the time.
+--    img_mounted_toggle_o is an optional persistent representation of the same event: each selected drive
+--    bit changes exactly once per rising edge, regardless of how many core clock cycles the strobe spans.
 --
 -- 3. rd_i should be low while no drive is not mounted. The QNICE firmware will output a warning on the
 --    serial port, if it detects high in such a situation: There might be something wrong with the logic.
@@ -171,7 +173,13 @@ port (
    qnice_data_i      : in std_logic_vector(15 downto 0);
    qnice_data_o      : out std_logic_vector(15 downto 0);
    qnice_ce_i        : in std_logic;
-   qnice_we_i        : in std_logic
+   qnice_we_i        : in std_logic;
+
+   -- Optional persistent event token in the core clock domain. The corresponding
+   -- bit toggles once for each rising edge of img_mounted_o, including unmounts.
+   -- The vector resets to zero with reset_core_i. Keep this defaulted port last
+   -- to preserve existing named and positional maps.
+   img_mounted_toggle_o : out std_logic_vector(VDNUM - 1 downto 0) := (others => '0')
 );
 end vdrives;
 
@@ -203,13 +211,19 @@ signal sd_lba_4k_offs   : vd_vec_array(VDNUM - 1 downto 0)(11 downto 0);
 
 -- CDC signals for QNICE to core clock domain
 signal img_mounted_out  : std_logic_vector(VDNUM - 1 downto 0);
+signal img_mounted_d    : std_logic_vector(VDNUM - 1 downto 0);
 signal img_readonly_out : std_logic;
 signal img_size_out     : std_logic_vector(31 downto 0);
 signal img_type_out     : std_logic_vector(1 downto 0);
+signal cdc_q2m_in       : std_logic_vector((3 * VDNUM) - 1 downto 0);
+signal cdc_q2m_out      : std_logic_vector((3 * VDNUM) - 1 downto 0);
 
 -- Drive mounted register in core's and QNICE's clock domain
 signal drive_mounted_reg         : std_logic_vector(VDNUM - 1 downto 0);
 signal drive_mounted_reg_qnice   : std_logic_vector(VDNUM - 1 downto 0);
+signal img_mounted_toggle_reg     : std_logic_vector(VDNUM - 1 downto 0);
+signal cdc_m2q_in                 : std_logic_vector(VDNUM downto 0);
+signal cdc_m2q_out                : std_logic_vector(VDNUM downto 0);
 
 -- Cache signalling registers in core's and QNICE's clock domain
 signal cache_dirty_r_core        : std_logic_vector(VDNUM - 1 downto 0);
@@ -231,22 +245,24 @@ begin
    img_size_o        <= img_size_out;
    img_type_o        <= img_type_out;
    drive_mounted_o   <= drive_mounted_reg;
+   img_mounted_toggle_o <= img_mounted_toggle_reg;
    cache_dirty_o     <= cache_dirty_r_core;
    cache_flushing_o  <= cache_flushing_r_core;
+
+   cdc_q2m_in            <= cache_flushing_r_qnice & cache_dirty_r_qnice & img_mounted;
+   img_mounted_out       <= cdc_q2m_out((VDNUM * 1) - 1 downto VDNUM * 0);
+   cache_dirty_r_core    <= cdc_q2m_out((VDNUM * 2) - 1 downto VDNUM * 1);
+   cache_flushing_r_core <= cdc_q2m_out((VDNUM * 3) - 1 downto VDNUM * 2);
 
    i_cdc_q2m_img_mounted: xpm_cdc_array_single
       generic map (
          WIDTH => 3 * VDNUM
       )
       port map (
-         src_clk                                      => clk_qnice_i,
-         src_in((VDNUM * 1) - 1 downto (VDNUM * 0))   => img_mounted(VDNUM - 1 downto 0),
-         src_in((VDNUM * 2) - 1 downto (VDNUM * 1))   => cache_dirty_r_qnice(VDNUM - 1 downto 0),
-         src_in((VDNUM * 3) - 1 downto (VDNUM * 2))   => cache_flushing_r_qnice(VDNUM - 1 downto 0),
-         dest_clk                                     => clk_core_i,
-         dest_out((VDNUM * 1) - 1 downto (VDNUM * 0)) => img_mounted_out(VDNUM - 1 downto 0),
-         dest_out((VDNUM * 2) - 1 downto (VDNUM * 1)) => cache_dirty_r_core(VDNUM - 1 downto 0),
-         dest_out((VDNUM * 3) - 1 downto (VDNUM * 2)) => cache_flushing_r_core(VDNUM - 1 downto 0)
+         src_clk  => clk_qnice_i,
+         src_in   => cdc_q2m_in,
+         dest_clk => clk_core_i,
+         dest_out => cdc_q2m_out
       );
 
    i_cdc_qnice2main: xpm_cdc_array_single
@@ -270,17 +286,19 @@ begin
    sd_buff_wr_o      <= sd_buff_wr;
    sd_ack_o          <= sd_ack;
 
+   cdc_m2q_in <= drive_mounted_reg & reset_core_i;
+   reset_qnice            <= cdc_m2q_out(0);
+   drive_mounted_reg_qnice <= cdc_m2q_out(VDNUM downto 1);
+
    i_cdc_main2qnice: xpm_cdc_array_single
       generic map (
          WIDTH => 1 + VDNUM
       )
       port map (
-         src_clk                             => clk_core_i,
-         src_in(0)                           => reset_core_i,
-         src_in((1 + VDNUM - 1) downto 1)    => drive_mounted_reg,
-         dest_clk                            => clk_qnice_i,
-         dest_out(0)                         => reset_qnice,
-         dest_out((1 + VDNUM - 1) downto 1)  => drive_mounted_reg_qnice
+         src_clk  => clk_core_i,
+         src_in   => cdc_m2q_in,
+         dest_clk => clk_qnice_i,
+         dest_out => cdc_m2q_out
       );
 
    -- speed up the QNICE firmware by doing certain calculations in hardware instead of software
@@ -300,25 +318,35 @@ begin
       sd_lba_4k_offs(i) <= sd_lba_bytes(i)(11 downto 0);
    end generate g_bytecalc;
 
-   -- the protocol demands for a strobed img_mounted signal, but we need a constant signal
-   -- to control the drive's reset line
+   -- The protocol demands a strobed img_mounted signal, but the drive also needs
+   -- a persistent mounted state. Some MiSTer cores additionally use a persistent
+   -- event token that changes once per strobe. Since the synchronized strobe can
+   -- span multiple core clock cycles, detect its rising edge before toggling.
    handle_drive_mounted : process(clk_core_i)
    begin
       if rising_edge(clk_core_i) then
-         for i in 0 to VDNUM - 1 loop
-            if reset_core_i = '1' then
-               drive_mounted_reg(i) <= '0';
-            elsif img_mounted_out(i) = '1' then
-               -- to unmount a drive: strobe img_mounted while having the image size set to zero
-               if img_size_out = x"00000000" then
-                  drive_mounted_reg(i) <= '0';
+         if reset_core_i = '1' then
+            img_mounted_d          <= (others => '0');
+            drive_mounted_reg      <= (others => '0');
+            img_mounted_toggle_reg <= (others => '0');
+         else
+            img_mounted_d <= img_mounted_out;
 
-               -- to mount a drive: strobe img_mounted while having a nonzero image size
-               else
-                  drive_mounted_reg(i) <= '1';
+            for i in 0 to VDNUM - 1 loop
+               if img_mounted_out(i) = '1' and img_mounted_d(i) = '0' then
+                  -- to unmount a drive: strobe img_mounted while having the image size set to zero
+                  if img_size_out = x"00000000" then
+                     drive_mounted_reg(i) <= '0';
+
+                  -- to mount a drive: strobe img_mounted while having a nonzero image size
+                  else
+                     drive_mounted_reg(i) <= '1';
+                  end if;
+
+                  img_mounted_toggle_reg(i) <= not img_mounted_toggle_reg(i);
                end if;
-            end if;
-         end loop;
+            end loop;
+         end if;
       end if;
    end process;
 

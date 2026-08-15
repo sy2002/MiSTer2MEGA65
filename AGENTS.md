@@ -346,7 +346,9 @@ MiSTer drive wires straight to it. It is instantiated **on the core side** (in t
 - The Shell firmware treats a mounted disk image as a **RAM disk** (buffered in HyperRAM) and
   serves the core's block reads/writes in real time. `img_mounted` is a strobe; **unmount =
   strobe with `img_size = 0`, mount = strobe with nonzero size**; `drive_mounted` is the latched
-  version that drives the drive's reset.
+  version that drives the drive's reset. The optional, defaulted `img_mounted_toggle_o` changes
+  each drive's bit exactly once per synchronized `img_mounted` rising edge, including replacement
+  and unmount, so cores that expect a persistent media-change token do not depend on strobe width.
 - **Cache write-back interlock:** a write marks the cache dirty; the flush to SD only starts after
   a configurable idle window (default **2 s**, anti-thrashing) because QNICE SD writes are too slow
   for real-time emulation. A core uses `cache_dirty_o` to **delay/deny a reset or unmount until the

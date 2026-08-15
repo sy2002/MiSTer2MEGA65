@@ -4,6 +4,13 @@ Version 2.1.0 - MONTH DAY, YEAR
 Improvements
 ------------
 
+* Added the optional `img_mounted_toggle_o` output to `vdrives`. Each drive's
+  bit changes exactly once per image event, including replacement and unmount,
+  independently of how many core clock cycles the synchronized
+  `img_mounted_o` strobe remains high. The defaulted trailing port preserves
+  existing direct entity instantiations. Thanks to Muse (Shoestring) from the
+  Apple II core for proposing the persistent disk-change token.
+
 * Added the generic `make_release.py` packager and a stock-demo
   `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell
   config naming, and release-document policies are declarative; genuinely

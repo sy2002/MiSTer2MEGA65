@@ -516,6 +516,10 @@ begin
          img_type_o        => open,
          drive_mounted_o   => open,
 
+         -- Optional persistent image-event token; each selected drive bit toggles
+         -- once per mount, replacement, or unmount event.
+         img_mounted_toggle_o => open,
+
          -- Cache output signals: The dirty flags can be used to enforce data consistency
          -- (for example by ignoring/delaying a reset or delaying a drive unmount/mount, etc.)
          -- The flushing flags can be used to signal the fact that the caches are currently
@@ -546,4 +550,3 @@ begin
       ); -- i_vdrives
 
 end architecture synthesis;
-
