@@ -69,6 +69,23 @@ OPTM_F_MENUGRP2 .ASCII_P "menu.asm: OPTM_SET\n"
                 .ASCII_W "groups. One item always needs to be 1.\n"
 OPTM_F_MENUGRP3 .ASCII_P "menu.asm: OPTM_SET\n"
                 .ASCII_W "Logic bug or memory corruption in M2M.\n"
+OPTM_F_WINX     .ASCII_P "menu.asm: OPTM_CHK_WIN:\n"
+                .ASCII_P "The menu window is wider than the\n"
+                .ASCII_P "screen: Reduce OPTM_DX in config.vhd.\n"
+                .ASCII_P "The error code shows the maximum\n"
+                .ASCII_W "valid OPTM_DX.\n"
+OPTM_F_WINY     .ASCII_P "menu.asm: OPTM_CHK_WIN:\n"
+                .ASCII_P "The menu window is higher than the\n"
+                .ASCII_P "screen: Reduce OPTM_DY in config.vhd.\n"
+                .ASCII_P "The error code shows the maximum\n"
+                .ASCII_W "valid OPTM_DY.\n"
+OPTM_F_MENUFIT  .ASCII_P "menu.asm: OPTM_SHOW:\n"
+                .ASCII_P "The active menu level contains more\n"
+                .ASCII_P "visible items than the height of the\n"
+                .ASCII_P "menu window allows: Increase OPTM_DY\n"
+                .ASCII_P "in config.vhd or use submenus.\n"
+                .ASCII_P "The error code shows the amount of\n"
+                .ASCII_W "visible items.\n"
 
 OPTM_F_MSTRUCT  .ASCII_P "menu.asm: OPTM_RUN is not running.\n"
                 .ASCII_W "OPTM_STRUCT is invalid.\n"
@@ -219,6 +236,48 @@ OPTM_INIT       INCRB
                 RET
 
 ; ----------------------------------------------------------------------------
+; OPTM_CHK_WIN: Check that the menu window fits on the screen
+;
+; Input:
+;   R8: width of the screen in characters
+;   R9: height of the screen in characters
+;
+; The window size that has been set via OPTM_INIT (OPTM_DX and OPTM_DY, both
+; including the frame) is checked against the screen size: If the window does
+; not fit on the screen, then a fatal error (OPTM_CLBK_FATAL) is raised,
+; because otherwise the menu would be drawn outside the video ram and corrupt
+; the screen. The error code of the fatal error shows the maximum valid net
+; size, i.e. the maximum valid value for OPTM_DX or OPTM_DY in config.vhd,
+; which is two characters smaller than the window due to the frame.
+;
+; Output: R8/R9 unchanged and no fatal error, if the window fits
+; ----------------------------------------------------------------------------
+
+OPTM_CHK_WIN    INCRB
+
+                MOVE    OPTM_DX, R0             ; R0: window dx incl. frame
+                MOVE    @R0, R0
+                CMP     R0, R8                  ; window wider than screen?
+                RBRA    _OPTM_CW_1, !N          ; no: check the height
+                MOVE    R8, R9                  ; yes: fatal; error code is..
+                SUB     2, R9                   ; ..the maximum valid OPTM_DX
+                MOVE    OPTM_F_WINX, R8
+                RBRA    _OPTM_CW_F, 1
+
+_OPTM_CW_1      MOVE    OPTM_DY, R0             ; R0: window dy incl. frame
+                MOVE    @R0, R0
+                CMP     R0, R9                  ; window higher than screen?
+                RBRA    _OPTM_CW_RET, !N        ; no: everything OK: return
+                SUB     2, R9                   ; error code: max. val. OPTM_DY
+                MOVE    OPTM_F_WINY, R8
+
+_OPTM_CW_F      MOVE    OPTM_CLBK_FATAL, R7     ; fatal via callback function
+                RBRA    _OPTM_CALL, 1           ; (never returns)
+
+_OPTM_CW_RET    DECRB
+                RET
+
+; ----------------------------------------------------------------------------
 ; Show menu: Draw frame and fill it with the menu items
 ;
 ; Input/Output: None, no registers are changed
@@ -261,6 +320,21 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 MOVE    R1, R9
                 RSUB    _OPTM_STRUCT, 1
 
+                ; The amount of visible menu items on the currently active
+                ; menu level (returned by _OPTM_STRUCT in R9) must fit into
+                ; the height of the menu window: The window height minus two
+                ; characters for the frame. Otherwise the menu would be drawn
+                ; outside the window and corrupt the screen, so we treat this
+                ; situation as a fatal error.
+                MOVE    OPTM_DY, R8             ; R8: maximum visible items:
+                MOVE    @R8, R8                 ; ..window height minus two..
+                SUB     2, R8                   ; ..characters for the frame
+                CMP     R9, R8                  ; more visible items than max?
+                RBRA    _OPTM_SHOW_FIT, !N      ; no: proceed
+                MOVE    OPTM_CLBK_FATAL, R7     ; yes: fatal; error code in R9
+                MOVE    OPTM_F_MENUFIT, R8      ; ..is the amt of visible itms
+                RBRA    _OPTM_CALL, 1           ; (never returns)
+
                 ; ------------------------------------------------------------
                 ; Draw the first iteration of the menu
                 ; (In case there are %s, they will be drawn as %s)
@@ -269,7 +343,7 @@ OPTM_SHOW       SYSCALL(enter, 1)
                 ; the coordinates are relative to the top/left of the screen
                 ; and not relative to the top/left of the "window"/"frame"
                 ; that is drawn around the menu
-                MOVE    OPTM_X, R8
+_OPTM_SHOW_FIT  MOVE    OPTM_X, R8
                 MOVE    @R8, R8
                 MOVE    OPTM_Y, R9
                 MOVE    @R9, R9

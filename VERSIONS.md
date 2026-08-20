@@ -11,6 +11,19 @@ Improvements
   existing direct entity instantiations. Thanks to Muse (Shoestring) from the
   Apple II core for proposing the persistent disk-change token.
 
+* The firmware now stops with a clear fatal error message instead of silently
+  corrupting the on-screen display when the Options menu does not fit: (a) at
+  startup, if the menu window (`OPTM_DX`/`OPTM_DY` from `config.vhd` plus two
+  characters for the frame) is larger than the screen, whose size is
+  `VGA_DX/16` x `VGA_DY/16` characters (`globals.vhd`), and (b) when a menu is
+  shown whose currently active level contains more visible lines than the
+  window height allows. Both checks only fire on configurations that already
+  rendered a corrupted menu before, so existing cores are not affected. The
+  maximum possible menu height on a given screen is `VGA_DY/16 - 2` lines;
+  use submenus to offer more items than that. Verified with the new emulator
+  testbed `M2M/rom/menu_test.asm`. Thanks to Muse (Shoestring) from the
+  Apple II core for reporting the corrupted rendering that led to this find.
+
 * Added the generic `make_release.py` packager and a stock-demo
   `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell
   config naming, and release-document policies are declarative; genuinely

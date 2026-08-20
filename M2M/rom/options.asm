@@ -260,6 +260,16 @@ HELP_MENU_INIT  SYSCALL(enter, 1)
                 MOVE    @R12, R12
                 RSUB    OPTM_INIT, 1
 
+                ; The menu window (net size from config.vhd plus two
+                ; characters for the frame) needs to fit on the screen,
+                ; otherwise the firmware would draw outside the video ram:
+                ; Show a fatal error, if it does not fit
+                MOVE    SCR$SYS_DX, R8          ; screen width in chars
+                MOVE    @R8, R8
+                MOVE    SCR$SYS_DY, R9          ; screen height in chars
+                MOVE    @R9, R9
+                RSUB    OPTM_CHK_WIN, 1
+
                 ; extract the amount of menu items (including empty lines and
                 ; headlines) from config.vhd
                 MOVE    M2M$RAMROM_DEV, R0      ; Device=config.vhd

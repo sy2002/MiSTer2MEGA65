@@ -336,6 +336,10 @@ constant OPTM_SIZE         : natural := 35;  -- amount of items including empty 
 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
 -- Without submenus: Use OPTM_SIZE as height, otherwise count how large the actually visible main menu is.
+-- CAUTION: The menu window including the frame needs to fit on the screen, which is VGA_DX/16 x VGA_DY/16 characters
+-- large (see globals.vhd), so make sure that OPTM_DX + 2 <= VGA_DX/16 and OPTM_DY + 2 <= VGA_DY/16 and that no menu
+-- level (main menu or submenu) contains more visible lines than OPTM_DY. The firmware checks both and shows a fatal
+-- error if the menu does not fit.
 constant OPTM_DX           : natural := 23;
 constant OPTM_DY           : natural := 24;
 
