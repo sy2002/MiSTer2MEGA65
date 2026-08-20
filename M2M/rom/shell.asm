@@ -524,6 +524,10 @@ _HM_SDMOUNTED5S MOVE    R1, R8                  ; output optional error string
                 RSUB    SCR$PRINTSTR, 1
                 MOVE    NEWLINE, R8
                 RSUB    SCR$PRINTSTR, 1
+
+                ; the Shell owns the press-Space prompt: core-provided error
+                ; strings from PREP_LOAD_IMAGE must not contain one themselves
+                ; (see the PREP_LOAD_IMAGE docs in CORE/m2m-rom/m2m-rom.asm)
                 MOVE    STR_SPACE, R8
                 RSUB    SCR$PRINTSTR, 1
                 MOVE    R6, SP                  ; restore SP

@@ -24,6 +24,15 @@ Improvements
   testbed `M2M/rom/menu_test.asm`. Thanks to Muse (Shoestring) from the
   Apple II core for reporting the corrupted rendering that led to this find.
 
+* Documented the `PREP_LOAD_IMAGE` error-message contract in the template
+  (`CORE/m2m-rom/m2m-rom.asm`) and at the display site in the Shell: when the
+  callback returns an error message string, the Shell prints "Error code:"
+  plus the code, then the string, and then appends its own "Press Space to
+  continue." prompt. Core-provided strings must therefore not contain such a
+  prompt themselves (it would be shown twice); start them with `\n\n` and end
+  them with `\n`, like the C64 core does, for exactly one empty line between
+  the message and the prompt.
+
 * Added the generic `make_release.py` packager and a stock-demo
   `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell
   config naming, and release-document policies are declarative; genuinely

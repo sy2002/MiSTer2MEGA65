@@ -97,7 +97,15 @@ FILTER_FILES    XOR     R8, R8                  ; R8 = 0 = do not filter file
 ;   R9: @TODO: Future release: Context (see CTX_* in sysdef.asm)
 ; Output:
 ;   R8: 0=OK, error code otherwise
-;   R9: image type if R8=0, otherwise 0 or optional ptr to  error msg string
+;   R9: image type if R8=0, otherwise 0 or optional ptr to error msg string
+;
+; If you return an error message string in R9, then the Shell prints
+; "Error code: <R8 in hex>", followed by your string, and then it appends
+; its own "Press Space to continue." prompt (_HM_SDMOUNTED5S in
+; M2M/rom/shell.asm). Therefore do not end your string with such a prompt,
+; otherwise the prompt is shown twice. Best practice (see the C64 core):
+; start your string with "\n\n" and end it with "\n" so that exactly one
+; empty line separates your message from the prompt of the Shell.
 PREP_LOAD_IMAGE XOR     R8, R8                  ; no errors
                 XOR     R9, R9                  ; image type hardcoded to 0
                 RET
