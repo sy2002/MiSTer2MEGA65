@@ -62,6 +62,13 @@ Improvements
 Bug fixes
 ---------
 
+* Fixed QNICE's FAT32 sector-address overflow check
+  ([issue #51](https://github.com/sy2002/MiSTer2MEGA65/issues/51)). It now
+  rejects a computed address when either upper word is nonzero, instead of
+  allowing a truncated 32-bit address through to the disk device. The overflow
+  error path also preserves the device handle. Included via the updated
+  QNICE V1.61 submodule.
+
 * Fixed silent data corruption when writing to disk images: opening a file or
   a directory stole QNICE's single 512-byte sector buffer from a handle that
   was in the middle of writing, so up to a sector of data was lost without any
