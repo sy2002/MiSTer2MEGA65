@@ -51,11 +51,8 @@ Status of the framework
 **The MiSTer2MEGA (M2M) framework is stable and ready for being used.**
 The reference implementation of the M2M framework is the
 [Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65).
-Additionally there is already
-[a decent amount of cores](https://cores.mega65.org)
-that are based on the M2M framework. Head to the
-[Alternate MEGA65 cores](https://sy2002.github.io/m65cores/)
-website to learn more.
+Additionally there is already a decent amount of cores that are based on the M2M framework.
+Head to the [Alternate MEGA65 cores](https://cores.mega65.org) website to learn more.
 
 [The Ultimate MiSTer2MEGA65 Porting Guide](https://github.com/sy2002/MiSTer2MEGA65/wiki/The-Ultimate-MiSTer2MEGA65-Porting-Guide)
 is very comprehensive - if you miss something or have questions, contact us on Discord.
