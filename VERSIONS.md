@@ -4,25 +4,22 @@ Version 2.1.0 - MONTH DAY, YEAR
 Improvements
 ------------
 
+* Heavily improved documentation: Wiki and "The Ultimate Porting Guide"
+
+* Support for AI coding assistants: Added AGENTS.md and CLAUDE.md
+
+* Added the generic `make_release.py` packager and a stock-demo
+  `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell
+  config naming, and release-document policies are declarative; genuinely
+  core-specific checks or artifacts can use optional `CORE/release_hooks.py`
+  callbacks without forking the shared release engine.
+
 * Added the optional `img_mounted_toggle_o` output to `vdrives`. Each drive's
   bit changes exactly once per image event, including replacement and unmount,
   independently of how many core clock cycles the synchronized
   `img_mounted_o` strobe remains high. The defaulted trailing port preserves
   existing direct entity instantiations. Thanks to Muse (Shoestring) from the
   Apple II core for proposing the persistent disk-change token.
-
-* The firmware now stops with a clear fatal error message instead of silently
-  corrupting the on-screen display when the Options menu does not fit: (a) at
-  startup, if the menu window (`OPTM_DX`/`OPTM_DY` from `config.vhd` plus two
-  characters for the frame) is larger than the screen, whose size is
-  `VGA_DX/16` x `VGA_DY/16` characters (`globals.vhd`), and (b) when a menu is
-  shown whose currently active level contains more visible lines than the
-  window height allows. Both checks only fire on configurations that already
-  rendered a corrupted menu before, so existing cores are not affected. The
-  maximum possible menu height on a given screen is `VGA_DY/16 - 2` lines;
-  use submenus to offer more items than that. Verified with the new emulator
-  testbed `M2M/rom/menu_test.asm`. Thanks to Muse (Shoestring) from the
-  Apple II core for reporting the corrupted rendering that led to this find.
 
 * Documented the `PREP_LOAD_IMAGE` error-message contract in the template
   (`CORE/m2m-rom/m2m-rom.asm`) and at the display site in the Shell: when the
@@ -32,16 +29,6 @@ Improvements
   prompt themselves (it would be shown twice); start them with `\n\n` and end
   them with `\n`, like the C64 core does, for exactly one empty line between
   the message and the prompt.
-
-* Added the generic `make_release.py` packager and a stock-demo
-  `CORE/release.toml`. Core identity, file naming, `.cor` metadata, Shell
-  config naming, and release-document policies are declarative; genuinely
-  core-specific checks or artifacts can use optional `CORE/release_hooks.py`
-  callbacks without forking the shared release engine.
-
-* Heavily improved documentation: Wiki and "The Ultimate Porting Guide"
-
-* Support for AI coding assistants: Added AGENTS.md and CLAUDE.md
 
 * Added an optional, core-configurable sync-pulse reshaper for analog VGA
   Standard mode. Core porters configure it in `CORE/vhdl/globals.vhd`; the
@@ -62,13 +49,6 @@ Improvements
 Bug fixes
 ---------
 
-* Fixed QNICE's FAT32 sector-address overflow check
-  ([issue #51](https://github.com/sy2002/MiSTer2MEGA65/issues/51)). It now
-  rejects a computed address when either upper word is nonzero, instead of
-  allowing a truncated 32-bit address through to the disk device. The overflow
-  error path also preserves the device handle. Included via the updated
-  QNICE V1.61 submodule.
-
 * Fixed silent data corruption when writing to disk images: opening a file or
   a directory stole QNICE's single 512-byte sector buffer from a handle that
   was in the middle of writing, so up to a sector of data was lost without any
@@ -79,7 +59,26 @@ Bug fixes
   closed: the keyboard stopped reacting and the menu could not be opened
   again. It occurred in cores that use two or more virtual drives and that
   have settings persistence switched on. Many thanks to Rhialto for the
-  thorough analysis and the fix (issue #58).
+  thorough analysis and the fix.
+  (Github issue https://github.com/sy2002/MiSTer2MEGA65/issues/58)
+
+* Fixed QNICE's FAT32 sector-address overflow check. It now rejects a computed
+  address when either upper word is nonzero, instead of allowing a truncated
+  32-bit address through to the disk device.
+  (GitHub issue https://github.com/sy2002/MiSTer2MEGA65/issues/51)
+
+* The firmware now stops with a clear fatal error message instead of silently
+  corrupting the on-screen display when the Options menu does not fit: (a) at
+  startup, if the menu window (`OPTM_DX`/`OPTM_DY` from `config.vhd` plus two
+  characters for the frame) is larger than the screen, whose size is
+  `VGA_DX/16` x `VGA_DY/16` characters (`globals.vhd`), and (b) when a menu is
+  shown whose currently active level contains more visible lines than the
+  window height allows. Both checks only fire on configurations that already
+  rendered a corrupted menu before, so existing cores are not affected. The
+  maximum possible menu height on a given screen is `VGA_DY/16 - 2` lines;
+  use submenus to offer more items than that. Verified with the new emulator
+  testbed `M2M/rom/menu_test.asm`. Thanks to Muse (Shoestring) from the
+  Apple II core for reporting the corrupted rendering that led to this find.
 
 * Restored the HyperRAM controller placement pblock on R3, R4, R5 and R6.
   Keeping the receive FIFO close to the fixed HyperRAM I/O bank ensures that
