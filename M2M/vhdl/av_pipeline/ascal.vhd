@@ -1644,7 +1644,16 @@ BEGIN
       avl_readdataack<='0';
       avl_readack<='0';
       avl_read_i<='0';
-      --avl_write_i<='0';
+      -- Wedge fix: this clear was commented out upstream. Without it,
+      -- avl_write_i holds '1' through reset when reset lands mid-burst
+      -- (async clause skips the synchronous '0' default), presenting a
+      -- stale phantom write to the memory chain for the whole reset hold.
+      -- If the avalon chain's reset releases before ascal's avl-domain
+      -- sync, the phantom header is accepted and then truncated after one
+      -- wide word, permanently desyncing downstream burst counters and
+      -- deadlocking the o-side line-fetch reads (cold-boot black screen /
+      -- striped freeze on reset press).
+      avl_write_i<='0';
       avl_write_sync<='0';
       avl_write_sync2<='0';
       avl_write_pulse<='0';
