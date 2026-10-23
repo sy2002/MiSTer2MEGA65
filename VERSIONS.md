@@ -49,6 +49,16 @@ Improvements
 Bug fixes
 ---------
 
+* Fixed the three NTSC-family HDMI pixel-clock tables in
+  `M2M/vhdl/controllers/HDMI/video_out_clock.vhd` (`CLK_SEL` 100 = 25.175 MHz,
+  101 = 27.027 MHz, 110 = 74.167 MHz). Their CLKOUT0/CLKOUT1 "Register 2"
+  words had been copied from the 148.5 MHz table, so the TMDS serializer
+  clock would have run at 10x instead of 5x the pixel clock (and the pixel
+  clock of the 27.027 MHz table with a wrong duty cycle): no picture on any
+  monitor. No core had used these tables so far; the C64 core's NTSC modes
+  are the first. The register words now match the field-proven tables with
+  the same dividers (EDGE set only for odd dividers, NO_COUNT never).
+
 * Fixed silent data corruption when writing to disk images: opening a file or
   a directory stole QNICE's single 512-byte sector buffer from a handle that
   was in the middle of writing, so up to a sector of data was lost without any
