@@ -49,6 +49,19 @@ Improvements
 Bug fixes
 ---------
 
+* Fixed the file browser stopping the core with "SD Card: Unknown error while
+  trying to browse. Error code: 2704" on folders whose directory exactly fills
+  its clusters on the SD card: QNICE's FAT32 library did not stop at the end
+  of the cluster chain and read a sector far beyond the end of the card. On
+  cards with 8 KB clusters and larger, the old sector-address overflow check
+  hid the bug by reading the end of the second FAT instead (garbage entries
+  if that part of the card is in use); with the fix of issue #51 alone it
+  would have shown up there as error code `EE14`. Also fixed: a broken long
+  file name crashed the file browser, and seeking to exactly the end of a file
+  whose size is a multiple of the cluster size returned an error. Thanks to
+  Mikey351AU for the analysis and the first fix.
+  (GitHub issue https://github.com/sy2002/MiSTer2MEGA65/issues/84)
+
 * Fixed the three NTSC-family HDMI pixel-clock tables in
   `M2M/vhdl/controllers/HDMI/video_out_clock.vhd` (`CLK_SEL` 100 = 25.175 MHz,
   101 = 27.027 MHz, 110 = 74.167 MHz). Their CLKOUT0/CLKOUT1 "Register 2"
